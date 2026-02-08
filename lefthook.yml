@@ -1,0 +1,5 @@
+pre-commit:
+  commands:
+    check:
+      glob: "*.{ts,tsx,js,jsx,json,css,html}"
+      run: npx biome check --staged --no-errors-on-unmatched {staged_files}
