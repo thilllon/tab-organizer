@@ -4,6 +4,10 @@
   "version": "0.0.1",
   "description": "Chrome extension that sorts and organizes your browser tabs.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thilllon/tab-organizer.git"
+  },
   "keywords": [
     "chrome-extension",
     "tab-organizer",
