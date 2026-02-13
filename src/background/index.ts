@@ -14,6 +14,7 @@ interface SortSettings {
   groupSuspendedTabs: boolean
   tabSuspenderExtensionId: string
   sortPinnedTabs: boolean
+  duplicateTabHandling: 'none' | 'closeAllButOne' | 'group'
 }
 
 const DEFAULT_SETTINGS: SortSettings = {
@@ -23,6 +24,7 @@ const DEFAULT_SETTINGS: SortSettings = {
   groupSuspendedTabs: false,
   tabSuspenderExtensionId: THE_MARVELLOUS_SUSPENDER_EXTENSION_ID,
   sortPinnedTabs: false,
+  duplicateTabHandling: 'none',
 }
 
 // ---------- Utility functions ----------
@@ -197,6 +199,95 @@ function sortByCustom(
   }
 }
 
+// ---------- Duplicate tab handling ----------
+
+function findDuplicateTabs(tabs: chrome.tabs.Tab[]): Map<string, chrome.tabs.Tab[]> {
+  const urlMap = new Map<string, chrome.tabs.Tab[]>()
+
+  for (const tab of tabs) {
+    const url = tab.url ?? tab.pendingUrl
+    if (!url) continue
+
+    const existingTabs = urlMap.get(url)
+    if (existingTabs) {
+      existingTabs.push(tab)
+    } else {
+      urlMap.set(url, [tab])
+    }
+  }
+
+  // 중복이 있는 것만 필터링 (2개 이상)
+  const duplicates = new Map<string, chrome.tabs.Tab[]>()
+  for (const [url, tabList] of urlMap) {
+    if (tabList.length > 1) {
+      duplicates.set(url, tabList)
+    }
+  }
+
+  return duplicates
+}
+
+async function closeDuplicateTabs(tabs: chrome.tabs.Tab[]): Promise<void> {
+  // 첫 번째 탭 또는 활성 탭을 제외하고 나머지 닫기
+  const activeTab = tabs.find((tab) => tab.active)
+  const tabToKeep = activeTab ?? tabs[0]
+
+  const tabsToClose = tabs.filter((tab) => tab.id !== tabToKeep.id)
+  const tabIdsToClose = tabsToClose
+    .map((tab) => tab.id)
+    .filter((id): id is number => id !== undefined)
+
+  if (tabIdsToClose.length > 0) {
+    await chrome.tabs.remove(tabIdsToClose)
+  }
+}
+
+async function groupDuplicateTabs(url: string, tabs: chrome.tabs.Tab[]): Promise<void> {
+  const tabIds = tabs.map((tab) => tab.id).filter((id): id is number => id !== undefined) as [
+    number,
+    ...number[],
+  ]
+
+  if (tabIds.length < 2) return
+
+  // 탭 그룹 생성
+  const groupId = await chrome.tabs.group({ tabIds })
+
+  // 그룹 이름 설정 (도메인 이름)
+  try {
+    const urlObj = new URL(url)
+    const groupTitle = `${urlObj.hostname} (${tabIds.length})`
+    await chrome.tabGroups.update(groupId, {
+      title: groupTitle,
+      collapsed: false,
+    })
+  } catch {
+    await chrome.tabGroups.update(groupId, {
+      title: `Duplicates (${tabIds.length})`,
+    })
+  }
+}
+
+async function handleDuplicateTabs(
+  duplicateHandling: 'none' | 'closeAllButOne' | 'group',
+  windowId: number,
+): Promise<void> {
+  if (duplicateHandling === 'none') return
+
+  const allTabs = await chrome.tabs.query({ windowId })
+  const duplicates = findDuplicateTabs(allTabs)
+
+  if (duplicateHandling === 'closeAllButOne') {
+    for (const [_, tabs] of duplicates) {
+      await closeDuplicateTabs(tabs)
+    }
+  } else if (duplicateHandling === 'group') {
+    for (const [url, tabs] of duplicates) {
+      await groupDuplicateTabs(url, tabs)
+    }
+  }
+}
+
 // ---------- Core sort orchestration ----------
 
 async function sortTabs(
@@ -277,6 +368,11 @@ async function sortTabGroups(): Promise<void> {
     groupId: -1,
   })
   await sortTabs(ungroupedTabs, -1, settings)
+
+  // 중복 탭 처리 (정렬 후에 수행)
+  if (currentWindow.id !== undefined) {
+    await handleDuplicateTabs(settings.duplicateTabHandling, currentWindow.id)
+  }
 }
 
 // ---------- Event listeners ----------
