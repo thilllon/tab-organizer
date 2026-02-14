@@ -22,6 +22,9 @@
 # original source (reference only)
 /__original__
 
+# IDE
+.cursor
+
 # secrets
 secrets.*.js
 

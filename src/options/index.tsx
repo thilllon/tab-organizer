@@ -4,7 +4,10 @@ import { Options } from './Options'
 
 import './index.css'
 
-createRoot(document.getElementById('app') as HTMLElement).render(
+const root = document.getElementById('app')
+if (!root) throw new Error('Root element not found')
+
+createRoot(root).render(
   <StrictMode>
     <Options />
   </StrictMode>,

@@ -243,12 +243,11 @@ async function closeDuplicateTabs(tabs: chrome.tabs.Tab[]): Promise<void> {
 }
 
 async function groupDuplicateTabs(url: string, tabs: chrome.tabs.Tab[]): Promise<void> {
-  const tabIds = tabs.map((tab) => tab.id).filter((id): id is number => id !== undefined) as [
-    number,
-    ...number[],
-  ]
+  const filteredIds = tabs.map((tab) => tab.id).filter((id): id is number => id !== undefined)
 
-  if (tabIds.length < 2) return
+  if (filteredIds.length < 2) return
+
+  const tabIds: [number, ...number[]] = [filteredIds[0], ...filteredIds.slice(1)]
 
   // 탭 그룹 생성
   const groupId = await chrome.tabs.group({ tabIds })
@@ -319,11 +318,9 @@ async function sortTabs(
       break
   }
 
-  const tabIds = tabs.map((tab) => tab.id).filter((id): id is number => id !== undefined) as [
-    number,
-    ...number[],
-  ]
-  if (tabIds.length === 0) return
+  const filteredIds = tabs.map((tab) => tab.id).filter((id): id is number => id !== undefined)
+  if (filteredIds.length === 0) return
+  const tabIds: [number, ...number[]] = [filteredIds[0], ...filteredIds.slice(1)]
   await chrome.tabs.move(tabIds, { index: firstTabIndex })
   if (groupId > -1) {
     await chrome.tabs.group({ groupId, tabIds })
@@ -331,7 +328,7 @@ async function sortTabs(
 }
 
 async function sortTabGroups(): Promise<void> {
-  const settings = (await chrome.storage.sync.get(DEFAULT_SETTINGS)) as SortSettings
+  const settings = await chrome.storage.sync.get<SortSettings>(DEFAULT_SETTINGS)
 
   const currentWindow = await chrome.windows.getLastFocused()
 
