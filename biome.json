@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!dist"]
+    "includes": ["**", "!dist", "!scripts/*.html"]
   },
   "formatter": {
     "enabled": true,
@@ -19,7 +19,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "style": {
+        "useBlockStatements": "error"
+      }
     }
   },
   "javascript": {

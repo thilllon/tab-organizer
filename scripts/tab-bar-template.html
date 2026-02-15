@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #202124;
+      }
+      .container {
+        width: 1280px;
+        height: 800px;
+        display: flex;
+        flex-direction: column;
+      }
+      .toolbar {
+        background: #35363a;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .dot.r {
+        background: #ff5f57;
+      }
+      .dot.y {
+        background: #febc2e;
+      }
+      .dot.g {
+        background: #28c840;
+      }
+      .label {
+        color: #9aa0a6;
+        font-size: 13px;
+        font-weight: 600;
+        margin-left: 16px;
+        letter-spacing: 0.5px;
+      }
+      .tabbar {
+        background: #292a2d;
+        display: flex;
+        gap: 1px;
+        padding: 6px 8px 0;
+        overflow: hidden;
+        flex-wrap: nowrap;
+      }
+      .tab {
+        background: #35363a;
+        border-radius: 8px 8px 0 0;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 100px;
+        max-width: 180px;
+        flex-shrink: 0;
+        cursor: default;
+      }
+      .tab.active {
+        background: #202124;
+      }
+      .tab .title {
+        color: #bdc1c6;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tab.active .title {
+        color: #e8eaed;
+      }
+      .content {
+        flex: 1;
+        background: #202124;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .content-inner {
+        text-align: center;
+      }
+      .content-inner h1 {
+        color: #e8eaed;
+        font-size: 36px;
+        font-weight: 300;
+        margin-bottom: 12px;
+      }
+      .content-inner p {
+        color: #9aa0a6;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="toolbar">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+        <span class="label">{{TITLE}}</span>
+      </div>
+      <div class="tabbar">{{TABS}}</div>
+      <div class="content">
+        <div class="content-inner">
+          <h1>Tab Organizer</h1>
+          <p>{{TITLE}}</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

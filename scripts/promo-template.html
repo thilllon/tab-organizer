@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: {{WIDTH}}px;
+        height: {{HEIGHT}}px;
+        overflow: hidden;
+      }
+      .card {
+        text-align: center;
+        padding: 32px;
+      }
+      .icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon img {
+        width: 56px;
+        height: 56px;
+      }
+      h1 {
+        color: #fff;
+        font-size: {{TITLE_SIZE}}px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        letter-spacing: -0.5px;
+      }
+      p {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: {{DESC_SIZE}}px;
+        line-height: 1.5;
+        max-width: 500px;
+        margin: 0 auto;
+      }
+      .tabs-demo {
+        margin-top: 24px;
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .mini-tab {
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 6px 6px 0 0;
+        padding: 6px 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .mini-tab.grouped {
+        border-top: 3px solid var(--color);
+      }
+      .mini-tab span {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 11px;
+      }
+      .arrow {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 28px;
+        margin: 0 12px;
+        align-self: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon">
+        <img src="{{ICON_PATH}}" />
+      </div>
+      <h1>Tab Organizer</h1>
+      <p>Sort and organize your browser tabs with one click</p>
+      <div class="tabs-demo">
+        <div class="mini-tab grouped" style="--color: #8ab4f8"><span>GitHub</span></div>
+        <div class="mini-tab grouped" style="--color: #8ab4f8"><span>GitHub</span></div>
+        <div class="mini-tab grouped" style="--color: #f28b82"><span>YouTube</span></div>
+        <div class="mini-tab grouped" style="--color: #f28b82"><span>YouTube</span></div>
+        <div class="mini-tab grouped" style="--color: #81c995"><span>Google</span></div>
+      </div>
+    </div>
+  </body>
+</html>

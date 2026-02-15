@@ -9,6 +9,7 @@
 # production
 /dist
 /package
+/screenshots
 
 # misc
 .DS_Store
@@ -21,6 +22,9 @@
 
 # original source (reference only)
 /__original__
+
+# Python
+.venv
 
 # IDE
 .cursor

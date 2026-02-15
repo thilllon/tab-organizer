@@ -1,5 +1,7 @@
 # Privacy Policy - Tab Organizer
 
+Last Updated: February 15, 2026
+
 ## Overview
 
 Tab Organizer is a Chrome extension that sorts and organizes your browser tabs. Your privacy is important to us.
@@ -14,12 +16,12 @@ This extension requires the following permissions:
 
 - **tabs**: Used to read tab URLs and titles for sorting purposes only.
 - **tabGroups**: Used to sort and organize tab groups within the current window.
-- **storage**: Used to save your sorting preferences locally in Chrome's sync storage.
+- **storage**: Used to save your sorting preferences using Chrome's storage API. If you have Chrome sync enabled, these preferences may sync across your devices signed into the same Chrome account.
 
 ## Data Usage
 
 - Tab URLs and titles are accessed **only** during the sorting process and are **not** stored or transmitted to any external server.
-- Sorting preferences are stored locally using Chrome's built-in storage API and are never shared with third parties.
+- Sorting preferences are stored using Chrome's built-in storage API and are never shared with third parties or external servers.
 
 ## Third-Party Services
 
@@ -27,7 +29,7 @@ Tab Organizer does **not** use any third-party analytics, tracking, or data coll
 
 ## Changes to This Policy
 
-Any changes to this privacy policy will be posted on this page with an updated date.
+We may update this privacy policy from time to time. Any changes will be posted on this page with an updated "Last Updated" date.
 
 ## Contact
 
