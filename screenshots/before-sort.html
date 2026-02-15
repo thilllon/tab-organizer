@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #202124;
+      }
+      .container {
+        width: 1280px;
+        height: 800px;
+        display: flex;
+        flex-direction: column;
+      }
+      .toolbar {
+        background: #35363a;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .dot.r {
+        background: #ff5f57;
+      }
+      .dot.y {
+        background: #febc2e;
+      }
+      .dot.g {
+        background: #28c840;
+      }
+      .label {
+        color: #9aa0a6;
+        font-size: 13px;
+        font-weight: 600;
+        margin-left: 16px;
+        letter-spacing: 0.5px;
+      }
+      .tabbar {
+        background: #292a2d;
+        display: flex;
+        gap: 1px;
+        padding: 6px 8px 0;
+        overflow: hidden;
+        flex-wrap: nowrap;
+      }
+      .tab {
+        background: #35363a;
+        border-radius: 8px 8px 0 0;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 100px;
+        max-width: 180px;
+        flex-shrink: 0;
+        cursor: default;
+      }
+      .tab.active {
+        background: #202124;
+      }
+      .tab .title {
+        color: #bdc1c6;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tab.active .title {
+        color: #e8eaed;
+      }
+      .content {
+        flex: 1;
+        background: #202124;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .content-inner {
+        text-align: center;
+      }
+      .content-inner h1 {
+        color: #e8eaed;
+        font-size: 36px;
+        font-weight: 300;
+        margin-bottom: 12px;
+      }
+      .content-inner p {
+        color: #9aa0a6;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="toolbar">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+        <span class="label">Before — Tabs in random order</span>
+      </div>
+      <div class="tabbar">
+    <div class="tab active" >
+      <img src="https://news.ycombinator.com/y18.svg" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Hacker News</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://www.youtube.com/s/desktop/78e11dee/img/favicon_32x32.png" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">YouTube</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://www.youtube.com/s/desktop/78e11dee/img/favicon_32x32.png" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Home - YouTube</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://github.githubassets.com/favicons/favicon.svg" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">GitHub · Change is constant.</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://github.githubassets.com/favicons/favicon.svg" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Trending repositories on Git</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://www.gstatic.com/images/branding/searchlogo/ico/favicon.ico" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Google</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://www.google.com/images/branding/product/ico/maps15_bnuw3a_32dp.ico" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Google 지도</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://www.amazon.com/favicon.ico" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Amazon.com. Spend less. Smil</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://en.wikipedia.org/static/favicon/wikipedia.ico" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Wikipedia, the free encyclop</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://www.google.com/s2/favicons?domain=stackoverflow.com&sz=32" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Newest Questions - Stack Ove</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://www.redditstatic.com/shreddit/assets/favicon/64x64.png" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">Reddit - Prove your humanity</span>
+    </div>
+
+    <div class="tab " >
+      <img src="https://www.redditstatic.com/shreddit/assets/favicon/64x64.png" width="16" height="16" onerror="this.style.display='none'"/>
+      <span class="title">programming</span>
+    </div></div>
+      <div class="content">
+        <div class="content-inner">
+          <h1>Tab Organizer</h1>
+          <p>Before — Tabs in random order</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

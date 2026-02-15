@@ -9,7 +9,6 @@
 # production
 /dist
 /package
-/screenshots
 
 # misc
 .DS_Store
