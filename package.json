@@ -43,7 +43,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.3",
     "archiver": "^7.0.1",
-    "lefthook": "^2.1.0",
+    "lefthook": "^2.1.1",
     "shadcn": "^3.8.4",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
