@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit",
     "format": "biome check --write . && mise exec -- ruff format .",
     "zip": "pnpm build && tsx scripts/zip.ts",
-    "screenshot:demo": "tsx scripts/screenshot-demo.ts",
+    "screenshot": "tsx scripts/screenshot.ts",
     "prepare-registration": "tsx scripts/prepare-registration.ts",
     "prepare": "lefthook install"
   },
