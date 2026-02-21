@@ -15,7 +15,7 @@ jobs:
         node-version: [20, 22, 24]
         pnpm-version: [latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: jdx/mise-action@v3
 
@@ -23,7 +23,7 @@ jobs:
         with:
           version: ${{ matrix.pnpm-version }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
