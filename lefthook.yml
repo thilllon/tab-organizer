@@ -1,5 +1,10 @@
 pre-commit:
   commands:
-    check:
-      glob: "*.{ts,tsx,js,jsx,json,css,html}"
-      run: npx biome check --staged --no-errors-on-unmatched {staged_files}
+    format:
+      run: pnpm format
+      stage_fixed: true
+
+pre-push:
+  commands:
+    typecheck:
+      run: pnpm typecheck
