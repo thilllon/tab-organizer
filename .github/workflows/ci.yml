@@ -15,7 +15,7 @@ jobs:
         node-version: [20, 22, 24]
         pnpm-version: [latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: jdx/mise-action@v2
 
