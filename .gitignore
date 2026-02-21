@@ -27,6 +27,8 @@
 
 # IDE
 .cursor
+.omc
+
 
 # secrets
 secrets.*.js
