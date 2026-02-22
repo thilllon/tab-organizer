@@ -2,6 +2,9 @@
 
 Chrome extension that sorts and organizes your browser tabs.
 
+[![GitHub](https://img.shields.io/github/v/release/thilllon/tab-organizer)](https://github.com/thilllon/tab-organizer)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/bmbpmnfhfbdjdjpblimidmbohgccmjdg)](https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg)
+
 Pin the extension icon and click it to instantly sort all tabs in the current window by URL.
 
 ## Features

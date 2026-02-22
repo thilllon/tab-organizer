@@ -5,6 +5,7 @@
 **Tab Organizer** is a Chrome extension (Manifest V3) that sorts and organizes browser tabs. It groups tabs by hostname/domain, handles duplicate tabs, and supports suspended tab detection. All operations are entirely local with zero external data transmission.
 
 - Repository: `https://github.com/thilllon/tab-organizer`
+- Chrome Web Store: `https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg`
 - License: Private
 
 ---
