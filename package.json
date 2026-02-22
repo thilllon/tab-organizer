@@ -20,8 +20,7 @@
     "format": "biome check --write . && mise exec -- ruff format .",
     "zip": "pnpm build && tsx scripts/zip.ts",
     "screenshot": "tsx scripts/screenshot.ts",
-    "prepare-registration": "tsx scripts/prepare-registration.ts",
-    "prepare": "lefthook install"
+    "prepare-registration": "tsx scripts/prepare-registration.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -43,7 +42,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
     "archiver": "^7.0.1",
-    "lefthook": "^2.1.1",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4.2.0",
     "tsx": "^4.21.0",
