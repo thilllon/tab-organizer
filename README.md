@@ -25,10 +25,16 @@ pnpm dev
 2. Enable **Developer mode**
 3. Click **Load unpacked** and select the `dist` folder
 
-### Build
+### Scripts
 
 ```shell
-pnpm build
+pnpm dev                    # Start Vite dev server (port 5173)
+pnpm build                  # TypeScript check + Vite build -> dist/
+pnpm typecheck              # Type check only (tsc --noEmit)
+pnpm format                 # Biome check --write + Ruff format
+pnpm release                # Bump version, build, and package into ZIP (via release-it)
+pnpm screenshot             # Generate automated screenshots
+pnpm prepare-registration   # Chrome Web Store registration helper
 ```
 
 The `dist` folder will contain the production-ready extension.

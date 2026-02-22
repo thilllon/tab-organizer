@@ -10,7 +10,6 @@
     "release": false
   },
   "hooks": {
-    "before:bump": "pnpm build",
-    "after:bump": "tsx scripts/zip.ts"
+    "after:bump": "pnpm build && tsx scripts/zip.ts"
   }
 }

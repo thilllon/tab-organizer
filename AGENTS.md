@@ -5,7 +5,6 @@
 **Tab Organizer** is a Chrome extension (Manifest V3) that sorts and organizes browser tabs. It groups tabs by hostname/domain, handles duplicate tabs, and supports suspended tab detection. All operations are entirely local with zero external data transmission.
 
 - Repository: `https://github.com/thilllon/tab-organizer`
-- Version: `0.0.1`
 - License: Private
 
 ---
@@ -150,7 +149,7 @@ Permissions: `tabs`, `tabGroups`, `storage`
 | Git Hooks | Lefthook |
 | Testing | Playwright (infrastructure only, no tests written yet) |
 | CI | GitHub Actions (Node 20/22/24 matrix) |
-| Tool Versions | mise (Node 24.13.0, pnpm 10.29.1) |
+| Tool Versions | mise |
 
 ---
 
@@ -161,7 +160,7 @@ pnpm dev              # Start Vite dev server (port 5173)
 pnpm build            # TypeScript check + Vite build -> dist/
 pnpm typecheck        # Type check only (tsc --noEmit)
 pnpm format           # Biome check --write + Ruff format
-pnpm zip              # Build + package into ZIP for Chrome Web Store
+pnpm release          # Bump version, build, and package into ZIP (via release-it)
 pnpm screenshot       # Generate automated screenshots
 ```
 
@@ -199,7 +198,8 @@ pnpm screenshot       # Generate automated screenshots
 
 - **Commit format**: Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - **DO NOT** add `Co-Authored-By` lines to commit messages
-- **Pre-commit hook**: Biome check on staged `.ts`, `.tsx`, `.js`, `.jsx`, `.json`, `.css`, `.html` files
+- **Pre-commit hook**: `pnpm format` (Biome check + Ruff format, staged files auto-fixed)
+- **Pre-push hook**: `pnpm typecheck`
 
 ### Component Patterns
 
