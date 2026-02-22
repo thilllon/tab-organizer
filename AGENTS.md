@@ -104,10 +104,10 @@ This is the most important file. It contains all tab sorting logic:
 All shared types are defined here. Both the service worker and the options page import from this file.
 
 ```typescript
-type SortBy = 'url' | 'title' | 'custom';
-type GroupFrom = 'leftToRight' | 'rightToLeft';
-type DuplicateTabHandling = 'none' | 'closeAllButOne' | 'group';
-type GroupingMode = 'subdomain' | 'domain';
+type SortBy = "url" | "title" | "custom";
+type GroupFrom = "leftToRight" | "rightToLeft";
+type DuplicateTabHandling = "none" | "closeAllButOne" | "group";
+type GroupingMode = "subdomain" | "domain";
 
 interface SortSettings {
   sortBy: SortBy;
