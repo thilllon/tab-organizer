@@ -84,46 +84,47 @@ tab-organizer/
 
 This is the most important file. It contains all tab sorting logic:
 
-| Function | Purpose |
-|---|---|
-| `sortTabGroups()` | Main orchestrator. Loads settings, queries tabs, delegates to sort functions, handles duplicates. |
-| `sortTabs()` | Sorts a set of tabs and moves them via Chrome API. Dispatches to `sortByTitleOrUrl` or `sortByCustom`. |
-| `sortByTitleOrUrl()` | Sorts tabs alphabetically by title or URL. Handles suspended tab grouping and pinned tab exclusion. |
-| `sortByCustom()` | Groups tabs by hostname/domain, preserving first-seen order. Supports LTR/RTL grouping direction. |
-| `handleDuplicateTabs()` | Finds duplicate URLs and either closes extras or groups them. |
-| `findDuplicateTabs()` | Returns a `Map<url, Tab[]>` of URLs with more than one tab. |
-| `closeDuplicateTabs()` | Keeps active/first tab, closes the rest. |
-| `groupDuplicateTabs()` | Groups duplicate tabs into a Chrome tab group. |
-| `extractGroupingKey()` | Parses hostname into grouping key. In `domain` mode, handles two-part TLDs (e.g., `co.uk`). |
-| `isSuspended()` | Checks if a tab is suspended by The Marvellous Suspender. |
-| `tabToUrl()` | Extracts real URL from suspended tabs by parsing the `uri` query parameter. |
-| `compareByUrlComponents()` | Compares URLs by hostname (without `www.`) + path + search + hash. |
+| Function                   | Purpose                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `sortTabGroups()`          | Main orchestrator. Loads settings, queries tabs, delegates to sort functions, handles duplicates.      |
+| `sortTabs()`               | Sorts a set of tabs and moves them via Chrome API. Dispatches to `sortByTitleOrUrl` or `sortByCustom`. |
+| `sortByTitleOrUrl()`       | Sorts tabs alphabetically by title or URL. Handles suspended tab grouping and pinned tab exclusion.    |
+| `sortByCustom()`           | Groups tabs by hostname/domain, preserving first-seen order. Supports LTR/RTL grouping direction.      |
+| `handleDuplicateTabs()`    | Finds duplicate URLs and either closes extras or groups them.                                          |
+| `findDuplicateTabs()`      | Returns a `Map<url, Tab[]>` of URLs with more than one tab.                                            |
+| `closeDuplicateTabs()`     | Keeps active/first tab, closes the rest.                                                               |
+| `groupDuplicateTabs()`     | Groups duplicate tabs into a Chrome tab group.                                                         |
+| `extractGroupingKey()`     | Parses hostname into grouping key. In `domain` mode, handles two-part TLDs (e.g., `co.uk`).            |
+| `isSuspended()`            | Checks if a tab is suspended by The Marvellous Suspender.                                              |
+| `tabToUrl()`               | Extracts real URL from suspended tabs by parsing the `uri` query parameter.                            |
+| `compareByUrlComponents()` | Compares URLs by hostname (without `www.`) + path + search + hash.                                     |
 
 ### `src/types.ts` — Shared Types
 
 All shared types are defined here. Both the service worker and the options page import from this file.
 
 ```typescript
-type SortBy = 'url' | 'title' | 'custom'
-type GroupFrom = 'leftToRight' | 'rightToLeft'
-type DuplicateTabHandling = 'none' | 'closeAllButOne' | 'group'
-type GroupingMode = 'subdomain' | 'domain'
+type SortBy = 'url' | 'title' | 'custom';
+type GroupFrom = 'leftToRight' | 'rightToLeft';
+type DuplicateTabHandling = 'none' | 'closeAllButOne' | 'group';
+type GroupingMode = 'subdomain' | 'domain';
 
 interface SortSettings {
-  sortBy: SortBy
-  groupFrom: GroupFrom
-  preserveOrderWithinGroups: boolean
-  groupSuspendedTabs: boolean
-  tabSuspenderExtensionId: string
-  sortPinnedTabs: boolean
-  duplicateTabHandling: DuplicateTabHandling
-  groupingMode: GroupingMode
+  sortBy: SortBy;
+  groupFrom: GroupFrom;
+  preserveOrderWithinGroups: boolean;
+  groupSuspendedTabs: boolean;
+  tabSuspenderExtensionId: string;
+  sortPinnedTabs: boolean;
+  duplicateTabHandling: DuplicateTabHandling;
+  groupingMode: GroupingMode;
 }
 ```
 
 ### `src/options/Options.tsx` — Settings UI
 
 React component using shadcn/ui (Radix UI + Tailwind). Provides radio groups for:
+
 - **Tab Grouping**: `subdomain` (full hostname) vs `domain` (base domain)
 - **Duplicate Tabs**: `none` / `closeAllButOne` / `group`
 
@@ -139,18 +140,18 @@ Permissions: `tabs`, `tabGroups`, `storage`
 
 ## Tech Stack
 
-| Category | Tool |
-|---|---|
-| Language | TypeScript (strict mode, ESNext target) |
-| UI Framework | React 19 |
-| CSS | Tailwind CSS 4 |
-| UI Components | shadcn/ui (Radix UI + CVA) |
-| Build | Vite 7 + @crxjs/vite-plugin |
-| Linter/Formatter | Biome |
-| Git Hooks | Lefthook |
-| Testing | Playwright (infrastructure only, no tests written yet) |
-| CI | GitHub Actions (Node 20/22/24 matrix) |
-| Tool Versions | mise |
+| Category         | Tool                                                   |
+| ---------------- | ------------------------------------------------------ |
+| Language         | TypeScript (strict mode, ESNext target)                |
+| UI Framework     | React 19                                               |
+| CSS              | Tailwind CSS 4                                         |
+| UI Components    | shadcn/ui (Radix UI + CVA)                             |
+| Build            | Vite 7 + @crxjs/vite-plugin                            |
+| Linter/Formatter | Biome                                                  |
+| Git Hooks        | Lefthook                                               |
+| Testing          | Playwright (infrastructure only, no tests written yet) |
+| CI               | GitHub Actions (Node 20/22/24 matrix)                  |
+| Tool Versions    | mise                                                   |
 
 ---
 
@@ -223,11 +224,11 @@ The manifest is generated at build time from `vite.config.ts`. Key points:
 
 ### Permissions Explained
 
-| Permission | Why |
-|---|---|
-| `tabs` | Read tab URLs and titles for sorting/grouping |
-| `tabGroups` | Create, move, and update tab groups |
-| `storage` | Persist user settings via `chrome.storage.sync` |
+| Permission  | Why                                             |
+| ----------- | ----------------------------------------------- |
+| `tabs`      | Read tab URLs and titles for sorting/grouping   |
+| `tabGroups` | Create, move, and update tab groups             |
+| `storage`   | Persist user settings via `chrome.storage.sync` |
 
 ### Storage Schema
 
