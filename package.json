@@ -17,7 +17,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
-    "format": "biome check --write . && mise exec -- ruff format .",
+    "format": "biome check --write . && prettier --write '**/*.md' && mise exec -- ruff format .",
     "screenshot": "tsx scripts/screenshot.ts",
     "prepare-registration": "tsx scripts/prepare-registration.ts",
     "release": "release-it"
@@ -42,6 +42,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
     "archiver": "^7.0.1",
+    "prettier": "^3.8.1",
     "release-it": "^19.2.4",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4.2.0",
