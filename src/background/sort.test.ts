@@ -65,6 +65,46 @@ describe('compareByUrlComponents', () => {
     const b = new URL('https://example.com/path#zzz')
     expect(compareByUrlComponents(a, b)).toBeLessThan(0)
   })
+
+  it('handles chrome:// URLs', () => {
+    const a = new URL('chrome://extensions/')
+    const b = new URL('chrome://settings/')
+    expect(compareByUrlComponents(a, b)).toBeLessThan(0)
+    expect(compareByUrlComponents(b, a)).toBeGreaterThan(0)
+  })
+
+  it('handles chrome-extension:// URLs', () => {
+    const a = new URL('chrome-extension://abcdef/popup.html')
+    const b = new URL('chrome-extension://zyxwvu/options.html')
+    expect(compareByUrlComponents(a, b)).toBeLessThan(0)
+  })
+
+  it('sorts chrome:// before https://', () => {
+    const a = new URL('chrome://settings/')
+    const b = new URL('https://example.com')
+    // chrome:// hostname ("settings") < https:// hostname ("example.com")
+    const result = compareByUrlComponents(a, b)
+    expect(typeof result).toBe('number')
+  })
+
+  it('handles about:blank', () => {
+    const a = new URL('about:blank')
+    const b = new URL('https://example.com')
+    const result = compareByUrlComponents(a, b)
+    expect(typeof result).toBe('number')
+  })
+
+  it('handles file:// URLs', () => {
+    const a = new URL('file:///Users/test/doc.html')
+    const b = new URL('file:///Users/test/readme.html')
+    expect(compareByUrlComponents(a, b)).toBeLessThan(0)
+  })
+
+  it('handles chrome:// URLs with subpages', () => {
+    const a = new URL('chrome://settings/privacy')
+    const b = new URL('chrome://settings/security')
+    expect(compareByUrlComponents(a, b)).toBeLessThan(0)
+  })
 })
 
 describe('extractGroupingKey', () => {
@@ -107,6 +147,16 @@ describe('isSuspended', () => {
     const tab = makeTab({ url: undefined })
     expect(isSuspended(tab, prefix)).toBe(false)
   })
+
+  it('returns false for chrome:// URL', () => {
+    const tab = makeTab({ url: 'chrome://settings/' })
+    expect(isSuspended(tab, prefix)).toBe(false)
+  })
+
+  it('returns false for chrome-extension:// URL that is not the suspender', () => {
+    const tab = makeTab({ url: 'chrome-extension://otherid/popup.html' })
+    expect(isSuspended(tab, prefix)).toBe(false)
+  })
 })
 
 describe('tabToUrl', () => {
@@ -128,6 +178,24 @@ describe('tabToUrl', () => {
     const tab = makeTab({ url: 'https://example.com' })
     const result = tabToUrl(tab, false, prefixLen)
     expect(result.href).toBe('https://example.com/')
+  })
+
+  it('handles chrome:// URLs', () => {
+    const tab = makeTab({ url: 'chrome://extensions/' })
+    const result = tabToUrl(tab, false, prefixLen)
+    expect(result.href).toBe('chrome://extensions/')
+  })
+
+  it('handles chrome-extension:// URLs', () => {
+    const tab = makeTab({ url: 'chrome-extension://abcdef/options.html' })
+    const result = tabToUrl(tab, false, prefixLen)
+    expect(result.href).toBe('chrome-extension://abcdef/options.html')
+  })
+
+  it('handles about:blank', () => {
+    const tab = makeTab({ url: 'about:blank' })
+    const result = tabToUrl(tab, false, prefixLen)
+    expect(result.href).toBe('about:blank')
   })
 })
 
@@ -168,6 +236,26 @@ describe('findDuplicateTabs', () => {
     ]
     const result = findDuplicateTabs(tabs)
     expect(result.size).toBe(1)
+  })
+
+  it('detects duplicate chrome:// tabs', () => {
+    const tabs = [
+      makeTab({ id: 1, url: 'chrome://settings/' }),
+      makeTab({ id: 2, url: 'chrome://settings/' }),
+      makeTab({ id: 3, url: 'chrome://extensions/' }),
+    ]
+    const result = findDuplicateTabs(tabs)
+    expect(result.size).toBe(1)
+    expect(result.get('chrome://settings/')?.length).toBe(2)
+  })
+
+  it('treats chrome:// and https:// as different URLs', () => {
+    const tabs = [
+      makeTab({ id: 1, url: 'chrome://settings/' }),
+      makeTab({ id: 2, url: 'https://settings/' }),
+    ]
+    const result = findDuplicateTabs(tabs)
+    expect(result.size).toBe(0)
   })
 })
 
@@ -249,5 +337,130 @@ describe('sortByTitleOrUrl', () => {
     const tabs: chrome.tabs.Tab[] = []
     sortByTitleOrUrl(tabs, 'title', false, false, noSuspend, noSuspendLen)
     expect(tabs).toEqual([])
+  })
+
+  it('sorts mixed chrome:// and https:// tabs by URL', () => {
+    const tabs = [
+      makeTab({ url: 'https://zoo.com' }),
+      makeTab({ url: 'chrome://settings/' }),
+      makeTab({ url: 'chrome://extensions/' }),
+      makeTab({ url: 'https://apple.com' }),
+    ]
+
+    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen)
+
+    expect(tabs.map((t) => t.url)).toEqual([
+      'https://apple.com',
+      'chrome://extensions/',
+      'chrome://settings/',
+      'https://zoo.com',
+    ])
+  })
+
+  it('sorts tabs with about:blank by URL', () => {
+    const tabs = [makeTab({ url: 'https://example.com' }), makeTab({ url: 'about:blank' })]
+
+    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen)
+
+    // about:blank has empty hostname, so it sorts before any domain
+    expect(tabs[0].url).toBe('about:blank')
+  })
+
+  it('sorts chrome-extension:// tabs by URL', () => {
+    const tabs = [
+      makeTab({ url: 'chrome-extension://zzz/popup.html' }),
+      makeTab({ url: 'chrome-extension://aaa/options.html' }),
+    ]
+
+    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen)
+
+    expect(tabs.map((t) => t.url)).toEqual([
+      'chrome-extension://aaa/options.html',
+      'chrome-extension://zzz/popup.html',
+    ])
+  })
+
+  it('sorts file:// tabs by title', () => {
+    const tabs = [
+      makeTab({ title: 'Readme', url: 'file:///readme.html' }),
+      makeTab({ title: 'About', url: 'file:///about.html' }),
+    ]
+
+    sortByTitleOrUrl(tabs, 'title', false, false, noSuspend, noSuspendLen)
+
+    expect(tabs.map((t) => t.title)).toEqual(['About', 'Readme'])
+  })
+
+  it('sorts many tabs with diverse URLs including subdomains and special schemes', () => {
+    const tabs = [
+      makeTab({ url: 'https://www.youtube.com/watch?v=abc123' }),
+      makeTab({ url: 'chrome://settings/privacy' }),
+      makeTab({ url: 'https://docs.google.com/document/d/1' }),
+      makeTab({ url: 'https://mail.google.com/mail/u/0/#inbox' }),
+      makeTab({ url: 'about:blank' }),
+      makeTab({ url: 'https://github.com/anthropics/claude-code' }),
+      makeTab({ url: 'chrome-extension://abcdef/options.html' }),
+      makeTab({ url: 'https://ko.wikipedia.org/wiki/JavaScript' }),
+      makeTab({ url: 'https://stackoverflow.com/questions/12345' }),
+      makeTab({ url: 'https://developer.mozilla.org/en-US/docs/Web/API' }),
+      makeTab({ url: 'chrome://extensions/' }),
+      makeTab({ url: 'https://www.amazon.com/dp/B09V3KXJPB' }),
+      makeTab({ url: 'https://drive.google.com/drive/my-drive' }),
+      makeTab({ url: 'https://news.ycombinator.com/' }),
+      makeTab({ url: 'file:///Users/test/index.html' }),
+      makeTab({ url: 'https://calendar.google.com/calendar/u/0' }),
+      makeTab({ url: 'https://app.slack.com/client/T1234/C5678' }),
+      makeTab({ url: 'https://www.reddit.com/r/programming/' }),
+      makeTab({ url: 'https://translate.google.com/?sl=en&tl=ko' }),
+      makeTab({ url: 'chrome://flags/' }),
+      makeTab({ url: 'https://console.cloud.google.com/home/dashboard' }),
+      makeTab({ url: 'https://www.notion.so/workspace/page-id' }),
+      makeTab({ url: 'https://en.wikipedia.org/wiki/TypeScript' }),
+      makeTab({ url: 'https://github.com/vercel/next.js/issues' }),
+      makeTab({ url: 'https://maps.google.com/maps?q=seoul' }),
+    ]
+
+    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen)
+
+    const urls = tabs.map((t) => {
+      const u = new URL(t.url ?? '')
+      return u.hostname.replace(/^www\./, '') + u.pathname + u.search + u.hash
+    })
+
+    // Verify sorted in ascending order
+    for (let i = 1; i < urls.length; i++) {
+      expect(urls[i - 1].localeCompare(urls[i])).toBeLessThanOrEqual(0)
+    }
+
+    // Verify specific ordering expectations
+    const hostnames = tabs.map((t) => new URL(t.url ?? '').hostname.replace(/^www\./, ''))
+
+    // about:blank (empty hostname) should be first
+    expect(hostnames[0]).toBe('')
+
+    // chrome-extension:// comes early (hostname is extension ID)
+    // amazon.com before github.com
+    const amazonIdx = hostnames.indexOf('amazon.com')
+    const githubIdx = hostnames.indexOf('github.com')
+    expect(amazonIdx).toBeLessThan(githubIdx)
+
+    // Multiple google subdomains should appear (URL sort is by full key, not just domain)
+    const googleHostnames = hostnames.filter((h) => h.endsWith('google.com'))
+    expect(googleHostnames.length).toBe(7)
+    // They should be in alphabetical order among themselves
+    const sortedGoogle = [...googleHostnames].sort((a, b) => a.localeCompare(b))
+    expect(googleHostnames).toEqual(sortedGoogle)
+
+    // Same domain, different paths: github.com entries should be adjacent
+    const githubIndices = hostnames
+      .map((h, i) => (h === 'github.com' ? i : -1))
+      .filter((i) => i !== -1)
+    expect(githubIndices.length).toBe(2)
+    expect(githubIndices[1] - githubIndices[0]).toBe(1)
+
+    // Two wikipedia subdomains should both be present and in alphabetical order
+    const wikiHostnames = hostnames.filter((h) => h.endsWith('wikipedia.org'))
+    expect(wikiHostnames.length).toBe(2)
+    expect(wikiHostnames).toEqual([...wikiHostnames].sort((a, b) => a.localeCompare(b)))
   })
 })
