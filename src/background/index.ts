@@ -67,7 +67,7 @@ async function sortTabGroups(): Promise<void> {
   const tabGroups = await chrome.tabGroups.query({ windowId: currentWindow.id })
 
   // Sort tab groups by title (you can prefix names with numbers to override order)
-  tabGroups.sort((a, b) => (b.title ?? '').localeCompare(a.title ?? ''))
+  tabGroups.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
 
   for (const tabGroup of tabGroups) {
     await chrome.tabGroups.move(tabGroup.id, { index: groupOffset })
