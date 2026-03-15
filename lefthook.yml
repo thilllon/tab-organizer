@@ -6,5 +6,9 @@ pre-commit:
 
 pre-push:
   commands:
+    test:
+      run: pnpm test
     typecheck:
       run: pnpm typecheck
+    build:
+      run: pnpm build
