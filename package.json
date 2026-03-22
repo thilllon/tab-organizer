@@ -33,7 +33,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.7",
+    "@biomejs/biome": "^2.4.8",
     "@crxjs/vite-plugin": "^2.3.0",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.1",
