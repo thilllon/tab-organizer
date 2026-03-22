@@ -36,7 +36,7 @@
     "@biomejs/biome": "^2.4.7",
     "@crxjs/vite-plugin": "^2.3.0",
     "@playwright/test": "^1.58.2",
-    "@tailwindcss/vite": "^4.2.1",
+    "@tailwindcss/vite": "^4.2.2",
     "@types/archiver": "^7.0.0",
     "@types/chrome": "^0.1.37",
     "@types/react": "^19.2.14",
