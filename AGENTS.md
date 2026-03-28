@@ -147,7 +147,7 @@ Permissions: `tabs`, `tabGroups`, `storage`
 | UI Framework     | React 19                                |
 | CSS              | Tailwind CSS 4                          |
 | UI Components    | shadcn/ui (Radix UI + CVA)              |
-| Build            | Vite 7 + @crxjs/vite-plugin             |
+| Build            | Vite 8 + @crxjs/vite-plugin             |
 | Linter/Formatter | Biome                                   |
 | Git Hooks        | Lefthook                                |
 | Testing          | Vitest + Playwright                     |
@@ -162,7 +162,7 @@ Permissions: `tabs`, `tabGroups`, `storage`
 pnpm dev              # Start Vite dev server (port 5173)
 pnpm build            # TypeScript check + Vite build -> dist/
 pnpm typecheck        # Type check only (tsc --noEmit)
-pnpm format           # Biome check --write + Ruff format
+pnpm format           # Biome check --write + Prettier (md/mdx) + mise format
 pnpm test             # Run tests (vitest)
 pnpm release          # Bump version, build, and package into ZIP (via release-it)
 ```
@@ -201,7 +201,7 @@ pnpm release          # Bump version, build, and package into ZIP (via release-i
 
 - **Commit format**: Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - **DO NOT** add `Co-Authored-By` lines to commit messages
-- **Pre-commit hook**: `pnpm format` (Biome check + Ruff format, staged files auto-fixed)
+- **Pre-commit hook**: `pnpm format` (Biome check + Prettier + mise format, staged files auto-fixed)
 - **Pre-push hook**: `pnpm typecheck`
 
 ### Component Patterns

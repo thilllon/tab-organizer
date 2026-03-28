@@ -34,7 +34,7 @@ pnpm dev
 pnpm dev                    # Start Vite dev server (port 5173)
 pnpm build                  # TypeScript check + Vite build -> dist/
 pnpm typecheck              # Type check only (tsc --noEmit)
-pnpm format                 # Biome check --write + Ruff format
+pnpm format                 # Biome check --write + Prettier (md/mdx) + mise format
 pnpm test                   # Run tests (vitest)
 pnpm release                # Bump version, build, and package into ZIP (via release-it)
 ```

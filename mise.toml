@@ -5,3 +5,6 @@ python = "3.13"
 uv = "latest"
 ruff = "latest"
 lefthook = "latest"
+
+[tasks]
+format = "ruff format ."
