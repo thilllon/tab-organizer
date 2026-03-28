@@ -1,25 +1,45 @@
-import type { GroupFrom, GroupingMode } from '@/types'
+import type { GroupFrom, GroupingMode, SortBy } from '@/types';
+
+const TAB_GROUP_COLORS: `${chrome.tabGroups.Color}`[] = [
+  'grey',
+  'blue',
+  'red',
+  'yellow',
+  'green',
+  'pink',
+  'purple',
+  'cyan',
+  'orange',
+];
+
+export function hashStringToColor(str: string): `${chrome.tabGroups.Color}` {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) | 0;
+  }
+  return TAB_GROUP_COLORS[Math.abs(hash) % TAB_GROUP_COLORS.length];
+}
 
 export function compareByUrlComponents(urlA: URL, urlB: URL): number {
-  const keyA = urlA.hostname.replace(/^www\./i, '') + urlA.pathname + urlA.search + urlA.hash
-  const keyB = urlB.hostname.replace(/^www\./i, '') + urlB.pathname + urlB.search + urlB.hash
-  return keyA.localeCompare(keyB)
+  const keyA = urlA.hostname.replace(/^www\./i, '') + urlA.pathname + urlA.search + urlA.hash;
+  const keyB = urlB.hostname.replace(/^www\./i, '') + urlB.pathname + urlB.search + urlB.hash;
+  return keyA.localeCompare(keyB);
 }
 
 export function extractGroupingKey(hostname: string, mode: GroupingMode): string {
   if (mode === 'subdomain') {
-    return hostname
+    return hostname;
   }
-  const parts = hostname.split('.')
-  const knownSecondLevel = ['co', 'com', 'org', 'net', 'edu', 'gov', 'ac']
+  const parts = hostname.split('.');
+  const knownSecondLevel = ['co', 'com', 'org', 'net', 'edu', 'gov', 'ac'];
   if (parts.length >= 3 && knownSecondLevel.includes(parts[parts.length - 2])) {
-    return parts.slice(-3).join('.')
+    return parts.slice(-3).join('.');
   }
-  return parts.slice(-2).join('.')
+  return parts.slice(-2).join('.');
 }
 
 export function isSuspended(tab: chrome.tabs.Tab, suspendedPrefix: string): boolean {
-  return !!tab.url?.startsWith(suspendedPrefix)
+  return !!tab.url?.startsWith(suspendedPrefix);
 }
 
 export function tabToUrl(
@@ -28,19 +48,19 @@ export function tabToUrl(
   suspendedPrefixLen: number,
 ): URL {
   if (groupSuspendedTabs) {
-    return new URL(tab.url ?? '')
+    return new URL(tab.url ?? '');
   }
 
-  const suspendedSuffix = tab.url?.slice(suspendedPrefixLen)
+  const suspendedSuffix = tab.url?.slice(suspendedPrefixLen);
   if (suspendedSuffix) {
-    const params = new URLSearchParams(suspendedSuffix)
+    const params = new URLSearchParams(suspendedSuffix);
     for (const [param, val] of params) {
       if (param === 'uri') {
-        return new URL(val)
+        return new URL(val);
       }
     }
   }
-  return new URL(tab.pendingUrl ?? tab.url ?? '')
+  return new URL(tab.pendingUrl ?? tab.url ?? '');
 }
 
 export function updateTabGroupMap(
@@ -52,49 +72,49 @@ export function updateTabGroupMap(
   suspendedPrefixLen: number,
 ): void {
   if (sortBy === 'title') {
-    const title = tab.title ?? ''
+    const title = tab.title ?? '';
     if (!tabGroupMap.has(title)) {
-      tabGroupMap.set(title, tabGroupMap.size)
+      tabGroupMap.set(title, tabGroupMap.size);
     }
   } else {
-    const urlParser = tabToUrl(tab, groupSuspendedTabs, suspendedPrefixLen)
-    const host = extractGroupingKey(urlParser.hostname, groupingMode)
+    const urlParser = tabToUrl(tab, groupSuspendedTabs, suspendedPrefixLen);
+    const host = extractGroupingKey(urlParser.hostname, groupingMode);
     if (!tabGroupMap.has(host)) {
-      tabGroupMap.set(host, tabGroupMap.size)
+      tabGroupMap.set(host, tabGroupMap.size);
     }
   }
 }
 
 export function findDuplicateTabs(tabs: chrome.tabs.Tab[]): Map<string, chrome.tabs.Tab[]> {
-  const urlMap = new Map<string, chrome.tabs.Tab[]>()
+  const urlMap = new Map<string, chrome.tabs.Tab[]>();
 
   for (const tab of tabs) {
-    const url = tab.url ?? tab.pendingUrl
+    const url = tab.url ?? tab.pendingUrl;
     if (!url) {
-      continue
+      continue;
     }
 
-    const existingTabs = urlMap.get(url)
+    const existingTabs = urlMap.get(url);
     if (existingTabs) {
-      existingTabs.push(tab)
+      existingTabs.push(tab);
     } else {
-      urlMap.set(url, [tab])
+      urlMap.set(url, [tab]);
     }
   }
 
-  const duplicates = new Map<string, chrome.tabs.Tab[]>()
+  const duplicates = new Map<string, chrome.tabs.Tab[]>();
   for (const [url, tabList] of urlMap) {
     if (tabList.length > 1) {
-      duplicates.set(url, tabList)
+      duplicates.set(url, tabList);
     }
   }
 
-  return duplicates
+  return duplicates;
 }
 
 export function sortByTitleOrUrl(
   tabs: chrome.tabs.Tab[],
-  sortBy: 'title' | 'url',
+  sortBy: SortBy,
   groupSuspendedTabs: boolean,
   sortPinnedTabs: boolean,
   suspendedPrefix: string,
@@ -102,37 +122,37 @@ export function sortByTitleOrUrl(
 ): void {
   const titleComparator = (a: chrome.tabs.Tab, b: chrome.tabs.Tab): number => {
     if (!sortPinnedTabs && (a.pinned || b.pinned)) {
-      return 0
+      return 0;
     }
     if (groupSuspendedTabs) {
       if (isSuspended(a, suspendedPrefix) && !isSuspended(b, suspendedPrefix)) {
-        return -1
+        return -1;
       }
       if (!isSuspended(a, suspendedPrefix) && isSuspended(b, suspendedPrefix)) {
-        return 1
+        return 1;
       }
     }
-    return (a.title ?? '').localeCompare(b.title ?? '')
-  }
+    return (a.title ?? '').localeCompare(b.title ?? '');
+  };
 
   const urlComparator = (a: chrome.tabs.Tab, b: chrome.tabs.Tab): number => {
     if (!sortPinnedTabs && (a.pinned || b.pinned)) {
-      return 0
+      return 0;
     }
     if (groupSuspendedTabs) {
       if (isSuspended(a, suspendedPrefix) && !isSuspended(b, suspendedPrefix)) {
-        return -1
+        return -1;
       }
       if (!isSuspended(a, suspendedPrefix) && isSuspended(b, suspendedPrefix)) {
-        return 1
+        return 1;
       }
     }
-    const urlA = tabToUrl(a, groupSuspendedTabs, suspendedPrefixLen)
-    const urlB = tabToUrl(b, groupSuspendedTabs, suspendedPrefixLen)
-    return compareByUrlComponents(urlA, urlB)
-  }
+    const urlA = tabToUrl(a, groupSuspendedTabs, suspendedPrefixLen);
+    const urlB = tabToUrl(b, groupSuspendedTabs, suspendedPrefixLen);
+    return compareByUrlComponents(urlA, urlB);
+  };
 
-  tabs.sort(sortBy === 'title' ? titleComparator : urlComparator)
+  tabs.sort(sortBy === 'title' ? titleComparator : urlComparator);
 }
 
 export function sortByCustom(
@@ -146,18 +166,18 @@ export function sortByCustom(
   suspendedPrefix: string,
   suspendedPrefixLen: number,
 ): void {
-  const tabGroupMap = new Map<string, number>()
-  let left = 0
-  let suspendedTabCount = 0
-  let right = tabs.length
+  const tabGroupMap = new Map<string, number>();
+  let left = 0;
+  let suspendedTabCount = 0;
+  let right = tabs.length;
 
   if (groupFrom === 'leftToRight') {
     if (groupSuspendedTabs) {
-      tabGroupMap.set(tabSuspenderExtensionId, 0)
+      tabGroupMap.set(tabSuspenderExtensionId, 0);
     }
     while (left !== right) {
       if (isSuspended(tabs[left], suspendedPrefix)) {
-        suspendedTabCount += 1
+        suspendedTabCount += 1;
       }
       updateTabGroupMap(
         tabGroupMap,
@@ -166,14 +186,14 @@ export function sortByCustom(
         groupSuspendedTabs,
         groupingMode,
         suspendedPrefixLen,
-      )
-      left += 1
+      );
+      left += 1;
     }
   } else {
     while (left !== right) {
-      right -= 1
+      right -= 1;
       if (isSuspended(tabs[right], suspendedPrefix)) {
-        suspendedTabCount += 1
+        suspendedTabCount += 1;
       }
       updateTabGroupMap(
         tabGroupMap,
@@ -182,10 +202,10 @@ export function sortByCustom(
         groupSuspendedTabs,
         groupingMode,
         suspendedPrefixLen,
-      )
+      );
     }
     if (groupSuspendedTabs) {
-      tabGroupMap.set(tabSuspenderExtensionId, tabGroupMap.size)
+      tabGroupMap.set(tabSuspenderExtensionId, tabGroupMap.size);
     }
   }
 
@@ -196,52 +216,52 @@ export function sortByCustom(
     gsSortPinned?: boolean,
   ): number => {
     if (!gsSortPinned && (a.pinned || b.pinned)) {
-      return 0
+      return 0;
     }
     if (gsSuspended) {
       if (isSuspended(a, suspendedPrefix) && !isSuspended(b, suspendedPrefix)) {
-        return -1
+        return -1;
       }
       if (!isSuspended(a, suspendedPrefix) && isSuspended(b, suspendedPrefix)) {
-        return 1
+        return 1;
       }
     }
-    const urlA = tabToUrl(a, gsSuspended, suspendedPrefixLen)
-    const urlB = tabToUrl(b, gsSuspended, suspendedPrefixLen)
-    const groupPosA = tabGroupMap.get(extractGroupingKey(urlA.hostname, groupingMode))
-    const groupPosB = tabGroupMap.get(extractGroupingKey(urlB.hostname, groupingMode))
+    const urlA = tabToUrl(a, gsSuspended, suspendedPrefixLen);
+    const urlB = tabToUrl(b, gsSuspended, suspendedPrefixLen);
+    const groupPosA = tabGroupMap.get(extractGroupingKey(urlA.hostname, groupingMode));
+    const groupPosB = tabGroupMap.get(extractGroupingKey(urlB.hostname, groupingMode));
 
     if (groupPosA !== undefined && groupPosB !== undefined) {
       if (groupFrom === 'leftToRight') {
         if (groupPosA < groupPosB) {
-          return -1
+          return -1;
         }
         if (groupPosA > groupPosB) {
-          return 1
+          return 1;
         }
       } else {
         if (groupPosA < groupPosB) {
-          return 1
+          return 1;
         }
         if (groupPosA > groupPosB) {
-          return -1
+          return -1;
         }
       }
     }
 
     if (!gsSuspended && !preserveOrderWithinGroups) {
-      return compareByUrlComponents(urlA, urlB)
+      return compareByUrlComponents(urlA, urlB);
     }
-    return 0
-  }
+    return 0;
+  };
 
-  tabs.sort((a, b) => customSortComparator(a, b, groupSuspendedTabs, sortPinnedTabs))
+  tabs.sort((a, b) => customSortComparator(a, b, groupSuspendedTabs, sortPinnedTabs));
 
   // Sub-sort suspended tabs independently if groupSuspendedTabs is enabled
   if (groupSuspendedTabs) {
-    tabGroupMap.clear()
-    left = 0
-    right = suspendedTabCount
+    tabGroupMap.clear();
+    left = 0;
+    right = suspendedTabCount;
     if (groupFrom === 'leftToRight') {
       while (left !== right) {
         updateTabGroupMap(
@@ -251,12 +271,12 @@ export function sortByCustom(
           false,
           groupingMode,
           suspendedPrefixLen,
-        )
-        left += 1
+        );
+        left += 1;
       }
     } else {
       while (left !== right) {
-        right -= 1
+        right -= 1;
         updateTabGroupMap(
           tabGroupMap,
           tabs[right],
@@ -264,15 +284,15 @@ export function sortByCustom(
           false,
           groupingMode,
           suspendedPrefixLen,
-        )
+        );
       }
     }
 
     const suspendedTabs = tabs
       .slice(0, suspendedTabCount)
-      .sort((a, b) => customSortComparator(a, b, false))
-    const postSorted = tabs.slice(suspendedTabCount)
-    tabs.length = 0
-    tabs.push(...suspendedTabs, ...postSorted)
+      .sort((a, b) => customSortComparator(a, b, false));
+    const postSorted = tabs.slice(suspendedTabCount);
+    tabs.length = 0;
+    tabs.push(...suspendedTabs, ...postSorted);
   }
 }

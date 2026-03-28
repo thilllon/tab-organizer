@@ -1,16 +1,16 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { Options } from './Options'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Options } from './Options';
 
-import './index.css'
+import './index.css';
 
-const root = document.getElementById('app')
+const root = document.getElementById('app');
 if (!root) {
-  throw new Error('Root element not found')
+  throw new Error('Root element not found');
 }
 
 createRoot(root).render(
   <StrictMode>
     <Options />
   </StrictMode>,
-)
+);

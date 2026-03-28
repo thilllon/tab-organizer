@@ -1,4 +1,5 @@
 {
+  "biome.lspBin": "./node_modules/.bin/biome",
   "editor.formatOnSave": true,
   "[json]": {
     "editor.defaultFormatter": "biomejs.biome"

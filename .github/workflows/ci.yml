@@ -2,31 +2,32 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["main"]
   pull_request:
-    branches: [main]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20, 22, 24]
-        pnpm-version: [latest]
+    runs-on: ["ubuntu-latest"]
     steps:
       - uses: actions/checkout@v6
 
       - uses: jdx/mise-action@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ matrix.pnpm-version }}
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: |
+          STORE_PATH=$(pnpm store path)
+          echo "📦 pnpm store path: $STORE_PATH"
+          echo "path=$STORE_PATH" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-node@v6
+      - uses: actions/cache@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: pnpm
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
 
       - run: pnpm install --frozen-lockfile
 

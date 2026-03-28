@@ -1,32 +1,32 @@
-import { createWriteStream, mkdirSync, readFileSync } from 'node:fs'
-import path from 'node:path'
-import archiver from 'archiver'
+import { createWriteStream, mkdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import archiver from 'archiver';
 
 /*
  * Entry point
  */
 
 async function main(): Promise<void> {
-  const manifest: Manifest = JSON.parse(readFileSync('./dist/manifest.json', 'utf-8'))
-  const name = manifest.name.replaceAll(' ', '-')
-  const filename = `${name}-${manifest.version}.zip`
+  const manifest: Manifest = JSON.parse(readFileSync('./dist/manifest.json', 'utf-8'));
+  const name = manifest.name.replaceAll(' ', '-');
+  const filename = `${name}-${manifest.version}.zip`;
 
-  mkdirSync('package', { recursive: true })
+  mkdirSync('package', { recursive: true });
 
-  const output = createWriteStream(path.join('package', filename))
-  const archive = archiver('zip', { zlib: { level: 9 } })
+  const output = createWriteStream(path.join('package', filename));
+  const archive = archiver('zip', { zlib: { level: 9 } });
 
   output.on('close', () => {
-    console.log(`Packaged: package/${filename} (${archive.pointer()} bytes)`)
-  })
+    console.log(`Packaged: package/${filename} (${archive.pointer()} bytes)`);
+  });
 
   archive.on('error', (err: Error) => {
-    throw err
-  })
+    throw err;
+  });
 
-  archive.pipe(output)
-  archive.directory('dist/', false)
-  await archive.finalize()
+  archive.pipe(output);
+  archive.directory('dist/', false);
+  await archive.finalize();
 }
 
 /*
@@ -34,8 +34,8 @@ async function main(): Promise<void> {
  */
 
 interface Manifest {
-  name: string
-  version: string
+  name: string;
+  version: string;
 }
 
-main()
+void main();

@@ -1,54 +1,54 @@
-import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import type { DuplicateTabHandling, GroupingMode } from '@/types'
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type { DuplicateTabHandling, GroupingMode } from '@/types';
 
 function isDuplicateTabHandling(value: string): value is DuplicateTabHandling {
-  return value === 'none' || value === 'closeAllButOne' || value === 'group'
+  return value === 'none' || value === 'closeAllButOne' || value === 'group';
 }
 
 function isGroupingMode(value: string): value is GroupingMode {
-  return value === 'subdomain' || value === 'domain'
+  return value === 'subdomain' || value === 'domain';
 }
 
 export const Options = () => {
-  const [duplicateHandling, setDuplicateHandling] = useState<DuplicateTabHandling>('none')
-  const [groupingMode, setGroupingMode] = useState<GroupingMode>('subdomain')
-  const [saved, setSaved] = useState(false)
+  const [duplicateHandling, setDuplicateHandling] = useState<DuplicateTabHandling>('none');
+  const [groupingMode, setGroupingMode] = useState<GroupingMode>('subdomain');
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     chrome.storage.sync.get<{
-      duplicateTabHandling: DuplicateTabHandling
-      groupingMode: GroupingMode
+      duplicateTabHandling: DuplicateTabHandling;
+      groupingMode: GroupingMode;
     }>(['duplicateTabHandling', 'groupingMode'], (result) => {
       if (result.duplicateTabHandling) {
-        setDuplicateHandling(result.duplicateTabHandling)
+        setDuplicateHandling(result.duplicateTabHandling);
       }
       if (result.groupingMode) {
-        setGroupingMode(result.groupingMode)
+        setGroupingMode(result.groupingMode);
       }
-    })
-  }, [])
+    });
+  }, []);
 
   const handleSave = () => {
     chrome.storage.sync.set({ duplicateTabHandling: duplicateHandling, groupingMode }, () => {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    })
-  }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    });
+  };
 
   const handleDuplicateChange = (value: string) => {
     if (isDuplicateTabHandling(value)) {
-      setDuplicateHandling(value)
+      setDuplicateHandling(value);
     }
-  }
+  };
 
   const handleGroupingChange = (value: string) => {
     if (isGroupingMode(value)) {
-      setGroupingMode(value)
+      setGroupingMode(value);
     }
-  }
+  };
 
   return (
     <main className="mx-auto max-w-md space-y-6 p-6">
@@ -130,5 +130,5 @@ export const Options = () => {
         {saved && <span className="text-sm text-green-600">Saved</span>}
       </div>
     </main>
-  )
-}
+  );
+};
