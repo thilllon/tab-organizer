@@ -247,7 +247,7 @@ class Preparation {
 
       const filepath = path.join(SCREENSHOTS_DIR, `screenshot-${width}x${height}.png`);
       await page.screenshot({ path: filepath, fullPage: false });
-      console.log(`  Saved: ${filepath} (${Preparation.fileSize(filepath)})`);
+      console.log(`  Saved: ${filepath}`);
       await page.close();
     }
   }
@@ -519,7 +519,7 @@ class Preparation {
         path: filepath,
         clip: { x: 0, y: 0, width, height },
       });
-      console.log(`  Saved: ${name}.png (${Preparation.fileSize(filepath)})`);
+      console.log(`  Saved: ${name}.png`);
     }
   }
 }
