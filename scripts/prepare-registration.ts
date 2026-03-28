@@ -1,29 +1,19 @@
 /**
  * Chrome Web Store registration preparation script.
  *
- * Runs the full pipeline:
+ * Runs the visual-asset pipeline (used as a release-it before:bump hook):
  *   1. Build the extension
  *   2. Generate options-page screenshots (1280x800, 640x400)
  *   3. Generate before/after demo screenshots
  *   4. Record demo video (requires ffmpeg)
  *   5. Generate CWS promotional images (440x280, 1400x560)
- *   6. Package into .zip
- *   7. Validate all required assets and print checklist
  */
 
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
-import {
-  createWriteStream,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type BrowserContext, chromium, type Page, type Worker } from '@playwright/test';
-import archiver from 'archiver';
 
 /*
  * Types
@@ -45,19 +35,6 @@ interface TabInfo {
   groupColor?: string | null;
 }
 
-interface Manifest {
-  name: string;
-  version: string;
-  description: string;
-  permissions?: string[];
-}
-
-interface CheckItem {
-  label: string;
-  path: string;
-  required: boolean;
-}
-
 /*
  * Constants
  */
@@ -66,7 +43,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 const SCREENSHOTS_DIR = path.join(ROOT, 'screenshots');
-const PACKAGE_DIR = path.join(ROOT, 'package');
 const PROMO_TEMPLATE = path.join(__dirname, 'promo-template.html');
 const TAB_BAR_TEMPLATE = path.join(__dirname, 'tab-bar-template.html');
 const GET_WINDOW_ID_SCRIPT = path.join(__dirname, 'get-window-id.py');
@@ -114,7 +90,6 @@ class Preparation {
 
   constructor() {
     mkdirSync(SCREENSHOTS_DIR, { recursive: true });
-    mkdirSync(PACKAGE_DIR, { recursive: true });
   }
 
   /* Main runner */
@@ -152,11 +127,7 @@ class Preparation {
     await this.generatePromoImages();
     await this.context?.close();
 
-    // Step 6: Package
-    const { zipPath, manifest } = await this.packageZip();
-
-    // Step 7: Checklist
-    this.printChecklist(zipPath, manifest);
+    console.log('\nDone! Screenshots and promo images saved to screenshots/');
   }
 
   private static step(label: string): void {
@@ -167,18 +138,6 @@ class Preparation {
 
   private static delay(ms: number): Promise<void> {
     return new Promise((r) => setTimeout(r, ms));
-  }
-
-  private static fileSize(filepath: string): string {
-    try {
-      const bytes = statSync(filepath).size;
-      if (bytes < 1024) {
-        return `${bytes} B`;
-      }
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    } catch {
-      return 'MISSING';
-    }
   }
 
   private getWindowBounds(): WindowBounds | null {
@@ -232,13 +191,13 @@ class Preparation {
   /* Pipeline steps */
 
   private buildExtension(): void {
-    Preparation.step('1/7  Building extension');
+    Preparation.step('1/5  Building extension');
     execSync('pnpm build', { cwd: ROOT, stdio: 'inherit' });
     console.log('Build complete.');
   }
 
   private async launchBrowser(): Promise<void> {
-    Preparation.step('2/7  Launching browser for screenshots & demo');
+    Preparation.step('2/5  Launching browser for screenshots & demo');
     this.context = await chromium.launchPersistentContext('', {
       headless: false,
       args: [
@@ -272,7 +231,7 @@ class Preparation {
     if (!this.context) {
       return;
     }
-    Preparation.step('3/7  Options page screenshots');
+    Preparation.step('3/5  Options page screenshots');
     const optionsUrl = `chrome-extension://${this.extensionId}/options.html`;
 
     for (const { width, height } of [
@@ -297,7 +256,7 @@ class Preparation {
     if (!this.context || !this.serviceWorker) {
       return { beforeTabs: [], nativeBefore: false };
     }
-    Preparation.step('4/7  Demo screenshots (before/after tab sorting)');
+    Preparation.step('4/5  Demo screenshots (before/after tab sorting)');
 
     console.log('  Opening tabs...');
     for (const url of DEMO_SITES) {
@@ -336,7 +295,7 @@ class Preparation {
   }
 
   private async startVideoRecording(): Promise<ChildProcess | null> {
-    Preparation.step('5/7  Video recording');
+    Preparation.step('5/5  Video recording & promo images');
     try {
       const deviceInfo = execSync('ffmpeg -f avfoundation -list_devices true -i "" 2>&1 || true', {
         encoding: 'utf-8',
@@ -531,7 +490,7 @@ class Preparation {
     if (!this.screenshotPage) {
       return;
     }
-    Preparation.step('6/7  Promotional images');
+    console.log('  Generating promotional images...');
 
     const promoSizes = [
       { width: 440, height: 280, name: 'promo-small-440x280', titleSize: 28, descSize: 14 },
@@ -562,115 +521,6 @@ class Preparation {
       });
       console.log(`  Saved: ${name}.png (${Preparation.fileSize(filepath)})`);
     }
-  }
-
-  private async packageZip(): Promise<{ zipName: string; zipPath: string; manifest: Manifest }> {
-    Preparation.step('7/7  Packaging .zip');
-
-    const manifest: Manifest = JSON.parse(readFileSync(path.join(DIST, 'manifest.json'), 'utf-8'));
-    const zipName = `${manifest.name.replaceAll(' ', '-')}-${manifest.version}.zip`;
-    const zipPath = path.join(PACKAGE_DIR, zipName);
-
-    await new Promise<void>((resolve, reject) => {
-      const output = createWriteStream(zipPath);
-      const archive = archiver('zip', { zlib: { level: 9 } });
-
-      output.on('close', () => {
-        console.log(`  Packaged: package/${zipName} (${Preparation.fileSize(zipPath)})`);
-        resolve();
-      });
-      archive.on('error', reject);
-      archive.pipe(output);
-      archive.directory('dist/', false);
-      archive.finalize();
-    });
-
-    return { zipName, zipPath, manifest };
-  }
-
-  private printChecklist(zipPath: string, manifest: Manifest): void {
-    Preparation.step('Checklist');
-
-    const videoPath = path.join(SCREENSHOTS_DIR, 'demo.mp4');
-    const checks: CheckItem[] = [
-      { label: 'Extension zip', path: zipPath, required: true },
-      { label: 'Icon 128x128', path: path.join(DIST, 'img', 'logo-128.png'), required: true },
-      { label: 'Manifest v3', path: path.join(DIST, 'manifest.json'), required: true },
-      { label: 'Privacy policy', path: path.join(ROOT, 'PRIVACY_POLICY.md'), required: true },
-      {
-        label: 'Screenshot 1280x800',
-        path: path.join(SCREENSHOTS_DIR, 'screenshot-1280x800.png'),
-        required: true,
-      },
-      {
-        label: 'Screenshot 640x400',
-        path: path.join(SCREENSHOTS_DIR, 'screenshot-640x400.png'),
-        required: false,
-      },
-      {
-        label: 'Demo: before-sort',
-        path: path.join(SCREENSHOTS_DIR, 'before-sort.png'),
-        required: false,
-      },
-      {
-        label: 'Demo: after-sort',
-        path: path.join(SCREENSHOTS_DIR, 'after-sort.png'),
-        required: false,
-      },
-      { label: 'Demo: video', path: videoPath, required: false },
-      {
-        label: 'Native: before',
-        path: path.join(SCREENSHOTS_DIR, 'before-sort-native.png'),
-        required: false,
-      },
-      {
-        label: 'Native: after',
-        path: path.join(SCREENSHOTS_DIR, 'after-sort-native.png'),
-        required: false,
-      },
-      {
-        label: 'Promo tile (440x280)',
-        path: path.join(SCREENSHOTS_DIR, 'promo-small-440x280.png'),
-        required: false,
-      },
-      {
-        label: 'Promo marquee (1400x560)',
-        path: path.join(SCREENSHOTS_DIR, 'promo-marquee-1400x560.png'),
-        required: false,
-      },
-    ];
-
-    let allRequiredOk = true;
-    for (const check of checks) {
-      const exists = existsSync(check.path);
-      const size = exists ? Preparation.fileSize(check.path) : '';
-      const icon = exists ? '\u2705' : check.required ? '\u274c' : '\u26a0\ufe0f';
-      const tag = check.required ? '[REQUIRED]' : '[optional]';
-      console.log(`  ${icon} ${tag} ${check.label.padEnd(28)} ${size}`);
-      if (check.required && !exists) {
-        allRequiredOk = false;
-      }
-    }
-
-    console.log('');
-    console.log(`  Name:        ${manifest.name}`);
-    console.log(`  Version:     ${manifest.version}`);
-    console.log(`  Description: ${manifest.description}`);
-    console.log(`  Permissions: ${manifest.permissions?.join(', ') || 'none'}`);
-
-    if (!allRequiredOk) {
-      console.log('\n  Some required assets are missing!');
-      process.exit(1);
-    }
-
-    console.log('\n  All required assets ready. Upload to:');
-    console.log('  https://chrome.google.com/webstore/devconsole');
-    console.log('');
-    console.log('  Files to upload:');
-    console.log(`    Extension zip:  package/${path.basename(zipPath)}`);
-    console.log('    Screenshots:    screenshots/screenshot-*.png');
-    console.log('    Promo images:   screenshots/promo-*.png');
-    console.log('    Privacy policy: PRIVACY_POLICY.md (paste content or host as URL)');
   }
 }
 

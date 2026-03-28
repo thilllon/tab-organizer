@@ -60,9 +60,10 @@ tab-organizer/
 │   └── icons/                 # Additional icon assets
 ├── scripts/
 │   ├── zip.ts                 # Packages extension into ZIP for Web Store
-│   ├── prepare-registration.ts # Chrome Web Store registration helper
-│   ├── screenshot.ts          # Automated screenshot generation
-│   └── get-window-id.py       # Screenshot automation helper
+│   ├── prepare-registration.ts # Full visual-asset pipeline (build, screenshots, video, promo images)
+│   ├── promo-template.html    # HTML template for CWS promotional images
+│   ├── tab-bar-template.html  # HTML template for tab bar mockup screenshots
+│   └── get-window-id.py       # macOS window-bounds helper for screenshot cropping
 ├── .github/workflows/
 │   ├── ci.yml                 # CI pipeline (Node 20/22/24 matrix)
 │   └── codeql.yml             # CodeQL security scanning
@@ -140,18 +141,18 @@ Permissions: `tabs`, `tabGroups`, `storage`
 
 ## Tech Stack
 
-| Category         | Tool                                                   |
-| ---------------- | ------------------------------------------------------ |
-| Language         | TypeScript (strict mode, ESNext target)                |
-| UI Framework     | React 19                                               |
-| CSS              | Tailwind CSS 4                                         |
-| UI Components    | shadcn/ui (Radix UI + CVA)                             |
-| Build            | Vite 7 + @crxjs/vite-plugin                            |
-| Linter/Formatter | Biome                                                  |
-| Git Hooks        | Lefthook                                               |
-| Testing          | Playwright (infrastructure only, no tests written yet) |
-| CI               | GitHub Actions (Node 20/22/24 matrix)                  |
-| Tool Versions    | mise                                                   |
+| Category         | Tool                                    |
+| ---------------- | --------------------------------------- |
+| Language         | TypeScript (strict mode, ESNext target) |
+| UI Framework     | React 19                                |
+| CSS              | Tailwind CSS 4                          |
+| UI Components    | shadcn/ui (Radix UI + CVA)              |
+| Build            | Vite 7 + @crxjs/vite-plugin             |
+| Linter/Formatter | Biome                                   |
+| Git Hooks        | Lefthook                                |
+| Testing          | Vitest + Playwright                     |
+| CI               | GitHub Actions (Node 20/22/24 matrix)   |
+| Tool Versions    | mise                                    |
 
 ---
 
@@ -162,8 +163,8 @@ pnpm dev              # Start Vite dev server (port 5173)
 pnpm build            # TypeScript check + Vite build -> dist/
 pnpm typecheck        # Type check only (tsc --noEmit)
 pnpm format           # Biome check --write + Ruff format
+pnpm test             # Run tests (vitest)
 pnpm release          # Bump version, build, and package into ZIP (via release-it)
-pnpm screenshot       # Generate automated screenshots
 ```
 
 ### Local Development Workflow

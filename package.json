@@ -15,11 +15,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "format": "biome check --write . && prettier --write '**/*.md' && mise exec -- ruff format .",
-    "screenshot": "tsx scripts/screenshot.ts",
-    "prepare-registration": "tsx scripts/prepare-registration.ts",
+    "format": "biome check --write . && prettier --write '**/*.{md,mdx}' && mise exec -- ruff format .",
     "test": "vitest run",
     "release": "release-it"
   },
