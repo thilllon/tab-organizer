@@ -59,7 +59,7 @@ export const Options = () => {
       <section className="space-y-4">
         <div>
           <h4 className="text-sm font-medium">Tab Grouping</h4>
-          <p className="text-sm text-muted-foreground">How should tabs be grouped when sorting?</p>
+          <p className="text-xs text-muted-foreground">How should tabs be grouped when sorting?</p>
         </div>
 
         <RadioGroup value={groupingMode} onValueChange={handleGroupingChange}>
@@ -87,7 +87,7 @@ export const Options = () => {
       <section className="space-y-4">
         <div>
           <h4 className="text-sm font-medium">Duplicate Tabs</h4>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             How should tabs with the same URL be handled?
           </p>
         </div>
@@ -124,11 +124,23 @@ export const Options = () => {
       </section>
 
       <div className="flex items-center gap-3 pt-2">
-        <Button size="sm" onClick={handleSave}>
+        <Button size="lg" className="w-full" onClick={handleSave}>
           Save
         </Button>
         {saved && <span className="text-sm text-green-600">Saved</span>}
       </div>
+
+      <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <span>v{chrome.runtime.getManifest().version}</span>
+        <a
+          href="https://github.com/thilllon/tab-organizer"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-foreground"
+        >
+          GitHub
+        </a>
+      </p>
     </main>
   );
 };

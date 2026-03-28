@@ -60,6 +60,7 @@ tab-organizer/
 │   └── icons/                 # Additional icon assets
 ├── scripts/
 │   ├── zip.ts                 # Packages extension into ZIP for Web Store
+│   ├── generate-ico.ts        # Generates multi-size .ico from SVG (macOS: qlmanage + sips)
 │   ├── prepare-registration.ts # Full visual-asset pipeline (build, screenshots, video, promo images)
 │   ├── promo-template.html    # HTML template for CWS promotional images
 │   ├── tab-bar-template.html  # HTML template for tab bar mockup screenshots
@@ -129,7 +130,7 @@ React component using shadcn/ui (Radix UI + Tailwind). Provides radio groups for
 - **Tab Grouping**: `subdomain` (full hostname) vs `domain` (base domain)
 - **Duplicate Tabs**: `none` / `closeAllButOne` / `group`
 
-Settings are loaded from `chrome.storage.sync` on mount and saved explicitly via a "Save" button.
+Settings are loaded from `chrome.storage.sync` on mount and saved explicitly via a "Save" button. The footer displays the extension version (from `chrome.runtime.getManifest()`) and a link to the GitHub repository.
 
 ### `vite.config.ts` — Build & Manifest
 
