@@ -2,7 +2,7 @@
   "name": "tab-organizer",
   "displayName": "Tab Organizer",
   "description": "Chrome extension that sorts and organizes your browser tabs.",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/thilllon/tab-organizer.git"
