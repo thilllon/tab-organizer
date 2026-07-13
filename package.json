@@ -36,7 +36,7 @@
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
     "@types/archiver": "^7.0.0",
-    "@types/chrome": "^0.1.38",
+    "@types/chrome": "^0.1.39",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
