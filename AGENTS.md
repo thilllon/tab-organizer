@@ -302,4 +302,4 @@ Playwright is installed but **no test files exist yet**. When adding tests:
 - **Tab group IDs**: `-1` means ungrouped in the Chrome API. The code uses this convention throughout.
 - **Module-scoped state**: `tabSuspenderExtensionId`, `suspendedPrefix`, and `suspendedPrefixLen` are module-level variables updated in `sortTabs()`. This works because service workers are single-threaded, but be aware these are mutable globals.
 - **Tab ID arrays**: Chrome's `tabs.move()` and `tabs.group()` require `[number, ...number[]]` tuple type for non-empty arrays.
-- **`pnpm-workspace.yaml`**: Exists but this is not a monorepo — it only configures `onlyBuiltDependencies` for esbuild, lefthook, and msw.
+- **`pnpm-workspace.yaml`**: Exists but this is not a monorepo — it only configures `allowBuilds` for esbuild and msw, and `minimumReleaseAgeExclude` for select packages.
