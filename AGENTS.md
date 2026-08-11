@@ -42,7 +42,9 @@ Settings are persisted in `chrome.storage.sync` and loaded fresh on every sort i
 tab-organizer/
 ├── src/
 │   ├── background/
-│   │   └── index.ts          # Service worker (core sorting logic, ~450 lines)
+│   │   ├── index.ts          # Service worker (orchestration, Chrome API calls, event listeners)
+│   │   ├── sort.ts           # Pure sorting/grouping logic (extracted for testability)
+│   │   └── sort.test.ts      # Unit tests for sort.ts (vitest)
 │   ├── options/
 │   │   ├── index.tsx          # React entry point
 │   │   ├── Options.tsx        # Settings UI component
@@ -82,24 +84,33 @@ tab-organizer/
 
 ## Key Source Files
 
-### `src/background/index.ts` — Core Engine
+### `src/background/index.ts` — Orchestration & Chrome APIs
 
-This is the most important file. It contains all tab sorting logic:
+Handles event listeners, settings loading, Chrome API calls (`tabs.move`, `tabs.group`, `tabGroups.update`), and duplicate tab handling. Imports pure sorting logic from `sort.ts`.
 
-| Function                   | Purpose                                                                                                |
-| -------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `sortTabGroups()`          | Main orchestrator. Loads settings, queries tabs, delegates to sort functions, handles duplicates.      |
-| `sortTabs()`               | Sorts a set of tabs and moves them via Chrome API. Dispatches to `sortByTitleOrUrl` or `sortByCustom`. |
-| `sortByTitleOrUrl()`       | Sorts tabs alphabetically by title or URL. Handles suspended tab grouping and pinned tab exclusion.    |
-| `sortByCustom()`           | Groups tabs by hostname/domain, preserving first-seen order. Supports LTR/RTL grouping direction.      |
-| `handleDuplicateTabs()`    | Finds duplicate URLs and either closes extras or groups them.                                          |
-| `findDuplicateTabs()`      | Returns a `Map<url, Tab[]>` of URLs with more than one tab.                                            |
-| `closeDuplicateTabs()`     | Keeps active/first tab, closes the rest.                                                               |
-| `groupDuplicateTabs()`     | Groups duplicate tabs into a Chrome tab group.                                                         |
-| `extractGroupingKey()`     | Parses hostname into grouping key. In `domain` mode, handles two-part TLDs (e.g., `co.uk`).            |
-| `isSuspended()`            | Checks if a tab is suspended by The Marvellous Suspender.                                              |
-| `tabToUrl()`               | Extracts real URL from suspended tabs by parsing the `uri` query parameter.                            |
-| `compareByUrlComponents()` | Compares URLs by hostname (without `www.`) + path + search + hash.                                     |
+| Function                | Purpose                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `sortTabGroups()`       | Main orchestrator. Loads settings, queries tabs, delegates to sort functions, handles duplicates.      |
+| `sortTabs()`            | Sorts a set of tabs and moves them via Chrome API. Dispatches to `sortByTitleOrUrl` or `sortByCustom`. |
+| `handleDuplicateTabs()` | Finds duplicate URLs and either closes extras or groups them.                                          |
+| `closeDuplicateTabs()`  | Keeps active/first tab, closes the rest.                                                               |
+| `groupDuplicateTabs()`  | Groups duplicate tabs into a Chrome tab group.                                                         |
+
+### `src/background/sort.ts` — Pure Sorting Logic
+
+Contains all pure sorting and grouping functions, extracted for testability. No Chrome API side effects.
+
+| Function                   | Purpose                                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------------------------- |
+| `sortByTitleOrUrl()`       | Sorts tabs alphabetically by title or URL. Handles suspended tab grouping and pinned tab exclusion. |
+| `sortByCustom()`           | Groups tabs by hostname/domain, preserving first-seen order. Supports LTR/RTL grouping direction.   |
+| `findDuplicateTabs()`      | Returns a `Map<url, Tab[]>` of URLs with more than one tab.                                         |
+| `extractGroupingKey()`     | Parses hostname into grouping key. In `domain` mode, handles two-part TLDs (e.g., `co.uk`).         |
+| `isSuspended()`            | Checks if a tab is suspended by The Marvellous Suspender.                                           |
+| `tabToUrl()`               | Extracts real URL from suspended tabs by parsing the `uri` query parameter.                         |
+| `compareByUrlComponents()` | Compares URLs by hostname (without `www.`) + path + search + hash.                                  |
+| `hashStringToColor()`      | Deterministically maps a string to a Chrome tab group color.                                        |
+| `updateTabGroupMap()`      | Tracks first-seen ordering of tab groups by hostname or title.                                      |
 
 ### `src/types.ts` — Shared Types
 
@@ -259,11 +270,15 @@ Scheduled security scanning for JavaScript/TypeScript (Fridays at 19:42 UTC).
 
 ## Testing
 
-Playwright is installed but **no test files exist yet**. When adding tests:
+Unit tests use **Vitest** and live adjacent to their source files. Pure sorting logic in `src/background/sort.ts` is tested in `src/background/sort.test.ts`, covering:
 
-- Place test files adjacent to source or in a `tests/` directory
-- Chrome extension testing requires specialized setup (use Playwright's browser context with extension loading)
-- The service worker logic (`src/background/index.ts`) contains pure functions that can be unit-tested independently if extracted
+- `compareByUrlComponents` — hostname normalization (`www.` stripping), pathname/search/hash ordering, special schemes (`chrome://`, `chrome-extension://`, `file://`, `about:blank`)
+- `extractGroupingKey` — subdomain vs domain mode, two-part TLDs (`co.uk`, `ac.kr`, `com.au`)
+- `isSuspended` / `tabToUrl` — suspended tab detection and URL extraction
+- `findDuplicateTabs` — duplicate detection, `pendingUrl` fallback, special scheme handling
+- `sortByTitleOrUrl` — title/URL sorting, pinned tab exclusion, edge cases (empty arrays, mixed schemes, large diverse tab sets)
+
+Playwright is also installed for potential end-to-end Chrome extension testing
 
 ---
 
@@ -300,6 +315,6 @@ Playwright is installed but **no test files exist yet**. When adding tests:
 - **No `manifest.json` file**: The manifest is defined inline in `vite.config.ts`. Don't look for a separate manifest file.
 - **Suspended tabs**: The extension integrates with "The Marvellous Suspender". Suspended tab URLs are wrapped in `chrome-extension://<id>/suspended.html#uri=<real-url>`. The `tabToUrl()` function unwraps them.
 - **Tab group IDs**: `-1` means ungrouped in the Chrome API. The code uses this convention throughout.
-- **Module-scoped state**: `tabSuspenderExtensionId`, `suspendedPrefix`, and `suspendedPrefixLen` are module-level variables updated in `sortTabs()`. This works because service workers are single-threaded, but be aware these are mutable globals.
+- **Module-scoped state**: `tabSuspenderExtensionId`, `suspendedPrefix`, and `suspendedPrefixLen` are module-level variables in `index.ts`, updated in `sortTabs()`. Sort functions in `sort.ts` receive these as parameters rather than accessing globals, keeping them pure and testable.
 - **Tab ID arrays**: Chrome's `tabs.move()` and `tabs.group()` require `[number, ...number[]]` tuple type for non-empty arrays.
 - **`pnpm-workspace.yaml`**: Exists but this is not a monorepo — it only configures `allowBuilds` for esbuild and msw, and `minimumReleaseAgeExclude` for select packages.

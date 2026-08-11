@@ -459,6 +459,7 @@ function makeTab(overrides: Partial<chrome.tabs.Tab> = {}): chrome.tabs.Tab {
     autoDiscardable: true,
     frozen: false,
     groupId: -1,
+    lastAccessed: 0,
     url: 'https://example.com',
     title: 'Example',
     ...overrides,
