@@ -2,24 +2,33 @@ import { Layers, Save } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { ProgressToast } from '@/dashboard/components/ProgressToast';
+import {
+  type PendingRestore,
+  RestoreConfirmDialog,
+} from '@/dashboard/components/RestoreConfirmDialog';
 import { SessionCard } from '@/dashboard/components/SessionCard';
+import { useRestore } from '@/dashboard/hooks/useRestore';
 import { useSessionIndex } from '@/dashboard/hooks/useSessionIndex';
 import { errorMessage } from '@/dashboard/lib/errors';
-import { loadSanitizeOptions } from '@/dashboard/lib/sanitize-options';
+import { needsRestoreConfirm } from '@/dashboard/lib/restore-summary';
 import { pickWindow } from '@/dashboard/lib/session-utils';
 import { captureSession } from '@/sessions/capture';
-import { executeRestore, planRestore } from '@/sessions/restore';
+import type { RestoreTarget } from '@/sessions/restore';
 import { sessionRepo } from '@/sessions/storage';
-import type { Session } from '@/types';
+import type { Session, SessionSettings } from '@/types';
 
 type SaveScope = 'window' | 'all';
 
+const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
+
 export function Dashboard() {
   const { sessions, loading, error: indexError } = useSessionIndex();
+  const { restore, progress, running, cancel, lastResult, dismiss } = useRestore();
   const [saving, setSaving] = useState<SaveScope | undefined>(undefined);
-  const [restoring, setRestoring] = useState(false);
   const [notice, setNotice] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [pending, setPending] = useState<PendingRestore | undefined>(undefined);
 
   const save = async (scope: SaveScope) => {
     setSaving(scope);
@@ -40,41 +49,42 @@ export function Dashboard() {
     }
   };
 
-  const restore = async (session: Session): Promise<void> => {
-    if (restoring) {
-      // Already mid-restore: no-op rather than opening a duplicate set of windows. The header
-      // Save buttons and each SessionCard's Restore button are also disabled while `restoring`
-      // is true, so this is a belt-and-braces guard against a click that lands first.
-      return;
-    }
-    setRestoring(true);
+  const runRestore = async (
+    session: Session,
+    target: RestoreTarget,
+    lazy?: SessionSettings['restoreLazy'],
+  ): Promise<void> => {
     setError(undefined);
     setNotice(undefined);
     try {
-      const [settings, sanitize] = await Promise.all([
-        sessionRepo.getSettings(),
-        loadSanitizeOptions(),
-      ]);
-      const plan = planRestore(session, {
-        target: { kind: 'newWindows' },
-        lazy: settings.restoreLazy,
-        sanitize,
-      });
-      const result = await executeRestore(plan);
-      setNotice(`Restored ${result.restored} of ${plan.totalTabs} tabs.`);
+      await restore(session, target, lazy);
     } catch (err) {
       setError(errorMessage(err));
-    } finally {
-      setRestoring(false);
     }
   };
 
-  const restoreWindow = async (session: Session, windowIndex: number): Promise<void> => {
-    try {
-      await restore(pickWindow(session, windowIndex));
-    } catch (err) {
-      setError(errorMessage(err));
+  const requestRestore = async (session: Session, target: RestoreTarget): Promise<void> => {
+    if (running) {
+      // Belt-and-braces re-entrancy guard: the header Save buttons and each SessionCard's
+      // Restore button are also disabled while `running` is true (via the `restoring` prop), so
+      // this only matters for a click that lands first.
+      setNotice('A restore is already running.');
+      return;
     }
+    if (needsRestoreConfirm(session)) {
+      setPending({ session, target });
+      return;
+    }
+    await runRestore(session, target);
+  };
+
+  const confirmRestore = (lazy: SessionSettings['restoreLazy']) => {
+    if (pending === undefined) {
+      return;
+    }
+    const { session, target } = pending;
+    setPending(undefined);
+    void runRestore(session, target, lazy);
   };
 
   return (
@@ -86,7 +96,7 @@ export function Dashboard() {
             variant="outline"
             size="sm"
             onClick={() => void save('window')}
-            disabled={saving !== undefined || restoring}
+            disabled={saving !== undefined || running}
           >
             <Save />
             Save this window
@@ -94,7 +104,7 @@ export function Dashboard() {
           <Button
             size="sm"
             onClick={() => void save('all')}
-            disabled={saving !== undefined || restoring}
+            disabled={saving !== undefined || running}
           >
             <Layers />
             Save all windows
@@ -129,14 +139,28 @@ export function Dashboard() {
               <SessionCard
                 key={summary.id}
                 summary={summary}
-                restoring={restoring}
-                onRestore={restore}
-                onRestoreWindow={restoreWindow}
+                restoring={running}
+                onRestore={(session) => requestRestore(session, NEW_WINDOWS)}
+                onRestoreWindow={(session, windowIndex) =>
+                  requestRestore(pickWindow(session, windowIndex), NEW_WINDOWS)
+                }
               />
             ))}
           </ul>
         )}
       </main>
+
+      <RestoreConfirmDialog
+        pending={pending}
+        onConfirm={confirmRestore}
+        onCancel={() => setPending(undefined)}
+      />
+      <ProgressToast
+        progress={progress}
+        result={lastResult}
+        onCancel={cancel}
+        onDismiss={dismiss}
+      />
     </div>
   );
 }
