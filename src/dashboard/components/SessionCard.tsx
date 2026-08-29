@@ -18,11 +18,12 @@ import type { Session, SessionSummary } from '@/types';
 
 export interface SessionCardProps {
   summary: SessionSummary;
-  onRestore(session: Session): void;
-  onRestoreWindow(session: Session, windowIndex: number): void;
+  restoring: boolean;
+  onRestore(session: Session): Promise<void>;
+  onRestoreWindow(session: Session, windowIndex: number): Promise<void>;
 }
 
-export function SessionCard({ summary, onRestore }: SessionCardProps) {
+export function SessionCard({ summary, restoring, onRestore }: SessionCardProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(summary.name);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -77,7 +78,7 @@ export function SessionCard({ summary, onRestore }: SessionCardProps) {
         return;
       }
       setError(undefined);
-      onRestore(session);
+      await onRestore(session);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -102,7 +103,7 @@ export function SessionCard({ summary, onRestore }: SessionCardProps) {
           ) : (
             <button
               type="button"
-              className="truncate text-left text-sm font-medium hover:underline"
+              className="block max-w-full truncate text-left text-sm font-medium hover:underline"
               title="Rename"
               onClick={startRename}
             >
@@ -116,7 +117,7 @@ export function SessionCard({ summary, onRestore }: SessionCardProps) {
 
         {summary.kind === 'history' && <Badge variant="secondary">history</Badge>}
 
-        <Button size="sm" onClick={() => void handleRestore()} disabled={busy}>
+        <Button size="sm" onClick={() => void handleRestore()} disabled={busy || restoring}>
           <RotateCcw />
           Restore
         </Button>
@@ -141,7 +142,11 @@ export function SessionCard({ summary, onRestore }: SessionCardProps) {
         </DropdownMenu>
       </div>
 
-      {error !== undefined && <p className="mt-2 text-xs text-destructive">{error}</p>}
+      {error !== undefined && (
+        <p role="alert" className="mt-2 text-xs text-destructive">
+          {error}
+        </p>
+      )}
 
       <DeleteSessionDialog
         name={summary.name}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { errorMessage } from '@/dashboard/lib/errors';
 import { INDEX_KEY, sessionRepo } from '@/sessions/storage';
 import type { SessionSummary } from '@/types';
@@ -21,21 +21,33 @@ export function useSessionIndex(): SessionIndexState {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
+  // Generation counter: guards listSummaries() calls that settle out of order (e.g. a rapid
+  // storage.onChanged burst racing the initial load) and discards a refresh() still in flight
+  // when the hook unmounts (the cleanup below bumps it past any gen already captured).
+  const genRef = useRef(0);
 
   const refresh = useCallback(async () => {
+    const gen = ++genRef.current;
     try {
-      const summaries = await sessionRepo.listSummaries();
-      setSessions(summaries);
+      const list = await sessionRepo.listSummaries();
+      if (gen !== genRef.current) {
+        return;
+      }
+      setSessions(list);
       setError(undefined);
     } catch (err) {
+      if (gen !== genRef.current) {
+        return;
+      }
       setError(errorMessage(err));
     } finally {
-      setLoading(false);
+      if (gen === genRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    let disposed = false;
     const listener = (
       changes: Record<string, chrome.storage.StorageChange>,
       area: chrome.storage.AreaName,
@@ -50,16 +62,15 @@ export function useSessionIndex(): SessionIndexState {
       try {
         // Spec §4: reconcile orphan bodies / dangling index entries on dashboard mount.
         await sessionRepo.reconcile();
-      } catch {
-        // Reconcile failures are non-fatal; the list below still loads.
+      } catch (err) {
+        console.warn('[tab-organizer:sessions] reconcile failed', errorMessage(err));
       }
-      if (!disposed) {
-        await refresh();
-      }
+      await refresh();
     })();
 
     return () => {
-      disposed = true;
+      // Invalidate any refresh() still in flight for this instance.
+      genRef.current += 1;
       chrome.storage.onChanged.removeListener(listener);
     };
   }, [refresh]);

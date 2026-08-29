@@ -17,6 +17,7 @@ type SaveScope = 'window' | 'all';
 export function Dashboard() {
   const { sessions, loading, error: indexError } = useSessionIndex();
   const [saving, setSaving] = useState<SaveScope | undefined>(undefined);
+  const [restoring, setRestoring] = useState(false);
   const [notice, setNotice] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
@@ -39,8 +40,16 @@ export function Dashboard() {
     }
   };
 
-  const restore = async (session: Session) => {
+  const restore = async (session: Session): Promise<void> => {
+    if (restoring) {
+      // Already mid-restore: no-op rather than opening a duplicate set of windows. The header
+      // Save buttons and each SessionCard's Restore button are also disabled while `restoring`
+      // is true, so this is a belt-and-braces guard against a click that lands first.
+      return;
+    }
+    setRestoring(true);
     setError(undefined);
+    setNotice(undefined);
     try {
       const [settings, sanitize] = await Promise.all([
         sessionRepo.getSettings(),
@@ -55,11 +64,17 @@ export function Dashboard() {
       setNotice(`Restored ${result.restored} of ${plan.totalTabs} tabs.`);
     } catch (err) {
       setError(errorMessage(err));
+    } finally {
+      setRestoring(false);
     }
   };
 
-  const restoreWindow = (session: Session, windowIndex: number) => {
-    void restore(pickWindow(session, windowIndex));
+  const restoreWindow = async (session: Session, windowIndex: number): Promise<void> => {
+    try {
+      await restore(pickWindow(session, windowIndex));
+    } catch (err) {
+      setError(errorMessage(err));
+    }
   };
 
   return (
@@ -71,12 +86,16 @@ export function Dashboard() {
             variant="outline"
             size="sm"
             onClick={() => void save('window')}
-            disabled={saving !== undefined}
+            disabled={saving !== undefined || restoring}
           >
             <Save />
             Save this window
           </Button>
-          <Button size="sm" onClick={() => void save('all')} disabled={saving !== undefined}>
+          <Button
+            size="sm"
+            onClick={() => void save('all')}
+            disabled={saving !== undefined || restoring}
+          >
             <Layers />
             Save all windows
           </Button>
@@ -86,10 +105,15 @@ export function Dashboard() {
       <Separator className="my-4" />
 
       {notice !== undefined && (
-        <p className="mb-3 rounded-md bg-muted px-3 py-2 text-sm">{notice}</p>
+        <p role="status" aria-live="polite" className="mb-3 rounded-md bg-muted px-3 py-2 text-sm">
+          {notice}
+        </p>
       )}
       {(error ?? indexError) !== undefined && (
-        <p className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {error ?? indexError}
         </p>
       )}
@@ -105,7 +129,8 @@ export function Dashboard() {
               <SessionCard
                 key={summary.id}
                 summary={summary}
-                onRestore={(session) => void restore(session)}
+                restoring={restoring}
+                onRestore={restore}
                 onRestoreWindow={restoreWindow}
               />
             ))}
