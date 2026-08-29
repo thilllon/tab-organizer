@@ -187,6 +187,7 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
                     window={window}
                     index={index}
                     onRestoreWindow={() => handleRestoreWindow(index)}
+                    restoring={busy || restoring}
                   />
                 ))}
               </div>

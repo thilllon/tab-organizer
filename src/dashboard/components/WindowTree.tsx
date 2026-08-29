@@ -10,9 +10,10 @@ export interface WindowTreeProps {
   window: WindowSnapshot;
   index: number;
   onRestoreWindow?(): void;
+  restoring?: boolean;
 }
 
-export function WindowTree({ window, index, onRestoreWindow }: WindowTreeProps) {
+export function WindowTree({ window, index, onRestoreWindow, restoring }: WindowTreeProps) {
   const segments = segmentTabs(window.tabs);
 
   return (
@@ -24,7 +25,13 @@ export function WindowTree({ window, index, onRestoreWindow }: WindowTreeProps) 
           {window.state !== 'normal' ? ` · ${window.state}` : ''}
         </span>
         {onRestoreWindow !== undefined && (
-          <Button size="xs" variant="outline" className="ml-auto" onClick={onRestoreWindow}>
+          <Button
+            size="xs"
+            variant="outline"
+            className="ml-auto"
+            onClick={onRestoreWindow}
+            disabled={restoring}
+          >
             <RotateCcw />
             Restore window
           </Button>

@@ -14,7 +14,12 @@ const RENDER_PX = 16;
  * Spec §9: request a 32 px bitmap (crisp on HiDPI) and display it at 16×16 CSS px.
  */
 export function Favicon({ url, size = 32 }: FaviconProps) {
-  const [failed, setFailed] = useState(false);
+  // Tracks *which* url last failed to load, rather than a plain boolean, so a component instance
+  // that survives a body reload (same list position, different tab) doesn't keep showing the
+  // Globe fallback for a url that hasn't actually failed. No effect needed: `failed` is derived
+  // directly from comparing the current url to the last one that errored.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const failed = failedUrl === url;
 
   if (failed) {
     return (
@@ -35,7 +40,7 @@ export function Favicon({ url, size = 32 }: FaviconProps) {
       height={RENDER_PX}
       alt=""
       className="shrink-0"
-      onError={() => setFailed(true)}
+      onError={() => setFailedUrl(url)}
     />
   );
 }
