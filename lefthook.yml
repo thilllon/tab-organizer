@@ -3,6 +3,10 @@ pre-commit:
     format:
       run: pnpm format
       stage_fixed: true
+    listing:
+      glob: "{docs/README.md,package.json,scripts/build-listing.ts}"
+      run: pnpm listing
+      stage_fixed: true
 
 pre-push:
   parallel: true

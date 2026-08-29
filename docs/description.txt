@@ -59,32 +59,26 @@ In Custom Grouping mode, you can optionally preserve the original tab order with
 SETTINGS
 
 Right-click the Tab Organizer icon and select "Options" to configure:
-
 • Tab Grouping Mode
-
-- Subdomain: Groups tabs by full hostname (e.g., mail.google.com ≠ drive.google.com)
-- Domain: Groups tabs by base domain (e.g., all \*.google.com tabs together)
-
+  - Subdomain: Groups tabs by full hostname (e.g., mail.google.com ≠ drive.google.com)
+  - Domain: Groups tabs by base domain (e.g., all *.google.com tabs together)
 • Duplicate Tab Handling
-
-- Do nothing: Leave duplicate tabs as they are
-- Keep one, close the rest: Automatically close duplicates
-- Group into tab group: Collect duplicates into a labeled group for review
+  - Do nothing: Leave duplicate tabs as they are
+  - Keep one, close the rest: Automatically close duplicates
+  - Group into tab group: Collect duplicates into a labeled group for review
 
 PRIVACY & SECURITY
 
 Tab Organizer is designed with privacy as a core principle:
-
 • Zero data collection — No analytics, no tracking, no telemetry.
 • Zero network requests — The extension never makes any HTTP requests. It works entirely offline.
 • Minimal permissions — Only requests the three permissions it absolutely needs:
-
-- "tabs" — To read tab URLs and titles for sorting
-- "tabGroups" — To create and manage Chrome tab groups
-- "storage" — To save your preferences using Chrome's built-in sync storage
-  • No content scripts — Tab Organizer never injects code into any web page.
-  • No background network activity — The service worker only activates when you click the icon.
-  • Open and transparent — The extension does exactly what it says, nothing more.
+  - "tabs" — To read tab URLs and titles for sorting
+  - "tabGroups" — To create and manage Chrome tab groups
+  - "storage" — To save your preferences using Chrome's built-in sync storage
+• No content scripts — Tab Organizer never injects code into any web page.
+• No background network activity — The service worker only activates when you click the icon.
+• Open and transparent — The extension does exactly what it says, nothing more.
 
 Your browsing data stays on your device. Always.
 
@@ -126,4 +120,4 @@ TIPS
 
 SUPPORT
 
-If you encounter any issues or have feature requests, please file an issue on our GitHub repository. We read every report and appreciate your feedback.
+If you encounter any issues or have feature requests, please file an issue on our GitHub repository (https://github.com/thilllon/tab-organizer/issues). We read every report and appreciate your feedback.

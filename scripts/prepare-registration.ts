@@ -7,13 +7,16 @@
  *   3. Generate before/after demo screenshots
  *   4. Record demo video (requires ffmpeg)
  *   5. Generate CWS promotional images (440x280, 1400x560)
+ *   6. Convert the demo video to demo.gif (embedded in docs/README.md)
+ *   7. Regenerate docs/description.txt from docs/README.md (see build-listing.ts)
  */
 
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type BrowserContext, chromium, type Page, type Worker } from '@playwright/test';
+import { buildListing } from './build-listing';
 
 /*
  * Types
@@ -127,7 +130,15 @@ class Preparation {
     await this.generatePromoImages();
     await this.context?.close();
 
-    console.log('\nDone! Screenshots and promo images saved to screenshots/');
+    // Step 6: demo.gif for docs/README.md
+    this.generateDemoGif();
+
+    // Step 7: store listing text
+    Preparation.step('7/7  Store listing text');
+    const listingPath = buildListing();
+    console.log(`  Saved: ${path.relative(ROOT, listingPath)}`);
+
+    console.log('\nDone! Screenshots, promo images, demo.gif and description.txt regenerated.');
   }
 
   private static step(label: string): void {
@@ -191,13 +202,13 @@ class Preparation {
   /* Pipeline steps */
 
   private buildExtension(): void {
-    Preparation.step('1/5  Building extension');
+    Preparation.step('1/7  Building extension');
     execSync('pnpm build', { cwd: ROOT, stdio: 'inherit' });
     console.log('Build complete.');
   }
 
   private async launchBrowser(): Promise<void> {
-    Preparation.step('2/5  Launching browser for screenshots & demo');
+    Preparation.step('2/7  Launching browser for screenshots & demo');
     this.context = await chromium.launchPersistentContext('', {
       headless: false,
       args: [
@@ -231,7 +242,7 @@ class Preparation {
     if (!this.context) {
       return;
     }
-    Preparation.step('3/5  Options page screenshots');
+    Preparation.step('3/7  Options page screenshots');
     const optionsUrl = `chrome-extension://${this.extensionId}/options.html`;
 
     for (const { width, height } of [
@@ -256,7 +267,7 @@ class Preparation {
     if (!this.context || !this.serviceWorker) {
       return { beforeTabs: [], nativeBefore: false };
     }
-    Preparation.step('4/5  Demo screenshots (before/after tab sorting)');
+    Preparation.step('4/7  Demo screenshots (before/after tab sorting)');
 
     console.log('  Opening tabs...');
     for (const url of DEMO_SITES) {
@@ -295,7 +306,7 @@ class Preparation {
   }
 
   private async startVideoRecording(): Promise<ChildProcess | null> {
-    Preparation.step('5/5  Video recording & promo images');
+    Preparation.step('5/7  Video recording & promo images');
     try {
       const deviceInfo = execSync('ffmpeg -f avfoundation -list_devices true -i "" 2>&1 || true', {
         encoding: 'utf-8',
@@ -484,6 +495,25 @@ class Preparation {
       clip: { x: 0, y: 0, width: 1280, height: 800 },
     });
     console.log('  Saved: screenshots/after-sort.png');
+  }
+
+  private generateDemoGif(): void {
+    Preparation.step('6/7  Demo GIF');
+    const video = path.join(SCREENSHOTS_DIR, 'demo.mp4');
+    const gif = path.join(SCREENSHOTS_DIR, 'demo.gif');
+    if (!existsSync(video)) {
+      console.log('  demo.mp4 not found, skipping GIF');
+      return;
+    }
+    try {
+      // 10 fps, 800px wide, 128-colour palette: ~170 KB for the 8 s demo
+      const filter =
+        'fps=10,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5';
+      execSync(`ffmpeg -y -v error -i "${video}" -vf "${filter}" "${gif}"`, { timeout: 60000 });
+      console.log('  Saved: screenshots/demo.gif');
+    } catch {
+      console.log('  ffmpeg failed, skipping GIF');
+    }
   }
 
   private async generatePromoImages(): Promise<void> {

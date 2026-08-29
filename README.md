@@ -36,7 +36,12 @@ pnpm build                  # Vite build -> dist/ (no type check; run typecheck 
 pnpm typecheck              # Type check only (tsc --noEmit)
 pnpm format                 # Biome check --write + Prettier (md/mdx/yml/yaml) + mise format (ruff)
 pnpm test                   # Run tests (vitest)
+pnpm listing                # Regenerate docs/description.txt (Chrome Web Store text) from docs/README.md
 pnpm release                # release-it: regenerate CWS assets, bump version, build, ZIP, GitHub release
 ```
 
 The `dist` folder will contain the production-ready extension.
+
+## Chrome Web Store listing
+
+Everything shown on the store page — description, screenshots, promo images, demo video, privacy disclosures — lives in [`docs/README.md`](docs/README.md). The plain-text description the store needs (`docs/description.txt`) is generated from it, so edit the Markdown and never the `.txt`.

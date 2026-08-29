@@ -18,6 +18,7 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "format": "biome check --write . && prettier --write '**/*.{md,mdx,yml,yaml}' && mise format",
+    "listing": "tsx ./scripts/build-listing.ts",
     "test": "vitest run",
     "release": "release-it"
   },
