@@ -33,7 +33,7 @@ export function GroupSection({ group, tabs }: GroupSectionProps) {
         <CollapsibleContent>
           <ul className="ml-5 border-l pl-2">
             {tabs.map((tab, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: tabs have no stable id; order is fixed per render.
+              // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.
               <TabRow key={`${index}-${tab.url}`} tab={tab} />
             ))}
           </ul>

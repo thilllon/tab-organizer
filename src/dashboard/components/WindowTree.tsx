@@ -37,7 +37,7 @@ export function WindowTree({ window, index, onRestoreWindow }: WindowTreeProps) 
           if (group !== undefined) {
             return (
               <GroupSection
-                // biome-ignore lint/suspicious/noArrayIndexKey: segments have no stable id; order is fixed per render.
+                // biome-ignore lint/suspicious/noArrayIndexKey: no stable segment id
                 key={`group-${segmentIndex}-${String(segment.groupIndex)}`}
                 group={group}
                 tabs={segment.tabs}
@@ -45,7 +45,7 @@ export function WindowTree({ window, index, onRestoreWindow }: WindowTreeProps) 
             );
           }
           return segment.tabs.map((tab, tabIndex) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: tabs have no stable id; order is fixed per render.
+            // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.
             <TabRow key={`tab-${segmentIndex}-${tabIndex}-${tab.url}`} tab={tab} />
           ));
         })}

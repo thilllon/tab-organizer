@@ -182,7 +182,7 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
               <div className="space-y-2 pr-3">
                 {body.session.windows.map((window, index) => (
                   <WindowTree
-                    // biome-ignore lint/suspicious/noArrayIndexKey: windows have no stable id; order is fixed per render.
+                    // biome-ignore lint/suspicious/noArrayIndexKey: no stable window id
                     key={`window-${index}`}
                     window={window}
                     index={index}
