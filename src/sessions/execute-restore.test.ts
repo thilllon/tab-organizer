@@ -45,6 +45,27 @@ const WINDOW_B: WindowSnapshot = {
   ],
 };
 
+const WINDOW_MINIMIZED: WindowSnapshot = {
+  state: 'minimized',
+  focused: false,
+  groups: [],
+  tabs: [{ url: 'https://min.example/', title: 'Min', pinned: false, active: true }],
+};
+
+const WINDOW_FULLSCREEN: WindowSnapshot = {
+  state: 'fullscreen',
+  focused: false,
+  groups: [],
+  tabs: [{ url: 'https://full.example/', title: 'Full', pinned: false, active: true }],
+};
+
+const WINDOW_MAXIMIZED: WindowSnapshot = {
+  state: 'maximized',
+  focused: false,
+  groups: [],
+  tabs: [{ url: 'https://max.example/', title: 'Max', pinned: false, active: true }],
+};
+
 function makeSession(windows: WindowSnapshot[]): Session {
   return {
     schemaVersion: 1,
@@ -427,5 +448,167 @@ describe('executeRestore', () => {
     expect(strip.some((row) => row.url === 'about:blank')).toBe(false);
     expect(progress).toEqual([[2, 7]]);
     expect(result.restored).toBe(2);
+  });
+
+  it('retries tabs.group once on "Tabs cannot be edited right now"', async () => {
+    const fake = getChromeFake();
+    fake.failNext('tabs.group', 1, 'Tabs cannot be edited right now');
+    const groupSpy = vi.spyOn(chrome.tabs, 'group');
+    const before = snapshotWindowIds();
+
+    const result = await executeRestore(makePlan([WINDOW_A]));
+    const [windowId] = newWindowIds(before);
+
+    expect(result.errors).toEqual([]);
+    expect(result.restored).toBe(5);
+    // 2 groups + 1 retry
+    expect(groupSpy).toHaveBeenCalledTimes(3);
+    const groups = [...fake.state.groups.values()]
+      .filter((group) => group.windowId === windowId)
+      .map(({ title, color, collapsed }) => ({ title, color, collapsed }));
+    expect(groups).toEqual([
+      { title: 'Work', color: 'blue', collapsed: false },
+      { title: 'News', color: 'red', collapsed: true },
+    ]);
+    vi.restoreAllMocks();
+  });
+
+  it('reports a group whose tabs.group rejects twice, without losing the other group, the created tabs, or the placeholder cleanup', async () => {
+    const fake = getChromeFake();
+    fake.failNext('tabs.group', 2, 'Tabs cannot be edited right now');
+    const removeSpy = vi.spyOn(chrome.tabs, 'remove');
+    const before = snapshotWindowIds();
+
+    const result = await executeRestore(makePlan([WINDOW_A]));
+    const [windowId] = newWindowIds(before);
+
+    // 'Work' (grouped first) exhausts both injected failures; 'News' groups normally afterwards.
+    expect(result.errors).toEqual([
+      { url: 'group:Work', message: 'Tabs cannot be edited right now' },
+    ]);
+    expect(result.restored).toBe(5);
+    const groups = [...fake.state.groups.values()]
+      .filter((group) => group.windowId === windowId)
+      .map(({ title, color, collapsed }) => ({ title, color, collapsed }));
+    expect(groups).toEqual([{ title: 'News', color: 'red', collapsed: true }]);
+    // The tabs that were meant for 'Work' still exist, just ungrouped.
+    const workRows = stripOf(windowId).filter((row) => row.url.startsWith('https://work.example/'));
+    expect(workRows.every((row) => row.group === null)).toBe(true);
+    expect(removeSpy).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  });
+
+  it('restores into an existing window: no placeholder, existing active tab stays active, no window state change', async () => {
+    const fake = getChromeFake();
+    const [existingWindowId] = [...fake.state.windows.keys()];
+    await chrome.tabs.create({
+      windowId: existingWindowId,
+      url: 'https://existing.example/',
+      active: true,
+    });
+    const removeSpy = vi.spyOn(chrome.tabs, 'remove');
+    const updateWindowSpy = vi.spyOn(chrome.windows, 'update');
+    const before = snapshotWindowIds();
+
+    const result = await executeRestore(
+      makePlan([WINDOW_A], { target: { kind: 'window', windowId: existingWindowId } }),
+    );
+
+    expect(newWindowIds(before)).toHaveLength(0);
+    expect(result.errors).toEqual([]);
+    expect(result.restored).toBe(5);
+    expect(removeSpy).not.toHaveBeenCalled();
+    // Chrome's pinned-first invariant puts the newly-created pinned tab ahead of the pre-existing
+    // unpinned tab; the rest of the restored tabs are appended after it, in snapshot order.
+    expect(stripOf(existingWindowId).map((row) => row.url)).toEqual([
+      'https://pinned.example/',
+      'https://existing.example/',
+      'https://work.example/a',
+      'https://work.example/b',
+      'https://news.example/',
+      'https://loose.example/',
+    ]);
+    const existingRow = stripOf(existingWindowId).find(
+      (row) => row.url === 'https://existing.example/',
+    );
+    expect(existingRow?.active).toBe(true);
+    const stateCalls = updateWindowSpy.mock.calls.filter(([, info]) => info.state !== undefined);
+    expect(stateCalls).toEqual([]);
+    vi.restoreAllMocks();
+  });
+
+  it('restores a window spanning multiple chunks in full, with cumulative progress and correct groups', async () => {
+    const progress: [number, number][] = [];
+    const before = snapshotWindowIds();
+
+    const result = await executeRestore(makePlan([WINDOW_A], { chunkSize: 2 }), {
+      onProgress: (done, total) => {
+        progress.push([done, total]);
+      },
+    });
+    const [windowId] = newWindowIds(before);
+
+    expect(result.errors).toEqual([]);
+    expect(result.restored).toBe(5);
+    expect(progress).toEqual([
+      [2, 5],
+      [4, 5],
+      [5, 5],
+    ]);
+    expect(stripOf(windowId)).toEqual([
+      { url: 'https://pinned.example/', pinned: true, active: false, group: null },
+      { url: 'https://work.example/a', pinned: false, active: false, group: 'Work' },
+      { url: 'https://work.example/b', pinned: false, active: true, group: 'Work' },
+      { url: 'https://news.example/', pinned: false, active: false, group: 'News' },
+      { url: 'https://loose.example/', pinned: false, active: false, group: null },
+    ]);
+    const groups = [...getChromeFake().state.groups.values()]
+      .filter((group) => group.windowId === windowId)
+      .map(({ title, color, collapsed }) => ({ title, color, collapsed }));
+    expect(groups).toEqual([
+      { title: 'Work', color: 'blue', collapsed: false },
+      { title: 'News', color: 'red', collapsed: true },
+    ]);
+  });
+
+  it('creates a minimized window as normal, then minimizes it after the tabs exist', async () => {
+    const createSpy = vi.spyOn(chrome.windows, 'create');
+    const updateSpy = vi.spyOn(chrome.windows, 'update');
+
+    const result = await executeRestore(makePlan([WINDOW_MINIMIZED]));
+
+    expect(result.errors).toEqual([]);
+    expect(createSpy.mock.calls[0]?.[0]?.state).toBe('normal');
+    const stateCalls = updateSpy.mock.calls.filter(([, info]) => info.state !== undefined);
+    expect(stateCalls).toHaveLength(1);
+    expect(stateCalls[0]?.[1]).toEqual({ state: 'minimized' });
+    vi.restoreAllMocks();
+  });
+
+  it('creates a fullscreen window as normal, then makes it fullscreen after the tabs exist', async () => {
+    const createSpy = vi.spyOn(chrome.windows, 'create');
+    const updateSpy = vi.spyOn(chrome.windows, 'update');
+
+    const result = await executeRestore(makePlan([WINDOW_FULLSCREEN]));
+
+    expect(result.errors).toEqual([]);
+    expect(createSpy.mock.calls[0]?.[0]?.state).toBe('normal');
+    const stateCalls = updateSpy.mock.calls.filter(([, info]) => info.state !== undefined);
+    expect(stateCalls).toHaveLength(1);
+    expect(stateCalls[0]?.[1]).toEqual({ state: 'fullscreen' });
+    vi.restoreAllMocks();
+  });
+
+  it('passes a maximized state straight to windows.create and never patches state afterwards', async () => {
+    const createSpy = vi.spyOn(chrome.windows, 'create');
+    const updateSpy = vi.spyOn(chrome.windows, 'update');
+
+    const result = await executeRestore(makePlan([WINDOW_MAXIMIZED]));
+
+    expect(result.errors).toEqual([]);
+    expect(createSpy.mock.calls[0]?.[0]?.state).toBe('maximized');
+    const stateCalls = updateSpy.mock.calls.filter(([, info]) => info.state !== undefined);
+    expect(stateCalls).toEqual([]);
+    vi.restoreAllMocks();
   });
 });

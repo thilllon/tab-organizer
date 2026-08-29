@@ -353,10 +353,17 @@ async function discardChunk(
   return result;
 }
 
+/**
+ * Groups and styles this window's tabs (spec §13 group-after-all-tabs). A rejection from
+ * `tabs.group`/`tabGroups.update` costs only that group: one `errors` entry, and the rest of the
+ * window (and the rest of the restore) still proceeds. `tabs.group` gets the same drag-lock retry
+ * as `tabs.create`, since Chrome raises "cannot be edited" there too.
+ */
 async function applyGroups(
   planned: PlannedWindow,
   created: (number | undefined)[],
   windowId: number,
+  errors: RestoreResult['errors'],
 ): Promise<void> {
   const groupIds: (number | undefined)[] = [];
   for (let gi = 0; gi < planned.snapshot.groups.length; gi++) {
@@ -369,9 +376,17 @@ async function applyGroups(
       continue;
     }
     const tabIds: [number, ...number[]] = [ids[0], ...ids.slice(1)];
-    const groupId = await chrome.tabs.group({ tabIds, createProperties: { windowId } });
-    await chrome.tabGroups.update(groupId, { title: group.title, color: group.color });
-    groupIds.push(groupId);
+    try {
+      const groupId = await withRetryOnce(
+        () => chrome.tabs.group({ tabIds, createProperties: { windowId } }),
+        isTabsCannotBeEditedError,
+      );
+      await chrome.tabGroups.update(groupId, { title: group.title, color: group.color });
+      groupIds.push(groupId);
+    } catch (err) {
+      errors.push({ url: `group:${group.title}`, message: errorMessage(err) });
+      groupIds.push(undefined);
+    }
   }
   // Collapse last: the placeholder is still the active tab, so collapsing cannot hit the active tab.
   for (let gi = 0; gi < groupIds.length; gi++) {
@@ -379,20 +394,41 @@ async function applyGroups(
     if (groupId === undefined) {
       continue;
     }
-    await chrome.tabGroups.update(groupId, { collapsed: planned.snapshot.groups[gi].collapsed });
+    try {
+      await chrome.tabGroups.update(groupId, { collapsed: planned.snapshot.groups[gi].collapsed });
+    } catch (err) {
+      errors.push({
+        url: `group:${planned.snapshot.groups[gi].title}`,
+        message: errorMessage(err),
+      });
+    }
   }
 }
 
+/**
+ * Activates the snapshot's active tab, removes the `about:blank` placeholder, and applies
+ * minimized/fullscreen post-hoc. Activation and the post-hoc state change are each best-effort:
+ * a rejection (e.g. the user closed the just-restored active tab) costs one `errors` entry and
+ * never blocks placeholder removal or the rest of the restore.
+ */
 async function finishWindow(
   plan: RestorePlan,
   planned: PlannedWindow,
   created: (number | undefined)[],
   opened: OpenedWindow,
+  errors: RestoreResult['errors'],
 ): Promise<void> {
   const activeIndex = planned.tabs.findIndex((tab) => tab.active);
   const activeId = created[activeIndex] ?? created.find((id) => id !== undefined);
   if (plan.target.kind === 'newWindows' && activeId !== undefined) {
-    await chrome.tabs.update(activeId, { active: true });
+    try {
+      await chrome.tabs.update(activeId, { active: true });
+    } catch (err) {
+      errors.push({
+        url: `activate:${planned.tabs[activeIndex]?.url ?? ''}`,
+        message: errorMessage(err),
+      });
+    }
   }
   if (opened.placeholderId !== undefined) {
     try {
@@ -405,8 +441,8 @@ async function finishWindow(
   if (plan.target.kind === 'newWindows' && (state === 'minimized' || state === 'fullscreen')) {
     try {
       await chrome.windows.update(opened.windowId, { state });
-    } catch {
-      // platform may refuse; the window still exists
+    } catch (err) {
+      errors.push({ url: `window-state:${state}`, message: errorMessage(err) });
     }
   }
 }
@@ -452,8 +488,8 @@ export async function executeRestore(
 
     restored += created.filter((id) => id !== undefined).length;
     // Groups only after all tabs of this window exist (groups cannot be empty).
-    await applyGroups(planned, created, opened.windowId);
-    await finishWindow(plan, planned, created, opened);
+    await applyGroups(planned, created, opened.windowId, errors);
+    await finishWindow(plan, planned, created, opened, errors);
 
     lastWindowId = opened.windowId;
     if (planned.snapshot.focused) {
