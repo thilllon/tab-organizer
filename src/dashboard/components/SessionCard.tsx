@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { DeleteSessionDialog } from '@/dashboard/components/DeleteSessionDialog';
 import { WindowTree } from '@/dashboard/components/WindowTree';
 import { useSessionBody } from '@/dashboard/hooks/useSessionBody';
@@ -207,7 +206,10 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
           )}
           {body.error !== undefined && <p className="text-xs text-destructive">{body.error}</p>}
           {body.session !== undefined && (
-            <ScrollArea className="max-h-96">
+            // Plain overflow container, not Radix's ScrollArea: its viewport is `size-full`, and a
+            // percentage height against a `max-height`-only parent resolves to auto, so nothing
+            // ever clipped and the tree overflowed the card instead of scrolling.
+            <div className="max-h-96 overflow-y-auto">
               <div className="space-y-2 pr-3">
                 {body.session.windows.map((window, index) => (
                   <WindowTree
@@ -220,7 +222,7 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
                   />
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           )}
         </div>
       )}
