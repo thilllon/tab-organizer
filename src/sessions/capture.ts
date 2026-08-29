@@ -1,5 +1,7 @@
 import { isSuspended, tabToUrl } from '@/background/sort';
-import type { GroupSnapshot, TabSnapshot, WindowSnapshot } from '@/types';
+import type { GroupSnapshot, Session, TabSnapshot, WindowSnapshot } from '@/types';
+import { contentHash } from './hash';
+import { defaultSessionName } from './naming';
 
 export interface CaptureOptions {
   /** `chrome.runtime.getURL('')` — tabs whose url starts with this are our own pages. */
@@ -133,4 +135,59 @@ export function captureWindows(
     }
   }
   return result;
+}
+
+// Default to "The Marvellous Suspender", the same de facto default as src/background/index.ts.
+// Shared with the dashboard (src/dashboard/lib/sanitize-options.ts imports both exports).
+export const THE_MARVELLOUS_SUSPENDER_EXTENSION_ID = 'noogafoofpebimajpfpamcfhoaifemoa';
+
+/** `chrome-extension://<suspender id>/suspended.html#`, honouring the Options-page override. */
+export async function loadSuspendedPrefix(): Promise<string> {
+  const stored = await chrome.storage.sync.get<{ tabSuspenderExtensionId: string }>({
+    tabSuspenderExtensionId: THE_MARVELLOUS_SUSPENDER_EXTENSION_ID,
+  });
+  const suspenderId =
+    typeof stored.tabSuspenderExtensionId === 'string' && stored.tabSuspenderExtensionId !== ''
+      ? stored.tabSuspenderExtensionId
+      : THE_MARVELLOUS_SUSPENDER_EXTENSION_ID;
+  return `chrome-extension://${suspenderId}/suspended.html#`;
+}
+
+async function loadCaptureOptions(): Promise<CaptureOptions> {
+  const suspendedPrefix = await loadSuspendedPrefix();
+  return {
+    ownUrlPrefix: chrome.runtime.getURL(''),
+    suspendedPrefix,
+    suspendedPrefixLen: suspendedPrefix.length,
+  };
+}
+
+export async function captureSession(scope: 'window' | 'all', name?: string): Promise<Session> {
+  const [allWindows, groups, focused, options] = await Promise.all([
+    chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }),
+    chrome.tabGroups.query({}),
+    chrome.windows.getLastFocused({ windowTypes: ['normal'] }),
+    loadCaptureOptions(),
+  ]);
+
+  const windows =
+    scope === 'window'
+      ? allWindows.filter((w) => w.id !== undefined && w.id === focused.id)
+      : allWindows;
+
+  const snapshots = captureWindows(windows, groups, options);
+  const tabCount = snapshots.reduce((sum, w) => sum + w.tabs.length, 0);
+  const now = Date.now();
+
+  return {
+    schemaVersion: 1,
+    id: crypto.randomUUID(),
+    kind: 'saved',
+    name: name ?? defaultSessionName(new Date(now), snapshots.length, tabCount),
+    origin: 'manual',
+    createdAt: now,
+    updatedAt: now,
+    contentHash: contentHash(snapshots),
+    windows: snapshots,
+  };
 }
