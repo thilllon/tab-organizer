@@ -74,4 +74,81 @@ describe('migrateIndex', () => {
     expect(() => migrateIndex({ schemaVersion: 1 })).toThrow('Not a session index');
     expect(() => migrateIndex(42)).toThrow('Not a session index');
   });
+
+  it('drops entries missing required SessionSummary fields', () => {
+    const validSummary = {
+      id: 'a1',
+      kind: 'saved' as const,
+      name: 'Work',
+      origin: 'manual' as const,
+      createdAt: 1,
+      updatedAt: 2,
+      windowCount: 1,
+      tabCount: 1,
+      bytes: 10,
+    };
+    const missingName = { ...validSummary, name: undefined };
+    const missingWindowCount = { ...validSummary, windowCount: undefined };
+    expect(
+      migrateIndex({
+        schemaVersion: 1,
+        sessions: [missingName, missingWindowCount, validSummary],
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      sessions: [validSummary],
+    });
+  });
+
+  it('drops entries with invalid kind', () => {
+    const validSummary = {
+      id: 'a1',
+      kind: 'saved' as const,
+      name: 'Work',
+      origin: 'manual' as const,
+      createdAt: 1,
+      updatedAt: 2,
+      windowCount: 1,
+      tabCount: 1,
+      bytes: 10,
+    };
+    const invalidKind = { ...validSummary, kind: 'bogus' };
+    expect(
+      migrateIndex({
+        schemaVersion: 1,
+        sessions: [invalidKind, validSummary],
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      sessions: [validSummary],
+    });
+  });
+
+  it('keeps fully valid entries with and without optional fields', () => {
+    const withoutOptional = {
+      id: 'a1',
+      kind: 'saved' as const,
+      name: 'Work',
+      origin: 'manual' as const,
+      createdAt: 1,
+      updatedAt: 2,
+      windowCount: 1,
+      tabCount: 1,
+      bytes: 10,
+    };
+    const withOptional = {
+      ...withoutOptional,
+      protected: true,
+      contentHash: 'abc12345',
+    };
+    expect(
+      migrateIndex({
+        schemaVersion: 1,
+        sessions: [withOptional, withoutOptional],
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      sessions: [withOptional, withoutOptional],
+    });
+  });
 });

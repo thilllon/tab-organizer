@@ -18,6 +18,52 @@ function assertSchemaVersion(record: Record<string, unknown>): void {
   }
 }
 
+function isSessionSummary(value: unknown): value is SessionSummary {
+  if (!isRecord(value)) {
+    return false;
+  }
+  const {
+    id,
+    kind,
+    name,
+    origin,
+    createdAt,
+    updatedAt,
+    windowCount,
+    tabCount,
+    bytes,
+    protected: isProtected,
+    contentHash,
+  } = value;
+
+  if (
+    typeof id !== 'string' ||
+    (kind !== 'saved' && kind !== 'history') ||
+    typeof name !== 'string' ||
+    (origin !== 'manual' &&
+      origin !== 'alarm' &&
+      origin !== 'startup' &&
+      origin !== 'recovered' &&
+      origin !== 'import') ||
+    typeof createdAt !== 'number' ||
+    typeof updatedAt !== 'number' ||
+    typeof windowCount !== 'number' ||
+    typeof tabCount !== 'number' ||
+    typeof bytes !== 'number'
+  ) {
+    return false;
+  }
+
+  if (isProtected !== undefined && typeof isProtected !== 'boolean') {
+    return false;
+  }
+  if (contentHash !== undefined && typeof contentHash !== 'string') {
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Validates a stored session record and returns it as a `Session`.
  * v1 is the current version, so this is the identity for well-formed records.
@@ -55,9 +101,8 @@ export function migrateIndex(record: unknown): SessionIndex {
   if (!Array.isArray(record.sessions)) {
     throw new TypeError('Not a session index');
   }
-  const sessions: SessionSummary[] = record.sessions.filter(
-    (entry): entry is SessionSummary =>
-      isRecord(entry) && typeof entry.id === 'string' && typeof entry.updatedAt === 'number',
+  const sessions: SessionSummary[] = record.sessions.filter((entry): entry is SessionSummary =>
+    isSessionSummary(entry),
   );
   return { schemaVersion: SESSION_SCHEMA_VERSION, sessions };
 }
