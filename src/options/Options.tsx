@@ -1,7 +1,10 @@
+import { FolderOpen, Keyboard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { openDashboard } from '@/sessions/open-dashboard';
+import { openShortcutSettings } from '@/sessions/shortcuts';
 import type { DuplicateTabHandling, GroupingMode } from '@/types';
 
 function isDuplicateTabHandling(value: string): value is DuplicateTabHandling {
@@ -121,6 +124,26 @@ export const Options = () => {
             </p>
           </div>
         </RadioGroup>
+      </section>
+
+      <section className="space-y-3 rounded-lg border p-4">
+        <div>
+          <h4 className="text-sm font-medium">Sessions</h4>
+          <p className="text-xs text-muted-foreground">
+            Save and restore windows, tabs and tab groups. Sessions are stored only on this device.
+            You can also save from the icon's right-click menu.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => void openDashboard()}>
+            <FolderOpen />
+            Open Sessions dashboard
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => void openShortcutSettings()}>
+            <Keyboard />
+            Set keyboard shortcuts
+          </Button>
+        </div>
       </section>
 
       <div className="flex items-center gap-3 pt-2">

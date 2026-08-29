@@ -2,6 +2,7 @@ import { Layers, Save } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { EmptyState } from '@/dashboard/components/EmptyState';
 import { ProgressToast } from '@/dashboard/components/ProgressToast';
 import {
   type PendingRestore,
@@ -144,7 +145,11 @@ export function Dashboard() {
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No saved sessions yet.</p>
+          <EmptyState
+            onSaveWindow={() => void save('window')}
+            onSaveAll={() => void save('all')}
+            saving={saving !== undefined}
+          />
         ) : (
           <ul className="space-y-3">
             {sessions.map((summary) => (
