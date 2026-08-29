@@ -1,17 +1,74 @@
-# Tab Organizer
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg">
+    <img src="screenshots/promo-marquee-1400x560.png" alt="Tab Organizer — one-click tab sorting and grouping for Chrome" width="100%" />
+  </a>
+</p>
 
-Chrome extension that sorts and organizes your browser tabs.
+<h1 align="center">Tab Organizer</h1>
 
-[![GitHub](https://img.shields.io/github/v/release/thilllon/tab-organizer)](https://github.com/thilllon/tab-organizer)
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/bmbpmnfhfbdjdjpblimidmbohgccmjdg)](https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg)
+<p align="center">
+  <strong>One click. Every tab sorted, grouped, and de-duplicated.</strong><br />
+  No popup, no account, no data ever leaves your browser.
+</p>
 
-Pin the extension icon and click it to instantly sort all tabs in the current window by URL.
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/v/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white" alt="Chrome Web Store" /></a>
+  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/users/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=users&logo=googlechrome&logoColor=white" alt="Users" /></a>
+  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/rating/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=rating&logo=googlechrome&logoColor=white" alt="Rating" /></a>
+  <a href="https://github.com/thilllon/tab-organizer/releases"><img src="https://img.shields.io/github/v/release/thilllon/tab-organizer?logo=github" alt="GitHub release" /></a>
+  <a href="https://github.com/thilllon/tab-organizer/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thilllon/tab-organizer/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white" alt="CI" /></a>
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><strong>➜ Install from the Chrome Web Store</strong></a>
+</p>
+
+## See it in action
+
+Pin the icon, click it, done — every tab in the window is sorted and grouped by site:
+
+<p align="center">
+  <img src="screenshots/demo.gif" alt="Demo: one click sorts and groups all open tabs" width="800" />
+</p>
+
+<table>
+  <tr>
+    <th width="50%">Before</th>
+    <th width="50%">After</th>
+  </tr>
+  <tr>
+    <td><img src="screenshots/before-sort.png" alt="Before: tabs in random order" /></td>
+    <td><img src="screenshots/after-sort.png" alt="After: tabs sorted and grouped by domain" /></td>
+  </tr>
+</table>
 
 ## Features
 
-- One-click tab sorting (by URL, title, or custom grouping)
-- Tab group sorting support
-- Configurable via options page
+|                               |                                                                                                                                     |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **▸ One-click sorting**       | Click the toolbar icon. No menus, no dialogs — the current window is organized instantly.                                           |
+| **▸ Three sort modes**        | By URL, by title, or custom grouping that keeps sites in the order you first opened them.                                           |
+| **▸ Smart grouping**          | Group by full hostname (`mail.google.com` ≠ `drive.google.com`) or by domain (all of Google together, `.co.uk`-style TLDs handled). |
+| **▸ Native tab groups**       | Existing Chrome tab groups are sorted by name (prefix with `1-`, `2-` to pin an order) and tidied inside.                           |
+| **▸ Duplicate detection**     | Leave duplicates alone, close all but one, or collect them into a labeled group to review first.                                    |
+| **▸ Pinned & suspended tabs** | Pinned tabs stay put unless you say otherwise; tabs suspended by The Marvellous Suspender sort by their real URL.                   |
+
+## Settings
+
+Right-click the icon → **Options** to choose the grouping level and how duplicates are handled.
+
+<p align="center">
+  <img src="screenshots/screenshot-1280x800.png" alt="Options page" width="640" />
+</p>
+
+## Privacy
+
+- **Zero network requests** — works entirely offline, no analytics, no telemetry.
+- **Three permissions only** — `tabs`, `tabGroups`, `storage` (your settings, via Chrome sync).
+- **No content scripts** — nothing is ever injected into a web page.
+- Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
+
+Everything shown on the store page — the complete description, every asset, the privacy answers — is kept in [`docs/README.md`](docs/README.md); `docs/description.txt` is generated from it.
 
 ## Development
 
@@ -41,7 +98,3 @@ pnpm release                # release-it: regenerate CWS assets, bump version, b
 ```
 
 The `dist` folder will contain the production-ready extension.
-
-## Chrome Web Store listing
-
-Everything shown on the store page — description, screenshots, promo images, demo video, privacy disclosures — lives in [`docs/README.md`](docs/README.md). The plain-text description the store needs (`docs/description.txt`) is generated from it, so edit the Markdown and never the `.txt`.
