@@ -5,6 +5,7 @@ import {
   formatRestoreSummary,
   needsRestoreConfirm,
   RESTORE_CONFIRM_THRESHOLD,
+  splitRestoreErrors,
 } from './restore-summary';
 
 function sessionWithTabs(...counts: number[]): Session {
@@ -42,6 +43,36 @@ describe('countTabs / needsRestoreConfirm', () => {
   });
 });
 
+describe('splitRestoreErrors', () => {
+  it('treats group/activate/window-state urls as structural, everything else as a tab error', () => {
+    const result = {
+      restored: 1,
+      skipped: [],
+      errors: [
+        { url: 'https://a', message: 'boom' },
+        { url: 'group:Work', message: 'drag lock' },
+        { url: 'activate:https://b', message: 'tab closed' },
+        { url: 'window-state:minimized', message: 'nope' },
+      ],
+    };
+    expect(splitRestoreErrors(result)).toEqual({
+      tabErrors: [{ url: 'https://a', message: 'boom' }],
+      structuralProblems: [
+        { url: 'group:Work', message: 'drag lock' },
+        { url: 'activate:https://b', message: 'tab closed' },
+        { url: 'window-state:minimized', message: 'nope' },
+      ],
+    });
+  });
+
+  it('returns empty arrays when there are no errors', () => {
+    expect(splitRestoreErrors({ restored: 1, skipped: [], errors: [] })).toEqual({
+      tabErrors: [],
+      structuralProblems: [],
+    });
+  });
+});
+
 describe('formatRestoreSummary', () => {
   it('reports a clean restore', () => {
     expect(formatRestoreSummary({ restored: 5, skipped: [], errors: [] }, 5)).toBe(
@@ -64,5 +95,44 @@ describe('formatRestoreSummary', () => {
     expect(formatRestoreSummary({ restored: 0, skipped: ['a'], errors: [] }, 1)).toBe(
       'Restored 0 of 1 tab · 1 skipped',
     );
+  });
+
+  it('reports structural (group/window) problems separately from tab errors', () => {
+    const result = {
+      restored: 10,
+      skipped: [],
+      errors: [
+        { url: 'https://a', message: 'boom' },
+        { url: 'group:Work', message: 'drag lock' },
+        { url: 'activate:https://b', message: 'tab closed' },
+        { url: 'window-state:minimized', message: 'nope' },
+      ],
+    };
+    expect(formatRestoreSummary(result, 11)).toBe(
+      'Restored 10 of 11 tabs · 1 could not be opened · 3 group/window problems',
+    );
+  });
+
+  it('uses the singular form for a single structural problem', () => {
+    const result = {
+      restored: 10,
+      skipped: [],
+      errors: [{ url: 'group:Work', message: 'drag lock' }],
+    };
+    expect(formatRestoreSummary(result, 10)).toBe(
+      'Restored 10 of 10 tabs · 1 group/window problem',
+    );
+  });
+
+  it('reports a cancelled restore as a plain count instead of a fraction', () => {
+    expect(
+      formatRestoreSummary({ restored: 25, skipped: [], errors: [] }, 25, { cancelled: true }),
+    ).toBe('Restore cancelled — 25 tabs opened');
+  });
+
+  it('uses the singular form for a cancelled restore of one tab', () => {
+    expect(
+      formatRestoreSummary({ restored: 1, skipped: [], errors: [] }, 1, { cancelled: true }),
+    ).toBe('Restore cancelled — 1 tab opened');
   });
 });

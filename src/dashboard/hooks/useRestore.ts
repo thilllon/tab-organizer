@@ -28,6 +28,8 @@ export interface UseRestore {
   running: boolean;
   cancel(): void;
   lastResult?: RestoreResult;
+  /** True when `lastResult` ended because `cancel()` aborted it, rather than running to completion. */
+  cancelled: boolean;
   dismiss(): void;
 }
 
@@ -35,6 +37,7 @@ export function useRestore(): UseRestore {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<RestoreProgress | undefined>(undefined);
   const [lastResult, setLastResult] = useState<RestoreResult | undefined>(undefined);
+  const [cancelled, setCancelled] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
 
   // Spec §5: warn before leaving the page while a restore is in flight.
@@ -66,6 +69,7 @@ export function useRestore(): UseRestore {
     controllerRef.current = controller;
     setRunning(true);
     setLastResult(undefined);
+    setCancelled(false);
     setProgress({ done: 0, total: 0 });
     try {
       const [settings, sanitize] = await Promise.all([
@@ -83,6 +87,9 @@ export function useRestore(): UseRestore {
         signal: controller.signal,
         screen: { availWidth: window.screen.availWidth, availHeight: window.screen.availHeight },
       });
+      // Read `aborted` before the finally block below runs (it doesn't touch the signal, but
+      // keeping the read right next to where the result lands avoids relying on that detail).
+      setCancelled(controller.signal.aborted);
       setLastResult(result);
       return result;
     } finally {
@@ -98,7 +105,8 @@ export function useRestore(): UseRestore {
 
   const dismiss = useCallback(() => {
     setLastResult(undefined);
+    setCancelled(false);
   }, []);
 
-  return { restore, progress, running, cancel, lastResult, dismiss };
+  return { restore, progress, running, cancel, lastResult, cancelled, dismiss };
 }

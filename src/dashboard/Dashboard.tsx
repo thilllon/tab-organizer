@@ -24,7 +24,7 @@ const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
 
 export function Dashboard() {
   const { sessions, loading, error: indexError } = useSessionIndex();
-  const { restore, progress, running, cancel, lastResult, dismiss } = useRestore();
+  const { restore, progress, running, cancel, lastResult, cancelled, dismiss } = useRestore();
   const [saving, setSaving] = useState<SaveScope | undefined>(undefined);
   const [notice, setNotice] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -54,8 +54,6 @@ export function Dashboard() {
     target: RestoreTarget,
     lazy?: SessionSettings['restoreLazy'],
   ): Promise<void> => {
-    setError(undefined);
-    setNotice(undefined);
     try {
       await restore(session, target, lazy);
     } catch (err) {
@@ -63,7 +61,14 @@ export function Dashboard() {
     }
   };
 
-  const requestRestore = async (session: Session, target: RestoreTarget): Promise<void> => {
+  // `windowIndex`, when given, scopes the restore to a single window of `session`. `pickWindow`
+  // runs in here (inside the try) rather than in the JSX callback, so a bad index (RangeError)
+  // lands in the error banner instead of escaping into the click handler.
+  const requestRestore = async (
+    session: Session,
+    target: RestoreTarget,
+    windowIndex?: number,
+  ): Promise<void> => {
     if (running) {
       // Belt-and-braces re-entrancy guard: the header Save buttons and each SessionCard's
       // Restore button are also disabled while `running` is true (via the `restoring` prop), so
@@ -71,11 +76,18 @@ export function Dashboard() {
       setNotice('A restore is already running.');
       return;
     }
-    if (needsRestoreConfirm(session)) {
-      setPending({ session, target });
-      return;
+    setError(undefined);
+    setNotice(undefined);
+    try {
+      const scoped = windowIndex === undefined ? session : pickWindow(session, windowIndex);
+      if (needsRestoreConfirm(scoped)) {
+        setPending({ session: scoped, target });
+        return;
+      }
+      await runRestore(scoped, target);
+    } catch (err) {
+      setError(errorMessage(err));
     }
-    await runRestore(session, target);
   };
 
   const confirmRestore = (lazy: SessionSettings['restoreLazy']) => {
@@ -142,7 +154,7 @@ export function Dashboard() {
                 restoring={running}
                 onRestore={(session) => requestRestore(session, NEW_WINDOWS)}
                 onRestoreWindow={(session, windowIndex) =>
-                  requestRestore(pickWindow(session, windowIndex), NEW_WINDOWS)
+                  requestRestore(session, NEW_WINDOWS, windowIndex)
                 }
               />
             ))}
@@ -158,6 +170,7 @@ export function Dashboard() {
       <ProgressToast
         progress={progress}
         result={lastResult}
+        cancelled={cancelled}
         onCancel={cancel}
         onDismiss={dismiss}
       />

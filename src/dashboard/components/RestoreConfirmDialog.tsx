@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,7 +26,22 @@ export interface RestoreConfirmDialogProps {
 
 export function RestoreConfirmDialog({ pending, onConfirm, onCancel }: RestoreConfirmDialogProps) {
   const [lazy, setLazy] = useState(true);
-  const tabCount = pending === undefined ? 0 : countTabs(pending.session);
+  // Radix keeps DialogContent mounted through its closing animation; once `pending` goes back to
+  // undefined, fall back to the last non-undefined value so the dialog's title/body don't flash
+  // "Restore 0 tabs?" while it fades out.
+  const lastPendingRef = useRef<PendingRestore | undefined>(undefined);
+
+  useEffect(() => {
+    if (pending !== undefined) {
+      lastPendingRef.current = pending;
+      // Reset the checkbox to its default each time a new confirm opens, rather than carrying
+      // over whatever the previous confirm (possibly for a different session) left it at.
+      setLazy(true);
+    }
+  }, [pending]);
+
+  const shown = pending ?? lastPendingRef.current;
+  const tabCount = shown === undefined ? 0 : countTabs(shown.session);
 
   return (
     <Dialog
@@ -41,8 +56,8 @@ export function RestoreConfirmDialog({ pending, onConfirm, onCancel }: RestoreCo
         <DialogHeader>
           <DialogTitle>Restore {tabCount} tabs?</DialogTitle>
           <DialogDescription>
-            {pending?.session.name ?? ''} will open {pending?.session.windows.length ?? 0}{' '}
-            {pending !== undefined && pending.session.windows.length === 1 ? 'window' : 'windows'}.
+            {shown?.session.name ?? ''} will open {shown?.session.windows.length ?? 0}{' '}
+            {shown !== undefined && shown.session.windows.length === 1 ? 'window' : 'windows'}.
             Large restores can take a while and use a lot of memory.
           </DialogDescription>
         </DialogHeader>
