@@ -149,6 +149,7 @@ export function Dashboard() {
             onSaveWindow={() => void save('window')}
             onSaveAll={() => void save('all')}
             saving={saving !== undefined}
+            running={running}
           />
         ) : (
           <ul className="space-y-3">

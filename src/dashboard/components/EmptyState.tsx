@@ -6,9 +6,10 @@ export interface EmptyStateProps {
   onSaveWindow(): void;
   onSaveAll(): void;
   saving: boolean;
+  running: boolean;
 }
 
-export function EmptyState({ onSaveWindow, onSaveAll, saving }: EmptyStateProps) {
+export function EmptyState({ onSaveWindow, onSaveAll, saving, running }: EmptyStateProps) {
   return (
     <section className="flex flex-col items-center gap-4 rounded-lg border border-dashed px-6 py-12 text-center">
       <FolderOpen className="size-10 text-muted-foreground" />
@@ -36,15 +37,21 @@ export function EmptyState({ onSaveWindow, onSaveAll, saving }: EmptyStateProps)
         </li>
       </ul>
       <div className="flex flex-wrap justify-center gap-2">
-        <Button variant="outline" size="sm" onClick={onSaveWindow} disabled={saving}>
+        <Button variant="outline" size="sm" onClick={onSaveWindow} disabled={saving || running}>
           <Save />
           Save this window
         </Button>
-        <Button size="sm" onClick={onSaveAll} disabled={saving}>
+        <Button size="sm" onClick={onSaveAll} disabled={saving || running}>
           <Layers />
           Save all windows
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => void openShortcutSettings()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            openShortcutSettings().catch((err) => console.error('[tab-organizer:sessions]', err));
+          }}
+        >
           <Keyboard />
           Set keyboard shortcuts
         </Button>

@@ -135,11 +135,23 @@ export const Options = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => void openDashboard()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              openDashboard().catch((err) => console.error('[tab-organizer:sessions]', err));
+            }}
+          >
             <FolderOpen />
             Open Sessions dashboard
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => void openShortcutSettings()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              openShortcutSettings().catch((err) => console.error('[tab-organizer:sessions]', err));
+            }}
+          >
             <Keyboard />
             Set keyboard shortcuts
           </Button>
