@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Dashboard } from './Dashboard';
 
 import './index.css';
 
@@ -10,8 +11,6 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <main className="mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-semibold">Sessions</h1>
-    </main>
+    <Dashboard />
   </StrictMode>,
 );
