@@ -611,4 +611,62 @@ describe('executeRestore', () => {
     expect(stateCalls).toEqual([]);
     vi.restoreAllMocks();
   });
+
+  it('waits for navigation to commit before discarding lazily restored tabs, never losing the url', async () => {
+    // QA finding (Chrome for Testing 151, 120-tab lazy restore): tabs.discard silently unloads a
+    // tab whose navigation has not committed yet, wiping its url. Model the delayed commit via the
+    // fake's deferCommit knob, and commit each tab shortly after it appears in state.tabs -- close
+    // enough after creation that a naive "discard right after tabs.create resolves" would still
+    // race it, but not synchronously, so the fix's poll-until-committed has something to wait for.
+    const fake = getChromeFake();
+    fake.state.deferCommit = true;
+    const committed = new Set<number>();
+    const timer = setInterval(() => {
+      for (const tab of fake.state.tabs.values()) {
+        if (tab.pendingUrl !== undefined && tab.url === '' && !committed.has(tab.id)) {
+          committed.add(tab.id);
+          fake.commitNavigation(tab.id);
+        }
+      }
+    }, 5);
+
+    const before = snapshotWindowIds();
+    const result = await executeRestore(makePlan([WINDOW_A], { lazy: 'always' })).finally(() => {
+      clearInterval(timer);
+    });
+    const [windowId] = newWindowIds(before);
+
+    expect(result.errors).toEqual([]);
+    expect(result.restored).toBe(5);
+    const rows = [...fake.state.tabs.values()].filter((tab) => tab.windowId === windowId);
+    expect(rows.every((tab) => tab.url !== '')).toBe(true);
+    const discardedRows = rows.filter((tab) => tab.discarded);
+    expect(discardedRows.length).toBeGreaterThan(0);
+    expect(discardedRows.every((tab) => tab.url !== '')).toBe(true);
+    expect(rows.some((tab) => tab.status === 'unloaded' && tab.url === '')).toBe(false);
+  });
+
+  it('leaves a tab that never commits within the timeout undiscarded, still counting it as restored', async () => {
+    const fake = getChromeFake();
+    fake.state.deferCommit = true;
+    vi.useFakeTimers();
+    try {
+      const before = snapshotWindowIds();
+      const restorePromise = executeRestore(makePlan([WINDOW_A], { lazy: 'always' }));
+      await vi.advanceTimersByTimeAsync(6000);
+      const result = await restorePromise;
+      const [windowId] = newWindowIds(before);
+
+      expect(result.errors).toEqual([]);
+      expect(result.restored).toBe(5);
+      const rows = [...fake.state.tabs.values()].filter((tab) => tab.windowId === windowId);
+      const discardable = rows.filter((tab) => !tab.pinned && !tab.active);
+      expect(discardable.length).toBeGreaterThan(0);
+      // Never discarded (still loading), and its url was never lost.
+      expect(discardable.every((tab) => tab.discarded === false)).toBe(true);
+      expect(discardable.every((tab) => tab.url === '')).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -74,6 +74,46 @@ describe('chrome fake: tab strip', () => {
     const discarded = await chrome.tabs.discard(idle.id);
     expect(discarded?.discarded).toBe(true);
   });
+
+  it('deferCommit leaves a created tab uncommitted until commitNavigation is called', async () => {
+    const fake = getChromeFake();
+    fake.state.deferCommit = true;
+
+    const tab = await chrome.tabs.create({ url: 'https://a.test', active: false });
+    if (tab.id === undefined) {
+      throw new Error('expected id');
+    }
+    expect(tab.url).toBe('');
+    expect(tab.pendingUrl).toBe('https://a.test');
+    expect(tab.status).toBe('loading');
+
+    fake.commitNavigation(tab.id);
+    const committed = await chrome.tabs.get(tab.id);
+    expect(committed.url).toBe('https://a.test');
+    expect(committed.pendingUrl).toBeUndefined();
+    expect(committed.status).toBe('complete');
+  });
+
+  it('tabs.discard on an uncommitted tab mimics Chrome: url stays empty, status becomes unloaded', async () => {
+    // A decoy tab occupies "active" so the tab under test (created second, active: false) is not
+    // forced active by the fake's "sole tab in the window is always active" rule.
+    await chrome.tabs.create({ url: 'https://decoy.test' });
+    const fake = getChromeFake();
+    fake.state.deferCommit = true;
+
+    const tab = await chrome.tabs.create({ url: 'https://a.test', active: false });
+    if (tab.id === undefined) {
+      throw new Error('expected id');
+    }
+    expect(tab.active).toBe(false);
+    const discarded = await chrome.tabs.discard(tab.id);
+    expect(discarded?.discarded).toBe(true);
+    expect(discarded?.url).toBe('');
+    expect(discarded?.status).toBe('unloaded');
+    // The original url is permanently lost: it never makes it into `url`, and commitNavigation
+    // has nothing left to promote once the tab has been discarded uncommitted.
+    expect(discarded?.pendingUrl).toBe('https://a.test');
+  });
 });
 
 describe('chrome fake: groups', () => {

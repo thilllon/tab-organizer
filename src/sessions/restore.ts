@@ -206,6 +206,8 @@ export function planRestore(session: Session, options: RestoreOptions): RestoreP
 // ---------------------------------------------------------------------------
 
 const RETRY_DELAY_MS = 100;
+const DISCARD_COMMIT_TIMEOUT_MS = 5000;
+const DISCARD_POLL_INTERVAL_MS = 50;
 
 export function isTabsCannotBeEditedError(err: unknown): boolean {
   const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
@@ -329,27 +331,64 @@ async function createChunk(
 }
 
 /**
+ * Polls `tabs.get(tabId)` until the tab has a committed URL (Chrome moves the URL from
+ * `pendingUrl` to `url` on commit; `status` may still be `'loading'`, which is fine) or
+ * `DISCARD_COMMIT_TIMEOUT_MS` elapses. `tabs.discard` does NOT reject when called on a tab whose
+ * navigation has not committed yet -- it silently unloads the tab with `url: ''`, permanently
+ * losing the intended URL -- so the caller must never discard before this resolves `true`.
+ */
+async function waitForCommit(tabId: number): Promise<boolean> {
+  const maxAttempts = Math.ceil(DISCARD_COMMIT_TIMEOUT_MS / DISCARD_POLL_INTERVAL_MS);
+  for (let attempt = 0; attempt <= maxAttempts; attempt++) {
+    let tab: chrome.tabs.Tab | undefined;
+    try {
+      tab = await chrome.tabs.get(tabId);
+    } catch {
+      // Tab is gone (closed by the user, replaced, ...): nothing left to wait for or discard.
+      return false;
+    }
+    if (tab.url !== undefined && tab.url !== '') {
+      return true;
+    }
+    if (attempt === maxAttempts) {
+      return false;
+    }
+    await delay(DISCARD_POLL_INTERVAL_MS);
+  }
+  return false;
+}
+
+/**
  * Discards the chunk's non-active, non-pinned tabs and returns the ids to keep using: Chrome may
  * replace a discarded tab (new id), and `tabs.discard` resolves with the tab that now exists.
+ *
+ * Each tab is discarded only after its navigation has committed (see `waitForCommit`); a tab that
+ * never commits within the timeout is left loading rather than risking a silent URL loss, and is
+ * not treated as an error -- it is simply not lazy-restored. Tabs in a chunk navigate in parallel,
+ * so the wait-then-discard runs concurrently per tab too, keeping the returned ids in order.
  */
 async function discardChunk(
   chunk: PlannedTab[],
   ids: (number | undefined)[],
 ): Promise<(number | undefined)[]> {
   const result = [...ids];
-  for (let i = 0; i < chunk.length; i++) {
-    const id = ids[i];
-    const tab = chunk[i];
-    if (id === undefined || tab.active || tab.pinned) {
-      continue;
-    }
-    try {
-      const discarded = await chrome.tabs.discard(id);
-      result[i] = discarded?.id ?? id;
-    } catch {
-      // "still initializing" and friends: discarding is best-effort
-    }
-  }
+  await Promise.all(
+    chunk.map(async (tab, i) => {
+      const id = ids[i];
+      if (id === undefined || tab.active || tab.pinned) {
+        return;
+      }
+      if (!(await waitForCommit(id))) {
+        return;
+      }
+      try {
+        const discarded = await chrome.tabs.discard(id);
+        result[i] = discarded?.id ?? id;
+      } catch {
+        // "still initializing" and friends: discarding is best-effort
+      }
+    }),
+  );
   return result;
 }
 

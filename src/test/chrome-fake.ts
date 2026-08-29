@@ -50,6 +50,7 @@ export function makeEvent<T extends (...args: never[]) => void>(): FakeEvent<T> 
 
 export type FakeWindowState = `${chrome.windows.WindowState}`;
 export type FakeGroupColor = `${chrome.tabGroups.Color}`;
+export type FakeTabStatus = `${chrome.tabs.TabStatus}`;
 
 export interface FakeWindow {
   id: number;
@@ -75,6 +76,7 @@ export interface FakeTab {
   groupId: number;
   discarded: boolean;
   incognito: boolean;
+  status: FakeTabStatus;
 }
 
 export interface FakeGroup {
@@ -97,6 +99,10 @@ export interface FakeState {
   createdTabs: chrome.tabs.CreateProperties[];
   nextId: { tab: number; window: number; group: number };
   fileAccessAllowed: boolean;
+  /** Testing-only knob (Task 8 fix round 2): when true, `tabs.create` leaves the tab
+   * uncommitted (`url: ''`, `pendingUrl` set, `status: 'loading'`) until `commitNavigation`
+   * is called for it, modelling a real browser navigation that has not finished yet. */
+  deferCommit: boolean;
 }
 
 export type FailableApi =
@@ -121,6 +127,8 @@ export interface ChromeFake {
   state: FakeState;
   fire: FakeFire;
   failNext(api: FailableApi, times: number, message: string): void;
+  /** Moves `pendingUrl` -> `url` and sets `status: 'complete'`, as Chrome does on commit. */
+  commitNavigation(tabId: number): void;
 }
 
 const NO_GROUP = -1;
@@ -147,7 +155,7 @@ function toChromeTab(tab: FakeTab): chrome.tabs.Tab {
     frozen: false,
     autoDiscardable: true,
     lastAccessed: 0,
-    status: 'complete',
+    status: tab.status,
   };
 }
 
@@ -184,6 +192,7 @@ export function createChromeFake(): ChromeFake {
     createdTabs: [],
     nextId: { tab: 1, window: 1, group: 1 },
     fileAccessAllowed: false,
+    deferCommit: false,
   };
 
   // One focused, empty, normal window so `tabs.create()` without a windowId works.
@@ -303,6 +312,7 @@ export function createChromeFake(): ChromeFake {
       groupId: NO_GROUP,
       discarded: false,
       incognito: false,
+      status: 'complete',
     };
     state.nextId.tab += 1;
     const position = Math.min(props.index ?? strip.length, strip.length);
@@ -500,6 +510,13 @@ export function createChromeFake(): ChromeFake {
         active: props.active,
         index: props.index,
       });
+      // Models a real browser: `tabs.create` resolves before navigation commits. The URL
+      // moves from `pendingUrl` to `url` only when `commitNavigation` is called for this tab.
+      if (state.deferCommit && props.url !== undefined) {
+        tab.pendingUrl = tab.url;
+        tab.url = '';
+        tab.status = 'loading';
+      }
       // Recorded only after insertTab succeeds: a rejected create (failNext, or an
       // unknown windowId thrown by requireWindow inside insertTab) must not appear here.
       state.createdTabs.push({ ...props });
@@ -611,6 +628,11 @@ export function createChromeFake(): ChromeFake {
         throw new Error('Cannot discard active tab');
       }
       tab.discarded = true;
+      // Chrome does NOT reject when the tab's navigation has not committed yet: it silently
+      // unloads the still-blank tab instead, permanently losing the intended URL.
+      if (tab.url === '') {
+        tab.status = 'unloaded';
+      }
       return toChromeTab(tab);
     },
     async get(tabId: number): Promise<chrome.tabs.Tab> {
@@ -880,6 +902,14 @@ export function createChromeFake(): ChromeFake {
     fire,
     failNext(apiName, times, message) {
       failures.set(apiName, { remaining: times, message });
+    },
+    commitNavigation(tabId) {
+      const tab = requireTab(tabId);
+      if (tab.pendingUrl !== undefined) {
+        tab.url = tab.pendingUrl;
+        tab.pendingUrl = undefined;
+      }
+      tab.status = 'complete';
     },
   };
 }
