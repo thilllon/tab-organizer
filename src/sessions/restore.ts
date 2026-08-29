@@ -200,3 +200,278 @@ export function planRestore(session: Session, options: RestoreOptions): RestoreP
     totalTabs,
   };
 }
+
+// ---------------------------------------------------------------------------
+// executeRestore (Chrome calls; runs in the dashboard page, never in the SW)
+// ---------------------------------------------------------------------------
+
+const RETRY_DELAY_MS = 100;
+
+export function isTabsCannotBeEditedError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+  return message.toLowerCase().includes('cannot be edited');
+}
+
+export async function withRetryOnce<T>(
+  fn: () => Promise<T>,
+  shouldRetry: (err: unknown) => boolean,
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (!shouldRetry(err)) {
+      throw err;
+    }
+    await delay(RETRY_DELAY_MS);
+    return fn();
+  }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return String(err);
+}
+
+interface OpenedWindow {
+  windowId: number;
+  placeholderId: number | undefined;
+}
+
+function currentScreen(
+  hooks: RestoreHooks,
+): { availWidth: number; availHeight: number } | undefined {
+  if (hooks.screen) {
+    return hooks.screen;
+  }
+  if (typeof screen !== 'undefined') {
+    return { availWidth: screen.availWidth, availHeight: screen.availHeight };
+  }
+  return undefined;
+}
+
+async function openTargetWindow(
+  target: RestoreTarget,
+  snapshot: WindowSnapshot,
+  hooks: RestoreHooks,
+): Promise<OpenedWindow> {
+  if (target.kind === 'window') {
+    return { windowId: target.windowId, placeholderId: undefined };
+  }
+  const createData: chrome.windows.CreateData = {
+    url: 'about:blank',
+    focused: false,
+    state:
+      snapshot.state === 'minimized' || snapshot.state === 'fullscreen' ? 'normal' : snapshot.state,
+  };
+  if (snapshot.state === 'normal' && snapshot.bounds) {
+    const screenInfo = currentScreen(hooks);
+    const bounds = screenInfo ? clampToScreen(snapshot.bounds, screenInfo) : snapshot.bounds;
+    if (bounds) {
+      createData.left = bounds.left;
+      createData.top = bounds.top;
+      createData.width = bounds.width;
+      createData.height = bounds.height;
+    }
+  }
+  let win: chrome.windows.Window | undefined;
+  try {
+    win = await chrome.windows.create(createData);
+  } catch (err) {
+    // Chrome refuses bounds it cannot honour (multi-monitor layouts changed, etc.): retry once
+    // without left/top/width/height; anything else propagates to executeRestore's per-window catch.
+    if (createData.left === undefined || !isBoundsError(err)) {
+      throw err;
+    }
+    win = await chrome.windows.create({
+      url: createData.url,
+      focused: createData.focused,
+      state: createData.state,
+    });
+  }
+  if (win === undefined || win.id === undefined) {
+    throw new Error('windows.create returned no window');
+  }
+  const placeholderId = win.tabs?.[0]?.id;
+  return { windowId: win.id, placeholderId };
+}
+
+function isBoundsError(err: unknown): boolean {
+  return errorMessage(err).toLowerCase().includes('bounds');
+}
+
+async function createChunk(
+  chunk: PlannedTab[],
+  windowId: number,
+  errors: RestoreResult['errors'],
+): Promise<(number | undefined)[]> {
+  return Promise.all(
+    chunk.map(async (tab) => {
+      try {
+        const created = await withRetryOnce(
+          () => chrome.tabs.create({ windowId, url: tab.url, pinned: tab.pinned, active: false }),
+          isTabsCannotBeEditedError,
+        );
+        return created.id;
+      } catch (err) {
+        errors.push({ url: tab.url, message: errorMessage(err) });
+        return undefined;
+      }
+    }),
+  );
+}
+
+/**
+ * Discards the chunk's non-active, non-pinned tabs and returns the ids to keep using: Chrome may
+ * replace a discarded tab (new id), and `tabs.discard` resolves with the tab that now exists.
+ */
+async function discardChunk(
+  chunk: PlannedTab[],
+  ids: (number | undefined)[],
+): Promise<(number | undefined)[]> {
+  const result = [...ids];
+  for (let i = 0; i < chunk.length; i++) {
+    const id = ids[i];
+    const tab = chunk[i];
+    if (id === undefined || tab.active || tab.pinned) {
+      continue;
+    }
+    try {
+      const discarded = await chrome.tabs.discard(id);
+      result[i] = discarded?.id ?? id;
+    } catch {
+      // "still initializing" and friends: discarding is best-effort
+    }
+  }
+  return result;
+}
+
+async function applyGroups(
+  planned: PlannedWindow,
+  created: (number | undefined)[],
+  windowId: number,
+): Promise<void> {
+  const groupIds: (number | undefined)[] = [];
+  for (let gi = 0; gi < planned.snapshot.groups.length; gi++) {
+    const group = planned.snapshot.groups[gi];
+    const ids = created.filter(
+      (id, i): id is number => id !== undefined && planned.tabs[i]?.groupIndex === gi,
+    );
+    if (ids.length === 0) {
+      groupIds.push(undefined);
+      continue;
+    }
+    const tabIds: [number, ...number[]] = [ids[0], ...ids.slice(1)];
+    const groupId = await chrome.tabs.group({ tabIds, createProperties: { windowId } });
+    await chrome.tabGroups.update(groupId, { title: group.title, color: group.color });
+    groupIds.push(groupId);
+  }
+  // Collapse last: the placeholder is still the active tab, so collapsing cannot hit the active tab.
+  for (let gi = 0; gi < groupIds.length; gi++) {
+    const groupId = groupIds[gi];
+    if (groupId === undefined) {
+      continue;
+    }
+    await chrome.tabGroups.update(groupId, { collapsed: planned.snapshot.groups[gi].collapsed });
+  }
+}
+
+async function finishWindow(
+  plan: RestorePlan,
+  planned: PlannedWindow,
+  created: (number | undefined)[],
+  opened: OpenedWindow,
+): Promise<void> {
+  const activeIndex = planned.tabs.findIndex((tab) => tab.active);
+  const activeId = created[activeIndex] ?? created.find((id) => id !== undefined);
+  if (plan.target.kind === 'newWindows' && activeId !== undefined) {
+    await chrome.tabs.update(activeId, { active: true });
+  }
+  if (opened.placeholderId !== undefined) {
+    try {
+      await chrome.tabs.remove(opened.placeholderId);
+    } catch {
+      // already gone
+    }
+  }
+  const state = planned.snapshot.state;
+  if (plan.target.kind === 'newWindows' && (state === 'minimized' || state === 'fullscreen')) {
+    try {
+      await chrome.windows.update(opened.windowId, { state });
+    } catch {
+      // platform may refuse; the window still exists
+    }
+  }
+}
+
+export async function executeRestore(
+  plan: RestorePlan,
+  hooks: RestoreHooks = {},
+): Promise<RestoreResult> {
+  const errors: RestoreResult['errors'] = [];
+  let restored = 0;
+  let done = 0;
+  let focusWindowId: number | undefined;
+  let lastWindowId: number | undefined;
+
+  for (const planned of plan.windows) {
+    if (hooks.signal?.aborted) {
+      break;
+    }
+    let opened: OpenedWindow;
+    try {
+      opened = await openTargetWindow(plan.target, planned.snapshot, hooks);
+    } catch (err) {
+      // Spec §6 "belt and braces": a failed windows.create costs this window only.
+      for (const tab of planned.tabs) {
+        errors.push({ url: tab.url, message: errorMessage(err) });
+      }
+      done += planned.tabs.length;
+      hooks.onProgress?.(done, plan.totalTabs);
+      continue;
+    }
+    const created: (number | undefined)[] = [];
+
+    for (const chunk of planned.chunks) {
+      const ids = await createChunk(chunk, opened.windowId, errors);
+      created.push(...(planned.lazy ? await discardChunk(chunk, ids) : ids));
+      done += chunk.length;
+      hooks.onProgress?.(done, plan.totalTabs);
+      if (hooks.signal?.aborted) {
+        break;
+      }
+      await delay(0);
+    }
+
+    restored += created.filter((id) => id !== undefined).length;
+    // Groups only after all tabs of this window exist (groups cannot be empty).
+    await applyGroups(planned, created, opened.windowId);
+    await finishWindow(plan, planned, created, opened);
+
+    lastWindowId = opened.windowId;
+    if (planned.snapshot.focused) {
+      focusWindowId = opened.windowId;
+    }
+    if (hooks.signal?.aborted) {
+      break;
+    }
+  }
+
+  const toFocus = focusWindowId ?? lastWindowId;
+  if (plan.target.kind === 'newWindows' && toFocus !== undefined) {
+    try {
+      await chrome.windows.update(toFocus, { focused: true });
+    } catch {
+      // window may have been closed by the user mid-restore
+    }
+  }
+
+  return { restored, skipped: plan.skipped, errors };
+}
