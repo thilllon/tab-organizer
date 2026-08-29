@@ -58,25 +58,35 @@ tab-organizer/
 │   ├── types.ts               # Shared TypeScript types
 │   └── global.d.ts            # Vite client type declarations
 ├── public/
-│   ├── img/                   # Extension logos (16/32/48/128px)
-│   └── icons/                 # Additional icon assets
+│   └── img/                   # Extension logos (SVG, ICO, 16/32/48/128px PNG)
 ├── scripts/
-│   ├── zip.ts                 # Packages extension into ZIP for Web Store
+│   ├── zip.ts                 # Packages dist/ into package/<name>-<version>.zip for Web Store
 │   ├── generate-ico.ts        # Generates multi-size .ico from SVG (macOS: qlmanage + sips)
 │   ├── prepare-registration.ts # Full visual-asset pipeline (build, screenshots, video, promo images)
 │   ├── promo-template.html    # HTML template for CWS promotional images
 │   ├── tab-bar-template.html  # HTML template for tab bar mockup screenshots
 │   └── get-window-id.py       # macOS window-bounds helper for screenshot cropping
-├── .github/workflows/
-│   ├── ci.yml                 # CI pipeline (Node 20/22/24 matrix)
-│   └── codeql.yml             # CodeQL security scanning
+├── screenshots/               # Generated CWS assets (screenshots, promo images, demo video)
+├── docs/
+│   ├── description.md         # Chrome Web Store listing description
+│   └── privacy.md             # Chrome Web Store privacy disclosures
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml             # CI pipeline (typecheck, format, build; tools via mise)
+│   │   └── codeql.yml         # CodeQL security scanning
+│   └── dependabot.yml         # Weekly npm + GitHub Actions updates (minor/patch grouped)
 ├── options.html               # Options page HTML entry
 ├── vite.config.ts             # Vite + CRX plugin config (manifest defined here)
 ├── tsconfig.json              # TypeScript config (strict mode)
+├── tsconfig.node.json         # TypeScript config for vite.config.ts
 ├── biome.json                 # Biome linter/formatter config
-├── lefthook.yml               # Git hooks (pre-commit: biome check)
-├── mise.toml                  # Tool version manager (Node, pnpm, Python)
+├── .prettierrc.json           # Prettier config (Markdown/YAML; pnpm-lock.yaml ignored via .prettierignore)
+├── .release-it.json           # release-it config (hooks run prepare-registration, build, zip)
+├── lefthook.yml               # Git hooks (pre-commit: format; pre-push: typecheck/test/build/docs)
+├── mise.toml                  # Tool versions (Node, pnpm, Python, uv, ruff, lefthook) + `format` task (ruff)
+├── pyproject.toml             # Python deps for scripts/ (pyobjc Quartz) + ruff config
 ├── components.json            # shadcn/ui configuration
+├── PRIVACY_POLICY.md          # Privacy policy (update when permissions change)
 └── package.json
 ```
 
@@ -153,18 +163,19 @@ Permissions: `tabs`, `tabGroups`, `storage`
 
 ## Tech Stack
 
-| Category         | Tool                                    |
-| ---------------- | --------------------------------------- |
-| Language         | TypeScript (strict mode, ESNext target) |
-| UI Framework     | React 19                                |
-| CSS              | Tailwind CSS 4                          |
-| UI Components    | shadcn/ui (Radix UI + CVA)              |
-| Build            | Vite 8 + @crxjs/vite-plugin             |
-| Linter/Formatter | Biome                                   |
-| Git Hooks        | Lefthook                                |
-| Testing          | Vitest + Playwright                     |
-| CI               | GitHub Actions (Node 20/22/24 matrix)   |
-| Tool Versions    | mise                                    |
+| Category         | Tool                                                           |
+| ---------------- | -------------------------------------------------------------- |
+| Language         | TypeScript (strict mode, ESNext target)                        |
+| UI Framework     | React 19                                                       |
+| CSS              | Tailwind CSS 4                                                 |
+| UI Components    | shadcn/ui (Radix UI + CVA)                                     |
+| Build            | Vite 8 + @crxjs/vite-plugin                                    |
+| Linter/Formatter | Biome (JS/TS/CSS) + Prettier (Markdown/YAML) + ruff (Python)   |
+| Git Hooks        | Lefthook                                                       |
+| Testing          | Vitest (Playwright is used for release screenshots, not tests) |
+| Release          | release-it (GitHub release + ZIP via `scripts/zip.ts`)         |
+| CI               | GitHub Actions (tool versions from `mise.toml`) + Dependabot   |
+| Tool Versions    | mise                                                           |
 
 ---
 
@@ -172,11 +183,11 @@ Permissions: `tabs`, `tabGroups`, `storage`
 
 ```bash
 pnpm dev              # Start Vite dev server (port 5173)
-pnpm build            # TypeScript check + Vite build -> dist/
+pnpm build            # Vite build -> dist/ (no type check; run typecheck separately)
 pnpm typecheck        # Type check only (tsc --noEmit)
-pnpm format           # Biome check --write + Prettier (md/mdx) + mise format
+pnpm format           # Biome check --write + Prettier (md/mdx/yml/yaml) + mise format (ruff)
 pnpm test             # Run tests (vitest)
-pnpm release          # Bump version, build, and package into ZIP (via release-it)
+pnpm release          # release-it: regenerate CWS assets, bump version, build, ZIP, GitHub release
 ```
 
 ### Local Development Workflow
@@ -197,7 +208,7 @@ pnpm release          # Bump version, build, and package into ZIP (via release-i
 - **Line width**: 100 characters
 - **Line endings**: LF
 - **Quotes**: Single quotes for JS/TS, double quotes for JSX
-- **Semicolons**: Only when needed (ASI-safe)
+- **Semicolons**: Always
 - **Trailing commas**: Always
 - **Block statements**: Required (`useBlockStatements: error`)
 - **Import organization**: Automatic via Biome assist
@@ -214,7 +225,7 @@ pnpm release          # Bump version, build, and package into ZIP (via release-i
 - **Commit format**: Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - **DO NOT** add `Co-Authored-By` lines to commit messages
 - **Pre-commit hook**: `pnpm format` (Biome check + Prettier + mise format, staged files auto-fixed)
-- **Pre-push hook**: `pnpm typecheck`
+- **Pre-push hook** (parallel): `pnpm typecheck`, `pnpm test`, `pnpm build`, and an `update-docs` step that, when `src/**`, `scripts/**`, `package.json`, or `vite.config.ts` changed in the last commit, runs `claude -p` to refresh `AGENTS.md`/`README.md` and amends the commit
 
 ### Component Patterns
 
@@ -245,7 +256,7 @@ The manifest is generated at build time from `vite.config.ts`. Key points:
 
 ### Storage Schema
 
-Settings are stored in `chrome.storage.sync` with `SortSettings` interface. Default values are defined in `src/background/index.ts` as `DEFAULT_SETTINGS`.
+Settings are stored in `chrome.storage.sync` with `SortSettings` interface. Default values are defined in `src/background/index.ts` as `DEFAULT_SETTINGS`. A `chrome.runtime.onInstalled` listener additionally writes `installedVersion`, `newInstall`, and `newUpdate` keys on install/update.
 
 ---
 
@@ -255,12 +266,14 @@ Settings are stored in `chrome.storage.sync` with `SortSettings` interface. Defa
 
 Runs on push to `main`, PRs to `main`, and manual dispatch:
 
-1. Setup mise tools
-2. Setup pnpm + Node.js (matrix: 20, 22, 24)
+1. Setup mise tools (`jdx/mise-action`; installs Node, pnpm, ruff, etc. from `mise.toml` — no Node version matrix)
+2. Restore the pnpm store cache (keyed on `pnpm-lock.yaml`)
 3. `pnpm install --frozen-lockfile`
 4. `pnpm typecheck`
-5. `pnpm format` (checks formatting)
+5. `pnpm format` (Biome check + Prettier + ruff; fails on unfixable lint errors)
 6. `pnpm build`
+
+Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates, grouping minor/patch bumps.
 
 ### CodeQL (`codeql.yml`)
 
@@ -278,7 +291,7 @@ Unit tests use **Vitest** and live adjacent to their source files. Pure sorting 
 - `findDuplicateTabs` — duplicate detection, `pendingUrl` fallback, special scheme handling
 - `sortByTitleOrUrl` — title/URL sorting, pinned tab exclusion, edge cases (empty arrays, mixed schemes, large diverse tab sets)
 
-Playwright is also installed for potential end-to-end Chrome extension testing
+Playwright is also installed, but it is currently used by `scripts/prepare-registration.ts` to drive Chromium for release screenshots and the demo video — there are no Playwright end-to-end tests yet.
 
 ---
 

@@ -17,7 +17,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "format": "biome check --write . && prettier --write '**/*.{md,mdx}' && mise format",
+    "format": "biome check --write . && prettier --write '**/*.{md,mdx,yml,yaml}' && mise format",
     "test": "vitest run",
     "release": "release-it"
   },
