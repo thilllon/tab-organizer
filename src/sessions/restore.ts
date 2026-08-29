@@ -267,11 +267,16 @@ async function openTargetWindow(
   if (target.kind === 'window') {
     return { windowId: target.windowId, placeholderId: undefined };
   }
+  // Always created normal + unfocused; a non-'normal' snapshot state is applied post-hoc in
+  // finishWindow(). Chrome (verified in Chrome for Testing 151) rejects windows.create with
+  // "Invalid value for state" for `{ state: 'minimized', focused: true }`, for
+  // `{ state: 'maximized' | 'fullscreen', focused: false }`, and for any non-'normal' state
+  // combined with left/top/width/height -- so no non-'normal' state can be created here at all
+  // without either stealing focus or losing the bounds.
   const createData: chrome.windows.CreateData = {
     url: 'about:blank',
     focused: false,
-    state:
-      snapshot.state === 'minimized' || snapshot.state === 'fullscreen' ? 'normal' : snapshot.state,
+    state: 'normal',
   };
   if (snapshot.state === 'normal' && snapshot.bounds) {
     const screenInfo = currentScreen(hooks);
@@ -446,7 +451,8 @@ async function applyGroups(
 
 /**
  * Activates the snapshot's active tab, removes the `about:blank` placeholder, and applies
- * minimized/fullscreen post-hoc. Activation and the post-hoc state change are each best-effort:
+ * minimized/maximized/fullscreen post-hoc (see `openTargetWindow`: `windows.create` cannot take
+ * any of them). Activation and the post-hoc state change are each best-effort:
  * a rejection (e.g. the user closed the just-restored active tab) costs one `errors` entry and
  * never blocks placeholder removal or the rest of the restore.
  */
@@ -477,7 +483,7 @@ async function finishWindow(
     }
   }
   const state = planned.snapshot.state;
-  if (plan.target.kind === 'newWindows' && (state === 'minimized' || state === 'fullscreen')) {
+  if (plan.target.kind === 'newWindows' && state !== 'normal') {
     try {
       await chrome.windows.update(opened.windowId, { state });
     } catch (err) {

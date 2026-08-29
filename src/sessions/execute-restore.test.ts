@@ -599,16 +599,20 @@ describe('executeRestore', () => {
     vi.restoreAllMocks();
   });
 
-  it('passes a maximized state straight to windows.create and never patches state afterwards', async () => {
+  it('creates a maximized window as normal, then maximizes it after the tabs exist', async () => {
+    // Chrome for Testing 151 rejects `windows.create({ state: 'maximized', focused: false })` with
+    // "Invalid value for state", so maximized takes the same post-hoc path as minimized/fullscreen.
     const createSpy = vi.spyOn(chrome.windows, 'create');
     const updateSpy = vi.spyOn(chrome.windows, 'update');
 
     const result = await executeRestore(makePlan([WINDOW_MAXIMIZED]));
 
     expect(result.errors).toEqual([]);
-    expect(createSpy.mock.calls[0]?.[0]?.state).toBe('maximized');
+    expect(createSpy.mock.calls[0]?.[0]?.state).toBe('normal');
+    expect(createSpy.mock.calls[0]?.[0]?.focused).toBe(false);
     const stateCalls = updateSpy.mock.calls.filter(([, info]) => info.state !== undefined);
-    expect(stateCalls).toEqual([]);
+    expect(stateCalls).toHaveLength(1);
+    expect(stateCalls[0]?.[1]).toEqual({ state: 'maximized' });
     vi.restoreAllMocks();
   });
 
