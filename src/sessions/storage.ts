@@ -72,6 +72,11 @@ function sortNewestFirst(sessions: SessionSummary[]): SessionSummary[] {
   return [...sessions].sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
+/** Byte length (not UTF-16 code units) — matches Chrome's quota accounting. */
+function byteLength(json: string): number {
+  return new TextEncoder().encode(json).length;
+}
+
 async function readIndex(): Promise<SessionIndex> {
   const raw: Record<string, unknown> = await chrome.storage.local.get(INDEX_KEY);
   return migrateIndex(raw[INDEX_KEY]);
@@ -101,7 +106,7 @@ async function readBody(id: SessionId): Promise<Session | undefined> {
 
 /** Body first, then index (spec §4). Must be called inside withLock. */
 async function writeBodyAndIndex(body: Session): Promise<void> {
-  const bytes = JSON.stringify(body).length;
+  const bytes = byteLength(JSON.stringify(body));
   await chrome.storage.local.set({ [sessionKey(body.id)]: body });
   const index = await readIndex();
   const others = index.sessions.filter((summary) => summary.id !== body.id);
@@ -227,7 +232,7 @@ export const sessionRepo = {
         } catch {
           continue;
         }
-        kept.push(toSummary(session, JSON.stringify(record).length));
+        kept.push(toSummary(session, byteLength(JSON.stringify(record))));
         reindexed += 1;
       }
 

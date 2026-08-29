@@ -7,9 +7,11 @@ import {
   type SessionIndex,
   type WindowSnapshot,
 } from '@/types';
+import { UnknownSchemaVersionError } from './migrate';
 import {
   HISTORY_META_KEY,
   INDEX_KEY,
+  LOCK_NAME,
   SETTINGS_KEY,
   sessionKey,
   sessionRepo,
@@ -94,6 +96,12 @@ describe('toSummary', () => {
   });
 });
 
+describe('LOCK_NAME', () => {
+  it('is the cross-context contract between the service worker and the dashboard', () => {
+    expect(LOCK_NAME).toBe('tab-organizer:sessions');
+  });
+});
+
 describe('withLock', () => {
   it('runs the callback and returns its value', async () => {
     await expect(withLock(async () => 42)).resolves.toBe(42);
@@ -134,6 +142,48 @@ describe('withLock', () => {
   });
 });
 
+describe('withLock without navigator.locks', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('serializes concurrent callbacks via the module-level fallback chain', async () => {
+    vi.stubGlobal('navigator', {});
+    vi.resetModules();
+    const { withLock: fallbackWithLock } = await import('./storage');
+
+    const order: string[] = [];
+    const first = fallbackWithLock(async () => {
+      order.push('first:start');
+      await Promise.resolve();
+      await Promise.resolve();
+      order.push('first:end');
+    });
+    const second = fallbackWithLock(async () => {
+      order.push('second:start');
+      order.push('second:end');
+    });
+
+    await Promise.all([first, second]);
+
+    expect(order).toEqual(['first:start', 'first:end', 'second:start', 'second:end']);
+  });
+
+  it('keeps working after a rejected callback and the rejection reaches its caller', async () => {
+    vi.stubGlobal('navigator', {});
+    vi.resetModules();
+    const { withLock: fallbackWithLock } = await import('./storage');
+
+    await expect(
+      fallbackWithLock(async () => {
+        throw new Error('first fails');
+      }),
+    ).rejects.toThrow('first fails');
+
+    await expect(fallbackWithLock(async () => 'ok')).resolves.toBe('ok');
+  });
+});
+
 describe('sessionRepo.put / get / listSummaries', () => {
   it('writes the body under session:<id> and a summary in the index', async () => {
     const fake = getChromeFake();
@@ -152,6 +202,21 @@ describe('sessionRepo.put / get / listSummaries', () => {
       updatedAt: 5_000,
     });
     expect(index?.sessions[0].bytes).toBe(JSON.stringify(body).length);
+  });
+
+  it('reports byte-accurate size (UTF-8), not UTF-16 code units, for non-ASCII content', async () => {
+    const session = makeSession({
+      windows: [makeWindow(['https://a.com/'])],
+    });
+    session.windows[0].tabs[0].title = '日本語';
+
+    await sessionRepo.put(session);
+
+    const body = getChromeFake().state.local.get(sessionKey('id-a'));
+    const utf16Length = JSON.stringify(body).length;
+    const index = await readIndex();
+
+    expect(index?.sessions[0].bytes).toBeGreaterThan(utf16Length);
   });
 
   it('writes the body before the index', async () => {
@@ -217,6 +282,25 @@ describe('sessionRepo.put / get / listSummaries', () => {
 
     const ids = (await sessionRepo.listSummaries()).map((s) => s.id).sort();
     expect(ids).toEqual(['id-a', 'id-b']);
+  });
+});
+
+describe('sessionRepo migration error propagation', () => {
+  it('get rejects with UnknownSchemaVersionError for a body from a future schema', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(sessionKey('future'), {
+      ...makeSession({ id: 'future' }),
+      schemaVersion: 2,
+    });
+
+    await expect(sessionRepo.get('future')).rejects.toBeInstanceOf(UnknownSchemaVersionError);
+  });
+
+  it('listSummaries rejects with UnknownSchemaVersionError for an index from a future schema', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(INDEX_KEY, { schemaVersion: 2, sessions: [] });
+
+    await expect(sessionRepo.listSummaries()).rejects.toBeInstanceOf(UnknownSchemaVersionError);
   });
 });
 
