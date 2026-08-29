@@ -3,7 +3,7 @@
 Status: **approved design — decisions recorded in §15** (2026-08-29)
 Branch: `feat/sessions`
 
-This spec was produced by a three-way design panel (identity-first / MV3-robustness / user-first lenses), judged, synthesized, and then cross-checked against an independent MV3 + privacy critique. Repo facts were verified against `src/background/index.ts`, `vite.config.ts`, `src/types.ts`, `docs/description.md`, `docs/privacy.md`, `PRIVACY_POLICY.md`, `lefthook.yml`, `.github/workflows/ci.yml`.
+This spec was produced by a three-way design panel (identity-first / MV3-robustness / user-first lenses), judged, synthesized, and then cross-checked against an independent MV3 + privacy critique. Repo facts were verified against `src/background/index.ts`, `vite.config.ts`, `src/types.ts`, `docs/README.md`, `PRIVACY_POLICY.md`, `lefthook.yml`, `.github/workflows/ci.yml`.
 
 Owner decisions (2026-08-29): history snapshots ON by default; `favicon` permission included; headline relaunch as **v7.0.0**; first store release only after Phases 0–5 are complete; lazy restore default `'auto'`. See §15.
 
@@ -263,11 +263,11 @@ No `host_permissions`, no `default_popup`, no `side_panel`, no `downloads`, no `
 
 ## 10. Privacy / listing text that must change (shipped in the same PR as the manifest change)
 
-- `docs/description.md` "Only requests the three permissions it absolutely needs" → list all (with one-line reasons: contextMenus "adds Save/Open items to the icon's right-click menu"; unlimitedStorage "lets large saved sessions exceed the 10 MB local quota; data stays on device"; favicon "shows site icons from Chrome's local cache, no network"; alarms (P3) "timer for optional automatic snapshots, off by default").
-- `docs/description.md` "The service worker only activates when you click the icon" → "The service worker runs only when you click the icon, use its right-click menu or a keyboard shortcut — and, only if you turn on automatic snapshots, briefly on the interval you choose. It never contacts the network."
-- `docs/description.md` storage bullet → "…preferences via Chrome sync storage; saved sessions and snapshots (tab URLs, titles, group names, window layout) in local storage on this device only."
+- `docs/README.md` (Description section) "Only requests the three permissions it absolutely needs" → list all (with one-line reasons: contextMenus "adds Save/Open items to the icon's right-click menu"; unlimitedStorage "lets large saved sessions exceed the 10 MB local quota; data stays on device"; favicon "shows site icons from Chrome's local cache, no network"; alarms (P3) "timer for optional automatic snapshots, off by default").
+- `docs/README.md` (Description section) "The service worker only activates when you click the icon" → "The service worker runs only when you click the icon, use its right-click menu or a keyboard shortcut — and, only if you turn on automatic snapshots, briefly on the interval you choose. It never contacts the network."
+- `docs/README.md` (Description section) storage bullet → "…preferences via Chrome sync storage; saved sessions and snapshots (tab URLs, titles, group names, window layout) in local storage on this device only."
 - Add a "SESSIONS" feature section + FAQ "Where are my saved sessions stored?" (local, not synced, never uploaded, delete anytime, Export for backup). v7.0.0 relaunch: the hero becomes "One-click tab sorting + a full session manager" — the one-click/no-popup promise stays in the first paragraph, followed by "Right-click the icon → Save session / Open Sessions." History being on by default must be disclosed up front ("automatic snapshots every 5 minutes, stored only on this device, can be turned off").
-- `docs/privacy.md` storage section: replace "No personal or browsing data is stored" with the local-only disclosure; add sections for contextMenus, unlimitedStorage, favicon, (P3) alarms.
+- `docs/README.md` Privacy → Permission justifications: replace "No personal or browsing data is stored" with the local-only disclosure; add sections for contextMenus, unlimitedStorage, favicon, (P3) alarms.
 - `PRIVACY_POLICY.md`: Data Collection ("does not collect or transmit; when you save a session or enable automatic snapshots, tab URLs and titles are stored locally on your device only"), Permissions list, Data Usage, new "Data retention" paragraph (snapshot ring buffer, user deletion incl. "Delete all session data", uninstall clears), bump Last Updated.
 - CWS privacy form: still "does not collect or transmit"; review the "Web history" data-type row with the "stored locally, not transmitted" justification.
 - `AGENTS.md`: Runtime Model (three contexts), data flow, directory tree, permissions table, storage keys, "single write path through `sessionRepo` under the Web Lock" rule, "never add tab listeners to the SW" rule. `README.md` where it repeats claims.
@@ -305,7 +305,7 @@ src/dashboard/hooks/ useSessionIndex.ts useSessionBody.ts useSessionSettings.ts 
 src/components/ui/                     # via shadcn CLI as needed: input, dialog, dropdown-menu, badge, tooltip, separator, switch, scroll-area, collapsible
 src/options/Options.tsx                # Sessions card (P1); history toggle (P3)
 src/test/setup.ts, chrome-fake.ts      # typed in-memory chrome.storage.local (+onChanged, getKeys, getBytesInUse), tabs/windows/tabGroups, alarms, navigator.locks
-docs/README.md (or docs/description.md) docs/privacy.md PRIVACY_POLICY.md AGENTS.md README.md
+docs/README.md (listing + privacy answers; description.txt is generated) PRIVACY_POLICY.md AGENTS.md README.md
 ```
 
 ---
