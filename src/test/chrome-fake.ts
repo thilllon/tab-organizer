@@ -493,7 +493,6 @@ export function createChromeFake(): ChromeFake {
     },
     async create(props: chrome.tabs.CreateProperties): Promise<chrome.tabs.Tab> {
       maybeFail('tabs.create');
-      state.createdTabs.push({ ...props });
       const windowId = props.windowId ?? focusedWindow().id;
       const tab = insertTab(windowId, {
         url: props.url,
@@ -501,6 +500,9 @@ export function createChromeFake(): ChromeFake {
         active: props.active,
         index: props.index,
       });
+      // Recorded only after insertTab succeeds: a rejected create (failNext, or an
+      // unknown windowId thrown by requireWindow inside insertTab) must not appear here.
+      state.createdTabs.push({ ...props });
       return toChromeTab(tab);
     },
     async update(tabId: number, props: chrome.tabs.UpdateProperties): Promise<chrome.tabs.Tab> {
@@ -891,7 +893,15 @@ declare global {
   var __chromeFake: ChromeFake | undefined;
 }
 
-/** Returns the fake installed by `src/test/setup.ts` for the current test. */
+/**
+ * Returns the fake installed by `src/test/setup.ts` for the current test.
+ *
+ * A module imported statically (at the top of a test file) evaluates before any
+ * `beforeEach`, so listeners it registers at import time land on setup.ts's
+ * throw-away module-level fake, not the one this function returns — load such a
+ * module per test instead (`vi.resetModules(); await import(...)`) if its listeners
+ * need to be reachable via `fire.*`. See the comment in setup.ts.
+ */
 export function getChromeFake(): ChromeFake {
   const fake = globalThis.__chromeFake;
   if (!fake) {

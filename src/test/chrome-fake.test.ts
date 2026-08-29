@@ -31,6 +31,13 @@ describe('chrome fake: tab strip', () => {
     );
   });
 
+  it('does not record a rejected tabs.create in state.createdTabs', async () => {
+    await expect(chrome.tabs.create({ windowId: 999, url: 'https://a.test' })).rejects.toThrow(
+      'No window with id: 999.',
+    );
+    expect(getChromeFake().state.createdTabs).toEqual([]);
+  });
+
   it('re-indexes after tabs.remove', async () => {
     const a = await chrome.tabs.create({ url: 'https://a.test' });
     const b = await chrome.tabs.create({ url: 'https://b.test' });

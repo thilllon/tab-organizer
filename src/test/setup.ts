@@ -48,9 +48,12 @@ function installLocksShim(): void {
 
 installLocksShim();
 
-// A chrome object must exist at module-evaluation time: `src/background/sessions.ts` (Task 9)
-// registers `chrome.runtime.onInstalled.addListener(...)` in its module body, and a static
-// `import` in its test runs before any `beforeEach`. This instance is replaced per test below.
+// A module-level fake so modules that register chrome listeners at import time
+// (e.g. src/background/index.ts) can be imported at all. It is NOT the per-test
+// fake: tests that need those listeners must load the module per test with
+// `vi.resetModules(); await import('./the-module');` inside the test body, after
+// beforeEach has installed the fresh fake below. A static import will register
+// on this discarded instance and fire.* will never reach it.
 Object.assign(globalThis, { chrome: createChromeFake().chrome });
 
 beforeEach(() => {
