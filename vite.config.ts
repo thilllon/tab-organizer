@@ -52,6 +52,10 @@ export default defineConfig(() => {
     build: {
       emptyOutDir: true,
       rollupOptions: {
+        input: {
+          options: 'options.html',
+          dashboard: 'dashboard.html',
+        },
         output: {
           chunkFileNames: 'assets/chunk-[hash].js',
         },
