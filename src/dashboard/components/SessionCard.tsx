@@ -1,4 +1,4 @@
-import { Ellipsis, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronRight, Ellipsis, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { type KeyboardEvent, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { DeleteSessionDialog } from '@/dashboard/components/DeleteSessionDialog';
+import { WindowTree } from '@/dashboard/components/WindowTree';
+import { useSessionBody } from '@/dashboard/hooks/useSessionBody';
 import { errorMessage } from '@/dashboard/lib/errors';
 import { formatDateTime, formatSessionMeta } from '@/dashboard/lib/format';
 import { sessionRepo } from '@/sessions/storage';
@@ -23,12 +26,14 @@ export interface SessionCardProps {
   onRestoreWindow(session: Session, windowIndex: number): Promise<void>;
 }
 
-export function SessionCard({ summary, restoring, onRestore }: SessionCardProps) {
+export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: SessionCardProps) {
+  const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(summary.name);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
+  const body = useSessionBody(expanded ? summary.id : null);
 
   const startRename = () => {
     setDraft(summary.name);
@@ -72,7 +77,7 @@ export function SessionCard({ summary, restoring, onRestore }: SessionCardProps)
   const handleRestore = async () => {
     setBusy(true);
     try {
-      const session = await sessionRepo.get(summary.id);
+      const session = body.session ?? (await sessionRepo.get(summary.id));
       if (session === undefined) {
         setError('This session no longer exists.');
         return;
@@ -86,9 +91,27 @@ export function SessionCard({ summary, restoring, onRestore }: SessionCardProps)
     }
   };
 
+  const handleRestoreWindow = (windowIndex: number) => {
+    if (body.session === undefined) {
+      return;
+    }
+    setError(undefined);
+    void onRestoreWindow(body.session, windowIndex);
+  };
+
   return (
     <li className="rounded-lg border bg-background p-4">
       <div className="flex items-start gap-3">
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          aria-label={expanded ? 'Collapse' : 'Expand'}
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <ChevronRight className={`transition-transform ${expanded ? 'rotate-90' : ''}`} />
+        </Button>
+
         <div className="min-w-0 flex-1">
           {editing ? (
             <Input
@@ -146,6 +169,30 @@ export function SessionCard({ summary, restoring, onRestore }: SessionCardProps)
         <p role="alert" className="mt-2 text-xs text-destructive">
           {error}
         </p>
+      )}
+
+      {expanded && (
+        <div className="mt-3">
+          {body.loading && body.session === undefined && (
+            <p className="text-xs text-muted-foreground">Loading…</p>
+          )}
+          {body.error !== undefined && <p className="text-xs text-destructive">{body.error}</p>}
+          {body.session !== undefined && (
+            <ScrollArea className="max-h-96">
+              <div className="space-y-2 pr-3">
+                {body.session.windows.map((window, index) => (
+                  <WindowTree
+                    // biome-ignore lint/suspicious/noArrayIndexKey: windows have no stable id; order is fixed per render.
+                    key={`window-${index}`}
+                    window={window}
+                    index={index}
+                    onRestoreWindow={() => handleRestoreWindow(index)}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
       )}
 
       <DeleteSessionDialog
