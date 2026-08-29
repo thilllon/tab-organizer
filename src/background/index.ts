@@ -1,5 +1,6 @@
 import type { DuplicateTabHandling, SortSettings } from '@/types';
 import { findDuplicateTabs, hashStringToColor, sortByCustom, sortByTitleOrUrl } from './sort';
+import './sessions';
 
 // Default to "The Marvellous Suspender" as the de facto The Great Suspender replacement
 const THE_MARVELLOUS_SUSPENDER_EXTENSION_ID = 'noogafoofpebimajpfpamcfhoaifemoa';

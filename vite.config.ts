@@ -42,7 +42,13 @@ const manifest = defineManifest((env) => {
         matches: [],
       },
     ],
-    permissions: ['tabs', 'tabGroups', 'storage'],
+    permissions: ['tabs', 'tabGroups', 'storage', 'contextMenus', 'unlimitedStorage', 'favicon'],
+    // Shipped unbound on purpose: Chrome silently drops conflicting suggested_key values and the
+    // UI must not promise a key. Users bind them at chrome://extensions/shortcuts.
+    commands: {
+      'save-session': { description: 'Save the current window as a session' },
+      'open-dashboard': { description: 'Open the Sessions dashboard' },
+    },
   };
 });
 
