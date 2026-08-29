@@ -26,14 +26,17 @@ function toWindowState(state: chrome.windows.Window['state']): WindowSnapshot['s
 }
 
 function resolveTabUrl(tab: chrome.tabs.Tab, options: CaptureOptions): string | undefined {
+  const raw = tab.pendingUrl ?? tab.url;
   if (options.suspendedPrefix !== '' && isSuspended(tab, options.suspendedPrefix)) {
     try {
       return tabToUrl(tab, false, options.suspendedPrefixLen).href;
     } catch {
-      return undefined;
+      // Malformed suspended wrapper (empty/relative `uri`): keep the tab rather than
+      // dropping it silently. `sanitizeRestoreUrl` (restore path) decides what to do
+      // with a raw `chrome-extension://` url later.
+      return raw === undefined || raw === '' ? undefined : raw;
     }
   }
-  const raw = tab.pendingUrl ?? tab.url;
   if (raw === undefined || raw === '') {
     return undefined;
   }

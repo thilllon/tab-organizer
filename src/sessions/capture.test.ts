@@ -201,6 +201,36 @@ describe('captureWindows', () => {
     expect(snapshot.tabs[0].url).toBe(url);
   });
 
+  it('keeps a suspended tab with an empty uri parameter, falling back to the wrapper url', () => {
+    const url = `${SUSPENDED_PREFIX}uri=`;
+    const win = makeWindow({
+      tabs: tabsInOrder({ url, title: 'Docs', pinned: true }),
+    });
+
+    const [snapshot] = captureWindows([win], [], OPTIONS);
+
+    expect(snapshot.tabs[0]).toEqual({ url, title: 'Docs', pinned: true, active: false });
+  });
+
+  it('keeps a suspended tab with a relative uri, preserving active state and group', () => {
+    const groups = [makeGroup({ id: 100, title: 'G' })];
+    const url = `${SUSPENDED_PREFIX}uri=/foo`;
+    const win = makeWindow({
+      tabs: tabsInOrder({ url, title: 'Docs', active: true, groupId: 100 }),
+    });
+
+    const [snapshot] = captureWindows([win], groups, OPTIONS);
+
+    expect(snapshot.tabs[0]).toEqual({
+      url,
+      title: 'Docs',
+      pinned: false,
+      active: true,
+      groupIndex: 0,
+    });
+    expect(snapshot.groups).toEqual([{ title: 'G', color: 'blue', collapsed: false }]);
+  });
+
   it('never treats tabs as suspended when suspendedPrefix is empty', () => {
     const win = makeWindow({ tabs: tabsInOrder({ url: 'https://a.com/?uri=https://evil.com/' }) });
 
@@ -234,6 +264,25 @@ describe('captureWindows', () => {
       { title: 'Second', color: 'red', collapsed: true },
     ]);
     expect(snapshot.tabs.map((t) => t.groupIndex)).toEqual([0, 0, undefined, 1]);
+  });
+
+  it("orders groups by first non-pinned appearance when a group's first tab is pinned", () => {
+    const groups = [makeGroup({ id: 100, title: 'A' }), makeGroup({ id: 200, title: 'B' })];
+    const win = makeWindow({
+      tabs: tabsInOrder(
+        { url: 'https://a1.com/', pinned: true, groupId: 100 },
+        { url: 'https://b1.com/', groupId: 200 },
+        { url: 'https://a2.com/', groupId: 100 },
+      ),
+    });
+
+    const [snapshot] = captureWindows([win], groups, OPTIONS);
+
+    expect(snapshot.groups).toEqual([
+      { title: 'B', color: 'blue', collapsed: false },
+      { title: 'A', color: 'blue', collapsed: false },
+    ]);
+    expect(snapshot.tabs.map((t) => t.groupIndex)).toEqual([undefined, 0, 1]);
   });
 
   it('uses an empty title for untitled groups', () => {
