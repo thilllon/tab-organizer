@@ -229,7 +229,7 @@ React component using shadcn/ui (Radix UI + Tailwind). Provides radio groups for
 - **Tab Grouping**: `subdomain` (full hostname) vs `domain` (base domain)
 - **Duplicate Tabs**: `none` / `closeAllButOne` / `group`
 
-Settings are loaded from `chrome.storage.sync` on mount and saved explicitly via a "Save" button. The footer displays the extension version (from `chrome.runtime.getManifest()`) and a link to the GitHub repository.
+Settings are loaded from `chrome.storage.sync` on mount and saved explicitly via a "Save" button. The footer displays the extension version (from `chrome.runtime.getManifest()`) and a link to the GitHub repository. A "Sessions" card below the two radio-group sections has two buttons: "Open Sessions dashboard" → `openDashboard()` (`src/sessions/open-dashboard.ts`) and "Set keyboard shortcuts" → `openShortcutSettings()` (`src/sessions/shortcuts.ts`).
 
 ### `vite.config.ts` — Build & Manifest
 
@@ -400,6 +400,8 @@ Unit tests use **Vitest** and live adjacent to their source files. Pure sorting 
 - `sortByTitleOrUrl` — title/URL sorting, pinned tab exclusion, edge cases (empty arrays, mixed schemes, large diverse tab sets)
 
 `vite.config.ts` sets `test.setupFiles: ['src/test/setup.ts']`, which installs `createChromeFake()` from `src/test/chrome-fake.ts` on `globalThis.chrome` before every test (typed against `@types/chrome`, no `any`) and a `navigator.locks` shim. Tests reach the fake through `getChromeFake()` (`state`, `fire.installed/startup/menuClicked/command/alarm`, `failNext('tabs.create', n, message)`). Session tests live next to their modules: `src/sessions/*.test.ts` (naming, migrate, hash, capture invariants, storage order/reconcile/lock, planner chunking and step order, executeRestore against the fake) and `src/background/sessions.test.ts` (menus recreated on install, badge, handlers).
+
+**Testing a module that registers `chrome.*` listeners at import time** (`src/background/index.ts`, `src/background/sessions.ts`): `src/test/setup.ts` assigns one throw-away fake to `globalThis.chrome` at module load (just so these modules are importable at all), then installs a **fresh** fake in `beforeEach`. A `import './sessions'` at the top of a test file runs once, before any `beforeEach`, and registers its listeners on the throw-away instance — every later `getChromeFake().fire.*` call reaches a different fake, so nothing fires. The fix is to defer the import into the test body, after `beforeEach` has installed that test's fake: `vi.resetModules(); await import('./sessions');`. `src/background/sessions.test.ts`'s `describe('listener wiring', …)` block does exactly this per test (`onInstalled`/`onStartup`/menu-click/command tests); the same file's other tests call the statically-imported `handleMenuOrCommand()`, `registerContextMenus()`, etc. directly, which is fine since those don't depend on which fake the listeners were registered against. (`src/sessions/storage.test.ts` also calls `vi.resetModules()` before re-importing `./storage`, but for an unrelated reason — getting a fresh copy of that module's own `fallbackChain` state to test the no-`navigator.locks` code path in isolation, not a listener-registration issue.)
 
 Playwright is also installed, but it is currently used by `scripts/prepare-registration.ts` to drive Chromium for release screenshots and the demo video — there are no Playwright end-to-end tests yet.
 
