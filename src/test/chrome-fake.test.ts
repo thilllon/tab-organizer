@@ -116,6 +116,57 @@ describe('chrome fake: tab strip', () => {
   });
 });
 
+describe('chrome fake: windows.create state validation', () => {
+  // Verified in Chrome for Testing 151: each of these three combinations rejects with
+  // "Invalid value for state"; the accepted ones below resolve.
+  it('rejects a minimized window that is also focused', async () => {
+    await expect(chrome.windows.create({ state: 'minimized', focused: true })).rejects.toThrow(
+      'Invalid value for state',
+    );
+    expect(getChromeFake().state.windows.size).toBe(1);
+  });
+
+  it('rejects a maximized or fullscreen window that is not focused', async () => {
+    await expect(chrome.windows.create({ state: 'maximized', focused: false })).rejects.toThrow(
+      'Invalid value for state',
+    );
+    await expect(chrome.windows.create({ state: 'fullscreen', focused: false })).rejects.toThrow(
+      'Invalid value for state',
+    );
+    expect(getChromeFake().state.windows.size).toBe(1);
+  });
+
+  it('rejects a non-normal state combined with bounds', async () => {
+    await expect(
+      chrome.windows.create({ state: 'maximized', left: 10, top: 20, width: 800, height: 600 }),
+    ).rejects.toThrow('Invalid value for state');
+    await expect(chrome.windows.create({ state: 'minimized', width: 800 })).rejects.toThrow(
+      'Invalid value for state',
+    );
+    expect(getChromeFake().state.windows.size).toBe(1);
+  });
+
+  it('accepts the combinations Chrome allows', async () => {
+    const normal = await chrome.windows.create({
+      state: 'normal',
+      focused: false,
+      left: 10,
+      top: 20,
+      width: 800,
+      height: 600,
+    });
+    expect(normal?.state).toBe('normal');
+    expect(normal?.left).toBe(10);
+    const maximized = await chrome.windows.create({ state: 'maximized', focused: true });
+    expect(maximized?.state).toBe('maximized');
+    const minimized = await chrome.windows.create({ state: 'minimized', focused: false });
+    expect(minimized?.state).toBe('minimized');
+    // No state at all: bounds and focus are unconstrained.
+    const plain = await chrome.windows.create({ focused: false, width: 640 });
+    expect(plain?.state).toBe('normal');
+  });
+});
+
 describe('chrome fake: groups', () => {
   it('tabs.group assigns a fresh group id and sets groupId on members', async () => {
     const a = await chrome.tabs.create({ url: 'https://a.test' });

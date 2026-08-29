@@ -642,6 +642,31 @@ export function createChromeFake(): ChromeFake {
 
   // ---- windows -------------------------------------------------------------
 
+  /**
+   * Chrome's own `windows.create` validation, verified against Chrome for Testing 151:
+   * a minimized window can never be focused, a maximized/fullscreen one can never be created
+   * unfocused, and no non-'normal' state may be combined with explicit bounds. All three reject
+   * with the same message. Modelled here so `src/sessions/restore.ts` cannot regress into passing
+   * a combination Chrome refuses (see the comment in `openTargetWindow`).
+   */
+  function rejectInvalidCreateState(data?: chrome.windows.CreateData): void {
+    const state = data?.state;
+    if (state === undefined) {
+      return;
+    }
+    const invalidState =
+      (state === 'minimized' && data?.focused === true) ||
+      ((state === 'maximized' || state === 'fullscreen') && data?.focused === false);
+    const hasBounds =
+      data?.left !== undefined ||
+      data?.top !== undefined ||
+      data?.width !== undefined ||
+      data?.height !== undefined;
+    if (invalidState || (state !== 'normal' && hasBounds)) {
+      throw new Error('Invalid value for state');
+    }
+  }
+
   const windows = {
     async getAll(options?: chrome.windows.QueryOptions): Promise<chrome.windows.Window[]> {
       const populate = options?.populate ?? false;
@@ -658,6 +683,7 @@ export function createChromeFake(): ChromeFake {
     },
     async create(data?: chrome.windows.CreateData): Promise<chrome.windows.Window> {
       maybeFail('windows.create');
+      rejectInvalidCreateState(data);
       const window: FakeWindow = {
         id: state.nextId.window,
         focused: data?.focused ?? true,
