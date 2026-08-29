@@ -1,5 +1,5 @@
 import { ChevronRight, Ellipsis, Pencil, RotateCcw, Trash2 } from 'lucide-react';
-import { type KeyboardEvent, useState } from 'react';
+import { type KeyboardEvent, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +34,10 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const body = useSessionBody(expanded ? summary.id : null);
+  // Set when Rename is picked in the dropdown: Radix returns focus to the trigger on close
+  // (`onCloseAutoFocus`), which blurs the freshly mounted input and commits the rename
+  // immediately, ending the edit before the user can type. See the guard on the content below.
+  const renameRequestedRef = useRef(false);
 
   const startRename = () => {
     setDraft(summary.name);
@@ -124,14 +128,24 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
               className="h-8"
             />
           ) : (
-            <button
-              type="button"
-              className="block max-w-full truncate text-left text-sm font-medium hover:underline"
-              title="Rename"
-              onClick={startRename}
-            >
-              {summary.name}
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="min-w-0 truncate text-left text-sm font-medium hover:underline"
+                title="Rename"
+                onClick={startRename}
+              >
+                {summary.name}
+              </button>
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                aria-label="Rename session"
+                onClick={startRename}
+              >
+                <Pencil />
+              </Button>
+            </div>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
             {formatSessionMeta(summary)} · saved {formatDateTime(summary.updatedAt)}
@@ -151,8 +165,23 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
               <Ellipsis />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={startRename}>
+          <DropdownMenuContent
+            align="end"
+            onCloseAutoFocus={(event) => {
+              // Keep the rename input focused instead of handing focus back to the trigger,
+              // whose blur would commit and close the edit right away.
+              if (renameRequestedRef.current) {
+                event.preventDefault();
+                renameRequestedRef.current = false;
+              }
+            }}
+          >
+            <DropdownMenuItem
+              onSelect={() => {
+                renameRequestedRef.current = true;
+                startRename();
+              }}
+            >
               <Pencil />
               Rename
             </DropdownMenuItem>
