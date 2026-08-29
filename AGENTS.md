@@ -62,7 +62,7 @@ SessionCard Restore -> useRestore()
 -> executeRestore(plan, { onProgress, signal, screen })
 -> windows.create placeholder -> tabs.create per chunk (retry once on "cannot be edited")
 -> tabs.discard non-active/non-pinned when lazy -> tabs.group + tabGroups.update after all tabs
--> collapse groups -> activate -> remove placeholder -> apply minimized/fullscreen
+-> collapse groups -> activate -> remove placeholder -> apply minimized/maximized/fullscreen
 -> ProgressToast with restored / skipped / errors
 ```
 
@@ -93,13 +93,16 @@ tab-organizer/
 │   │   ├── index.css          # @import '../options/index.css'
 │   │   ├── Dashboard.tsx      # Header (save buttons) + session list + empty state
 │   │   ├── hooks/             # useSessionIndex, useSessionBody, useRestore
-│   │   └── components/        # SessionCard, WindowTree, GroupSection, TabRow, Favicon, ProgressToast
+│   │   ├── lib/               # Page-side helpers (+ adjacent tests): errors, format, group-colors,
+│   │   │                      #   open-tab, restore-summary, sanitize-options, segments, session-utils
+│   │   └── components/        # SessionCard, WindowTree, GroupSection, TabRow, Favicon, ProgressToast,
+│   │                          #   EmptyState, RestoreConfirmDialog, DeleteSessionDialog
 │   ├── options/
 │   │   ├── index.tsx          # React entry point
 │   │   ├── Options.tsx        # Settings UI component + "Sessions" card
 │   │   └── index.css          # Tailwind CSS with shadcn theme
 │   ├── components/ui/         # Reusable UI components (shadcn/ui: button, radio-group, label, input,
-│   │                          #   dialog, dropdown-menu, badge, tooltip, separator, scroll-area, collapsible)
+│   │                          #   dialog, dropdown-menu, badge, separator, collapsible)
 │   ├── lib/
 │   │   └── utils.ts           # cn() utility (clsx + tailwind-merge)
 │   ├── test/
@@ -177,7 +180,7 @@ Contains all pure sorting and grouping functions, extracted for testability. No 
 
 ### `src/background/sessions.ts` — Sessions listeners (service worker)
 
-Registers listeners synchronously at module top level; imported by `index.ts`. Exports for tests: `MENU_IDS = { saveWindow: 'save-window', saveAll: 'save-all', openDashboard: 'open-dashboard' }`, `registerContextMenus()`, `handleMenuOrCommand(id)`, `showSavedBadge()`, `clearBadge()`.
+Registers listeners synchronously at module top level; imported by `index.ts`. Exports for tests: `MENU_IDS = { saveWindow: 'save-window', saveAll: 'save-all', openDashboard: 'open-dashboard' }`, `COMMAND_IDS = { saveSession: 'save-session', openDashboard: 'open-dashboard' }` (must equal the `commands` block in `vite.config.ts`), `registerContextMenus()`, `handleMenuOrCommand(id)`, `showSavedBadge()`, `clearBadge()`.
 
 | Listener                                        | Behaviour                                                                                                                                                                                             |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -187,16 +190,16 @@ Registers listeners synchronously at module top level; imported by `index.ts`. E
 
 ### `src/sessions/` — Session domain
 
-| Module              | Exports                                                                                                                                                                                                           |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `naming.ts`         | `defaultSessionName(date, windowCount, tabCount)`, `slugify(name)`                                                                                                                                                |
-| `migrate.ts`        | `migrateSession(record)`, `migrateIndex(record)`, `UnknownSchemaVersionError` (identity for v1; unknown versions throw and the UI shows the record read-only)                                                     |
-| `hash.ts`           | `contentHash(windows)` — titles excluded, so a title change never produces a new snapshot                                                                                                                         |
-| `capture.ts`        | `captureWindows(windows, groups, options)` (pure), `captureSession(scope, name?)`                                                                                                                                 |
-| `storage.ts`        | `sessionRepo` (`listSummaries`, `get`, `put`, `rename`, `remove`, `removeAll`, `reconcile`, `getSettings`, `setSettings`), `withLock`, `INDEX_KEY`, `SETTINGS_KEY`, `HISTORY_META_KEY`, `sessionKey`, `LOCK_NAME` |
-| `restore.ts`        | `sanitizeRestoreUrl`, `clampToScreen`, `planRestore` (pure), `executeRestore`, `withRetryOnce`, `isTabsCannotBeEditedError`                                                                                       |
-| `open-dashboard.ts` | `openDashboard()` — focuses the existing dashboard tab or opens one                                                                                                                                               |
-| `shortcuts.ts`      | `openShortcutSettings()` — `chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })`, used by Options and the dashboard empty state                                                                          |
+| Module              | Exports                                                                                                                                                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `naming.ts`         | `defaultSessionName(date, windowCount, tabCount)`, `slugify(name)`                                                                                                                                                                           |
+| `migrate.ts`        | `migrateSession(record)`, `migrateIndex(record)`, `UnknownSchemaVersionError` (identity for v1; unknown versions throw and the UI shows the record read-only)                                                                                |
+| `hash.ts`           | `contentHash(windows)` — titles excluded, so a title change never produces a new snapshot                                                                                                                                                    |
+| `capture.ts`        | `captureWindows(windows, groups, options)` (pure), `captureSession(scope, name?)`                                                                                                                                                            |
+| `storage.ts`        | `sessionRepo` (`listSummaries`, `get`, `put`, `rename`, `remove`, `removeAll`, `reconcile`, `migrateAll`, `getSettings`, `setSettings`), `withLock`, `toSummary`, `INDEX_KEY`, `SETTINGS_KEY`, `HISTORY_META_KEY`, `sessionKey`, `LOCK_NAME` |
+| `restore.ts`        | `sanitizeRestoreUrl`, `clampToScreen`, `planRestore` (pure), `executeRestore`, `withRetryOnce`, `isTabsCannotBeEditedError`                                                                                                                  |
+| `open-dashboard.ts` | `openDashboard()` — focuses the existing dashboard tab or opens one                                                                                                                                                                          |
+| `shortcuts.ts`      | `openShortcutSettings()` — `chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })`, used by Options and the dashboard empty state                                                                                                     |
 
 ### `src/types.ts` — Shared Types
 
@@ -241,19 +244,19 @@ Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`,
 
 ## Tech Stack
 
-| Category         | Tool                                                           |
-| ---------------- | -------------------------------------------------------------- |
-| Language         | TypeScript (strict mode, ESNext target)                        |
-| UI Framework     | React 19                                                       |
-| CSS              | Tailwind CSS 4                                                 |
-| UI Components    | shadcn/ui (Radix UI + CVA)                                     |
-| Build            | Vite 8 + @crxjs/vite-plugin                                    |
-| Linter/Formatter | Biome (JS/TS/CSS) + Prettier (Markdown/YAML) + ruff (Python)   |
-| Git Hooks        | Lefthook                                                       |
-| Testing          | Vitest (Playwright is used for release screenshots, not tests) |
-| Release          | release-it (GitHub release + ZIP via `scripts/zip.ts`)         |
-| CI               | GitHub Actions (tool versions from `mise.toml`) + Dependabot   |
-| Tool Versions    | mise                                                           |
+| Category         | Tool                                                                  |
+| ---------------- | --------------------------------------------------------------------- |
+| Language         | TypeScript (strict mode, ESNext target)                               |
+| UI Framework     | React 19                                                              |
+| CSS              | Tailwind CSS 4                                                        |
+| UI Components    | shadcn/ui (Radix UI + CVA)                                            |
+| Build            | Vite 8 + @crxjs/vite-plugin                                           |
+| Linter/Formatter | Biome (JS/TS/CSS) + Prettier (Markdown/YAML) + ruff (Python)          |
+| Git Hooks        | Lefthook                                                              |
+| Testing          | Vitest; Playwright drives release screenshots + manual real-Chrome QA |
+| Release          | release-it (GitHub release + ZIP via `scripts/zip.ts`)                |
+| CI               | GitHub Actions (tool versions from `mise.toml`) + Dependabot          |
+| Tool Versions    | mise                                                                  |
 
 ---
 
@@ -363,6 +366,7 @@ Write order is body → index (put) and body → index (delete). `sessionRepo.re
 - **The icon click stays `sortTabGroups()` only.** No `default_popup`, no dialogs, no `openDashboard()` on `action.onClicked`. `sort.ts` and the duplicate handlers are not edited by session work.
 - **Restore runs in the dashboard page**, never in the worker. Own extension pages are excluded from every capture.
 - **No Chrome runtime ids in stored data** — groups are referenced by `groupIndex`; pinned tabs never carry `groupIndex`; at most one `active` tab per window.
+- **A chrome namespace touched at module-evaluation time needs its permission in the same commit.** Anything `src/background/sessions.ts` (or any module it imports) reads or calls while the module body runs — `chrome.alarms.onAlarm.addListener(…)`, `chrome.something.CONSTANT`, a top-level `chrome.x.y()` — runs before `index.ts`'s own body, because `import './sessions';` is hoisted. A missing permission makes that line throw, the whole service-worker module fails to evaluate, `chrome.action.onClicked` is never registered, and **tab sorting dies too** — a permission typo takes out the unrelated core feature, not just sessions. So add the permission to `vite.config.ts` in the very same commit as the code that touches the namespace (never "wire it up now, add the permission later"). Phase 3's `alarms` is the next case: `chrome.alarms.onAlarm.addListener` and `'alarms'` in `permissions` must land together.
 
 ---
 
@@ -403,7 +407,16 @@ Unit tests use **Vitest** and live adjacent to their source files. Pure sorting 
 
 **Testing a module that registers `chrome.*` listeners at import time** (`src/background/index.ts`, `src/background/sessions.ts`): `src/test/setup.ts` assigns one throw-away fake to `globalThis.chrome` at module load (just so these modules are importable at all), then installs a **fresh** fake in `beforeEach`. A `import './sessions'` at the top of a test file runs once, before any `beforeEach`, and registers its listeners on the throw-away instance — every later `getChromeFake().fire.*` call reaches a different fake, so nothing fires. The fix is to defer the import into the test body, after `beforeEach` has installed that test's fake: `vi.resetModules(); await import('./sessions');`. `src/background/sessions.test.ts`'s `describe('listener wiring', …)` block does exactly this per test (`onInstalled`/`onStartup`/menu-click/command tests); the same file's other tests call the statically-imported `handleMenuOrCommand()`, `registerContextMenus()`, etc. directly, which is fine since those don't depend on which fake the listeners were registered against. (`src/sessions/storage.test.ts` also calls `vi.resetModules()` before re-importing `./storage`, but for an unrelated reason — getting a fresh copy of that module's own `fallbackChain` state to test the no-`navigator.locks` code path in isolation, not a listener-registration issue.)
 
-Playwright is also installed, but it is currently used by `scripts/prepare-registration.ts` to drive Chromium for release screenshots and the demo video — there are no Playwright end-to-end tests yet.
+Playwright is also installed. `scripts/prepare-registration.ts` uses it to drive Chromium for release screenshots and the demo video; there is no committed Playwright end-to-end suite, but Playwright's CDP client is the tool used for the manual real-Chrome QA passes described below (findings from those passes are what produced the `waitForCommit` and window-state fixes in `src/sessions/restore.ts`).
+
+### Real-Chrome QA (manual, when a change touches restore or the service worker)
+
+Vitest + the chrome fake cannot catch Chrome's own argument validation or its navigation timing. When restore, capture or the worker's listeners change, drive a real Chrome for Testing build once. What was learned doing it:
+
+- **Do not let Playwright launch the browser.** Its default Chromium launch flags make Chrome for Testing 151 **SIGSEGV on `chrome.tabs.discard`** (i.e. exactly the lazy-restore path). Launch Chrome for Testing yourself with `--load-extension=<dist>` plus `--remote-debugging-port=<port>` (and a scratch `--user-data-dir`), then attach with `chromium.connectOverCDP('http://127.0.0.1:<port>')`.
+- **Pick the right service worker.** Component extensions register service workers too, so `context.serviceWorkers()` has several entries. Select ours by its URL ending in `/service-worker-loader.js` — never by index — and `evaluate` the `chrome.*` calls inside it.
+- **`--load-extension` is ignored by branded Chrome ≥ 137.** Use a Chrome for Testing binary (`npx @puppeteer/browsers install chrome@<version>`), not the installed Chrome.
+- **Verified this way (do not "simplify" these back):** `chrome.windows.create` rejects `{ state: 'minimized', focused: true }`, `{ state: 'maximized' | 'fullscreen', focused: false }`, and any non-`'normal'` state combined with `left/top/width/height`, all with `Invalid value for state` — so restore always creates a `'normal'`, unfocused window and applies the real state afterwards with `windows.update`. And `chrome.tabs.discard` on a tab whose navigation has not committed silently unloads it with `url: ''`, losing the URL — hence `waitForCommit`. `src/test/chrome-fake.ts` models both behaviours so the unit tests hold the line.
 
 ---
 
