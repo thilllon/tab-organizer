@@ -7,7 +7,7 @@
 <h1 align="center">Tab Organizer</h1>
 
 <p align="center">
-  <strong>One click. Every tab sorted, grouped, and de-duplicated.</strong><br />
+  <strong>One click. Every tab sorted, grouped, and de-duplicated — plus sessions you can save and restore.</strong><br />
   No popup, no account, no data ever leaves your browser.
 </p>
 
@@ -44,14 +44,15 @@ Pin the icon, click it, done — every tab in the window is sorted and grouped b
 
 ## Features
 
-|                               |                                                                                                                                     |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **▸ One-click sorting**       | Click the toolbar icon. No menus, no dialogs — the current window is organized instantly.                                           |
-| **▸ Three sort modes**        | By URL, by title, or custom grouping that keeps sites in the order you first opened them.                                           |
-| **▸ Smart grouping**          | Group by full hostname (`mail.google.com` ≠ `drive.google.com`) or by domain (all of Google together, `.co.uk`-style TLDs handled). |
-| **▸ Native tab groups**       | Existing Chrome tab groups are sorted by name (prefix with `1-`, `2-` to pin an order) and tidied inside.                           |
-| **▸ Duplicate detection**     | Leave duplicates alone, close all but one, or collect them into a labeled group to review first.                                    |
-| **▸ Pinned & suspended tabs** | Pinned tabs stay put unless you say otherwise; tabs suspended by The Marvellous Suspender sort by their real URL.                   |
+|                               |                                                                                                                                                                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **▸ One-click sorting**       | Click the toolbar icon. No menus, no dialogs — the current window is organized instantly.                                                                                                                                       |
+| **▸ Three sort modes**        | By URL, by title, or custom grouping that keeps sites in the order you first opened them.                                                                                                                                       |
+| **▸ Smart grouping**          | Group by full hostname (`mail.google.com` ≠ `drive.google.com`) or by domain (all of Google together, `.co.uk`-style TLDs handled).                                                                                             |
+| **▸ Native tab groups**       | Existing Chrome tab groups are sorted by name (prefix with `1-`, `2-` to pin an order) and tidied inside.                                                                                                                       |
+| **▸ Duplicate detection**     | Leave duplicates alone, close all but one, or collect them into a labeled group to review first.                                                                                                                                |
+| **▸ Pinned & suspended tabs** | Pinned tabs stay put unless you say otherwise; tabs suspended by The Marvellous Suspender sort by their real URL.                                                                                                               |
+| **▸ Sessions**                | Right-click the icon → save this window or all windows; the full-page Sessions dashboard restores them exactly (order, pinned, groups, active tab). Automatic local snapshots every 5 min for crash recovery, off in one click. |
 
 ## Settings
 
@@ -64,7 +65,7 @@ Right-click the icon → **Options** to choose the grouping level and how duplic
 ## Privacy
 
 - **Zero network requests** — works entirely offline, no analytics, no telemetry.
-- **Three permissions only** — `tabs`, `tabGroups`, `storage` (your settings, via Chrome sync).
+- **Permissions** — `tabs`, `tabGroups`, `storage` (settings via Chrome sync; sessions in local storage on this device only), `contextMenus` (icon menu), `unlimitedStorage` (large sessions), `favicon` (site icons from Chrome's local cache). Automatic snapshots use `alarms` and can be turned off.
 - **No content scripts** — nothing is ever injected into a web page.
 - Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
 

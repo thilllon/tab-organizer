@@ -1,8 +1,16 @@
 # Tab Organizer — Chrome Web Store Listing
 
+<!--
+  This file describes the FUTURE v7.0.0 relaunch listing (Sessions feature, full permission set).
+  Do NOT publish it — or `docs/description.txt` generated from it — to the Chrome Web Store until
+  the v7.0.0 release ships (design spec §12: after Phases 0–5 are complete). Until then, the
+  branch/repo is ahead of what is actually listed on the store.
+-->
+
 > **This file is the single source of truth for the [Chrome Web Store listing](https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg).**
 > Everything shown on the store page — text, images, video, privacy disclosures — is kept here so the store and GitHub never drift apart.
 > The store's Description field only accepts plain text, so `docs/description.txt` is **generated** from the [Description](#description) section below by `pnpm listing` (runs automatically on every commit and during `pnpm release`). Never edit `description.txt` by hand.
+> **This describes the v7.0.0 relaunch (Sessions feature) — see the note above; it is not the currently published listing.**
 
 ## Store listing
 
@@ -18,15 +26,19 @@
 
 ### Description
 
-Tab Organizer — One-Click Tab Sorting & Grouping for Chrome
+Tab Organizer — One-Click Tab Sorting + a Full Session Manager for Chrome
 
-Tired of dozens of messy, unorganized tabs cluttering your browser? Tab Organizer instantly sorts and groups all your tabs with a single click. No complicated setup, no account required, no data ever leaves your browser.
+Tired of dozens of messy, unorganized tabs cluttering your browser? Tab Organizer instantly sorts and groups all your tabs with a single click. No popup, no complicated setup, no account required, no data ever leaves your browser.
 
 Just pin the extension icon to your toolbar and click it. That's it. Your tabs are instantly organized.
+
+Need to put a project away for later? Right-click the icon → Save session / Open Sessions. Tab Organizer saves every window, tab, pinned tab and tab group exactly as it is, and restores it later with one click. It also keeps automatic snapshots of your open windows every 5 minutes so you can recover after a crash — snapshots are stored only on this device, are never uploaded, and can be turned off in Options at any time.
 
 #### How it works
 
 Click the Tab Organizer icon in your toolbar. Every tab in your current window is immediately sorted and organized. There's no popup, no extra steps — one click and you're done.
+
+Right-click the icon for everything else: "Save this window as session", "Save all windows as session" and "Open Sessions" (the full-page dashboard where saved sessions are listed and restored). A ✓ badge on the icon confirms a save.
 
 Tab Organizer handles three types of tabs independently:
 
@@ -91,6 +103,30 @@ When using Custom Grouping, you can choose the grouping direction:
 
 In Custom Grouping mode, you can optionally preserve the original tab order within each group. This is useful if the order you opened tabs matters (e.g., reading articles in sequence).
 
+#### Sessions
+
+Save what you have open, close it, and bring it all back later — Session Buddy-style, with nothing leaving your computer.
+
+##### Save a Session in One Action
+
+Right-click the Tab Organizer icon and choose "Save this window as session" or "Save all windows as session". Every window is captured with its tabs in order, pinned tabs, the active tab, tab groups (name, color, collapsed state) and window size. Tabs suspended by The Marvellous Suspender are saved by their real URL. Incognito windows and empty windows are never captured. A ✓ badge on the icon confirms the save.
+
+##### Restore Exactly
+
+Open Sessions, pick a session and click Restore. Windows are recreated with the same tab order, pinned tabs, active tab, groups (including collapsed ones) and window state. Restore a whole session or a single window. Large restores run in chunks with a progress indicator you can cancel; sessions with more than 50 tabs are opened lazily (tabs load when you click them) so Chrome stays responsive. Pages that cannot be opened (for example javascript: or data: URLs, or file:// pages when file access is not allowed) are skipped and listed in the result — nothing else is affected.
+
+##### Sessions Dashboard
+
+A full-page dashboard, not a cramped popup. Rename sessions inline, expand a session to see its windows → groups → tabs with site icons, click any tab to open it in the background, delete sessions with a confirmation. Open it from the icon's right-click menu, from Options, or with a keyboard shortcut of your choice (chrome://extensions/shortcuts — no shortcut is pre-assigned so nothing conflicts with your setup).
+
+##### Automatic Snapshots and Crash Recovery
+
+Tab Organizer takes a snapshot of your open windows every 5 minutes (only when something changed), keeps the most recent 20, and marks the last one as "Previous session (recovered)" after Chrome restarts so you can get everything back after a crash. Snapshots live only on this device. You can change the interval, protect or delete individual snapshots, or turn snapshots off entirely — with snapshots off the extension runs only when you click it.
+
+##### Local-First, Always
+
+Saved sessions and snapshots are stored in Chrome's local extension storage on this device. They are not synced, not uploaded, and not readable by any web page. Delete a session and it is gone; uninstall the extension and Chrome removes everything.
+
 #### Settings
 
 Right-click the Tab Organizer icon and select "Options" to configure:
@@ -109,12 +145,16 @@ Tab Organizer is designed with privacy as a core principle:
 
 - Zero data collection — No analytics, no tracking, no telemetry.
 - Zero network requests — The extension never makes any HTTP requests. It works entirely offline.
-- Minimal permissions — Only requests the three permissions it absolutely needs:
-  - "tabs" — To read tab URLs and titles for sorting
-  - "tabGroups" — To create and manage Chrome tab groups
-  - "storage" — To save your preferences using Chrome's built-in sync storage
+- Only the permissions it needs, each with one job:
+  - "tabs" — reads tab URLs and titles to sort them and to save sessions
+  - "tabGroups" — creates and manages Chrome tab groups, and restores them from sessions
+  - "storage" — saves your preferences via Chrome sync storage; saved sessions and snapshots (tab URLs, titles, group names, window layout) are kept in local storage on this device only
+  - "contextMenus" — adds the Save / Open Sessions items to the icon's right-click menu
+  - "unlimitedStorage" — lets large saved sessions exceed Chrome's 10 MB local quota; data stays on the device
+  - "favicon" — shows site icons in the dashboard from Chrome's local favicon cache, no network
+  - "alarms" — the timer for automatic snapshots (every 5 minutes by default; turn it off in Options and no timer exists)
 - No content scripts — Tab Organizer never injects code into any web page.
-- No background network activity — The service worker only activates when you click the icon.
+- No background network activity — The service worker runs only when you click the icon, use its right-click menu or a keyboard shortcut — and, while automatic snapshots are on, briefly on the interval you choose. It never contacts the network.
 - Open and transparent — The extension does exactly what it says, nothing more.
 
 Your browsing data stays on your device. Always.
@@ -130,7 +170,7 @@ Your browsing data stays on your device. Always.
 #### FAQ
 
 Q: Does Tab Organizer work across multiple windows?\
-A: Tab Organizer sorts tabs in the currently focused window. Click the icon in each window you want to organize.
+A: Sorting works on the currently focused window — click the icon in each window you want to organize. Sessions can cover every window at once ("Save all windows as session").
 
 Q: Will it mess up my pinned tabs?\
 A: No. Pinned tabs are left untouched by default. You can optionally enable pinned tab sorting in settings.
@@ -140,6 +180,21 @@ A: Yes! It sorts your tab groups by name and organizes tabs within each group.
 
 Q: Does it send my browsing data anywhere?\
 A: Absolutely not. Tab Organizer makes zero network requests. Everything happens locally in your browser.
+
+Q: Where are my saved sessions stored?\
+A: In Chrome's local extension storage on this device only. Sessions are never synced, never uploaded and never shared with any web page. Delete a session from the dashboard whenever you like; uninstalling the extension removes all of them. Use Export (JSON) in the dashboard to keep your own backup.
+
+Q: What do automatic snapshots record, and can I turn them off?\
+A: A snapshot is the same data as a saved session — tab URLs, titles, pinned state, tab groups and window layout — taken every 5 minutes when something changed, kept as a rolling set of 20 on this device. Turn them off in Options → Sessions (or change the interval). With snapshots off, the extension only runs when you click it.
+
+Q: How do I restore a session?\
+A: Right-click the icon → Open Sessions, then click Restore on a session (or on a single window inside it). Windows are recreated in new windows with the original order, pinned tabs, groups and active tab. Restoring never deletes the saved session.
+
+Q: Can I use a keyboard shortcut to save or open sessions?\
+A: Yes. Tab Organizer registers "Save the current window as a session" and "Open the Sessions dashboard" as Chrome commands, without a preset key so nothing conflicts with your other shortcuts. Assign keys at chrome://extensions/shortcuts (there is a button for it in Options and in the empty dashboard).
+
+Q: Does saving a session change my open tabs?\
+A: No. Saving only reads your tabs. Sorting still happens only when you left-click the icon.
 
 Q: What happens if I don't like the result?\
 A: Use Ctrl+Z (Cmd+Z on Mac) immediately after sorting to undo tab moves in Chrome. Note that closed duplicate tabs cannot be recovered this way — use Chrome's "Recently closed" menu (Ctrl+Shift+T) to restore them.
@@ -218,25 +273,31 @@ The store only accepts a **YouTube URL** for the promo video; none is published 
 
 ### Single purpose
 
-Sort and organize browser tabs by URL, title, or domain, and optionally group or remove duplicate tabs in the current window.
+Organize browser tabs: sort and group the tabs of the current window (by URL, title or domain, optionally removing or grouping duplicates) and save, list and restore sets of windows and tabs as sessions, all stored locally.
 
 ### Permission justifications
 
-| Permission  | Justification                                                                                                                                                                                                                                                        |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tabs`      | Required to read tab URLs and titles in the current window for sorting. The extension uses `chrome.tabs.query()` to retrieve tab information and `chrome.tabs.move()` to reorder them. No tab data is stored or transmitted externally.                              |
-| `tabGroups` | Required to sort existing tab groups by title and to group duplicate tabs when the user enables that option. The extension uses `chrome.tabGroups.query()`, `chrome.tabGroups.move()`, and `chrome.tabGroups.update()` to organize groups within the current window. |
-| `storage`   | Required to persist user preferences (sort method, grouping mode, duplicate handling) across sessions using `chrome.storage.sync`. No personal or browsing data is stored — only the extension's settings.                                                           |
+| Permission         | Justification                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tabs`             | Required to read tab URLs and titles for sorting and for saving sessions, and to create tabs when restoring. Uses `chrome.tabs.query()`/`chrome.windows.getAll()` to read, `chrome.tabs.move()` to reorder and `chrome.tabs.create()`/`chrome.tabs.discard()` to restore. Tab data is stored only in local extension storage on the device when the user saves a session or automatic snapshots are on; it is never transmitted. |
+| `tabGroups`        | Required to sort existing tab groups by title, to group duplicate tabs when the user enables that option, and to recreate a session's tab groups (title, color, collapsed state) on restore. Uses `chrome.tabGroups.query()`, `move()` and `update()`.                                                                                                                                                                           |
+| `storage`          | Required to persist user preferences (sort method, grouping mode, duplicate handling) via `chrome.storage.sync`, and to store saved sessions and automatic snapshots — tab URLs, titles, pinned state, group names/colors and window layout — via `chrome.storage.local` on this device only. Session data is never synced or transmitted; the user can delete any session or all session data from the dashboard.               |
+| `contextMenus`     | Adds "Save this window as session", "Save all windows as session" and "Open Sessions" to the extension icon's right-click menu (`contexts: ['action']` only — no menu items are added to web pages).                                                                                                                                                                                                                             |
+| `unlimitedStorage` | Lets saved sessions and snapshots exceed the default 10 MB `chrome.storage.local` quota for users with thousands of tabs. Data stays in local extension storage on the device; nothing is uploaded.                                                                                                                                                                                                                              |
+| `favicon`          | Displays site icons next to saved tabs in the dashboard by reading Chrome's local favicon cache through `chrome-extension://<id>/_favicon/`. No favicon is fetched from the network and no favicon data is stored.                                                                                                                                                                                                               |
+| `alarms`           | (Added in Phase 3.) A `chrome.alarms` timer that wakes the service worker on the user's chosen interval (5/10/30 min) to take an automatic local snapshot of open windows for crash recovery. When the user turns snapshots off, no alarm exists and the worker runs only on user actions.                                                                                                                                       |
 
 Host permissions: none. Remote code: not used.
 
 ### Data usage
 
-The extension does **not** collect or transmit any user data. All three certifications apply:
+The extension does **not** collect or transmit any user data. When the user saves a session or automatic snapshots are enabled, tab URLs, titles and window/group layout are written to `chrome.storage.local` on the user's device only; they are never sent anywhere, and the user can delete them at any time. All three certifications apply:
 
 - Does not sell user data to third parties.
 - Does not use or transfer user data for purposes unrelated to the item's core functionality.
 - Does not use or transfer user data to determine creditworthiness or for lending purposes.
+
+CWS privacy form: the "Web history" data-type row is answered with "stored locally on the device, not transmitted" (spec §10).
 
 ### Privacy policy URL
 
