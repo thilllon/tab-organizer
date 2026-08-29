@@ -1,7 +1,6 @@
 import { captureSession } from '@/sessions/capture';
-import { migrateSession, UnknownSchemaVersionError } from '@/sessions/migrate';
 import { openDashboard } from '@/sessions/open-dashboard';
-import { sessionKey, sessionRepo, withLock } from '@/sessions/storage';
+import { sessionRepo } from '@/sessions/storage';
 
 /**
  * Session-related service-worker listeners. Imported once from ./index.ts. Every listener is
@@ -16,17 +15,37 @@ export const MENU_IDS = {
 } as const;
 
 const SEPARATOR_ID = 'sessions-separator';
-const BADGE_COLOR = '#16a34a';
+const SAVED_BADGE_COLOR = '#16a34a';
+const ERROR_BADGE_COLOR = '#d93025';
 const BADGE_CLEAR_MS = 2000;
 
+// The only timer in this module; re-armed (never stacked) so two saves in quick succession
+// don't have the first save's clear cut off the second save's badge early.
+let badgeTimer: ReturnType<typeof setTimeout> | undefined;
+
+function armBadge(text: string, color: string): void {
+  if (badgeTimer !== undefined) {
+    clearTimeout(badgeTimer);
+  }
+  chrome.action.setBadgeBackgroundColor({ color }).catch(report);
+  chrome.action.setBadgeText({ text }).catch(report);
+  badgeTimer = setTimeout(clearBadge, BADGE_CLEAR_MS);
+}
+
 export function showSavedBadge(): void {
-  void chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
-  void chrome.action.setBadgeText({ text: '✓' });
-  setTimeout(clearBadge, BADGE_CLEAR_MS);
+  armBadge('✓', SAVED_BADGE_COLOR);
+}
+
+export function showErrorBadge(): void {
+  armBadge('!', ERROR_BADGE_COLOR);
 }
 
 export function clearBadge(): void {
-  void chrome.action.setBadgeText({ text: '' });
+  if (badgeTimer !== undefined) {
+    clearTimeout(badgeTimer);
+    badgeTimer = undefined;
+  }
+  chrome.action.setBadgeText({ text: '' }).catch(report);
 }
 
 export async function registerContextMenus(): Promise<void> {
@@ -50,13 +69,19 @@ export async function registerContextMenus(): Promise<void> {
 }
 
 async function saveSession(scope: 'window' | 'all'): Promise<void> {
-  const session = await captureSession(scope);
-  if (session.windows.length === 0) {
-    // Nothing capturable (e.g. only the dashboard is open): no badge, no empty session.
-    return;
+  try {
+    const session = await captureSession(scope);
+    if (session.windows.length === 0) {
+      // Nothing capturable (e.g. only the dashboard, or an incognito window, is open).
+      showErrorBadge();
+      return;
+    }
+    await sessionRepo.put(session);
+    showSavedBadge();
+  } catch (err) {
+    report(err);
+    showErrorBadge();
   }
-  await sessionRepo.put(session);
-  showSavedBadge();
 }
 
 export async function handleMenuOrCommand(id: string): Promise<void> {
@@ -77,42 +102,14 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
   }
 }
 
-/**
- * Eager migration on extension update: one key at a time under the lock. For schema v1 this is
- * the identity, so nothing is rewritten; newer records stay untouched (the UI shows them
- * read-only).
- */
-async function migrateStoredSessions(): Promise<void> {
-  const summaries = await sessionRepo.listSummaries();
-  for (const summary of summaries) {
-    await withLock(async () => {
-      const key = sessionKey(summary.id);
-      const raw = await chrome.storage.local.get(key);
-      const record: unknown = raw[key];
-      if (record === undefined) {
-        return;
-      }
-      try {
-        const migrated = migrateSession(record);
-        if (JSON.stringify(migrated) !== JSON.stringify(record)) {
-          await chrome.storage.local.set({ [key]: migrated });
-        }
-      } catch (err) {
-        if (err instanceof UnknownSchemaVersionError) {
-          return;
-        }
-        throw err;
-      }
-    });
-  }
-}
-
 async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<void> {
   await registerContextMenus();
-  await sessionRepo.reconcile();
   if (details.reason === 'update') {
-    await migrateStoredSessions();
+    // Caught locally (not left to the listener's outer .catch) so a failed migration still
+    // lets reconcile() run below.
+    await sessionRepo.migrateAll().catch(report);
   }
+  await sessionRepo.reconcile();
 }
 
 async function onStartup(): Promise<void> {

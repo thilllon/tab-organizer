@@ -425,6 +425,49 @@ describe('sessionRepo.reconcile', () => {
   });
 });
 
+describe('sessionRepo.migrateAll', () => {
+  // migrateSession() is the identity function for schema v1 (it returns the very same object
+  // reference when the record already validates), so there is no way to construct a
+  // differing-but-valid v1 body through the real migrateSession today. These tests therefore
+  // cover the no-op path and the skip-on-unknown-version path; the rewrite-and-reindex branch is
+  // exercised only by code inspection until a v2 schema exists to migrate from.
+
+  it('does not rewrite or touch storage.local.set when every body is already current', async () => {
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+    await sessionRepo.put(makeSession({ id: 'id-b' }));
+    const setSpy = vi.spyOn(chrome.storage.local, 'set');
+
+    const result = await sessionRepo.migrateAll();
+
+    expect(result).toEqual({ migrated: 0 });
+    expect(setSpy).not.toHaveBeenCalled();
+  });
+
+  it('treats a body missing optional protected/contentHash fields as already current', async () => {
+    const fake = getChromeFake();
+    const minimal = makeSession({ id: 'minimal' });
+    fake.state.local.set(sessionKey('minimal'), minimal);
+
+    const result = await sessionRepo.migrateAll();
+
+    expect(result).toEqual({ migrated: 0 });
+  });
+
+  it('skips a body from a future schema version without throwing', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(sessionKey('future'), {
+      ...makeSession({ id: 'future' }),
+      schemaVersion: 2,
+    });
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+
+    const result = await sessionRepo.migrateAll();
+
+    expect(result).toEqual({ migrated: 0 });
+    expect(fake.state.local.has(sessionKey('future'))).toBe(true);
+  });
+});
+
 describe('sessionRepo settings', () => {
   it('returns defaults when nothing is stored', async () => {
     await expect(sessionRepo.getSettings()).resolves.toEqual(DEFAULT_SESSION_SETTINGS);

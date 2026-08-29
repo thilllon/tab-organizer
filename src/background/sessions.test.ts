@@ -7,6 +7,7 @@ import {
   handleMenuOrCommand,
   MENU_IDS,
   registerContextMenus,
+  showErrorBadge,
   showSavedBadge,
 } from './sessions';
 
@@ -83,6 +84,32 @@ describe('badge', () => {
     clearBadge();
     expect(fake.state.badge.text).toBe('');
   });
+
+  it('showErrorBadge shows ! on a red background and clears itself after 2 s', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const fake = getChromeFake();
+
+    showErrorBadge();
+    expect(fake.state.badge.text).toBe('!');
+    expect(fake.state.badge.color).toBe('#d93025');
+
+    vi.advanceTimersByTime(2000);
+    expect(fake.state.badge.text).toBe('');
+  });
+
+  it('a second save 1.5 s later re-arms the clear timer instead of stacking it', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const fake = getChromeFake();
+
+    showSavedBadge();
+    vi.advanceTimersByTime(1500);
+    showSavedBadge();
+
+    vi.advanceTimersByTime(500);
+    expect(fake.state.badge.text).toBe('✓');
+    vi.advanceTimersByTime(1500);
+    expect(fake.state.badge.text).toBe('');
+  });
 });
 
 describe('handleMenuOrCommand', () => {
@@ -140,6 +167,27 @@ describe('handleMenuOrCommand', () => {
     expect(sessionKeys()).toHaveLength(0);
     expect(getChromeFake().state.tabs.size).toBe(0);
   });
+
+  it('save-window with only an extension page open shows the error badge and writes nothing', async () => {
+    await seedWindow([DASHBOARD_URL], true);
+
+    await handleMenuOrCommand('save-window');
+
+    expect(sessionKeys()).toHaveLength(0);
+    expect(getChromeFake().state.badge.text).toBe('!');
+  });
+
+  it('a failed sessionRepo.put shows the error badge, reports the error and does not throw', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await seedWindow(['https://a.example/'], true);
+    getChromeFake().failNext('storage.local.set', 1, 'QUOTA_BYTES exceeded');
+
+    await expect(handleMenuOrCommand('save-window')).resolves.toBeUndefined();
+
+    expect(getChromeFake().state.badge.text).toBe('!');
+    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    expect(sessionKeys()).toHaveLength(0);
+  });
 });
 
 describe('listener wiring', () => {
@@ -178,6 +226,39 @@ describe('listener wiring', () => {
 
     await vi.waitFor(() => {
       expect(fake.state.menus).toHaveLength(4);
+    });
+  });
+
+  it("onInstalled with reason 'update' registers the menus and runs migrateAll then reconcile", async () => {
+    vi.resetModules();
+    await import('./sessions');
+    const { sessionRepo } = await import('@/sessions/storage');
+    const fake = getChromeFake();
+    const migrateSpy = vi.spyOn(sessionRepo, 'migrateAll');
+    const reconcileSpy = vi.spyOn(sessionRepo, 'reconcile');
+
+    fake.fire.installed({ reason: 'update', previousVersion: '6.0.0' });
+
+    await vi.waitFor(() => {
+      expect(fake.state.menus).toHaveLength(4);
+      expect(migrateSpy).toHaveBeenCalledTimes(1);
+      expect(reconcileSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('onStartup clears the badge and reconciles', async () => {
+    vi.resetModules();
+    await import('./sessions');
+    const { sessionRepo } = await import('@/sessions/storage');
+    const fake = getChromeFake();
+    fake.state.badge.text = '✓';
+    const reconcileSpy = vi.spyOn(sessionRepo, 'reconcile');
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(fake.state.badge.text).toBe('');
+      expect(reconcileSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

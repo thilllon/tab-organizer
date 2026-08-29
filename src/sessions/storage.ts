@@ -7,7 +7,7 @@ import {
   type SessionSettings,
   type SessionSummary,
 } from '@/types';
-import { migrateIndex, migrateSession } from './migrate';
+import { migrateIndex, migrateSession, UnknownSchemaVersionError } from './migrate';
 
 export const INDEX_KEY = 'sessionIndex';
 export const SETTINGS_KEY = 'sessionSettings';
@@ -240,6 +240,55 @@ export const sessionRepo = {
         await writeIndex(kept);
       }
       return { reindexed, dropped };
+    });
+  },
+
+  /**
+   * Eager migration pass over every stored session body (e.g. on extension update). For schema
+   * v1 `migrateSession` is the identity, so nothing is rewritten today; this is forward-looking
+   * for a future schema bump. A body that fails migration (unknown schema version, or malformed)
+   * is left untouched and not counted — reconcile()/read-time migration handle it from there.
+   */
+  migrateAll(): Promise<{ migrated: number }> {
+    return withLock(async () => {
+      const keys = await listStorageKeys();
+      const ids = keys
+        .map((key) => idFromKey(key))
+        .filter((id): id is SessionId => id !== undefined);
+
+      const index = await readIndex();
+      const summaries = new Map(index.sessions.map((summary) => [summary.id, summary]));
+
+      let migrated = 0;
+      let indexChanged = false;
+      for (const id of ids) {
+        const raw = await readRawBody(id);
+        if (raw === undefined) {
+          continue;
+        }
+        let session: Session;
+        try {
+          session = migrateSession(raw);
+        } catch (err) {
+          if (err instanceof UnknownSchemaVersionError || err instanceof TypeError) {
+            continue;
+          }
+          throw err;
+        }
+        const migratedJson = JSON.stringify(session);
+        if (migratedJson === JSON.stringify(raw)) {
+          continue;
+        }
+        await chrome.storage.local.set({ [sessionKey(id)]: session });
+        summaries.set(id, toSummary(session, byteLength(migratedJson)));
+        migrated += 1;
+        indexChanged = true;
+      }
+
+      if (indexChanged) {
+        await writeIndex([...summaries.values()]);
+      }
+      return { migrated };
     });
   },
 
