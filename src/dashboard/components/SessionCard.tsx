@@ -1,5 +1,5 @@
 import { ChevronRight, Ellipsis, Pencil, RotateCcw, Trash2 } from 'lucide-react';
-import { type KeyboardEvent, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,15 +33,37 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const body = useSessionBody(expanded ? summary.id : null);
-  // Set when Rename is picked in the dropdown: Radix returns focus to the trigger on close
-  // (`onCloseAutoFocus`), which blurs the freshly mounted input and commits the rename
-  // immediately, ending the edit before the user can type. See the guard on the content below.
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Set when Rename is picked in the dropdown, and acted on in `onCloseAutoFocus` below: the edit
+  // must not start while the menu is open. Radix's FocusScope owns focus until the menu unmounts,
+  // so an Input mounted from `onSelect` never receives it (its `autoFocus` is overridden and
+  // typing goes nowhere), and the trigger refocus that follows blurs it straight back out.
   const renameRequestedRef = useRef(false);
 
   const startRename = () => {
     setDraft(summary.name);
     setEditing(true);
   };
+
+  // Belt and braces for the same problem: even mounted after the menu closed, the input can lose
+  // the race with a focus handler still unwinding, so claim focus again on the next frame.
+  // The caret is parked at the end rather than selecting the name: renaming a session is usually
+  // an edit of the existing name ("Work" -> "Work 2"), and select() would make the first keystroke
+  // wipe it -- verified in Chrome, where select() turned "Rename me" + " 2" into "2".
+  useEffect(() => {
+    if (!editing) {
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      const input = inputRef.current;
+      if (!input) {
+        return;
+      }
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [editing]);
 
   const commitRename = async () => {
     setEditing(false);
@@ -119,6 +141,7 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
           {editing ? (
             <Input
               autoFocus
+              ref={inputRef}
               value={draft}
               aria-label="Session name"
               onChange={(event) => setDraft(event.target.value)}
@@ -167,18 +190,19 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
           <DropdownMenuContent
             align="end"
             onCloseAutoFocus={(event) => {
-              // Keep the rename input focused instead of handing focus back to the trigger,
-              // whose blur would commit and close the edit right away.
+              // Start the rename only now: the menu's focus scope is gone, so the Input's
+              // autoFocus actually lands. preventDefault stops Radix handing focus back to the
+              // trigger, whose blur would commit and close the edit immediately.
               if (renameRequestedRef.current) {
                 event.preventDefault();
                 renameRequestedRef.current = false;
+                startRename();
               }
             }}
           >
             <DropdownMenuItem
               onSelect={() => {
                 renameRequestedRef.current = true;
-                startRename();
               }}
             >
               <Pencil />
