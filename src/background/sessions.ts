@@ -14,6 +14,17 @@ export const MENU_IDS = {
   openDashboard: 'open-dashboard',
 } as const;
 
+/**
+ * Keyboard-command ids. These must stay in lockstep with the `commands` block of
+ * `defineManifest()` in `vite.config.ts` — Chrome delivers exactly those strings to
+ * `commands.onCommand`, and a rename on one side silently stops the shortcut working.
+ * `openDashboard` deliberately shares its id with `MENU_IDS.openDashboard`.
+ */
+export const COMMAND_IDS = {
+  saveSession: 'save-session',
+  openDashboard: 'open-dashboard',
+} as const;
+
 const SEPARATOR_ID = 'sessions-separator';
 const SAVED_BADGE_COLOR = '#16a34a';
 const ERROR_BADGE_COLOR = '#d93025';
@@ -88,12 +99,13 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
   clearBadge();
   switch (id) {
     case MENU_IDS.saveWindow:
-    case 'save-session':
+    case COMMAND_IDS.saveSession:
       await saveSession('window');
       return;
     case MENU_IDS.saveAll:
       await saveSession('all');
       return;
+    // Also `COMMAND_IDS.openDashboard`, which is the same id (one case, not two).
     case MENU_IDS.openDashboard:
       await openDashboard();
       return;

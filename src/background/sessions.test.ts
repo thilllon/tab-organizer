@@ -3,6 +3,7 @@ import { INDEX_KEY } from '@/sessions/storage';
 import { getChromeFake } from '@/test/chrome-fake';
 import type { SessionIndex } from '@/types';
 import {
+  COMMAND_IDS,
   clearBadge,
   handleMenuOrCommand,
   MENU_IDS,
@@ -109,6 +110,16 @@ describe('badge', () => {
     expect(fake.state.badge.text).toBe('✓');
     vi.advanceTimersByTime(1500);
     expect(fake.state.badge.text).toBe('');
+  });
+});
+
+describe('COMMAND_IDS', () => {
+  it('matches the ids declared in the manifest', () => {
+    // Source of truth: the `commands` block of `defineManifest()` in `vite.config.ts`.
+    // Chrome delivers exactly these strings to `commands.onCommand`; keep both sides equal.
+    expect(COMMAND_IDS.saveSession).toBe('save-session');
+    expect(COMMAND_IDS.openDashboard).toBe('open-dashboard');
+    expect(COMMAND_IDS.openDashboard).toBe(MENU_IDS.openDashboard);
   });
 });
 
