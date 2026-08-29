@@ -1,11 +1,11 @@
 # Sessions (Session Buddy-style save/restore) — Design Spec
 
-Status: **draft, awaiting owner review** (2026-08-29)
+Status: **approved design — decisions recorded in §15** (2026-08-29)
 Branch: `feat/sessions`
 
 This spec was produced by a three-way design panel (identity-first / MV3-robustness / user-first lenses), judged, synthesized, and then cross-checked against an independent MV3 + privacy critique. Repo facts were verified against `src/background/index.ts`, `vite.config.ts`, `src/types.ts`, `docs/description.md`, `docs/privacy.md`, `PRIVACY_POLICY.md`, `lefthook.yml`, `.github/workflows/ci.yml`.
 
-Assumptions taken until the owner answers the open questions in §15 are marked **[assumed]**.
+Owner decisions (2026-08-29): history snapshots ON by default; `favicon` permission included; headline relaunch as **v7.0.0**; first store release only after Phases 0–5 are complete; lazy restore default `'auto'`. See §15.
 
 ---
 
@@ -15,7 +15,7 @@ Assumptions taken until the owner answers the open questions in §15 are marked 
 
 - Session Buddy parity for the core loop: save all/current windows in one action, restore exactly (windows, tab order, pinned, active tab, tab groups title/color/collapsed, window state), a full-page dashboard with open windows + saved sessions + history, crash/restart recovery, unified search, import/export (JSON/CSV/Markdown/text/Netscape HTML), copy links, thousands of tabs, local-first.
 - The icon click stays byte-for-byte `sortTabGroups()`: no `default_popup`, no dialogs on the click path. The sort code (`sort.ts`, `sortTabGroups`, `sortTabs`, duplicate handlers) is not edited in any phase.
-- Zero network requests, no content scripts, no accounts. With history off, the service worker still wakes only on user actions (click, context menu, shortcut, dashboard).
+- Zero network requests, no content scripts, no accounts. The service worker wakes on user actions (click, context menu, shortcut, dashboard) and — because history snapshots are on by default — on the snapshot alarm; turning history off returns it to user-action-only.
 - Every phase is independently shippable with accurate docs/privacy text and typecheck/biome/vitest/build green.
 
 **Non-goals (deferred or rejected)**
@@ -110,13 +110,13 @@ export interface SessionIndex {
 
 export interface SessionSettings {
   // chrome.storage.local key 'sessionSettings' (device-local; NOT sync)
-  historyEnabled: boolean; // default false [assumed — Q1]
+  historyEnabled: boolean; // default true (owner decision)
   historyIntervalMinutes: 5 | 10 | 30; // default 5
   historyMaxSnapshots: number; // default 20 unprotected
-  restoreLazy: "auto" | "always" | "never"; // default 'auto' = discard when tabCount > 50 [assumed — Q4]
+  restoreLazy: "auto" | "always" | "never"; // default 'auto' = discard when tabCount > 50
 }
 export const DEFAULT_SESSION_SETTINGS: SessionSettings = {
-  historyEnabled: false,
+  historyEnabled: true,
   historyIntervalMinutes: 5,
   historyMaxSnapshots: 20,
   restoreLazy: "auto",
@@ -152,13 +152,13 @@ Rules: Chrome runtime ids (tab/window/group) are never persisted; groups are ref
 
 `src/background/index.ts` gains exactly one line: `import './sessions';`. `src/background/sessions.ts` registers all listeners synchronously at module top level:
 
-| Listener                                        | Behaviour                                                                                                                                                                                                                                                                                                                                                            |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runtime.onInstalled`                           | `contextMenus.removeAll()` → create 3 items; `reconcile()`; run migrations on `update`; `ensureHistoryAlarm()` (P3). The existing onInstalled handler in `index.ts` remains as is.                                                                                                                                                                                   |
-| `runtime.onStartup`                             | `clearBadge()`; `reconcile()`; P3: `promoteRecoveredSnapshot()` then `ensureHistoryAlarm()` with a one-shot `alarms.create('history-first', { delayInMinutes: 1 })` so the first post-launch snapshot happens after Chrome finishes restoring tabs.                                                                                                                  |
-| `contextMenus.onClicked` / `commands.onCommand` | `clearBadge()`; switch on id: `saveSession('window' \| 'all')` → `captureSession()` → `sessionRepo.put()` → badge ✓; or `openDashboard()`.                                                                                                                                                                                                                           |
-| `alarms.onAlarm` (P3)                           | `history-snapshot` / `history-first` → `takeHistorySnapshot({ origin: 'alarm' })`.                                                                                                                                                                                                                                                                                   |
-| `action.onClicked` (P3, optional, opt-in)       | Second listener added in `sessions.ts` (not in `index.ts`): if `historyEnabled`, fire-and-forget `takeHistorySnapshot({ origin: 'manual' })` concurrently with the sort. The sort path is untouched and not awaited on; the snapshot captures URLs before `closeAllButOne` closes them (order may reflect an in-progress sort — acceptable, recovery is about URLs). |
+| Listener                                                  | Behaviour                                                                                                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runtime.onInstalled`                                     | `contextMenus.removeAll()` → create 3 items; `reconcile()`; run migrations on `update`; `ensureHistoryAlarm()` (P3). The existing onInstalled handler in `index.ts` remains as is.                                                                                                                                                                                   |
+| `runtime.onStartup`                                       | `clearBadge()`; `reconcile()`; P3: `promoteRecoveredSnapshot()` then `ensureHistoryAlarm()` with a one-shot `alarms.create('history-first', { delayInMinutes: 1 })` so the first post-launch snapshot happens after Chrome finishes restoring tabs.                                                                                                                  |
+| `contextMenus.onClicked` / `commands.onCommand`           | `clearBadge()`; switch on id: `saveSession('window' \| 'all')` → `captureSession()` → `sessionRepo.put()` → badge ✓; or `openDashboard()`.                                                                                                                                                                                                                           |
+| `alarms.onAlarm` (P3)                                     | `history-snapshot` / `history-first` → `takeHistorySnapshot({ origin: 'alarm' })`.                                                                                                                                                                                                                                                                                   |
+| `action.onClicked` (P3, runs only while `historyEnabled`) | Second listener added in `sessions.ts` (not in `index.ts`): if `historyEnabled`, fire-and-forget `takeHistorySnapshot({ origin: 'manual' })` concurrently with the sort. The sort path is untouched and not awaited on; the snapshot captures URLs before `closeAllButOne` closes them (order may reflect an in-progress sort — acceptable, recovery is about URLs). |
 
 Deliberately absent: `chrome.tabs.*`, `chrome.windows.*`, `chrome.tabGroups.*` listeners. Alarms are created/cleared only when `historyEnabled` changes (`storage.onChanged` on `sessionSettings` in the SW) and re-asserted in `onStartup`/`onInstalled` (alarms are cleared on extension update/reload). `alarms.create` with an existing name replaces it (no churn). No module-scope mutable state is relied on between events.
 
@@ -254,10 +254,10 @@ Pure functions, executed in the dashboard (`navigator.clipboard.writeText` and `
 | Phase | Change                                                                                                                                                                                                                                                                                                      |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0     | `build.rollupOptions.input = { options: 'options.html', dashboard: 'dashboard.html' }` (crxjs 2.x only auto-builds manifest-referenced HTML); `test: { setupFiles: ['src/test/setup.ts'] }` via `defineConfig` from `vitest/config`. `ci.yml`: add `pnpm test` (today CI runs typecheck/format/build only). |
-| 1     | `permissions: ['tabs','tabGroups','storage','contextMenus','unlimitedStorage','favicon']` [favicon assumed — Q2]; `commands: { 'save-session': { description: 'Save the current window as a session' }, 'open-dashboard': { description: 'Open the Sessions dashboard' } }` (no `suggested_key`).           |
+| 1     | `permissions: ['tabs','tabGroups','storage','contextMenus','unlimitedStorage','favicon']` ; `commands: { 'save-session': { description: 'Save the current window as a session' }, 'open-dashboard': { description: 'Open the Sessions dashboard' } }` (no `suggested_key`).                                 |
 | 3     | add `'alarms'`.                                                                                                                                                                                                                                                                                             |
 
-No `host_permissions`, no `default_popup`, no `side_panel`, no `downloads`, no `web_accessible_resources` change. None of the new permissions adds an install-time warning. Favicons render as `<img src={chrome.runtime.getURL('/_favicon/?pageUrl=' + encodeURIComponent(url) + '&size=32')}>` from Chrome's local cache with a lucide `Globe` fallback on error — zero network.
+No `host_permissions`, no `default_popup`, no `side_panel`, no `downloads`, no `web_accessible_resources` change. None of the new permissions adds an install-time warning. Because the first store release (v7.0.0) ships after Phase 5, all four new permissions reach users in one update. Favicons render as `<img src={chrome.runtime.getURL('/_favicon/?pageUrl=' + encodeURIComponent(url) + '&size=32')}>` from Chrome's local cache with a lucide `Globe` fallback on error — zero network.
 
 ---
 
@@ -266,7 +266,7 @@ No `host_permissions`, no `default_popup`, no `side_panel`, no `downloads`, no `
 - `docs/description.md` "Only requests the three permissions it absolutely needs" → list all (with one-line reasons: contextMenus "adds Save/Open items to the icon's right-click menu"; unlimitedStorage "lets large saved sessions exceed the 10 MB local quota; data stays on device"; favicon "shows site icons from Chrome's local cache, no network"; alarms (P3) "timer for optional automatic snapshots, off by default").
 - `docs/description.md` "The service worker only activates when you click the icon" → "The service worker runs only when you click the icon, use its right-click menu or a keyboard shortcut — and, only if you turn on automatic snapshots, briefly on the interval you choose. It never contacts the network."
 - `docs/description.md` storage bullet → "…preferences via Chrome sync storage; saved sessions and snapshots (tab URLs, titles, group names, window layout) in local storage on this device only."
-- Add a "SESSIONS" feature section + FAQ "Where are my saved sessions stored?" (local, not synced, never uploaded, delete anytime, Export for backup). Keep the "one click, no popup" hero verbatim; add "Need more? Right-click the icon → Open Sessions."
+- Add a "SESSIONS" feature section + FAQ "Where are my saved sessions stored?" (local, not synced, never uploaded, delete anytime, Export for backup). v7.0.0 relaunch: the hero becomes "One-click tab sorting + a full session manager" — the one-click/no-popup promise stays in the first paragraph, followed by "Right-click the icon → Save session / Open Sessions." History being on by default must be disclosed up front ("automatic snapshots every 5 minutes, stored only on this device, can be turned off").
 - `docs/privacy.md` storage section: replace "No personal or browsing data is stored" with the local-only disclosure; add sections for contextMenus, unlimitedStorage, favicon, (P3) alarms.
 - `PRIVACY_POLICY.md`: Data Collection ("does not collect or transmit; when you save a session or enable automatic snapshots, tab URLs and titles are stored locally on your device only"), Permissions list, Data Usage, new "Data retention" paragraph (snapshot ring buffer, user deletion incl. "Delete all session data", uninstall clears), bump Last Updated.
 - CWS privacy form: still "does not collect or transmit"; review the "Web history" data-type row with the "stored locally, not transmitted" justification.
@@ -312,7 +312,7 @@ docs/README.md (or docs/description.md) docs/privacy.md PRIVACY_POLICY.md AGENTS
 
 ## 12. Phased implementation plan
 
-Branch: `feat/sessions` off `main`; one PR per phase onto that branch (or onto `main` once a phase is release-ready), conventional commits `feat(sessions): …`. On this branch run pushes with `LEFTHOOK_EXCLUDE=update-docs` and do one deliberate docs pass per phase instead of letting the hook amend commits.
+Branch: `feat/sessions` off `main`; one PR per phase onto that branch, conventional commits `feat(sessions): …`. **Release plan (owner decision):** no store release until Phases 0–5 are complete; then merge to `main`, run the release-prep step below, and publish as **v7.0.0**. Phase 6 performance work may follow as v7.x. On this branch run pushes with `LEFTHOOK_EXCLUDE=update-docs` and do one deliberate docs pass per phase instead of letting the hook amend commits.
 
 ### Phase 0 — Scaffold & spike (no user-visible change; releasable as-is)
 
@@ -343,6 +343,11 @@ Acceptance: typing filters open tabs and saved sessions within one frame at 10k 
 
 Tasks: `export.ts` five serializers (+tests: CSV quoting, HTML escaping, pinned/group rendering, empty groups); `guards.ts` (+malformed-input tests); `import.ts` detect + parsers (+tests, round-trip JSON exact); `ExportMenu` on rows, header "Export all (JSON backup)" / "Import", `ImportDialog` with preview and commit; docs bullet + FAQ.
 Acceptance: JSON export → import round-trips a fixture exactly (new ids); exported HTML imports into Chrome bookmarks; pasting a URL list creates a one-window session; malformed JSON is rejected with a message.
+
+### Release prep — v7.0.0 (after Phase 5, before publishing)
+
+Tasks: `scripts/prepare-registration.ts` gains dashboard screenshots (sessions list, restore progress, search, import dialog) and a rebranded promo template ("Sort tabs in one click · Save and restore sessions"); rewrite the store listing (`docs/README.md` description, permissions, privacy) for v7 per §10; bump `PRIVACY_POLICY.md` date; `pnpm release` with `--increment major`; CWS privacy form re-review ("Web history: stored locally, not transmitted").
+Acceptance: `screenshots/` regenerated; listing text mentions every permission and the default-on snapshots; manual QA matrix (§13) passed on the release build.
 
 ### Phase 6 — Scale & polish
 
@@ -377,9 +382,9 @@ Acceptance: a 1,000-tab restore completes without freezing, cancel works; a dash
 
 ---
 
-## 15. Open questions for the owner
+## 15. Decisions (owner, 2026-08-29)
 
-1. **History default** — OFF (recommended; keeps "SW only runs when you act" literally true, adds `alarms` in Phase 3 only) vs ON (Session Buddy parity, requires the reworded claim from day one). **[assumed: OFF]** with a one-time dashboard banner suggesting enabling it.
-2. **Favicon permission** — include `favicon` in Phase 1 (recommended; zero network, one permission-change review, real Session Buddy look) vs ship hostname text only. **[assumed: included]**
-3. **Versioning/branding** — quiet addition under v6.x with a secondary "Sessions" listing section (recommended; hero stays "one click sorts") vs headline relaunch as v7.0.0 with new screenshots/promo. **[assumed: v6.x]**
-4. **Restore-lazy default** — `'auto'` above 50 tabs (recommended: faithful for normal sessions, safe for huge ones) vs `'always'` vs `'never'`. **[assumed: 'auto']**
+1. **History default — ON.** Session Buddy parity; the service-worker claim is reworded from the first release (§10). `ensureHistoryAlarm()` runs in `onInstalled` for fresh installs; the dashboard settings row and Options expose the off switch prominently.
+2. **Favicon permission — included** (Phase 1; zero network).
+3. **Versioning/branding — v7.0.0 relaunch** with new screenshots/promo and a rewritten listing; first release only after Phases 0–5.
+4. **Restore-lazy default — `'auto'`** (discard non-active, non-pinned tabs when a restore exceeds 50 tabs).
