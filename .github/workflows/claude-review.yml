@@ -1,0 +1,110 @@
+name: Claude Review
+
+# Agentic review-and-fix loop for pull requests:
+#   1. Claude reviews the PR and posts inline comments.
+#   2. If it finds Critical/Important issues on a human-authored head commit, it fixes them,
+#      runs the repo checks, pushes a `fix(review): …` commit and re-triggers CI.
+#   3. On a `fix(review):` head commit it reviews only (no second fix round); if blocking
+#      issues remain, the job FAILS, which blocks auto-merge until a human steps in.
+#
+# `claude-review` is a required status check on `main` (with `ci`), so auto-merge waits for
+# a clean review. Requires the Claude GitHub App + CLAUDE_CODE_OAUTH_TOKEN secret
+# (run /install-github-app from Claude Code) or an ANTHROPIC_API_KEY secret.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  claude-review:
+    name: claude-review
+    # Same-repo, non-draft, non-bot PRs only: forks must not spend API credits or gain a
+    # push-capable agent, and dependabot PRs are reviewed by CI alone.
+    if: >
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Decide whether this round may push fixes
+        id: mode
+        run: |
+          HEAD_SUBJECT=$(git log -1 --format=%s)
+          case "$HEAD_SUBJECT" in
+            "fix(review):"*) echo "allow_fixes=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "allow_fixes=true" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - uses: jdx/mise-action@v4.2.3
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            FIXES ALLOWED THIS ROUND: ${{ steps.mode.outputs.allow_fixes }}
+
+            The PR branch is already checked out in the working directory (find its name with
+            `git branch --show-current` if you need it).
+
+            You are the automated reviewer for this repository. Read AGENTS.md first — its
+            conventions and "Sessions rules" are binding.
+
+            1. Review the PR diff (`gh pr diff`) for correctness bugs, MV3/service-worker
+               hazards, privacy regressions (network requests, storage.sync misuse, unsanitised
+               URLs), broken invariants, and test gaps on changed logic. Judge severity honestly:
+               Critical (must not merge), Important (should fix before merge), Minor (note only).
+            2. Post findings on the PR: inline comments via
+               `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) for
+               specific lines, and ONE summary comment via `gh pr comment` listing every finding
+               with severity. If a previous Claude Review summary comment exists, note what
+               changed since it rather than repeating it.
+            3. If FIXES ALLOWED THIS ROUND is true AND there are Critical or Important findings
+               you can fix mechanically and safely: fix them, run `pnpm typecheck` and
+               `pnpm test` (they must pass), commit everything as ONE commit with subject
+               starting exactly `fix(review): ` (no Co-Authored-By trailer), push it with
+               exactly `git push origin HEAD`, and then run
+               `gh workflow run ci.yml --ref "$(git branch --show-current)"`
+               so CI runs on the new commit even when the push comes from a token that does not
+               trigger workflows. Mention in the summary comment which findings you fixed.
+            4. Decide the verdict AFTER any fixes: if Critical or Important findings remain
+               unfixed, write the file `/tmp/claude-review-verdict` containing `BLOCKED` on the
+               first line followed by one line per open finding. If nothing blocking remains,
+               write `APPROVED` as its only line. Always write this file.
+
+            Never edit files under .github/workflows/. Never force-push. Minor findings never
+            block and must not be "fixed" in this run — list them for humans.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Edit,Write,mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),Bash(gh workflow run:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git branch --show-current),Bash(git push origin HEAD),Bash(pnpm typecheck),Bash(pnpm test),Bash(pnpm exec biome check:*),Bash(pnpm listing)"
+
+      - name: Enforce verdict
+        run: |
+          if [ ! -f /tmp/claude-review-verdict ]; then
+            echo "::error::Claude did not produce a review verdict."
+            exit 1
+          fi
+          cat /tmp/claude-review-verdict
+          if [ "$(head -1 /tmp/claude-review-verdict)" != "APPROVED" ]; then
+            echo "::error::Claude Review found blocking issues (see the PR comments)."
+            exit 1
+          fi
