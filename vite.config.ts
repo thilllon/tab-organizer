@@ -2,7 +2,7 @@ import path from 'node:path';
 import { crx, defineManifest } from '@crxjs/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import packageJson from './package.json';
 
 interface PackageJson {
@@ -42,7 +42,13 @@ const manifest = defineManifest((env) => {
         matches: [],
       },
     ],
-    permissions: ['tabs', 'tabGroups', 'storage'],
+    permissions: ['tabs', 'tabGroups', 'storage', 'contextMenus', 'unlimitedStorage', 'favicon'],
+    // Shipped unbound on purpose: Chrome silently drops conflicting suggested_key values and the
+    // UI must not promise a key. Users bind them at chrome://extensions/shortcuts.
+    commands: {
+      'save-session': { description: 'Save the current window as a session' },
+      'open-dashboard': { description: 'Open the Sessions dashboard' },
+    },
   };
 });
 
@@ -52,6 +58,10 @@ export default defineConfig(() => {
     build: {
       emptyOutDir: true,
       rollupOptions: {
+        input: {
+          options: 'options.html',
+          dashboard: 'dashboard.html',
+        },
         output: {
           chunkFileNames: 'assets/chunk-[hash].js',
         },
@@ -70,6 +80,9 @@ export default defineConfig(() => {
     plugins: [crx({ manifest }), react(), tailwindcss()],
     legacy: {
       skipWebSocketTokenCheck: true,
+    },
+    test: {
+      setupFiles: ['src/test/setup.ts'],
     },
   };
 });
