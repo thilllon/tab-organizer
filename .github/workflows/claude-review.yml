@@ -1,19 +1,20 @@
 name: Claude Review
 
-# Agentic review-and-fix loop for pull requests:
+# OPT-IN (paid) agentic review-and-fix loop. Day-to-day PR review comes from free tools
+# (CodeRabbit / Gemini Code Assist / SonarCloud — see AGENTS.md); this workflow runs ONLY
+# when a PR carries the `claude-review` label, for deep review plus mechanical fixes:
 #   1. Claude reviews the PR and posts inline comments.
 #   2. If it finds Critical/Important issues on a human-authored head commit, it fixes them,
 #      runs the repo checks, pushes a `fix(review): …` commit and re-triggers CI.
 #   3. On a `fix(review):` head commit it reviews only (no second fix round); if blocking
-#      issues remain, the job FAILS, which blocks auto-merge until a human steps in.
+#      issues remain, the job FAILS so the label owner sees it.
 #
-# `claude-review` is a required status check on `main` (with `ci`), so auto-merge waits for
-# a clean review. Requires the Claude GitHub App + CLAUDE_CODE_OAUTH_TOKEN secret
-# (run /install-github-app from Claude Code) or an ANTHROPIC_API_KEY secret.
+# Not a required status check. Requires the Claude GitHub App + CLAUDE_CODE_OAUTH_TOKEN
+# secret (run /install-github-app from Claude Code) or an ANTHROPIC_API_KEY secret.
 
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
+    types: [labeled, synchronize, reopened]
 
 concurrency:
   group: claude-review-${{ github.event.pull_request.number }}
@@ -22,11 +23,12 @@ concurrency:
 jobs:
   claude-review:
     name: claude-review
-    # Same-repo, non-draft, non-bot PRs only: forks must not spend API credits or gain a
-    # push-capable agent, and dependabot PRs are reviewed by CI alone.
+    # Same-repo, non-draft, labelled PRs only: the `claude-review` label is the opt-in
+    # switch (spend), and forks must not spend API credits or gain a push-capable agent.
     if: >
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'claude-review') &&
       github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 30
