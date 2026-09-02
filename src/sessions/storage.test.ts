@@ -498,3 +498,277 @@ describe('sessionRepo settings', () => {
     await expect(sessionRepo.getSettings()).resolves.toEqual(DEFAULT_SESSION_SETTINGS);
   });
 });
+
+describe('sessionRepo history (Phase 3)', () => {
+  function makeHistory(overrides: Partial<Session> = {}): Session {
+    return makeSession({ kind: 'history', origin: 'alarm', name: 'Snapshot', ...overrides });
+  }
+
+  /** Seeds sessions in the given order; `createdAt` decides age, `updatedAt` is set by put(). */
+  async function seed(...sessions: Session[]): Promise<void> {
+    for (const session of sessions) {
+      await sessionRepo.put(session);
+    }
+  }
+
+  function bodyIds(): string[] {
+    return [...getChromeFake().state.local.keys()]
+      .filter((key) => key.startsWith('session:'))
+      .map((key) => key.slice('session:'.length))
+      .sort();
+  }
+
+  describe('getHistoryMeta / setHistoryMeta', () => {
+    it('is undefined until written, then round-trips', async () => {
+      await expect(sessionRepo.getHistoryMeta()).resolves.toBeUndefined();
+
+      await sessionRepo.setHistoryMeta({ lastHash: 'deadbeef', lastSnapshotAt: 5_000 });
+
+      expect(getChromeFake().state.local.get(HISTORY_META_KEY)).toEqual({
+        lastHash: 'deadbeef',
+        lastSnapshotAt: 5_000,
+      });
+      await expect(sessionRepo.getHistoryMeta()).resolves.toEqual({
+        lastHash: 'deadbeef',
+        lastSnapshotAt: 5_000,
+      });
+    });
+
+    it('treats a malformed stored value as absent', async () => {
+      const fake = getChromeFake();
+      fake.state.local.set(HISTORY_META_KEY, { lastHash: 42 });
+      await expect(sessionRepo.getHistoryMeta()).resolves.toBeUndefined();
+      fake.state.local.set(HISTORY_META_KEY, 'junk');
+      await expect(sessionRepo.getHistoryMeta()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('pruneHistory', () => {
+    it('removes the oldest unprotected snapshots beyond max and returns their ids oldest first', async () => {
+      await seed(
+        makeHistory({ id: 'h3', createdAt: 3_000 }),
+        makeHistory({ id: 'h1', createdAt: 1_000 }),
+        makeHistory({ id: 'h4', createdAt: 4_000 }),
+        makeHistory({ id: 'h2', createdAt: 2_000 }),
+      );
+
+      await expect(sessionRepo.pruneHistory(2)).resolves.toEqual(['h1', 'h2']);
+
+      expect(bodyIds()).toEqual(['h3', 'h4']);
+      expect((await sessionRepo.listSummaries()).map((s) => s.id).sort()).toEqual(['h3', 'h4']);
+    });
+
+    it('never touches saved sessions or protected snapshots, whatever their age', async () => {
+      await seed(
+        makeSession({ id: 'saved', createdAt: 1 }),
+        makeHistory({ id: 'pinned', protected: true, createdAt: 2 }),
+        makeHistory({ id: 'recovered', origin: 'recovered', protected: true, createdAt: 3 }),
+        makeHistory({ id: 'h1', createdAt: 1_000 }),
+        makeHistory({ id: 'h2', createdAt: 2_000 }),
+      );
+
+      await expect(sessionRepo.pruneHistory(1)).resolves.toEqual(['h1']);
+
+      expect(bodyIds()).toEqual(['h2', 'pinned', 'recovered', 'saved']);
+    });
+
+    it('does not write when nothing exceeds max', async () => {
+      await seed(makeHistory({ id: 'h1' }), makeHistory({ id: 'h2', createdAt: 2_000 }));
+      const setSpy = vi.spyOn(chrome.storage.local, 'set');
+      const removeSpy = vi.spyOn(chrome.storage.local, 'remove');
+
+      await expect(sessionRepo.pruneHistory(2)).resolves.toEqual([]);
+
+      expect(setSpy).not.toHaveBeenCalled();
+      expect(removeSpy).not.toHaveBeenCalled();
+    });
+
+    it('removes bodies before rewriting the index, in one remove call', async () => {
+      await seed(makeHistory({ id: 'h1', createdAt: 1_000 }), makeHistory({ id: 'h2' }));
+      const removeSpy = vi.spyOn(chrome.storage.local, 'remove');
+      const setSpy = vi.spyOn(chrome.storage.local, 'set');
+
+      await sessionRepo.pruneHistory(0);
+
+      expect(removeSpy).toHaveBeenCalledWith([sessionKey('h1'), sessionKey('h2')]);
+      expect(removeSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        setSpy.mock.invocationCallOrder[0],
+      );
+      expect(await readIndex()).toMatchObject({ sessions: [] });
+    });
+
+    it('drops historyMeta when the snapshot it fingerprints is pruned, keeps it otherwise', async () => {
+      await seed(
+        makeHistory({ id: 'h1', createdAt: 1_000, contentHash: 'aaaa0001' }),
+        makeHistory({ id: 'h2', createdAt: 2_000, contentHash: 'aaaa0002' }),
+      );
+      await sessionRepo.setHistoryMeta({ lastHash: 'aaaa0002', lastSnapshotAt: 2_000 });
+
+      await sessionRepo.pruneHistory(1);
+      await expect(sessionRepo.getHistoryMeta()).resolves.toEqual({
+        lastHash: 'aaaa0002',
+        lastSnapshotAt: 2_000,
+      });
+
+      await sessionRepo.pruneHistory(0);
+      await expect(sessionRepo.getHistoryMeta()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('setProtected', () => {
+    it('rewrites the body and the index summary, keeping updatedAt', async () => {
+      await seed(makeHistory({ id: 'h1' }));
+      vi.setSystemTime(9_000);
+
+      await sessionRepo.setProtected('h1', true);
+
+      expect(await sessionRepo.get('h1')).toMatchObject({ protected: true, updatedAt: 5_000 });
+      expect((await sessionRepo.listSummaries())[0]).toMatchObject({ id: 'h1', protected: true });
+
+      await sessionRepo.setProtected('h1', false);
+
+      expect((await sessionRepo.get('h1'))?.protected).toBe(false);
+      expect((await sessionRepo.listSummaries())[0].protected).toBe(false);
+    });
+
+    it('rejects for an unknown id', async () => {
+      await expect(sessionRepo.setProtected('ghost', true)).rejects.toThrow(
+        'Session not found: ghost',
+      );
+    });
+  });
+
+  describe('markRecovered', () => {
+    it('sets origin recovered, protected and the name in body and index, keeping updatedAt', async () => {
+      await seed(makeHistory({ id: 'h1' }));
+      vi.setSystemTime(9_000);
+
+      await sessionRepo.markRecovered('h1', 'Previous session (recovered) 2026-08-29 14:03');
+
+      const expected = {
+        origin: 'recovered',
+        protected: true,
+        name: 'Previous session (recovered) 2026-08-29 14:03',
+        updatedAt: 5_000,
+      };
+      expect(await sessionRepo.get('h1')).toMatchObject(expected);
+      expect((await sessionRepo.listSummaries())[0]).toMatchObject(expected);
+    });
+
+    it('rejects for an unknown id', async () => {
+      await expect(sessionRepo.markRecovered('ghost', 'x')).rejects.toThrow(
+        'Session not found: ghost',
+      );
+    });
+  });
+
+  describe('duplicateAsSaved', () => {
+    it('creates a fresh saved session from a history snapshot and leaves the source untouched', async () => {
+      const source = makeHistory({
+        id: 'h1',
+        protected: true,
+        contentHash: 'cafe0001',
+        createdAt: new Date(2026, 7, 29, 14, 3).getTime(),
+        windows: [makeWindow(['https://a.com/']), makeWindow(['https://b.com/', 'https://c.com/'])],
+      });
+      await seed(source);
+      vi.setSystemTime(9_000);
+
+      const copy = await sessionRepo.duplicateAsSaved('h1');
+
+      expect(copy.id).toMatch(/^[0-9a-f-]{36}$/);
+      expect(copy.id).not.toBe('h1');
+      expect(copy).toMatchObject({
+        schemaVersion: SESSION_SCHEMA_VERSION,
+        kind: 'saved',
+        origin: 'manual',
+        name: 'Session 2026-08-29 14:03 · 2 windows · 3 tabs',
+        createdAt: 9_000,
+        updatedAt: 9_000,
+        contentHash: 'cafe0001',
+        windows: source.windows,
+      });
+      expect('protected' in copy).toBe(false);
+      expect(await sessionRepo.get(copy.id)).toEqual(copy);
+      expect(await sessionRepo.get('h1')).toMatchObject({
+        kind: 'history',
+        origin: 'alarm',
+        protected: true,
+        updatedAt: 5_000,
+      });
+      const summaries = await sessionRepo.listSummaries();
+      expect(summaries.map((s) => s.id)).toEqual([copy.id, 'h1']);
+      expect(summaries[0]).toMatchObject({ kind: 'saved', windowCount: 2, tabCount: 3 });
+    });
+
+    it('uses the given name and omits contentHash when the source has none', async () => {
+      await seed(makeHistory({ id: 'h1' }));
+
+      const copy = await sessionRepo.duplicateAsSaved('h1', 'Work tabs');
+
+      expect(copy.name).toBe('Work tabs');
+      expect('contentHash' in copy).toBe(false);
+    });
+
+    it('rejects for an unknown id', async () => {
+      await expect(sessionRepo.duplicateAsSaved('ghost')).rejects.toThrow(
+        'Session not found: ghost',
+      );
+    });
+  });
+
+  describe('removeAllHistory', () => {
+    beforeEach(async () => {
+      await seed(
+        makeSession({ id: 'saved', contentHash: 'aaaa0000' }),
+        makeHistory({ id: 'h1', createdAt: 1_000, contentHash: 'aaaa0001' }),
+        makeHistory({ id: 'pinned', protected: true, createdAt: 2_000, contentHash: 'aaaa0002' }),
+        makeHistory({ id: 'h3', createdAt: 3_000, contentHash: 'aaaa0003' }),
+      );
+    });
+
+    it('unprotectedOnly keeps saved sessions and protected snapshots', async () => {
+      await sessionRepo.setHistoryMeta({ lastHash: 'aaaa0003', lastSnapshotAt: 3_000 });
+
+      const removed = await sessionRepo.removeAllHistory({ unprotectedOnly: true });
+
+      expect([...removed].sort()).toEqual(['h1', 'h3']);
+      expect(bodyIds()).toEqual(['pinned', 'saved']);
+      expect((await sessionRepo.listSummaries()).map((s) => s.id).sort()).toEqual([
+        'pinned',
+        'saved',
+      ]);
+      await expect(sessionRepo.getHistoryMeta()).resolves.toBeUndefined();
+    });
+
+    it('otherwise removes every history snapshot, protected included, but never saved sessions', async () => {
+      const removed = await sessionRepo.removeAllHistory({ unprotectedOnly: false });
+
+      expect([...removed].sort()).toEqual(['h1', 'h3', 'pinned']);
+      expect(bodyIds()).toEqual(['saved']);
+      expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['saved']);
+    });
+
+    it('keeps historyMeta while the snapshot it fingerprints survives', async () => {
+      await sessionRepo.setHistoryMeta({ lastHash: 'aaaa0002', lastSnapshotAt: 2_000 });
+
+      await sessionRepo.removeAllHistory({ unprotectedOnly: true });
+
+      await expect(sessionRepo.getHistoryMeta()).resolves.toEqual({
+        lastHash: 'aaaa0002',
+        lastSnapshotAt: 2_000,
+      });
+    });
+
+    it('does not write when there is nothing to remove', async () => {
+      await sessionRepo.removeAllHistory({ unprotectedOnly: false });
+      const setSpy = vi.spyOn(chrome.storage.local, 'set');
+      const removeSpy = vi.spyOn(chrome.storage.local, 'remove');
+
+      await expect(sessionRepo.removeAllHistory({ unprotectedOnly: false })).resolves.toEqual([]);
+
+      expect(setSpy).not.toHaveBeenCalled();
+      expect(removeSpy).not.toHaveBeenCalled();
+    });
+  });
+});
