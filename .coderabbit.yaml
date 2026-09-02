@@ -1,0 +1,35 @@
+# CodeRabbit — free AI review for public repos (https://docs.coderabbit.ai/reference/yaml-template)
+language: "ko-KR"
+reviews:
+  profile: "chill"
+  high_level_summary: true
+  request_changes_workflow: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!dist/**"
+    - "!package/**"
+    - "!screenshots/**"
+    - "!docs/description.txt"
+    - "!pnpm-lock.yaml"
+  path_instructions:
+    - path: "src/background/**"
+      instructions: >-
+        Manifest V3 service worker. Flag any chrome.tabs/chrome.windows/chrome.tabGroups event
+        listener (forbidden here), listeners registered after an await, module-scope mutable
+        state relied on between events, and any chrome namespace used at module-evaluation
+        time without a matching manifest permission in the same PR.
+    - path: "src/sessions/**"
+      instructions: >-
+        Session data must go through sessionRepo under the Web Lock (never raw
+        chrome.storage), never into chrome.storage.sync, and never persist Chrome runtime ids
+        (tab/window/group ids). Restore code must sanitise URLs before opening them.
+    - path: "src/dashboard/**"
+      instructions: >-
+        Extension page React code. Flag network requests of any kind (only
+        chrome.runtime.getURL('/_favicon/…') images are allowed), dangerouslySetInnerHTML,
+        missing effect cleanup, and unguarded async races (this codebase uses generation
+        counters).
+chat:
+  auto_reply: true
