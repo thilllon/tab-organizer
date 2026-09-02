@@ -8,6 +8,7 @@ import {
   type SessionSummary,
 } from '@/types';
 import { migrateIndex, migrateSession, UnknownSchemaVersionError } from './migrate';
+import { defaultSessionName } from './naming';
 
 export const INDEX_KEY = 'sessionIndex';
 export const SETTINGS_KEY = 'sessionSettings';
@@ -337,4 +338,181 @@ export const sessionRepo = {
       await chrome.storage.local.set({ [SETTINGS_KEY]: next });
     });
   },
+
+  // ---- Phase 3: history snapshots (spec §4 `historyMeta`, §12 Phase 3) -------------------
+
+  /** `historyMeta` — dedupe baseline for `takeHistorySnapshot()`; `undefined` until the first snapshot. */
+  getHistoryMeta(): Promise<HistoryMeta | undefined> {
+    return readHistoryMeta();
+  },
+
+  setHistoryMeta(meta: HistoryMeta): Promise<void> {
+    return withLock(async () => {
+      await chrome.storage.local.set({ [HISTORY_META_KEY]: meta });
+    });
+  },
+
+  /**
+   * Ring buffer: keeps the newest `max` unprotected `kind: 'history'` sessions and removes the
+   * rest, oldest first. Never touches `kind: 'saved'` or protected snapshots. Returns the removed
+   * ids (oldest first); the index is rewritten once, under a single lock.
+   */
+  pruneHistory(max: number): Promise<SessionId[]> {
+    return withLock(async () => {
+      const index = await readIndex();
+      const unprotected = index.sessions.filter(isUnprotectedHistory).sort(oldestFirst);
+      const excess = unprotected.length - Math.max(0, Math.floor(max));
+      if (excess <= 0) {
+        return [];
+      }
+      const ids = unprotected.slice(0, excess).map((summary) => summary.id);
+      await removeBodiesAndIndex(index, ids);
+      return ids;
+    });
+  },
+
+  /** Protected snapshots are exempt from pruning (recovered / user-pinned). `updatedAt` is kept. */
+  setProtected(id: SessionId, value: boolean): Promise<void> {
+    return updateBody(id, (existing) => ({ ...existing, protected: value }));
+  },
+
+  /**
+   * Turns a history snapshot into the crash-recovery entry: `origin: 'recovered'`, protected,
+   * renamed. `updatedAt` is kept so the snapshot stays in its chronological place in the index.
+   */
+  markRecovered(id: SessionId, name: string): Promise<void> {
+    return updateBody(id, (existing) => ({
+      ...existing,
+      origin: 'recovered',
+      protected: true,
+      name,
+    }));
+  },
+
+  /**
+   * "Save as session": copies a (history) session into a brand-new `kind: 'saved'` session with
+   * a fresh id, `origin: 'manual'`, `createdAt`/`updatedAt` = now and no `protected` flag. The
+   * source is left untouched. Default name: the saved-session form stamped with the source's
+   * capture time ("Session 2026-08-29 14:03 · 3 windows · 87 tabs").
+   */
+  duplicateAsSaved(id: SessionId, name?: string): Promise<Session> {
+    return withLock(async () => {
+      const source = await readBody(id);
+      if (source === undefined) {
+        throw new Error(`Session not found: ${id}`);
+      }
+      const now = Date.now();
+      const tabCount = source.windows.reduce((count, win) => count + win.tabs.length, 0);
+      const copy: Session = {
+        schemaVersion: SESSION_SCHEMA_VERSION,
+        id: crypto.randomUUID(),
+        kind: 'saved',
+        name:
+          name ?? defaultSessionName(new Date(source.createdAt), source.windows.length, tabCount),
+        origin: 'manual',
+        createdAt: now,
+        updatedAt: now,
+        windows: source.windows,
+      };
+      if (source.contentHash !== undefined) {
+        copy.contentHash = source.contentHash;
+      }
+      await writeBodyAndIndex(copy);
+      return copy;
+    });
+  },
+
+  /**
+   * Deletes every `kind: 'history'` session (only the unprotected ones when `unprotectedOnly`).
+   * Saved sessions are never touched. Returns the removed ids.
+   */
+  removeAllHistory(options: { unprotectedOnly: boolean }): Promise<SessionId[]> {
+    return withLock(async () => {
+      const index = await readIndex();
+      const ids = index.sessions
+        .filter((summary) =>
+          options.unprotectedOnly ? isUnprotectedHistory(summary) : isHistory(summary),
+        )
+        .map((summary) => summary.id);
+      await removeBodiesAndIndex(index, ids);
+      return ids;
+    });
+  },
 };
+
+// ---------------------------------------------------------------------------
+// Phase 3 helpers (history snapshots)
+// ---------------------------------------------------------------------------
+
+/** `chrome.storage.local` key `historyMeta` (spec §4). */
+export interface HistoryMeta {
+  /** `contentHash` of the newest history snapshot; identical captures are skipped. */
+  lastHash: string;
+  /** Epoch ms of that snapshot's write. */
+  lastSnapshotAt: number;
+}
+
+function normalizeHistoryMeta(value: unknown): HistoryMeta | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  if (typeof value.lastHash !== 'string' || typeof value.lastSnapshotAt !== 'number') {
+    return undefined;
+  }
+  return { lastHash: value.lastHash, lastSnapshotAt: value.lastSnapshotAt };
+}
+
+async function readHistoryMeta(): Promise<HistoryMeta | undefined> {
+  const raw: Record<string, unknown> = await chrome.storage.local.get(HISTORY_META_KEY);
+  return normalizeHistoryMeta(raw[HISTORY_META_KEY]);
+}
+
+function isHistory(summary: SessionSummary): boolean {
+  return summary.kind === 'history';
+}
+
+function isUnprotectedHistory(summary: SessionSummary): boolean {
+  return isHistory(summary) && summary.protected !== true;
+}
+
+/** Capture time decides age (rename/protect keep `updatedAt`, but `createdAt` never moves). */
+function oldestFirst(a: SessionSummary, b: SessionSummary): number {
+  return a.createdAt - b.createdAt || a.updatedAt - b.updatedAt || a.id.localeCompare(b.id);
+}
+
+/** Read-modify-write of one body and its summary under the lock. Not for use inside withLock. */
+function updateBody(id: SessionId, update: (existing: Session) => Session): Promise<void> {
+  return withLock(async () => {
+    const existing = await readBody(id);
+    if (existing === undefined) {
+      throw new Error(`Session not found: ${id}`);
+    }
+    await writeBodyAndIndex(update(existing));
+  });
+}
+
+/**
+ * Delete order: bodies first, then the index (spec §4), then drop `historyMeta` when the
+ * snapshot it fingerprints is gone — otherwise the next `takeHistorySnapshot()` would skip a
+ * state that no stored snapshot holds any more. Must be called inside withLock.
+ */
+async function removeBodiesAndIndex(index: SessionIndex, ids: SessionId[]): Promise<void> {
+  if (ids.length === 0) {
+    return;
+  }
+  await chrome.storage.local.remove(ids.map((id) => sessionKey(id)));
+  const removed = new Set(ids);
+  const remaining = index.sessions.filter((summary) => !removed.has(summary.id));
+  await writeIndex(remaining);
+
+  const meta = await readHistoryMeta();
+  if (meta === undefined) {
+    return;
+  }
+  const stillHeld = remaining.some(
+    (summary) => isHistory(summary) && summary.contentHash === meta.lastHash,
+  );
+  if (!stillHeld) {
+    await chrome.storage.local.remove(HISTORY_META_KEY);
+  }
+}
