@@ -1,5 +1,5 @@
 import { Layers, Save } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/dashboard/components/EmptyState';
@@ -15,6 +15,7 @@ import { errorMessage } from '@/dashboard/lib/errors';
 import { needsRestoreConfirm } from '@/dashboard/lib/restore-summary';
 import { pickWindow } from '@/dashboard/lib/session-utils';
 import { captureSession } from '@/sessions/capture';
+import { ensureUniqueName } from '@/sessions/naming';
 import type { RestoreTarget } from '@/sessions/restore';
 import { sessionRepo } from '@/sessions/storage';
 import type { Session, SessionSettings } from '@/types';
@@ -23,13 +24,23 @@ type SaveScope = 'window' | 'all';
 
 const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
 
+const NOTHING_TO_SAVE: Record<SaveScope, string> = {
+  window: 'Nothing to save — this window only contains the Sessions dashboard.',
+  all: 'Nothing to save — no open window contains anything besides the Sessions dashboard.',
+};
+
 export function Dashboard() {
   const { sessions, loading, error: indexError } = useSessionIndex();
-  const { restore, progress, running, cancel, lastResult, cancelled, dismiss } = useRestore();
+  const { restore, progress, running, cancel, cancelling, lastResult, cancelled, dismiss } =
+    useRestore();
   const [saving, setSaving] = useState<SaveScope | undefined>(undefined);
   const [notice, setNotice] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [pending, setPending] = useState<PendingRestore | undefined>(undefined);
+  // Focus target after a card deletes itself: the card (and with it the button that had focus)
+  // unmounts, which would otherwise drop keyboard focus to <body>. <main> outlives both the list
+  // and the empty state that replaces it once the last session is gone.
+  const mainRef = useRef<HTMLElement>(null);
 
   const save = async (scope: SaveScope) => {
     setSaving(scope);
@@ -38,11 +49,14 @@ export function Dashboard() {
     try {
       const session = await captureSession(scope);
       if (session.windows.length === 0) {
-        setNotice('Nothing to save — this window only contains the Sessions dashboard.');
+        setNotice(NOTHING_TO_SAVE[scope]);
         return;
       }
-      await sessionRepo.put(session);
-      setNotice(`Saved “${session.name}”.`);
+      // Two saves in the same minute would otherwise share the default name.
+      const names = (await sessionRepo.listSummaries()).map((summary) => summary.name);
+      const named: Session = { ...session, name: ensureUniqueName(session.name, names) };
+      await sessionRepo.put(named);
+      setNotice(`Saved “${named.name}”.`);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -56,7 +70,13 @@ export function Dashboard() {
     lazy?: SessionSettings['restoreLazy'],
   ): Promise<void> => {
     try {
-      await restore(session, target, lazy);
+      const outcome = await restore(session, target, lazy);
+      if (!outcome.ok) {
+        // The header Save buttons and each SessionCard's Restore button are disabled while a
+        // restore runs (via `running` / the `restoring` prop); this catches the click that lands
+        // before that re-render, straight from the hook rather than from state timing.
+        setNotice('A restore is already running.');
+      }
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -70,19 +90,13 @@ export function Dashboard() {
     target: RestoreTarget,
     windowIndex?: number,
   ): Promise<void> => {
-    if (running) {
-      // Belt-and-braces re-entrancy guard: the header Save buttons and each SessionCard's
-      // Restore button are also disabled while `running` is true (via the `restoring` prop), so
-      // this only matters for a click that lands first.
-      setNotice('A restore is already running.');
-      return;
-    }
     setError(undefined);
     setNotice(undefined);
     try {
       const scoped = windowIndex === undefined ? session : pickWindow(session, windowIndex);
       if (needsRestoreConfirm(scoped)) {
-        setPending({ session: scoped, target });
+        const settings = await sessionRepo.getSettings();
+        setPending({ session: scoped, target, restoreLazy: settings.restoreLazy });
         return;
       }
       await runRestore(scoped, target);
@@ -98,6 +112,10 @@ export function Dashboard() {
     const { session, target } = pending;
     setPending(undefined);
     void runRestore(session, target, lazy);
+  };
+
+  const focusList = () => {
+    mainRef.current?.focus({ preventScroll: true });
   };
 
   return (
@@ -141,7 +159,8 @@ export function Dashboard() {
         </p>
       )}
 
-      <main>
+      {/* tabIndex -1: programmatic focus target only (see mainRef); never in the tab order. */}
+      <main ref={mainRef} tabIndex={-1} className="outline-none">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : sessions.length === 0 ? (
@@ -162,6 +181,7 @@ export function Dashboard() {
                 onRestoreWindow={(session, windowIndex) =>
                   requestRestore(session, NEW_WINDOWS, windowIndex)
                 }
+                onDeleted={focusList}
               />
             ))}
           </ul>
@@ -176,6 +196,7 @@ export function Dashboard() {
       <ProgressToast
         progress={progress}
         result={lastResult}
+        cancelling={cancelling}
         cancelled={cancelled}
         onCancel={cancel}
         onDismiss={dismiss}

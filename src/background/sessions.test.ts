@@ -140,6 +140,22 @@ describe('handleMenuOrCommand', () => {
     expect(getChromeFake().state.badge.text).toBe('✓');
   });
 
+  it('gives a second save in the same minute a " (2)" suffix instead of a duplicate name', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 7, 29, 14, 3).getTime() });
+    await seedWindow(['https://a.example/'], true);
+
+    await handleMenuOrCommand('save-window');
+    await handleMenuOrCommand('save-window');
+    await handleMenuOrCommand('save-window');
+
+    const names = readIndex()?.sessions.map((s) => s.name) ?? [];
+    expect(names.sort()).toEqual([
+      'Session 2026-08-29 14:03 · 1 window · 1 tab',
+      'Session 2026-08-29 14:03 · 1 window · 1 tab (2)',
+      'Session 2026-08-29 14:03 · 1 window · 1 tab (3)',
+    ]);
+  });
+
   it("'save-session' (keyboard command) behaves like 'save-window'", async () => {
     await seedWindow(['https://a.example/'], true);
     await handleMenuOrCommand('save-session');

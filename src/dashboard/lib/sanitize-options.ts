@@ -10,10 +10,5 @@ export async function loadSanitizeOptions(): Promise<SanitizeOptions> {
     loadSuspendedPrefix(),
     chrome.extension.isAllowedFileSchemeAccess(),
   ]);
-  return {
-    ownExtensionId: chrome.runtime.id,
-    fileAccessAllowed,
-    suspendedPrefix,
-    suspendedPrefixLen: suspendedPrefix.length,
-  };
+  return { ownExtensionId: chrome.runtime.id, fileAccessAllowed, suspendedPrefix };
 }

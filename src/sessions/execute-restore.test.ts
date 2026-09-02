@@ -14,7 +14,6 @@ const SANITIZE: RestoreOptions['sanitize'] = {
   ownExtensionId: 'fakeextid',
   fileAccessAllowed: false,
   suspendedPrefix: 'chrome-extension://noogafoofpebimajpfpamcfhoaifemoa/suspended.html#',
-  suspendedPrefixLen: 'chrome-extension://noogafoofpebimajpfpamcfhoaifemoa/suspended.html#'.length,
 };
 
 /** 1 pinned, group "Work" (blue, open) with 2 tabs, group "News" (red, collapsed) with 1 tab, 1 loose. */
@@ -199,7 +198,7 @@ describe('executeRestore', () => {
       { title: 'News', color: 'red', collapsed: true },
     ]);
 
-    expect(result).toEqual({ restored: 5, skipped: [], errors: [] });
+    expect(result).toEqual({ restored: 5, discarded: 0, skipped: [], errors: [] });
   });
 
   it('applies clamped bounds for normal windows and focuses the snapshot-focused window last', async () => {
@@ -395,13 +394,15 @@ describe('executeRestore', () => {
     vi.restoreAllMocks();
   });
 
-  it('never discards the active or pinned tab in lazy mode', async () => {
+  it('never discards the active or pinned tab in lazy mode, and reports the discarded count', async () => {
     const discardSpy = vi.spyOn(chrome.tabs, 'discard');
     const before = snapshotWindowIds();
 
-    await executeRestore(makePlan([WINDOW_A], { lazy: 'always' }));
+    const result = await executeRestore(makePlan([WINDOW_A], { lazy: 'always' }));
     const [windowId] = newWindowIds(before);
     const fake = getChromeFake();
+
+    expect(result.discarded).toBe(3);
 
     const discardedUrls = [...fake.state.tabs.values()]
       .filter((tab) => tab.windowId === windowId && tab.discarded)
@@ -648,6 +649,49 @@ describe('executeRestore', () => {
     expect(discardedRows.length).toBeGreaterThan(0);
     expect(discardedRows.every((tab) => tab.url !== '')).toBe(true);
     expect(rows.some((tab) => tab.status === 'unloaded' && tab.url === '')).toBe(false);
+  });
+
+  it('stops waiting for uncommitted tabs on the next poll after a cancel, instead of the 5 s timeout', async () => {
+    // Lazy restore whose navigations never commit: before the abort check in waitForCommit, a
+    // Cancel pressed here was only noticed once the full commit timeout had elapsed.
+    const fake = getChromeFake();
+    fake.state.deferCommit = true;
+    const controller = new AbortController();
+    const getSpy = vi.spyOn(chrome.tabs, 'get');
+    vi.useFakeTimers();
+    try {
+      let settled = false;
+      const before = snapshotWindowIds();
+      const restorePromise = executeRestore(makePlan([WINDOW_A], { lazy: 'always' }), {
+        signal: controller.signal,
+      }).then((result) => {
+        settled = true;
+        return result;
+      });
+      // A couple of 50 ms polls in, every discardable tab is still waiting for its commit.
+      await vi.advanceTimersByTimeAsync(120);
+      expect(settled).toBe(false);
+      expect(getSpy.mock.calls.length).toBeGreaterThan(0);
+
+      controller.abort();
+      const pollsBeforeAbort = getSpy.mock.calls.length;
+      // One more poll interval is enough: the loop checks the signal before calling tabs.get.
+      await vi.advanceTimersByTimeAsync(100);
+      expect(settled).toBe(true);
+      expect(getSpy.mock.calls.length).toBe(pollsBeforeAbort);
+
+      const result = await restorePromise;
+      expect(result.restored).toBe(5);
+      expect(result.discarded).toBe(0);
+      expect(result.errors).toEqual([]);
+      const [windowId] = newWindowIds(before);
+      const rows = [...fake.state.tabs.values()].filter((tab) => tab.windowId === windowId);
+      // Nothing was discarded while uncommitted, so no url was lost.
+      expect(rows.every((tab) => !tab.discarded)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    }
   });
 
   it('leaves a tab that never commits within the timeout undiscarded, still counting it as restored', async () => {

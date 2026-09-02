@@ -6,7 +6,6 @@ const SUSPENDED_PREFIX = 'chrome-extension://suspenderid/suspended.html#';
 const OPTIONS: CaptureOptions = {
   ownUrlPrefix: 'chrome-extension://fakeextid/',
   suspendedPrefix: SUSPENDED_PREFIX,
-  suspendedPrefixLen: SUSPENDED_PREFIX.length,
 };
 
 function makeTab(overrides: Partial<chrome.tabs.Tab> = {}): chrome.tabs.Tab {
@@ -192,6 +191,17 @@ describe('captureWindows', () => {
     expect(snapshot.tabs[0].url).toBe('https://docs.example.com/page?x=1');
   });
 
+  it('unwraps the suspended url verbatim: query with &, +, %XX escapes and a #fragment survive', () => {
+    const real = 'https://www.youtube.com/watch?v=abc&list=PL123&q=a+b&p=%2Fusr%2Fbin#t=42';
+    const win = makeWindow({
+      tabs: tabsInOrder({ url: `${SUSPENDED_PREFIX}ttl=YouTube&pos=0&uri=${real}` }),
+    });
+
+    const [snapshot] = captureWindows([win], [], OPTIONS);
+
+    expect(snapshot.tabs[0].url).toBe(real);
+  });
+
   it('keeps the wrapper url when a suspended tab has no uri parameter', () => {
     const url = `${SUSPENDED_PREFIX}ttl=Docs`;
     const win = makeWindow({ tabs: tabsInOrder({ url }) });
@@ -234,11 +244,7 @@ describe('captureWindows', () => {
   it('never treats tabs as suspended when suspendedPrefix is empty', () => {
     const win = makeWindow({ tabs: tabsInOrder({ url: 'https://a.com/?uri=https://evil.com/' }) });
 
-    const result = captureWindows([win], [], {
-      ...OPTIONS,
-      suspendedPrefix: '',
-      suspendedPrefixLen: 0,
-    });
+    const result = captureWindows([win], [], { ...OPTIONS, suspendedPrefix: '' });
 
     expect(result[0].tabs[0].url).toBe('https://a.com/?uri=https://evil.com/');
   });

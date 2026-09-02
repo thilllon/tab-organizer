@@ -17,6 +17,23 @@ export function defaultSessionName(date: Date, windowCount: number, tabCount: nu
   return `Session ${stamp} · ${plural(windowCount, 'window')} · ${plural(tabCount, 'tab')}`;
 }
 
+/**
+ * `name`, or `name (2)`, `name (3)`, ... — the first that is not in `existingNames`. Two saves in
+ * the same minute get the same default name otherwise.
+ */
+export function ensureUniqueName(name: string, existingNames: Iterable<string>): string {
+  const taken = new Set(existingNames);
+  if (!taken.has(name)) {
+    return name;
+  }
+  for (let n = 2; ; n++) {
+    const candidate = `${name} (${n})`;
+    if (!taken.has(candidate)) {
+      return candidate;
+    }
+  }
+}
+
 /** Lowercase, non-alphanumerics collapsed to `-`, trimmed, at most 40 characters. */
 export function slugify(name: string): string {
   return name

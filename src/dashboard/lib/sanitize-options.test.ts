@@ -11,7 +11,6 @@ describe('loadSanitizeOptions', () => {
     expect(options.suspendedPrefix).toBe(
       `chrome-extension://${THE_MARVELLOUS_SUSPENDER_EXTENSION_ID}/suspended.html#`,
     );
-    expect(options.suspendedPrefixLen).toBe(options.suspendedPrefix.length);
   });
 
   it('honours the configured suspender id and file-scheme access', async () => {

@@ -10,12 +10,14 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { countTabs } from '@/dashboard/lib/restore-summary';
-import type { RestoreTarget } from '@/sessions/restore';
+import { isLazyRestore, type RestoreTarget } from '@/sessions/restore';
 import type { Session, SessionSettings } from '@/types';
 
 export interface PendingRestore {
   session: Session;
   target: RestoreTarget;
+  /** The stored `restoreLazy` setting when the confirm was requested; seeds the checkbox. */
+  restoreLazy: SessionSettings['restoreLazy'];
 }
 
 export interface RestoreConfirmDialogProps {
@@ -34,9 +36,11 @@ export function RestoreConfirmDialog({ pending, onConfirm, onCancel }: RestoreCo
   useEffect(() => {
     if (pending !== undefined) {
       lastPendingRef.current = pending;
-      // Reset the checkbox to its default each time a new confirm opens, rather than carrying
-      // over whatever the previous confirm (possibly for a different session) left it at.
-      setLazy(true);
+      // Seed the checkbox from the stored setting each time a new confirm opens, rather than
+      // carrying over whatever the previous confirm (possibly for a different session) left it
+      // at: 'always' -> checked, 'never' -> unchecked, 'auto' -> what the planner would do for
+      // this many tabs. The checkbox's answer is then passed back as an explicit override.
+      setLazy(isLazyRestore(pending.restoreLazy, countTabs(pending.session)));
     }
   }, [pending]);
 

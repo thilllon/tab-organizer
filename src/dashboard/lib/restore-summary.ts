@@ -45,18 +45,26 @@ export function splitRestoreErrors(result: RestoreResult): SplitRestoreErrors {
  * uses `splitRestoreErrors`). That keeps "of total" meaningful whether the run finished in full or
  * broke off early (e.g. a window failed to open partway through): both read as a fraction of tabs
  * the restore actually attempted. When `options.cancelled` is set, the fraction is dropped
- * entirely in favour of a plain count of tabs opened before Cancel was pressed.
+ * entirely in favour of a plain count of tabs opened before Cancel was pressed. Lazily restored
+ * tabs (`result.discarded`) are always called out: between 51 and 100 tabs the 'auto' setting
+ * discards without ever having shown the confirm dialog, so this is the only place it is visible.
  */
 export function formatRestoreSummary(
   result: RestoreResult,
   total: number,
   options: { cancelled?: boolean } = {},
 ): string {
+  const parts =
+    options.cancelled === true
+      ? [`Restore cancelled — ${pluralize(result.restored, 'tab')} opened`]
+      : [`Restored ${result.restored} of ${pluralize(total, 'tab')}`];
+  if (result.discarded > 0) {
+    parts.push(`${pluralize(result.discarded, 'tab')} will load when clicked`);
+  }
   if (options.cancelled === true) {
-    return `Restore cancelled — ${pluralize(result.restored, 'tab')} opened`;
+    return parts.join(' · ');
   }
   const { tabErrors, structuralProblems } = splitRestoreErrors(result);
-  const parts = [`Restored ${result.restored} of ${pluralize(total, 'tab')}`];
   if (result.skipped.length > 0) {
     parts.push(`${result.skipped.length} skipped`);
   }

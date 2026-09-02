@@ -47,6 +47,7 @@ describe('splitRestoreErrors', () => {
   it('treats group/activate/window-state urls as structural, everything else as a tab error', () => {
     const result = {
       restored: 1,
+      discarded: 0,
       skipped: [],
       errors: [
         { url: 'https://a', message: 'boom' },
@@ -66,7 +67,7 @@ describe('splitRestoreErrors', () => {
   });
 
   it('returns empty arrays when there are no errors', () => {
-    expect(splitRestoreErrors({ restored: 1, skipped: [], errors: [] })).toEqual({
+    expect(splitRestoreErrors({ restored: 1, discarded: 0, skipped: [], errors: [] })).toEqual({
       tabErrors: [],
       structuralProblems: [],
     });
@@ -75,7 +76,7 @@ describe('splitRestoreErrors', () => {
 
 describe('formatRestoreSummary', () => {
   it('reports a clean restore', () => {
-    expect(formatRestoreSummary({ restored: 5, skipped: [], errors: [] }, 5)).toBe(
+    expect(formatRestoreSummary({ restored: 5, discarded: 0, skipped: [], errors: [] }, 5)).toBe(
       'Restored 5 of 5 tabs',
     );
   });
@@ -83,6 +84,7 @@ describe('formatRestoreSummary', () => {
   it('reports skipped and failed tabs', () => {
     const result = {
       restored: 410,
+      discarded: 0,
       skipped: ['file:///a', 'javascript:void(0)'],
       errors: [{ url: 'https://x', message: 'boom' }],
     };
@@ -92,7 +94,7 @@ describe('formatRestoreSummary', () => {
   });
 
   it('uses singular forms', () => {
-    expect(formatRestoreSummary({ restored: 0, skipped: ['a'], errors: [] }, 1)).toBe(
+    expect(formatRestoreSummary({ restored: 0, discarded: 0, skipped: ['a'], errors: [] }, 1)).toBe(
       'Restored 0 of 1 tab · 1 skipped',
     );
   });
@@ -100,6 +102,7 @@ describe('formatRestoreSummary', () => {
   it('reports structural (group/window) problems separately from tab errors', () => {
     const result = {
       restored: 10,
+      discarded: 0,
       skipped: [],
       errors: [
         { url: 'https://a', message: 'boom' },
@@ -116,6 +119,7 @@ describe('formatRestoreSummary', () => {
   it('uses the singular form for a single structural problem', () => {
     const result = {
       restored: 10,
+      discarded: 0,
       skipped: [],
       errors: [{ url: 'group:Work', message: 'drag lock' }],
     };
@@ -124,15 +128,36 @@ describe('formatRestoreSummary', () => {
     );
   });
 
+  it('calls out lazily restored tabs, before the skipped/failed counts', () => {
+    expect(formatRestoreSummary({ restored: 80, discarded: 77, skipped: [], errors: [] }, 80)).toBe(
+      'Restored 80 of 80 tabs · 77 tabs will load when clicked',
+    );
+    expect(
+      formatRestoreSummary({ restored: 2, discarded: 1, skipped: ['file:///a'], errors: [] }, 3),
+    ).toBe('Restored 2 of 3 tabs · 1 tab will load when clicked · 1 skipped');
+  });
+
+  it('keeps the lazy count on a cancelled restore', () => {
+    expect(
+      formatRestoreSummary({ restored: 25, discarded: 20, skipped: [], errors: [] }, 25, {
+        cancelled: true,
+      }),
+    ).toBe('Restore cancelled — 25 tabs opened · 20 tabs will load when clicked');
+  });
+
   it('reports a cancelled restore as a plain count instead of a fraction', () => {
     expect(
-      formatRestoreSummary({ restored: 25, skipped: [], errors: [] }, 25, { cancelled: true }),
+      formatRestoreSummary({ restored: 25, discarded: 0, skipped: [], errors: [] }, 25, {
+        cancelled: true,
+      }),
     ).toBe('Restore cancelled — 25 tabs opened');
   });
 
   it('uses the singular form for a cancelled restore of one tab', () => {
     expect(
-      formatRestoreSummary({ restored: 1, skipped: [], errors: [] }, 1, { cancelled: true }),
+      formatRestoreSummary({ restored: 1, discarded: 0, skipped: [], errors: [] }, 1, {
+        cancelled: true,
+      }),
     ).toBe('Restore cancelled — 1 tab opened');
   });
 });

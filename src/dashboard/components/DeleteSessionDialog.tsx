@@ -13,6 +13,11 @@ export interface DeleteSessionDialogProps {
   open: boolean;
   onOpenChange(open: boolean): void;
   onConfirm(): void;
+  /**
+   * Radix's close-time focus hand-off (defaults to the trigger). Call `event.preventDefault()`
+   * and focus something else when the trigger is about to unmount.
+   */
+  onCloseAutoFocus?(event: Event): void;
 }
 
 export function DeleteSessionDialog({
@@ -20,10 +25,11 @@ export function DeleteSessionDialog({
   open,
   onOpenChange,
   onConfirm,
+  onCloseAutoFocus,
 }: DeleteSessionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Delete session?</DialogTitle>
           <DialogDescription>

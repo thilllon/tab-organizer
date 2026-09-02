@@ -28,7 +28,7 @@ export type SessionOrigin = 'manual' | 'alarm' | 'startup' | 'recovered' | 'impo
 export type TabGroupColor = `${chrome.tabGroups.Color}`; // same form as hashStringToColor()
 
 export interface TabSnapshot {
-  url: string; // pendingUrl ?? url; suspender wrappers unwrapped via tabToUrl()
+  url: string; // pendingUrl ?? url; suspender wrappers unwrapped via unwrapSuspendedUrl()
   title: string;
   pinned: boolean;
   active: boolean; // at most one true per window

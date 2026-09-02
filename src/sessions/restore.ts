@@ -1,4 +1,5 @@
 import type { Session, SessionSettings, WindowBounds, WindowSnapshot } from '@/types';
+import { unwrapSuspendedUrl } from './suspender';
 
 export const DEFAULT_CHUNK_SIZE = 25;
 export const LAZY_AUTO_THRESHOLD = 50;
@@ -11,7 +12,6 @@ export interface SanitizeOptions {
   fileAccessAllowed: boolean;
   /** Suspender wrapper prefix, or '' when no suspender is configured. */
   suspendedPrefix: string;
-  suspendedPrefixLen: number;
 }
 
 export type RestoreTarget = { kind: 'newWindows' } | { kind: 'window'; windowId: number };
@@ -46,27 +46,32 @@ export interface RestorePlan {
 
 export interface RestoreResult {
   restored: number;
+  /** Tabs left unloaded until clicked (lazy restore); always <= restored. */
+  discarded: number;
   skipped: string[];
   errors: { url: string; message: string }[];
+}
+
+/**
+ * The screen the dashboard is on, in virtual-desktop coordinates. `availLeft`/`availTop` are
+ * non-standard (absent from lib.dom) but present in Chrome; see `screenRectOf`.
+ */
+export interface ScreenRect {
+  availLeft?: number;
+  availTop?: number;
+  availWidth: number;
+  availHeight: number;
 }
 
 export interface RestoreHooks {
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
-  screen?: { availWidth: number; availHeight: number };
-}
-
-function unwrapSuspended(url: string, options: SanitizeOptions): string | null {
-  if (options.suspendedPrefix === '' || !url.startsWith(options.suspendedPrefix)) {
-    return url;
-  }
-  const params = new URLSearchParams(url.slice(options.suspendedPrefixLen));
-  return params.get('uri');
+  screen?: ScreenRect;
 }
 
 /** Spec §6: returns the url to open, or null when it must be skipped. Never throws. */
 export function sanitizeRestoreUrl(url: string, options: SanitizeOptions): string | null {
-  const candidate = unwrapSuspended(url, options);
+  const candidate = unwrapSuspendedUrl(url, options.suspendedPrefix);
   if (candidate === null || candidate === '') {
     return null;
   }
@@ -100,21 +105,66 @@ export function sanitizeRestoreUrl(url: string, options: SanitizeOptions): strin
   }
 }
 
-/** Intersects bounds with the available screen; undefined when less than 200x200 remains. */
-export function clampToScreen(
-  bounds: WindowBounds,
-  screen: { availWidth: number; availHeight: number },
-): WindowBounds | undefined {
-  const left = Math.max(0, bounds.left);
-  const top = Math.max(0, bounds.top);
-  const right = Math.min(screen.availWidth, bounds.left + bounds.width);
-  const bottom = Math.min(screen.availHeight, bounds.top + bounds.height);
+/**
+ * Fits saved bounds to the screen the dashboard is on. Bounds are captured in virtual-desktop
+ * coordinates, so a window from a secondary monitor has `left >= availWidth` or `left < 0` while
+ * being perfectly visible there:
+ * - bounds that intersect this screen by at least 200x200 are clamped into it (offset by
+ *   `availLeft`/`availTop`, which are 0 when absent);
+ * - bounds that do not intersect this screen at all are passed through unchanged. Chrome adjusts
+ *   a window that would land entirely off every display onto the nearest one itself, so the
+ *   window comes back on its own monitor while that monitor is attached and is still shown when
+ *   it is not;
+ * - a sliver (intersection under 200x200) or a window already smaller than 200x200 yields
+ *   undefined: the caller omits the bounds and Chrome places the window.
+ */
+export function clampToScreen(bounds: WindowBounds, screen: ScreenRect): WindowBounds | undefined {
+  if (bounds.width < MIN_WINDOW_SIDE || bounds.height < MIN_WINDOW_SIDE) {
+    return undefined;
+  }
+  const screenLeft = screen.availLeft ?? 0;
+  const screenTop = screen.availTop ?? 0;
+  const left = Math.max(screenLeft, bounds.left);
+  const top = Math.max(screenTop, bounds.top);
+  const right = Math.min(screenLeft + screen.availWidth, bounds.left + bounds.width);
+  const bottom = Math.min(screenTop + screen.availHeight, bounds.top + bounds.height);
   const width = right - left;
   const height = bottom - top;
+  if (width <= 0 || height <= 0) {
+    return bounds;
+  }
   if (width < MIN_WINDOW_SIDE || height < MIN_WINDOW_SIDE) {
     return undefined;
   }
   return { left, top, width, height };
+}
+
+function optionalNumber(source: object, key: string): number | undefined {
+  const value: unknown = Reflect.get(source, key);
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+/**
+ * Reads a `Screen` into a `ScreenRect`. `availLeft`/`availTop` are read defensively: Chrome
+ * exposes them (the screen's origin in the virtual desktop) but they are not standard, so a
+ * runtime without them simply yields a screen at (0, 0).
+ */
+export function screenRectOf(source: Pick<Screen, 'availWidth' | 'availHeight'>): ScreenRect {
+  const rect: ScreenRect = { availWidth: source.availWidth, availHeight: source.availHeight };
+  const availLeft = optionalNumber(source, 'availLeft');
+  const availTop = optionalNumber(source, 'availTop');
+  if (availLeft !== undefined) {
+    rect.availLeft = availLeft;
+  }
+  if (availTop !== undefined) {
+    rect.availTop = availTop;
+  }
+  return rect;
+}
+
+/** Whether the `restoreLazy` setting discards tabs for a restore of `tabCount` tabs (spec §6). */
+export function isLazyRestore(lazy: SessionSettings['restoreLazy'], tabCount: number): boolean {
+  return lazy === 'always' || (lazy === 'auto' && tabCount > LAZY_AUTO_THRESHOLD);
 }
 
 function chunk<T>(items: T[], size: number): T[][] {
@@ -185,8 +235,7 @@ export function planRestore(session: Session, options: RestoreOptions): RestoreP
   }
 
   const totalTabs = planned.reduce((count, entry) => count + entry.tabs.length, 0);
-  const lazy =
-    options.lazy === 'always' || (options.lazy === 'auto' && totalTabs > LAZY_AUTO_THRESHOLD);
+  const lazy = isLazyRestore(options.lazy, totalTabs);
 
   return {
     target: options.target,
@@ -247,14 +296,12 @@ interface OpenedWindow {
   placeholderId: number | undefined;
 }
 
-function currentScreen(
-  hooks: RestoreHooks,
-): { availWidth: number; availHeight: number } | undefined {
+function currentScreen(hooks: RestoreHooks): ScreenRect | undefined {
   if (hooks.screen) {
     return hooks.screen;
   }
   if (typeof screen !== 'undefined') {
-    return { availWidth: screen.availWidth, availHeight: screen.availHeight };
+    return screenRectOf(screen);
   }
   return undefined;
 }
@@ -341,10 +388,15 @@ async function createChunk(
  * `DISCARD_COMMIT_TIMEOUT_MS` elapses. `tabs.discard` does NOT reject when called on a tab whose
  * navigation has not committed yet -- it silently unloads the tab with `url: ''`, permanently
  * losing the intended URL -- so the caller must never discard before this resolves `true`.
+ * Resolves `false` as soon as `signal` aborts, so a cancel is honoured within one poll instead of
+ * only once the timeout has run out.
  */
-async function waitForCommit(tabId: number): Promise<boolean> {
+async function waitForCommit(tabId: number, signal: AbortSignal | undefined): Promise<boolean> {
   const maxAttempts = Math.ceil(DISCARD_COMMIT_TIMEOUT_MS / DISCARD_POLL_INTERVAL_MS);
   for (let attempt = 0; attempt <= maxAttempts; attempt++) {
+    if (signal?.aborted) {
+      return false;
+    }
     let tab: chrome.tabs.Tab | undefined;
     try {
       tab = await chrome.tabs.get(tabId);
@@ -371,30 +423,34 @@ async function waitForCommit(tabId: number): Promise<boolean> {
  * never commits within the timeout is left loading rather than risking a silent URL loss, and is
  * not treated as an error -- it is simply not lazy-restored. Tabs in a chunk navigate in parallel,
  * so the wait-then-discard runs concurrently per tab too, keeping the returned ids in order.
+ * `discarded` counts the tabs actually unloaded, for the result toast.
  */
 async function discardChunk(
   chunk: PlannedTab[],
   ids: (number | undefined)[],
-): Promise<(number | undefined)[]> {
+  signal: AbortSignal | undefined,
+): Promise<{ ids: (number | undefined)[]; discarded: number }> {
   const result = [...ids];
+  let discarded = 0;
   await Promise.all(
     chunk.map(async (tab, i) => {
       const id = ids[i];
       if (id === undefined || tab.active || tab.pinned) {
         return;
       }
-      if (!(await waitForCommit(id))) {
+      if (!(await waitForCommit(id, signal))) {
         return;
       }
       try {
-        const discarded = await chrome.tabs.discard(id);
-        result[i] = discarded?.id ?? id;
+        const replacement = await chrome.tabs.discard(id);
+        result[i] = replacement?.id ?? id;
+        discarded += 1;
       } catch {
         // "still initializing" and friends: discarding is best-effort
       }
     }),
   );
-  return result;
+  return { ids: result, discarded };
 }
 
 /**
@@ -498,6 +554,7 @@ export async function executeRestore(
 ): Promise<RestoreResult> {
   const errors: RestoreResult['errors'] = [];
   let restored = 0;
+  let discarded = 0;
   let done = 0;
   let focusWindowId: number | undefined;
   let lastWindowId: number | undefined;
@@ -522,7 +579,13 @@ export async function executeRestore(
 
     for (const chunk of planned.chunks) {
       const ids = await createChunk(chunk, opened.windowId, errors);
-      created.push(...(planned.lazy ? await discardChunk(chunk, ids) : ids));
+      if (planned.lazy) {
+        const lazily = await discardChunk(chunk, ids, hooks.signal);
+        created.push(...lazily.ids);
+        discarded += lazily.discarded;
+      } else {
+        created.push(...ids);
+      }
       done += chunk.length;
       hooks.onProgress?.(done, plan.totalTabs);
       if (hooks.signal?.aborted) {
@@ -554,5 +617,5 @@ export async function executeRestore(
     }
   }
 
-  return { restored, skipped: plan.skipped, errors };
+  return { restored, discarded, skipped: plan.skipped, errors };
 }

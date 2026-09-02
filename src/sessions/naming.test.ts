@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSessionName, slugify } from './naming';
+import { defaultSessionName, ensureUniqueName, slugify } from './naming';
+
+describe('ensureUniqueName', () => {
+  it('returns the name unchanged when it is not taken', () => {
+    expect(ensureUniqueName('Work', [])).toBe('Work');
+    expect(ensureUniqueName('Work', ['Home', 'Work (2)'])).toBe('Work');
+  });
+
+  it('appends (2) when the name is taken', () => {
+    expect(ensureUniqueName('Work', ['Work'])).toBe('Work (2)');
+  });
+
+  it('skips suffixes that are already taken', () => {
+    expect(ensureUniqueName('Work', ['Work', 'Work (2)', 'Work (3)'])).toBe('Work (4)');
+    expect(ensureUniqueName('Work', ['Work', 'Work (3)'])).toBe('Work (2)');
+  });
+
+  it('does not strip an existing suffix from the base name', () => {
+    expect(ensureUniqueName('Work (2)', ['Work (2)'])).toBe('Work (2) (2)');
+  });
+
+  it('accepts any iterable of names', () => {
+    expect(ensureUniqueName('Work', new Set(['Work']))).toBe('Work (2)');
+  });
+});
 
 describe('defaultSessionName', () => {
   it('formats local date/time with zero padding and plural counts', () => {

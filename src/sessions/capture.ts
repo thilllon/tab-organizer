@@ -1,14 +1,14 @@
-import { isSuspended, tabToUrl } from '@/background/sort';
+import { isSuspended } from '@/background/sort';
 import type { GroupSnapshot, Session, TabSnapshot, WindowSnapshot } from '@/types';
 import { contentHash } from './hash';
 import { defaultSessionName } from './naming';
+import { unwrapSuspendedUrl } from './suspender';
 
 export interface CaptureOptions {
   /** `chrome.runtime.getURL('')` — tabs whose url starts with this are our own pages. */
   ownUrlPrefix: string;
   /** Suspender wrapper prefix (`chrome-extension://<id>/suspended.html#`), or '' when none. */
   suspendedPrefix: string;
-  suspendedPrefixLen: number;
 }
 
 function toWindowState(state: chrome.windows.Window['state']): WindowSnapshot['state'] {
@@ -27,20 +27,27 @@ function toWindowState(state: chrome.windows.Window['state']): WindowSnapshot['s
   }
 }
 
+function isAbsoluteUrl(value: string): boolean {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function resolveTabUrl(tab: chrome.tabs.Tab, options: CaptureOptions): string | undefined {
   const raw = tab.pendingUrl ?? tab.url;
-  if (options.suspendedPrefix !== '' && isSuspended(tab, options.suspendedPrefix)) {
-    try {
-      return tabToUrl(tab, false, options.suspendedPrefixLen).href;
-    } catch {
-      // Malformed suspended wrapper (empty/relative `uri`): keep the tab rather than
-      // dropping it silently. `sanitizeRestoreUrl` (restore path) decides what to do
-      // with a raw `chrome-extension://` url later.
-      return raw === undefined || raw === '' ? undefined : raw;
-    }
-  }
   if (raw === undefined || raw === '') {
     return undefined;
+  }
+  if (options.suspendedPrefix !== '' && isSuspended(tab, options.suspendedPrefix)) {
+    // `isSuspended` matched `tab.url`, so that is the wrapper to unwrap (verbatim -- see
+    // suspender.ts). A malformed wrapper (missing/empty/relative `uri`) keeps the tab on the raw
+    // wrapper url rather than dropping it silently; `sanitizeRestoreUrl` (restore path) decides
+    // what to do with a raw `chrome-extension://` url later.
+    const inner = unwrapSuspendedUrl(tab.url ?? '', options.suspendedPrefix);
+    return inner !== null && isAbsoluteUrl(inner) ? inner : raw;
   }
   return raw;
 }
@@ -154,12 +161,7 @@ export async function loadSuspendedPrefix(): Promise<string> {
 }
 
 async function loadCaptureOptions(): Promise<CaptureOptions> {
-  const suspendedPrefix = await loadSuspendedPrefix();
-  return {
-    ownUrlPrefix: chrome.runtime.getURL(''),
-    suspendedPrefix,
-    suspendedPrefixLen: suspendedPrefix.length,
-  };
+  return { ownUrlPrefix: chrome.runtime.getURL(''), suspendedPrefix: await loadSuspendedPrefix() };
 }
 
 export async function captureSession(scope: 'window' | 'all', name?: string): Promise<Session> {

@@ -104,13 +104,34 @@ async function readBody(id: SessionId): Promise<Session | undefined> {
   return migrateSession(record);
 }
 
-/** Body first, then index (spec §4). Must be called inside withLock. */
+/**
+ * Body first, then index (spec §4): an interruption between the two writes leaves an orphan body
+ * (re-indexed by `reconcile()`), never a dangling index entry. The index is read -- and thereby
+ * validated -- before the body is written, so an unreadable index fails the call without leaving
+ * behind a body nothing can list. Must be called inside withLock.
+ */
 async function writeBodyAndIndex(body: Session): Promise<void> {
+  const index = await readIndex();
   const bytes = byteLength(JSON.stringify(body));
   await chrome.storage.local.set({ [sessionKey(body.id)]: body });
-  const index = await readIndex();
   const others = index.sessions.filter((summary) => summary.id !== body.id);
   await writeIndex([...others, toSummary(body, bytes)]);
+}
+
+/** Field-by-field: does the index entry still describe this body? */
+function sameSummary(a: SessionSummary, b: SessionSummary): boolean {
+  return (
+    a.kind === b.kind &&
+    a.name === b.name &&
+    a.origin === b.origin &&
+    a.createdAt === b.createdAt &&
+    a.updatedAt === b.updatedAt &&
+    a.protected === b.protected &&
+    a.contentHash === b.contentHash &&
+    a.windowCount === b.windowCount &&
+    a.tabCount === b.tabCount &&
+    a.bytes === b.bytes
+  );
 }
 
 async function listStorageKeys(): Promise<string[]> {
@@ -187,8 +208,9 @@ export const sessionRepo = {
 
   remove(id: SessionId): Promise<void> {
     return withLock(async () => {
-      await chrome.storage.local.remove(sessionKey(id));
+      // Index read first (validated), then body, then index -- see writeBodyAndIndex.
       const index = await readIndex();
+      await chrome.storage.local.remove(sessionKey(id));
       await writeIndex(index.sessions.filter((summary) => summary.id !== id));
     });
   },
@@ -204,35 +226,47 @@ export const sessionRepo = {
     });
   },
 
+  /**
+   * Repairs the index from the bodies (spec §4): drops entries whose body is gone, re-indexes
+   * orphan bodies (a `put` interrupted between its two writes) and re-derives entries that no
+   * longer describe their body (a `rename` interrupted the same way). A body that fails
+   * migration or is malformed is skipped, keeping whatever index entry it had.
+   */
   reconcile(): Promise<{ reindexed: number; dropped: number }> {
     return withLock(async () => {
       const keys = await listStorageKeys();
-      const bodyIds = new Set<string>();
-      for (const key of keys) {
-        const id = idFromKey(key);
-        if (id !== undefined) {
-          bodyIds.add(id);
-        }
-      }
+      const ids = keys
+        .map((key) => idFromKey(key))
+        .filter((id): id is SessionId => id !== undefined);
+      const bodyIds = new Set(ids);
 
       const index = await readIndex();
-      const kept = index.sessions.filter((summary) => bodyIds.has(summary.id));
-      const dropped = index.sessions.length - kept.length;
-      const indexedIds = new Set(kept.map((summary) => summary.id));
+      const indexed = new Map(index.sessions.map((summary) => [summary.id, summary]));
+      const dropped = index.sessions.filter((summary) => !bodyIds.has(summary.id)).length;
 
+      const records: Record<string, unknown> =
+        ids.length > 0 ? await chrome.storage.local.get(ids.map((id) => sessionKey(id))) : {};
+      const kept: SessionSummary[] = [];
       let reindexed = 0;
-      for (const id of bodyIds) {
-        if (indexedIds.has(id)) {
-          continue;
-        }
-        const record = await readRawBody(id);
-        let session: Session;
+      for (const id of ids) {
+        const record = records[sessionKey(id)];
+        const existing = indexed.get(id);
+        let summary: SessionSummary;
         try {
-          session = migrateSession(record);
+          // toSummary is inside the try too: a malformed nested window (e.g. `windows: [null]`)
+          // passes migrateSession's shallow checks and must cost this body only, not the pass.
+          summary = toSummary(migrateSession(record), byteLength(JSON.stringify(record)));
         } catch {
+          if (existing !== undefined) {
+            kept.push(existing);
+          }
           continue;
         }
-        kept.push(toSummary(session, byteLength(JSON.stringify(record))));
+        if (existing !== undefined && sameSummary(existing, summary)) {
+          kept.push(existing);
+          continue;
+        }
+        kept.push(summary);
         reindexed += 1;
       }
 

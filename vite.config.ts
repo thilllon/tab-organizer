@@ -2,7 +2,7 @@ import path from 'node:path';
 import { crx, defineManifest } from '@crxjs/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import packageJson from './package.json';
 
 interface PackageJson {
@@ -22,6 +22,11 @@ const manifest = defineManifest((env) => {
     description: pkg.description ?? '',
     version: pkg.version ?? '0.0.0',
     manifest_version: 3,
+    // Floor for the APIs used without a runtime guard:
+    // - 123: promise-form `chrome.contextMenus.removeAll()` (awaited in src/background/sessions.ts)
+    // - 104: the `favicon` permission / `_favicon/` endpoint (dashboard tab rows)
+    // `chrome.storage.local.getKeys()` (130) is behind a `typeof` guard, so it does not raise this.
+    minimum_chrome_version: '123',
     icons: {
       16: 'img/logo-16.png',
       32: 'img/logo-32.png',
@@ -83,6 +88,8 @@ export default defineConfig(() => {
     },
     test: {
       setupFiles: ['src/test/setup.ts'],
+      // Only this tree's suites: Claude Code worktrees under .claude/ carry their own copies.
+      exclude: [...configDefaults.exclude, '.claude/**'],
     },
   };
 });

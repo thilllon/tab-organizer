@@ -23,9 +23,26 @@ export interface SessionCardProps {
   restoring: boolean;
   onRestore(session: Session): Promise<void>;
   onRestoreWindow(session: Session, windowIndex: number): Promise<void>;
+  /** Called once the session is removed; the card is about to unmount, so move focus elsewhere. */
+  onDeleted?(): void;
 }
 
-export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: SessionCardProps) {
+/**
+ * Enter pressed to confirm an IME composition (Japanese, Korean, Chinese, ...) reaches the input
+ * as a keydown too and must not commit the rename. `isComposing` is the standard signal; keyCode
+ * 229 is the legacy one some IMEs still send with `isComposing` false.
+ */
+function isComposingEnter(event: KeyboardEvent<HTMLInputElement>): boolean {
+  return event.nativeEvent.isComposing || event.keyCode === 229;
+}
+
+export function SessionCard({
+  summary,
+  restoring,
+  onRestore,
+  onRestoreWindow,
+  onDeleted,
+}: SessionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(summary.name);
@@ -34,13 +51,26 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
   const [error, setError] = useState<string | undefined>(undefined);
   const body = useSessionBody(expanded ? summary.id : null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const nameButtonRef = useRef<HTMLButtonElement>(null);
   // Set when Rename is picked in the dropdown, and acted on in `onCloseAutoFocus` below: the edit
   // must not start while the menu is open. Radix's FocusScope owns focus until the menu unmounts,
   // so an Input mounted from `onSelect` never receives it (its `autoFocus` is overridden and
   // typing goes nowhere), and the trigger refocus that follows blurs it straight back out.
   const renameRequestedRef = useRef(false);
+  // Set by Enter/Escape before they close the edit. Chrome fires blur on the input as it is
+  // removed from the DOM, and React delivers it: without this, that blur would commit again
+  // after Enter (a second identical rename) or -- worse -- commit the draft Escape just reverted.
+  const renameSettledRef = useRef(false);
+  // Set alongside it when the edit was closed from the keyboard: the input that had focus is
+  // gone, so hand focus back to the name button instead of letting it drop to <body>. A blur
+  // commit (the user clicked elsewhere) leaves focus where the click put it.
+  const returnFocusRef = useRef(false);
+  // Set once the delete is confirmed: the dialog's close-time focus hand-off must not target
+  // this card's actions button, which unmounts together with the card.
+  const deletingRef = useRef(false);
 
   const startRename = () => {
+    renameSettledRef.current = false;
     setDraft(summary.name);
     setEditing(true);
   };
@@ -52,6 +82,10 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
   // wipe it -- verified in Chrome, where select() turned "Rename me" + " 2" into "2".
   useEffect(() => {
     if (!editing) {
+      if (returnFocusRef.current) {
+        returnFocusRef.current = false;
+        nameButtonRef.current?.focus();
+      }
       return;
     }
     const frame = requestAnimationFrame(() => {
@@ -81,20 +115,37 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
 
   const handleRenameKey = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
+      if (isComposingEnter(event)) {
+        return;
+      }
       event.preventDefault();
+      renameSettledRef.current = true;
+      returnFocusRef.current = true;
       void commitRename();
     } else if (event.key === 'Escape') {
       event.preventDefault();
+      renameSettledRef.current = true;
+      returnFocusRef.current = true;
       setDraft(summary.name);
       setEditing(false);
     }
   };
 
+  const handleRenameBlur = () => {
+    if (renameSettledRef.current) {
+      return;
+    }
+    void commitRename();
+  };
+
   const handleDelete = async () => {
+    deletingRef.current = true;
     setConfirmingDelete(false);
     try {
       await sessionRepo.remove(summary.id);
+      onDeleted?.();
     } catch (err) {
+      deletingRef.current = false;
       setError(errorMessage(err));
     }
   };
@@ -146,12 +197,13 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
               aria-label="Session name"
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={handleRenameKey}
-              onBlur={() => void commitRename()}
+              onBlur={handleRenameBlur}
               className="h-8"
             />
           ) : (
             <div className="flex items-center gap-1">
               <button
+                ref={nameButtonRef}
                 type="button"
                 className="min-w-0 truncate text-left text-sm font-medium hover:underline"
                 title="Rename"
@@ -256,6 +308,15 @@ export function SessionCard({ summary, restoring, onRestore, onRestoreWindow }: 
         open={confirmingDelete}
         onOpenChange={setConfirmingDelete}
         onConfirm={() => void handleDelete()}
+        onCloseAutoFocus={(event) => {
+          // The dialog closes as the delete starts; Radix would focus the actions button, which
+          // unmounts with the card moments later, and focus would end up on <body>. The dialog's
+          // exit animation makes this race `onDeleted` above, so both point at the same target.
+          if (deletingRef.current) {
+            event.preventDefault();
+            onDeleted?.();
+          }
+        }}
       />
     </li>
   );

@@ -6,6 +6,8 @@ import type { RestoreResult } from '@/sessions/restore';
 export interface ProgressToastProps {
   progress?: { done: number; total: number };
   result?: RestoreResult;
+  /** True while a cancel has been requested and the running restore is still winding down. */
+  cancelling: boolean;
   /** True when `result` ended because the running restore was cancelled. */
   cancelled: boolean;
   onCancel(): void;
@@ -15,6 +17,7 @@ export interface ProgressToastProps {
 export function ProgressToast({
   progress,
   result,
+  cancelling,
   cancelled,
   onCancel,
   onDismiss,
@@ -48,8 +51,8 @@ export function ProgressToast({
               />
             </div>
           </div>
-          <Button size="sm" variant="outline" onClick={onCancel}>
-            Cancel
+          <Button size="sm" variant="outline" onClick={onCancel} disabled={cancelling}>
+            {cancelling ? 'Cancelling…' : 'Cancel'}
           </Button>
         </div>
       )}

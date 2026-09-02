@@ -5,6 +5,7 @@ import {
   planRestore,
   type RestoreResult,
   type RestoreTarget,
+  screenRectOf,
 } from '@/sessions/restore';
 import { sessionRepo } from '@/sessions/storage';
 import type { Session, SessionSettings } from '@/types';
@@ -14,19 +15,28 @@ export interface RestoreProgress {
   total: number;
 }
 
+export type RestoreOutcome = { ok: true; result: RestoreResult } | { ok: false; reason: 'busy' };
+
 export interface UseRestore {
   /**
-   * Plans and executes a restore in this page. Resolves to `undefined` when a restore is
-   * already running. `lazyOverride` comes from the confirm dialog's checkbox.
+   * Plans and executes a restore in this page. Resolves `{ ok: false, reason: 'busy' }` -- without
+   * touching any state -- when a restore is already running, so the caller reports that from the
+   * return value rather than from a `running` flag that can lag a click by a render.
+   * `lazyOverride` comes from the confirm dialog's checkbox.
    */
   restore(
     session: Session,
     target: RestoreTarget,
     lazyOverride?: SessionSettings['restoreLazy'],
-  ): Promise<RestoreResult | undefined>;
+  ): Promise<RestoreOutcome>;
   progress?: RestoreProgress;
   running: boolean;
   cancel(): void;
+  /**
+   * True from `cancel()` until the aborted run has wound down: the abort is only noticed between
+   * chunks and between commit polls, so the toast acknowledges the click in the meantime.
+   */
+  cancelling: boolean;
   lastResult?: RestoreResult;
   /** True when `lastResult` ended because `cancel()` aborted it, rather than running to completion. */
   cancelled: boolean;
@@ -35,6 +45,7 @@ export interface UseRestore {
 
 export function useRestore(): UseRestore {
   const [running, setRunning] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [progress, setProgress] = useState<RestoreProgress | undefined>(undefined);
   const [lastResult, setLastResult] = useState<RestoreResult | undefined>(undefined);
   const [cancelled, setCancelled] = useState(false);
@@ -63,7 +74,7 @@ export function useRestore(): UseRestore {
 
   const restore = useCallback<UseRestore['restore']>(async (session, target, lazyOverride) => {
     if (controllerRef.current !== null) {
-      return undefined;
+      return { ok: false, reason: 'busy' };
     }
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -85,22 +96,27 @@ export function useRestore(): UseRestore {
       const result = await executeRestore(plan, {
         onProgress: (done, total) => setProgress({ done, total }),
         signal: controller.signal,
-        screen: { availWidth: window.screen.availWidth, availHeight: window.screen.availHeight },
+        screen: screenRectOf(window.screen),
       });
       // Read `aborted` before the finally block below runs (it doesn't touch the signal, but
       // keeping the read right next to where the result lands avoids relying on that detail).
       setCancelled(controller.signal.aborted);
       setLastResult(result);
-      return result;
+      return { ok: true, result };
     } finally {
       controllerRef.current = null;
       setProgress(undefined);
       setRunning(false);
+      setCancelling(false);
     }
   }, []);
 
   const cancel = useCallback(() => {
-    controllerRef.current?.abort();
+    if (controllerRef.current === null) {
+      return;
+    }
+    controllerRef.current.abort();
+    setCancelling(true);
   }, []);
 
   const dismiss = useCallback(() => {
@@ -108,5 +124,5 @@ export function useRestore(): UseRestore {
     setCancelled(false);
   }, []);
 
-  return { restore, progress, running, cancel, lastResult, cancelled, dismiss };
+  return { restore, progress, running, cancel, cancelling, lastResult, cancelled, dismiss };
 }

@@ -1,4 +1,5 @@
 import { captureSession } from '@/sessions/capture';
+import { ensureUniqueName } from '@/sessions/naming';
 import { openDashboard } from '@/sessions/open-dashboard';
 import { sessionRepo } from '@/sessions/storage';
 
@@ -87,7 +88,9 @@ async function saveSession(scope: 'window' | 'all'): Promise<void> {
       showErrorBadge();
       return;
     }
-    await sessionRepo.put(session);
+    // Two saves in the same minute would otherwise share the default name.
+    const names = (await sessionRepo.listSummaries()).map((summary) => summary.name);
+    await sessionRepo.put({ ...session, name: ensureUniqueName(session.name, names) });
     showSavedBadge();
   } catch (err) {
     report(err);

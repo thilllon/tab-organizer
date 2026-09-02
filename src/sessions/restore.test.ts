@@ -8,11 +8,13 @@ import {
 import {
   clampToScreen,
   DEFAULT_CHUNK_SIZE,
+  isLazyRestore,
   LAZY_AUTO_THRESHOLD,
   planRestore,
   type RestoreOptions,
   type SanitizeOptions,
   sanitizeRestoreUrl,
+  screenRectOf,
 } from './restore';
 
 const SUSPENDED_PREFIX = 'chrome-extension://suspenderid/suspended.html#';
@@ -21,7 +23,6 @@ const SANITIZE: SanitizeOptions = {
   ownExtensionId: 'fakeextid',
   fileAccessAllowed: false,
   suspendedPrefix: SUSPENDED_PREFIX,
-  suspendedPrefixLen: SUSPENDED_PREFIX.length,
 };
 
 function tab(overrides: Partial<TabSnapshot> = {}): TabSnapshot {
@@ -99,6 +100,19 @@ describe('sanitizeRestoreUrl', () => {
     expect(sanitizeRestoreUrl(wrapped, SANITIZE)).toBe('https://docs.example.com/p?x=1');
   });
 
+  it('unwraps verbatim: query with &, +, %XX escapes and a #fragment survive', () => {
+    const real = 'https://www.youtube.com/watch?v=abc&list=PL123&q=a+b&p=%2Fusr%2Fbin#t=42';
+
+    expect(sanitizeRestoreUrl(`${SUSPENDED_PREFIX}ttl=YouTube&pos=0&uri=${real}`, SANITIZE)).toBe(
+      real,
+    );
+  });
+
+  it('rejects a wrapper whose uri parameter is empty or relative', () => {
+    expect(sanitizeRestoreUrl(`${SUSPENDED_PREFIX}ttl=Docs&uri=`, SANITIZE)).toBeNull();
+    expect(sanitizeRestoreUrl(`${SUSPENDED_PREFIX}uri=/foo`, SANITIZE)).toBeNull();
+  });
+
   it('rejects a wrapper whose inner url is not allowed', () => {
     const wrapped = `${SUSPENDED_PREFIX}uri=javascript:alert(1)`;
 
@@ -112,9 +126,7 @@ describe('sanitizeRestoreUrl', () => {
   it('does not unwrap when suspendedPrefix is empty', () => {
     const url = 'https://a.com/?uri=https://b.com/';
 
-    expect(
-      sanitizeRestoreUrl(url, { ...SANITIZE, suspendedPrefix: '', suspendedPrefixLen: 0 }),
-    ).toBe(url);
+    expect(sanitizeRestoreUrl(url, { ...SANITIZE, suspendedPrefix: '' })).toBe(url);
   });
 
   it('does not alter the url text (no normalization)', () => {
@@ -152,11 +164,78 @@ describe('clampToScreen', () => {
   it('returns undefined when the visible part is smaller than 200x200', () => {
     expect(clampToScreen({ left: 1300, top: 0, width: 800, height: 600 }, screen)).toBeUndefined();
     expect(clampToScreen({ left: 0, top: 750, width: 800, height: 600 }, screen)).toBeUndefined();
-    expect(clampToScreen({ left: 2000, top: 0, width: 800, height: 600 }, screen)).toBeUndefined();
   });
 
   it('returns undefined for a window that is already tiny', () => {
     expect(clampToScreen({ left: 0, top: 0, width: 199, height: 600 }, screen)).toBeUndefined();
+    expect(clampToScreen({ left: 5000, top: 0, width: 800, height: 100 }, screen)).toBeUndefined();
+  });
+
+  it('passes bounds through unchanged when they do not touch this screen (another monitor)', () => {
+    const right = { left: 2000, top: 0, width: 800, height: 600 };
+    const leftOf = { left: -1000, top: 100, width: 800, height: 600 };
+    const above = { left: 100, top: -700, width: 800, height: 600 };
+    const below = { left: 100, top: 900, width: 800, height: 600 };
+
+    expect(clampToScreen(right, screen)).toEqual(right);
+    expect(clampToScreen(leftOf, screen)).toEqual(leftOf);
+    expect(clampToScreen(above, screen)).toEqual(above);
+    expect(clampToScreen(below, screen)).toEqual(below);
+  });
+
+  it('treats a window touching the edge without overlapping as off-screen', () => {
+    const bounds = { left: 1440, top: 0, width: 800, height: 600 };
+
+    expect(clampToScreen(bounds, screen)).toEqual(bounds);
+  });
+
+  it('clamps into a screen whose origin is offset by availLeft/availTop', () => {
+    // Secondary monitor to the right of a 1440-wide primary, with a 30px top bar.
+    const secondary = { availLeft: 1440, availTop: 30, availWidth: 1920, availHeight: 1050 };
+
+    const inside = { left: 1500, top: 100, width: 800, height: 600 };
+    expect(clampToScreen(inside, secondary)).toEqual(inside);
+    expect(clampToScreen({ left: 1000, top: 0, width: 800, height: 600 }, secondary)).toEqual({
+      left: 1440,
+      top: 30,
+      width: 360,
+      height: 570,
+    });
+    expect(clampToScreen({ left: 3000, top: 100, width: 800, height: 600 }, secondary)).toEqual({
+      left: 3000,
+      top: 100,
+      width: 360,
+      height: 600,
+    });
+    // Entirely on the primary: not this screen, so untouched.
+    const primary = { left: 100, top: 100, width: 800, height: 600 };
+    expect(clampToScreen(primary, secondary)).toEqual(primary);
+  });
+});
+
+describe('screenRectOf', () => {
+  it('copies availLeft/availTop when Chrome exposes them, and omits them otherwise', () => {
+    const chromeScreen = { availLeft: 1440, availTop: 30, availWidth: 1920, availHeight: 1050 };
+    const plainScreen = { availWidth: 1440, availHeight: 900 };
+    const bogusScreen = { availLeft: 'x', availWidth: 1440, availHeight: 900 };
+
+    expect(screenRectOf(chromeScreen)).toEqual({
+      availLeft: 1440,
+      availTop: 30,
+      availWidth: 1920,
+      availHeight: 1050,
+    });
+    expect(screenRectOf(plainScreen)).toEqual({ availWidth: 1440, availHeight: 900 });
+    expect(screenRectOf(bogusScreen)).toEqual({ availWidth: 1440, availHeight: 900 });
+  });
+});
+
+describe('isLazyRestore', () => {
+  it("mirrors the planner: 'always' is lazy, 'never' is not, 'auto' is lazy above 50 tabs", () => {
+    expect(isLazyRestore('always', 1)).toBe(true);
+    expect(isLazyRestore('never', 500)).toBe(false);
+    expect(isLazyRestore('auto', LAZY_AUTO_THRESHOLD)).toBe(false);
+    expect(isLazyRestore('auto', LAZY_AUTO_THRESHOLD + 1)).toBe(true);
   });
 });
 

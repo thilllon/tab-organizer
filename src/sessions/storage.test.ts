@@ -267,6 +267,17 @@ describe('sessionRepo.put / get / listSummaries', () => {
     await expect(sessionRepo.listSummaries()).resolves.toEqual([]);
   });
 
+  it('does not write the body when the index cannot be read (no permanent orphan)', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(INDEX_KEY, { schemaVersion: 2, sessions: [] });
+    const setSpy = vi.spyOn(chrome.storage.local, 'set');
+
+    await expect(sessionRepo.put(makeSession())).rejects.toBeInstanceOf(UnknownSchemaVersionError);
+
+    expect(setSpy).not.toHaveBeenCalled();
+    expect(fake.state.local.has(sessionKey('id-a'))).toBe(false);
+  });
+
   it('propagates storage errors from put', async () => {
     vi.spyOn(chrome.storage.local, 'set').mockRejectedValueOnce(new Error('QUOTA_BYTES exceeded'));
 
@@ -339,6 +350,18 @@ describe('sessionRepo.remove / removeAll', () => {
     expect(removeSpy.mock.invocationCallOrder[0]).toBeLessThan(setSpy.mock.invocationCallOrder[0]);
   });
 
+  it('does not remove the body when the index cannot be read', async () => {
+    const fake = getChromeFake();
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+    fake.state.local.set(INDEX_KEY, { schemaVersion: 2, sessions: [] });
+    const removeSpy = vi.spyOn(chrome.storage.local, 'remove');
+
+    await expect(sessionRepo.remove('id-a')).rejects.toBeInstanceOf(UnknownSchemaVersionError);
+
+    expect(removeSpy).not.toHaveBeenCalled();
+    expect(fake.state.local.has(sessionKey('id-a'))).toBe(true);
+  });
+
   it('removing an unknown id leaves the index untouched', async () => {
     await sessionRepo.put(makeSession({ id: 'id-a' }));
 
@@ -404,8 +427,61 @@ describe('sessionRepo.reconcile', () => {
     await expect(sessionRepo.listSummaries()).resolves.toEqual([]);
   });
 
+  it('skips a body with a malformed nested window instead of aborting the whole pass', async () => {
+    const fake = getChromeFake();
+    // Passes migrateSession's shallow checks (`windows` is an array) but blows up in toSummary.
+    fake.state.local.set(sessionKey('bad'), { ...makeSession({ id: 'bad' }), windows: [null] });
+    const orphan = makeSession({ id: 'orphan', name: 'Orphan' });
+    fake.state.local.set(sessionKey('orphan'), orphan);
+
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 1, dropped: 0 });
+    expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['orphan']);
+    expect(fake.state.local.has(sessionKey('bad'))).toBe(true);
+  });
+
+  it('keeps the existing index entry of an indexed body that no longer migrates', async () => {
+    const fake = getChromeFake();
+    await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
+    fake.state.local.set(sessionKey('id-a'), { ...makeSession({ id: 'id-a' }), schemaVersion: 2 });
+
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 0, dropped: 0 });
+    expect((await sessionRepo.listSummaries()).map((s) => s.name)).toEqual(['A']);
+  });
+
+  it('re-derives an index entry whose body was renamed (rename interrupted before the index write)', async () => {
+    const fake = getChromeFake();
+    await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
+    await sessionRepo.put(makeSession({ id: 'id-b', name: 'B' }));
+    const body = await sessionRepo.get('id-a');
+    const renamed = { ...body, name: 'A renamed' };
+    fake.state.local.set(sessionKey('id-a'), renamed);
+
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 1, dropped: 0 });
+    const summary = (await sessionRepo.listSummaries()).find((s) => s.id === 'id-a');
+    expect(summary?.name).toBe('A renamed');
+    expect(summary?.bytes).toBe(JSON.stringify(renamed).length);
+  });
+
+  it('re-derives a stale entry even when the new name has the same byte length', async () => {
+    const fake = getChromeFake();
+    await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
+    fake.state.local.set(sessionKey('id-a'), { ...(await sessionRepo.get('id-a')), name: 'B' });
+
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 1, dropped: 0 });
+    expect((await sessionRepo.listSummaries()).map((s) => s.name)).toEqual(['B']);
+  });
+
   it('does not write the index when nothing changed', async () => {
     await sessionRepo.put(makeSession({ id: 'id-a' }));
+    await sessionRepo.rename('id-a', 'Renamed');
     const setSpy = vi.spyOn(chrome.storage.local, 'set');
 
     await sessionRepo.reconcile();
