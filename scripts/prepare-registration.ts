@@ -3,20 +3,45 @@
  *
  * Runs the visual-asset pipeline (used as a release-it before:bump hook):
  *   1. Build the extension
- *   2. Generate options-page screenshots (1280x800, 640x400)
- *   3. Generate before/after demo screenshots
- *   4. Record demo video (requires ffmpeg)
- *   5. Generate CWS promotional images (440x280, 1400x560)
- *   6. Convert the demo video to demo.gif (embedded in docs/README.md)
- *   7. Regenerate docs/description.txt from docs/README.md (see build-listing.ts)
+ *   2. Launch Chrome with the built extension
+ *   3. Generate options-page screenshots (1280x800, 640x400)
+ *   4. Generate Sessions dashboard screenshots (1280x800)
+ *   5. Generate before/after demo screenshots            (needs an external network)
+ *   6. Record demo video + sort the demo tabs            (needs ffmpeg, macOS capture)
+ *   7. Render tab-bar mockups and CWS promotional images
+ *   8. Convert the demo video to demo.gif                (needs ffmpeg)
+ *   9. Regenerate docs/description.txt from docs/README.md (see build-listing.ts)
+ *
+ * Every step that depends on ffmpeg, an external network or a macOS-only tool is optional: it is
+ * skipped -- loudly, but without failing the run -- when the dependency is missing or when its
+ * environment flag is set. The process still exits 0 when only optional steps were skipped, and
+ * exits 1 only when a step that should have worked did not.
+ *
+ * Environment flags (all `=1` to enable):
+ *   SKIP_BUILD      don't run `pnpm build` (reuse whatever is in dist/)
+ *   SKIP_OPTIONS    skip the options-page screenshots
+ *   SKIP_DASHBOARD  skip the Sessions dashboard screenshots
+ *   SKIP_DEMO       skip the before/after demo tabs (auto-skipped without an external network)
+ *   SKIP_VIDEO      skip the screen recording (auto-skipped without ffmpeg or off macOS)
+ *   SKIP_NATIVE     skip native macOS window captures (auto-skipped off macOS)
+ *   SKIP_MOCKUPS    skip the tab-bar mockup renders
+ *   SKIP_PROMO      skip the promotional images
+ *   SKIP_GIF        skip demo.gif (auto-skipped without ffmpeg)
+ *   SKIP_LISTING    skip regenerating docs/description.txt
+ *   HEADLESS=1      force a headless browser (the default where there is no display)
+ *   PW_CHROMIUM     Chromium binary to drive (see scripts/qa/browser.ts)
  */
 
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type BrowserContext, chromium, type Page, type Worker } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import type { ExportBundle } from '../src/types';
 import { buildListing } from './build-listing';
+import { type ExtensionSession, launchExtension } from './qa/browser';
+import { buildDashboardFixtures, seedSessions } from './qa/fixtures';
 
 /*
  * Types
@@ -38,6 +63,11 @@ interface TabInfo {
   groupColor?: string | null;
 }
 
+interface SkipRecord {
+  step: string;
+  reason: string;
+}
+
 /*
  * Constants
  */
@@ -50,6 +80,9 @@ const PROMO_TEMPLATE = path.join(__dirname, 'promo-template.html');
 const TAB_BAR_TEMPLATE = path.join(__dirname, 'tab-bar-template.html');
 const GET_WINDOW_ID_SCRIPT = path.join(__dirname, 'get-window-id.py');
 const ICON_PATH = path.join(ROOT, 'public', 'img', 'logo-128.png');
+
+/** How long a dashboard control is waited for before its screenshot is skipped. */
+const CONTROL_TIMEOUT = 8000;
 
 const GROUP_COLORS: Record<string, string> = {
   blue: '#8ab4f8',
@@ -78,6 +111,24 @@ const DEMO_SITES = [
 ];
 
 /*
+ * Optional-dependency probes
+ */
+
+function envFlag(name: string): boolean {
+  const value = process.env[name];
+  return value === '1' || value === 'true';
+}
+
+function commandExists(command: string): boolean {
+  try {
+    execSync(`command -v ${command}`, { stdio: 'ignore', shell: '/bin/sh' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/*
  * Entry point
  */
 
@@ -86,10 +137,13 @@ async function main(): Promise<void> {
 }
 
 class Preparation {
-  private context: BrowserContext | null = null;
-  private serviceWorker: Worker | null = null;
+  private context: ExtensionSession['context'] | null = null;
+  private ext: ExtensionSession | null = null;
+  private serviceWorker: ExtensionSession['serviceWorker'] | null = null;
   private extensionId = '';
   private screenshotPage: Page | null = null;
+  private readonly skipped: SkipRecord[] = [];
+  private readonly failed: SkipRecord[] = [];
 
   constructor() {
     mkdirSync(SCREENSHOTS_DIR, { recursive: true });
@@ -107,18 +161,23 @@ class Preparation {
     // Step 3: Options screenshots
     await this.takeOptionsScreenshots();
 
-    // Step 4: Demo screenshots (before/after)
+    // Step 4: Sessions dashboard screenshots
+    await this.takeDashboardScreenshots();
+
+    // Step 5: Demo screenshots (before/after)
     const { beforeTabs } = await this.takeDemoScreenshots();
+    const demoRan = beforeTabs.length > 0;
 
-    // Step 5: Video recording + sort
-    const ffmpeg = await this.startVideoRecording();
-    const afterTabs = await this.sortAndGroupTabs();
+    // Step 6: Video recording + sort
+    const ffmpeg = await this.startVideoRecording(demoRan);
+    const afterTabs = demoRan ? await this.sortAndGroupTabs() : [];
 
-    await Preparation.delay(3000);
-    this.context?.pages()[0]?.bringToFront();
-    await Preparation.delay(1000);
-
-    this.tryMacCapture(path.join(SCREENSHOTS_DIR, 'after-sort-native.png'));
+    if (demoRan) {
+      await Preparation.delay(3000);
+      this.context?.pages()[0]?.bringToFront();
+      await Preparation.delay(1000);
+      this.tryMacCapture(path.join(SCREENSHOTS_DIR, 'after-sort-native.png'), 'after-sort-native');
+    }
 
     // Stop video BEFORE rendering HTML mockups
     if (ffmpeg) {
@@ -130,15 +189,53 @@ class Preparation {
     await this.generatePromoImages();
     await this.context?.close();
 
-    // Step 6: demo.gif for docs/README.md
+    // Step 8: demo.gif for docs/README.md
     this.generateDemoGif();
 
-    // Step 7: store listing text
-    Preparation.step('7/7  Store listing text');
-    const listingPath = buildListing();
-    console.log(`  Saved: ${path.relative(ROOT, listingPath)}`);
+    // Step 9: store listing text
+    Preparation.step('9/9  Store listing text');
+    if (envFlag('SKIP_LISTING')) {
+      this.skip('9/9  Store listing text', 'SKIP_LISTING=1');
+    } else {
+      const listingPath = buildListing();
+      console.log(`  Saved: ${path.relative(ROOT, listingPath)}`);
+    }
 
-    console.log('\nDone! Screenshots, promo images, demo.gif and description.txt regenerated.');
+    this.report();
+  }
+
+  /* Skip / failure bookkeeping */
+
+  private skip(step: string, reason: string): void {
+    this.skipped.push({ step, reason });
+    console.warn(`  SKIPPED — ${step}: ${reason}`);
+  }
+
+  private fail(step: string, reason: string): void {
+    this.failed.push({ step, reason });
+    console.error(`  FAILED — ${step}: ${reason}`);
+  }
+
+  private report(): void {
+    console.log(`\n${'='.repeat(50)}`);
+    if (this.skipped.length > 0) {
+      console.log(`  ${this.skipped.length} optional step(s) skipped:`);
+      for (const entry of this.skipped) {
+        console.log(`    - ${entry.step}: ${entry.reason}`);
+      }
+    }
+    if (this.failed.length > 0) {
+      console.log(`  ${this.failed.length} step(s) FAILED:`);
+      for (const entry of this.failed) {
+        console.log(`    - ${entry.step}: ${entry.reason}`);
+      }
+      console.log('='.repeat(50));
+      process.exitCode = 1;
+      return;
+    }
+    console.log('='.repeat(50));
+    console.log('\nDone! Screenshots, promo images and description.txt regenerated.');
+    process.exitCode = 0;
   }
 
   private static step(label: string): void {
@@ -149,6 +246,43 @@ class Preparation {
 
   private static delay(ms: number): Promise<void> {
     return new Promise((r) => setTimeout(r, ms));
+  }
+
+  private static errorMessage(err: unknown): string {
+    return err instanceof Error ? err.message.split('\n')[0] : String(err);
+  }
+
+  /** True once the locator is visible; false (rather than throwing) when it never shows up. */
+  private static async isVisible(locator: Locator, timeout = CONTROL_TIMEOUT): Promise<boolean> {
+    try {
+      await locator.first().waitFor({ state: 'visible', timeout });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Probes the demo network from inside the browser, which is the thing that has to reach it --
+   * Node may well have a proxy the browser does not. Returns `null` when the page loaded, and the
+   * reason it did not otherwise.
+   */
+  private async browserCanReach(url: string): Promise<string | null> {
+    if (!this.context) {
+      return 'no browser context';
+    }
+    const page = await this.context.newPage();
+    try {
+      const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      if (response === null) {
+        return 'no response';
+      }
+      return response.ok() ? null : `HTTP ${response.status()}`;
+    } catch (err) {
+      return Preparation.errorMessage(err);
+    } finally {
+      await page.close();
+    }
   }
 
   private getWindowBounds(): WindowBounds | null {
@@ -171,15 +305,33 @@ class Preparation {
     return null;
   }
 
-  private tryMacCapture(filename: string): boolean {
+  /**
+   * `screencapture` is macOS-only and needs a real window server; off macOS (or with
+   * SKIP_NATIVE=1) the capture is skipped rather than silently swallowed, so the run log says
+   * why `*-native.png` did not change.
+   */
+  private tryMacCapture(filename: string, label: string): boolean {
+    if (envFlag('SKIP_NATIVE')) {
+      this.skip(`native capture (${label})`, 'SKIP_NATIVE=1');
+      return false;
+    }
+    if (process.platform !== 'darwin') {
+      this.skip(
+        `native capture (${label})`,
+        `macOS-only (screencapture); platform is ${process.platform}`,
+      );
+      return false;
+    }
     try {
       const bounds = this.getWindowBounds();
       if (!bounds) {
+        this.skip(`native capture (${label})`, 'could not resolve the Chrome window id');
         return false;
       }
       execSync(`screencapture -l${bounds.id} -x "${filename}"`, { timeout: 5000 });
       return true;
-    } catch {
+    } catch (err) {
+      this.skip(`native capture (${label})`, Preparation.errorMessage(err));
       return false;
     }
   }
@@ -202,39 +354,33 @@ class Preparation {
   /* Pipeline steps */
 
   private buildExtension(): void {
-    Preparation.step('1/7  Building extension');
+    Preparation.step('1/9  Building extension');
+    if (envFlag('SKIP_BUILD')) {
+      this.skip('1/9  Building extension', 'SKIP_BUILD=1');
+      if (!existsSync(path.join(DIST, 'manifest.json'))) {
+        this.fail('1/9  Building extension', `SKIP_BUILD=1 but there is no build in ${DIST}`);
+      }
+      return;
+    }
     execSync('pnpm build', { cwd: ROOT, stdio: 'inherit' });
     console.log('Build complete.');
   }
 
   private async launchBrowser(): Promise<void> {
-    Preparation.step('2/7  Launching browser for screenshots & demo');
-    this.context = await chromium.launchPersistentContext('', {
-      headless: false,
-      args: [
-        `--disable-extensions-except=${DIST}`,
-        `--load-extension=${DIST}`,
-        '--no-first-run',
-        '--disable-default-apps',
-        '--window-size=1400,900',
-        '--window-position=100,50',
-      ],
+    Preparation.step('2/9  Launching browser for screenshots & demo');
+    const session = await launchExtension({
+      dist: DIST,
+      preferHeaded: true,
+      args: ['--window-size=1400,900', '--window-position=100,50'],
+    }).catch((err: unknown) => {
+      console.error('Could not launch Chrome with the extension:', Preparation.errorMessage(err));
+      process.exit(1);
     });
 
-    let worker = this.context.serviceWorkers()[0];
-    if (!worker) {
-      worker = await this.context
-        .waitForEvent('serviceworker', { timeout: 5000 })
-        .catch(() => null as never);
-    }
-    if (!worker) {
-      console.error('Could not find extension service worker!');
-      await this.context.close();
-      process.exit(1);
-    }
-
-    this.serviceWorker = worker;
-    this.extensionId = worker.url().split('/')[2];
+    this.ext = session;
+    this.context = session.context;
+    this.serviceWorker = session.serviceWorker;
+    this.extensionId = session.extensionId;
     console.log(`Extension ID: ${this.extensionId}`);
   }
 
@@ -242,7 +388,11 @@ class Preparation {
     if (!this.context) {
       return;
     }
-    Preparation.step('3/7  Options page screenshots');
+    Preparation.step('3/9  Options page screenshots');
+    if (envFlag('SKIP_OPTIONS')) {
+      this.skip('3/9  Options page screenshots', 'SKIP_OPTIONS=1');
+      return;
+    }
     const optionsUrl = `chrome-extension://${this.extensionId}/options.html`;
 
     for (const { width, height } of [
@@ -263,11 +413,188 @@ class Preparation {
     }
   }
 
+  /**
+   * Sessions dashboard screenshots. The data comes from `scripts/qa/fixtures.ts`, written
+   * straight into `chrome.storage.local` through the extension service worker -- no Chrome
+   * runtime ids are ever stored, so the records are exactly what a real save would leave behind.
+   *
+   * Parts of the dashboard (search, import, the history section) are still being built; every
+   * capture locates its control by role/accessible name and skips itself with a warning when that
+   * control is not there, so this step never fails a release run.
+   */
+  private async takeDashboardScreenshots(): Promise<void> {
+    if (!this.context || !this.ext) {
+      return;
+    }
+    Preparation.step('4/9  Sessions dashboard screenshots');
+    if (envFlag('SKIP_DASHBOARD')) {
+      this.skip('4/9  Sessions dashboard screenshots', 'SKIP_DASHBOARD=1');
+      return;
+    }
+
+    const fixtures = buildDashboardFixtures();
+    const worker = await this.ext.worker();
+    await seedSessions(worker, fixtures);
+
+    const dashboardUrl = `chrome-extension://${this.extensionId}/dashboard.html`;
+    const page = await this.context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    const reload = async (): Promise<void> => {
+      await page.goto(dashboardUrl);
+      await page.waitForLoadState('networkidle');
+      await page.getByRole('banner').getByRole('heading', { name: 'Sessions' }).waitFor({
+        timeout: CONTROL_TIMEOUT,
+      });
+      await page.waitForTimeout(300);
+    };
+
+    const shot = async (name: string, prepare: () => Promise<string | null>): Promise<void> => {
+      try {
+        await reload();
+        const problem = await prepare();
+        if (problem !== null) {
+          this.skip(`dashboard-${name}.png`, problem);
+          return;
+        }
+        await page.waitForTimeout(400);
+        const filepath = path.join(SCREENSHOTS_DIR, `dashboard-${name}.png`);
+        await page.screenshot({ path: filepath, clip: { x: 0, y: 0, width: 1280, height: 800 } });
+        console.log(`  Saved: ${path.relative(ROOT, filepath)}`);
+      } catch (err) {
+        this.skip(`dashboard-${name}.png`, Preparation.errorMessage(err));
+      }
+    };
+
+    const cardFor = (name: string): Locator =>
+      page.locator('main > ul > li').filter({ hasText: name });
+
+    await shot('sessions', async () => {
+      const card = cardFor(fixtures[0].name);
+      if (!(await Preparation.isVisible(card))) {
+        return `no session card for “${fixtures[0].name}”`;
+      }
+      const expand = card.getByRole('button', { name: 'Expand' });
+      if (!(await Preparation.isVisible(expand))) {
+        return 'no Expand control on the session card';
+      }
+      await expand.first().click();
+      await card.getByRole('heading', { name: 'Window 1' }).first().waitFor({
+        timeout: CONTROL_TIMEOUT,
+      });
+      return null;
+    });
+
+    await shot('restore', async () => {
+      // The confirm dialog only appears above the large-restore threshold, which the second
+      // fixture session is built to cross. If the click starts a restore instead, cancel it at
+      // once rather than letting a screenshot run open a hundred tabs.
+      const card = cardFor(fixtures[1].name);
+      if (!(await Preparation.isVisible(card))) {
+        return `no session card for “${fixtures[1].name}”`;
+      }
+      const restore = card.getByRole('button', { name: 'Restore', exact: true });
+      if (!(await Preparation.isVisible(restore))) {
+        return 'no Restore control on the session card';
+      }
+      await restore.first().click();
+
+      const dialog = page.getByRole('dialog');
+      const cancelRunning = page
+        .getByRole('button', { name: /^Cancel(ling)?/ })
+        .and(page.locator('output button'));
+      if (await Preparation.isVisible(cancelRunning, 2000)) {
+        await cancelRunning
+          .first()
+          .click()
+          .catch(() => undefined);
+        return 'clicking Restore started the restore directly (no confirm dialog)';
+      }
+      if (!(await Preparation.isVisible(dialog))) {
+        return 'the restore confirm dialog did not open';
+      }
+      return null;
+    });
+
+    await shot('search', async () => {
+      const search = page
+        .getByRole('searchbox')
+        .or(page.getByRole('textbox', { name: /search|filter/i }))
+        .or(page.getByPlaceholder(/search|filter/i));
+      if (!(await Preparation.isVisible(search))) {
+        return 'no search field on the dashboard yet';
+      }
+      await search.first().fill('research');
+      await page.waitForTimeout(500);
+      return null;
+    });
+
+    await shot('import', async () => {
+      const importButton = page.getByRole('button', { name: /^import/i });
+      if (!(await Preparation.isVisible(importButton))) {
+        return 'no Import control on the dashboard yet';
+      }
+      await importButton.first().click();
+      const dialog = page.getByRole('dialog');
+      if (!(await Preparation.isVisible(dialog))) {
+        return 'the import dialog did not open';
+      }
+      const fileInput = dialog.locator('input[type="file"]');
+      if ((await fileInput.count()) === 0) {
+        return 'the import dialog has no file input to build a preview from';
+      }
+      const bundle: ExportBundle = {
+        app: 'tab-organizer',
+        schemaVersion: 1,
+        exportedAt: Date.now(),
+        sessions: fixtures.slice(0, 2),
+      };
+      const bundlePath = path.join(os.tmpdir(), 'tab-organizer-import-preview.json');
+      writeFileSync(bundlePath, JSON.stringify(bundle, null, 2));
+      await fileInput.first().setInputFiles(bundlePath);
+      const preview = dialog.getByText(new RegExp(fixtures[0].name.slice(0, 12), 'i'));
+      if (!(await Preparation.isVisible(preview))) {
+        return 'the import dialog never showed a preview of the chosen file';
+      }
+      return null;
+    });
+
+    await shot('history', async () => {
+      const control = page
+        .getByRole('button', { name: /history/i })
+        .or(page.getByRole('tab', { name: /history/i }));
+      if (!(await Preparation.isVisible(control))) {
+        return 'no history section control on the dashboard yet';
+      }
+      const target = control.first();
+      if ((await target.getAttribute('aria-expanded')) === 'false') {
+        await target.click();
+        await page.waitForTimeout(400);
+      } else {
+        await target.click().catch(() => undefined);
+        await page.waitForTimeout(400);
+      }
+      return null;
+    });
+
+    await page.close();
+  }
+
   private async takeDemoScreenshots(): Promise<{ beforeTabs: TabInfo[]; nativeBefore: boolean }> {
     if (!this.context || !this.serviceWorker) {
       return { beforeTabs: [], nativeBefore: false };
     }
-    Preparation.step('4/7  Demo screenshots (before/after tab sorting)');
+    Preparation.step('5/9  Demo screenshots (before/after tab sorting)');
+
+    if (envFlag('SKIP_DEMO')) {
+      this.skip('5/9  Demo screenshots', 'SKIP_DEMO=1');
+      return { beforeTabs: [], nativeBefore: false };
+    }
+    const reachable = await this.browserCanReach(DEMO_SITES[0]);
+    if (reachable !== null) {
+      this.skip('5/9  Demo screenshots', `the browser cannot reach ${DEMO_SITES[0]}: ${reachable}`);
+      return { beforeTabs: [], nativeBefore: false };
+    }
 
     console.log('  Opening tabs...');
     for (const url of DEMO_SITES) {
@@ -285,7 +612,8 @@ class Preparation {
     await this.context.pages()[0].bringToFront();
     await Preparation.delay(1000);
 
-    const beforeTabs: TabInfo[] = await this.serviceWorker.evaluate(async () => {
+    const worker = this.ext === null ? this.serviceWorker : await this.ext.worker();
+    const beforeTabs: TabInfo[] = await worker.evaluate(async () => {
       const win = await chrome.windows.getCurrent();
       const tabs = await chrome.tabs.query({ windowId: win.id });
       return tabs.map((t) => ({
@@ -297,7 +625,10 @@ class Preparation {
     });
     console.log(`  ${beforeTabs.length} tabs open`);
 
-    const nativeBefore = this.tryMacCapture(path.join(SCREENSHOTS_DIR, 'before-sort-native.png'));
+    const nativeBefore = this.tryMacCapture(
+      path.join(SCREENSHOTS_DIR, 'before-sort-native.png'),
+      'before-sort-native',
+    );
     if (nativeBefore) {
       console.log('  Native BEFORE screenshot captured');
     }
@@ -305,8 +636,33 @@ class Preparation {
     return { beforeTabs, nativeBefore };
   }
 
-  private async startVideoRecording(): Promise<ChildProcess | null> {
-    Preparation.step('5/7  Video recording & promo images');
+  /**
+   * Screen recording is macOS-only (ffmpeg's `avfoundation` input) and needs ffmpeg on PATH.
+   * Missing either -- or a skipped demo step, which leaves nothing worth filming -- means no
+   * video, and later `demo.gif` sees no `demo.mp4` and skips too.
+   */
+  private async startVideoRecording(demoRan: boolean): Promise<ChildProcess | null> {
+    Preparation.step('6/9  Video recording & tab sorting');
+    if (envFlag('SKIP_VIDEO')) {
+      this.skip('6/9  Video recording', 'SKIP_VIDEO=1');
+      return null;
+    }
+    if (!demoRan) {
+      this.skip('6/9  Video recording', 'the demo step was skipped, so there is nothing to record');
+      return null;
+    }
+    if (!commandExists('ffmpeg')) {
+      this.skip('6/9  Video recording', 'ffmpeg is not installed');
+      return null;
+    }
+    if (process.platform !== 'darwin') {
+      this.skip(
+        '6/9  Video recording',
+        `ffmpeg avfoundation capture is macOS-only; platform is ${process.platform}`,
+      );
+      return null;
+    }
+
     try {
       const deviceInfo = execSync('ffmpeg -f avfoundation -list_devices true -i "" 2>&1 || true', {
         encoding: 'utf-8',
@@ -355,8 +711,8 @@ class Preparation {
       );
       await Preparation.delay(2000);
       return proc;
-    } catch {
-      console.log('  ffmpeg not available, skipping video');
+    } catch (err) {
+      this.skip('6/9  Video recording', Preparation.errorMessage(err));
       return null;
     }
   }
@@ -376,8 +732,9 @@ class Preparation {
       return [];
     }
     console.log('  Sorting and grouping tabs...');
+    const worker = this.ext === null ? this.serviceWorker : await this.ext.worker();
 
-    return this.serviceWorker.evaluate(async () => {
+    return worker.evaluate(async () => {
       const currentWindow = await chrome.windows.getCurrent();
       const tabs = await chrome.tabs.query({ windowId: currentWindow.id });
 
@@ -452,11 +809,33 @@ class Preparation {
     });
   }
 
+  /** The page promo images are rendered on; created lazily so a skipped mockup step is fine. */
+  private async ensureScreenshotPage(): Promise<Page | null> {
+    if (this.screenshotPage) {
+      return this.screenshotPage;
+    }
+    if (!this.context) {
+      return null;
+    }
+    this.screenshotPage = await this.context.newPage();
+    await this.screenshotPage.setViewportSize({ width: 1280, height: 800 });
+    return this.screenshotPage;
+  }
+
   private async renderMockupScreenshots(
     beforeTabs: TabInfo[],
     afterTabs: TabInfo[],
   ): Promise<void> {
     if (!this.context) {
+      return;
+    }
+    Preparation.step('7/9  Tab-bar mockups & promotional images');
+    if (envFlag('SKIP_MOCKUPS')) {
+      this.skip('7/9  Tab-bar mockups', 'SKIP_MOCKUPS=1');
+      return;
+    }
+    if (beforeTabs.length === 0 && afterTabs.length === 0) {
+      this.skip('7/9  Tab-bar mockups', 'the demo step produced no tabs to draw');
       return;
     }
     console.log('  Rendering tab bar mockups...');
@@ -466,10 +845,10 @@ class Preparation {
       groupColor: t.groupColor ? GROUP_COLORS[t.groupColor] || t.groupColor : null,
     }));
 
-    const beforeHtml = this.buildTabBarHtml(beforeTabs, 'Before \u2014 Tabs in random order');
+    const beforeHtml = this.buildTabBarHtml(beforeTabs, 'Before — Tabs in random order');
     const afterHtml = this.buildTabBarHtml(
       afterTabsWithColors,
-      'After \u2014 Sorted and grouped by domain',
+      'After — Sorted and grouped by domain',
     );
 
     const beforePath = path.join(SCREENSHOTS_DIR, 'before-sort.html');
@@ -477,20 +856,23 @@ class Preparation {
     writeFileSync(beforePath, beforeHtml);
     writeFileSync(afterPath, afterHtml);
 
-    this.screenshotPage = await this.context.newPage();
-    await this.screenshotPage.setViewportSize({ width: 1280, height: 800 });
+    const page = await this.ensureScreenshotPage();
+    if (page === null) {
+      return;
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
 
-    await this.screenshotPage.goto(`file://${beforePath}`);
-    await this.screenshotPage.waitForTimeout(1000);
-    await this.screenshotPage.screenshot({
+    await page.goto(`file://${beforePath}`);
+    await page.waitForTimeout(1000);
+    await page.screenshot({
       path: path.join(SCREENSHOTS_DIR, 'before-sort.png'),
       clip: { x: 0, y: 0, width: 1280, height: 800 },
     });
     console.log('  Saved: screenshots/before-sort.png');
 
-    await this.screenshotPage.goto(`file://${afterPath}`);
-    await this.screenshotPage.waitForTimeout(1000);
-    await this.screenshotPage.screenshot({
+    await page.goto(`file://${afterPath}`);
+    await page.waitForTimeout(1000);
+    await page.screenshot({
       path: path.join(SCREENSHOTS_DIR, 'after-sort.png'),
       clip: { x: 0, y: 0, width: 1280, height: 800 },
     });
@@ -498,11 +880,19 @@ class Preparation {
   }
 
   private generateDemoGif(): void {
-    Preparation.step('6/7  Demo GIF');
+    Preparation.step('8/9  Demo GIF');
+    if (envFlag('SKIP_GIF')) {
+      this.skip('8/9  Demo GIF', 'SKIP_GIF=1');
+      return;
+    }
     const video = path.join(SCREENSHOTS_DIR, 'demo.mp4');
     const gif = path.join(SCREENSHOTS_DIR, 'demo.gif');
+    if (!commandExists('ffmpeg')) {
+      this.skip('8/9  Demo GIF', 'ffmpeg is not installed');
+      return;
+    }
     if (!existsSync(video)) {
-      console.log('  demo.mp4 not found, skipping GIF');
+      this.skip('8/9  Demo GIF', 'screenshots/demo.mp4 does not exist');
       return;
     }
     try {
@@ -511,13 +901,18 @@ class Preparation {
         'fps=10,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5';
       execSync(`ffmpeg -y -v error -i "${video}" -vf "${filter}" "${gif}"`, { timeout: 60000 });
       console.log('  Saved: screenshots/demo.gif');
-    } catch {
-      console.log('  ffmpeg failed, skipping GIF');
+    } catch (err) {
+      this.skip('8/9  Demo GIF', `ffmpeg failed: ${Preparation.errorMessage(err)}`);
     }
   }
 
   private async generatePromoImages(): Promise<void> {
-    if (!this.screenshotPage) {
+    if (envFlag('SKIP_PROMO')) {
+      this.skip('7/9  Promotional images', 'SKIP_PROMO=1');
+      return;
+    }
+    const page = await this.ensureScreenshotPage();
+    if (page === null) {
       return;
     }
     console.log('  Generating promotional images...');
@@ -540,12 +935,12 @@ class Preparation {
       const htmlPath = path.join(SCREENSHOTS_DIR, `${name}.html`);
       writeFileSync(htmlPath, html);
 
-      await this.screenshotPage.setViewportSize({ width, height });
-      await this.screenshotPage.goto(`file://${htmlPath}`);
-      await this.screenshotPage.waitForTimeout(500);
+      await page.setViewportSize({ width, height });
+      await page.goto(`file://${htmlPath}`);
+      await page.waitForTimeout(500);
 
       const filepath = path.join(SCREENSHOTS_DIR, `${name}.png`);
-      await this.screenshotPage.screenshot({
+      await page.screenshot({
         path: filepath,
         clip: { x: 0, y: 0, width, height },
       });
@@ -554,4 +949,7 @@ class Preparation {
   }
 }
 
-main();
+main().catch((err: unknown) => {
+  console.error('prepare-registration failed:', err);
+  process.exitCode = 1;
+});
