@@ -19,7 +19,7 @@
       }
       .card {
         text-align: center;
-        padding: 32px;
+        padding: 24px 32px;
       }
       .icon {
         width: 80px;
@@ -35,18 +35,38 @@
         width: 56px;
         height: 56px;
       }
+      .brand {
+        color: rgba(255, 255, 255, 0.55);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
       h1 {
         color: #fff;
         font-size: {{TITLE_SIZE}}px;
         font-weight: 700;
+        line-height: 1.15;
         margin-bottom: 12px;
         letter-spacing: -0.5px;
+      }
+      /* Each half of the headline stays whole: side by side on the wide marquee, stacked on the
+         small tile. The separator hides itself once they stack. */
+      h1 .half {
+        display: inline-block;
+        white-space: nowrap;
+      }
+      h1 .sep {
+        display: inline-block;
+        padding: 0 0.35em;
+        color: rgba(255, 255, 255, 0.45);
       }
       p {
         color: rgba(255, 255, 255, 0.7);
         font-size: {{DESC_SIZE}}px;
         line-height: 1.5;
-        max-width: 500px;
+        max-width: 620px;
         margin: 0 auto;
       }
       .tabs-demo {
@@ -67,6 +87,10 @@
       .mini-tab.grouped {
         border-top: 3px solid var(--color);
       }
+      .mini-tab.session {
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.18);
+      }
       .mini-tab span {
         color: rgba(255, 255, 255, 0.8);
         font-size: 11px;
@@ -77,6 +101,46 @@
         margin: 0 12px;
         align-self: center;
       }
+      /* Small tile (440x280): same layout, tightened so the two-line headline still fits. */
+      @media (max-height: 320px) {
+        .icon {
+          width: 52px;
+          height: 52px;
+          margin-bottom: 12px;
+          border-radius: 12px;
+        }
+        .icon img {
+          width: 36px;
+          height: 36px;
+        }
+        .brand {
+          font-size: 10px;
+          letter-spacing: 1.5px;
+          margin-bottom: 6px;
+        }
+        h1 {
+          margin-bottom: 8px;
+        }
+        h1 .sep {
+          display: none;
+        }
+        h1 .half {
+          display: block;
+        }
+        p {
+          max-width: 360px;
+        }
+        .tabs-demo {
+          margin-top: 12px;
+          gap: 3px;
+        }
+        .mini-tab {
+          padding: 4px 9px;
+        }
+        .mini-tab span {
+          font-size: 9px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -84,14 +148,22 @@
       <div class="icon">
         <img src="{{ICON_PATH}}" />
       </div>
-      <h1>Tab Organizer</h1>
-      <p>Sort and organize your browser tabs with one click</p>
+      <div class="brand">Tab Organizer</div>
+      <h1>
+        <span class="half">Sort tabs in one click</span><span class="sep">·</span
+        ><span class="half">Save and restore sessions</span>
+      </h1>
+      <p>
+        Sort and group every tab by domain, then save whole windows as a session and bring them
+        back exactly as you left them.
+      </p>
       <div class="tabs-demo">
         <div class="mini-tab grouped" style="--color: #8ab4f8"><span>GitHub</span></div>
         <div class="mini-tab grouped" style="--color: #8ab4f8"><span>GitHub</span></div>
         <div class="mini-tab grouped" style="--color: #f28b82"><span>YouTube</span></div>
         <div class="mini-tab grouped" style="--color: #f28b82"><span>YouTube</span></div>
         <div class="mini-tab grouped" style="--color: #81c995"><span>Google</span></div>
+        <div class="mini-tab session"><span>💾 Monday morning · 17 tabs</span></div>
       </div>
     </div>
   </body>
