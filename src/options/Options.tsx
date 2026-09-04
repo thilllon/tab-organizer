@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { SessionSettingsFields } from '@/dashboard/components/SessionSettingsFields';
+import { useSessionSettings } from '@/dashboard/hooks/useSessionSettings';
 import { openDashboard } from '@/sessions/open-dashboard';
 import { openShortcutSettings } from '@/sessions/shortcuts';
 import type { DuplicateTabHandling, GroupingMode } from '@/types';
@@ -19,6 +21,10 @@ export const Options = () => {
   const [duplicateHandling, setDuplicateHandling] = useState<DuplicateTabHandling>('none');
   const [groupingMode, setGroupingMode] = useState<GroupingMode>('subdomain');
   const [saved, setSaved] = useState(false);
+  // Session settings are device-local (`chrome.storage.local` via sessionRepo) and apply
+  // immediately -- they deliberately do not go through this page's "Save" button, which writes
+  // the sort settings to chrome.storage.sync.
+  const sessionSettings = useSessionSettings();
 
   useEffect(() => {
     chrome.storage.sync.get<{
@@ -134,6 +140,19 @@ export const Options = () => {
             You can also save from the icon's right-click menu.
           </p>
         </div>
+        <SessionSettingsFields
+          settings={sessionSettings.settings}
+          disabled={sessionSettings.loading}
+          idPrefix="options"
+          className="flex-col items-start gap-3"
+          onChange={(patch) => void sessionSettings.update(patch)}
+        />
+        {sessionSettings.error !== undefined && (
+          <p role="alert" className="text-xs text-destructive">
+            {sessionSettings.error}
+          </p>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"

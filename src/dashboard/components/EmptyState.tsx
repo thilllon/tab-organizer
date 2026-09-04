@@ -1,4 +1,4 @@
-import { FolderOpen, Keyboard, Layers, MousePointerClick, Save } from 'lucide-react';
+import { FolderOpen, History, Keyboard, Layers, MousePointerClick, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openShortcutSettings } from '@/sessions/shortcuts';
 
@@ -26,6 +26,15 @@ export function EmptyState({ onSaveWindow, onSaveAll, saving, running }: EmptySt
           <span>
             Right-click the Tab Organizer icon → <strong>Save this window as session</strong> or{' '}
             <strong>Save all windows as session</strong>. A ✓ badge confirms the save.
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <History className="mt-0.5 size-4 shrink-0" />
+          <span>
+            <strong>Automatic snapshots are on by default</strong>: all your windows are captured
+            every few minutes into the <strong>History</strong> section below, so nothing is lost if
+            Chrome restarts. Turn them off with the “Automatic snapshots” switch at the top of this
+            page, or on the Options page.
           </span>
         </li>
         <li className="flex items-start gap-2">

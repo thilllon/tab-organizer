@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { Session, WindowSnapshot } from '@/types';
-import { pickWindow } from './session-utils';
+import type { Session, SessionSummary, WindowSnapshot } from '@/types';
+import {
+  historyOriginLabel,
+  pickWindow,
+  shouldShowRecoveredBanner,
+  splitByKind,
+} from './session-utils';
 
 function makeWindow(url: string): WindowSnapshot {
   return {
@@ -38,5 +43,97 @@ describe('pickWindow', () => {
   it('throws a RangeError for an out-of-range index', () => {
     expect(() => pickWindow(session, 2)).toThrow(RangeError);
     expect(() => pickWindow(session, -1)).toThrow(RangeError);
+  });
+});
+
+function makeSummary(
+  overrides: Partial<SessionSummary> & Pick<SessionSummary, 'id'>,
+): SessionSummary {
+  return {
+    kind: 'history',
+    name: 'Snapshot',
+    origin: 'alarm',
+    createdAt: 1000,
+    updatedAt: 1000,
+    windowCount: 1,
+    tabCount: 3,
+    bytes: 100,
+    ...overrides,
+  };
+}
+
+describe('splitByKind', () => {
+  it('separates saved sessions from history snapshots', () => {
+    const saved = makeSummary({ id: 's1', kind: 'saved', origin: 'manual' });
+    const snapshot = makeSummary({ id: 'h1' });
+    const result = splitByKind([saved, snapshot]);
+    expect(result.saved).toEqual([saved]);
+    expect(result.history).toEqual([snapshot]);
+  });
+
+  it('preserves the order of the index within each list', () => {
+    const list = [
+      makeSummary({ id: 'h2', createdAt: 3000, updatedAt: 3000 }),
+      makeSummary({ id: 's1', kind: 'saved', origin: 'manual', updatedAt: 2000 }),
+      makeSummary({ id: 'h1', createdAt: 1000, updatedAt: 1000 }),
+      makeSummary({ id: 's2', kind: 'saved', origin: 'import', updatedAt: 500 }),
+    ];
+    expect(splitByKind(list).history.map((summary) => summary.id)).toEqual(['h2', 'h1']);
+    expect(splitByKind(list).saved.map((summary) => summary.id)).toEqual(['s1', 's2']);
+  });
+
+  it('returns two empty lists for an empty index', () => {
+    expect(splitByKind([])).toEqual({ saved: [], history: [] });
+  });
+});
+
+describe('historyOriginLabel', () => {
+  it('renames the alarm origin to "auto"', () => {
+    expect(historyOriginLabel('alarm')).toBe('auto');
+  });
+
+  it('passes the other origins through unchanged', () => {
+    expect(historyOriginLabel('manual')).toBe('manual');
+    expect(historyOriginLabel('startup')).toBe('startup');
+    expect(historyOriginLabel('recovered')).toBe('recovered');
+    expect(historyOriginLabel('import')).toBe('import');
+  });
+});
+
+describe('shouldShowRecoveredBanner', () => {
+  const recovered = makeSummary({
+    id: 'r1',
+    origin: 'recovered',
+    protected: true,
+    createdAt: 5000,
+    updatedAt: 5000,
+    name: 'Previous session (recovered) 2026-08-29 14:03',
+  });
+
+  it('returns the newest snapshot when it is the recovered one', () => {
+    const older = makeSummary({ id: 'h1', createdAt: 1000, updatedAt: 1000 });
+    expect(shouldShowRecoveredBanner([recovered, older], undefined)).toEqual(recovered);
+  });
+
+  it('ignores the order it is given', () => {
+    const older = makeSummary({ id: 'h1', createdAt: 1000, updatedAt: 1000 });
+    expect(shouldShowRecoveredBanner([older, recovered], undefined)).toEqual(recovered);
+  });
+
+  it('does not show once a newer ordinary snapshot exists', () => {
+    const newer = makeSummary({ id: 'h9', createdAt: 9000, updatedAt: 9000 });
+    expect(shouldShowRecoveredBanner([recovered, newer], undefined)).toBeUndefined();
+  });
+
+  it('does not show when that snapshot was dismissed', () => {
+    expect(shouldShowRecoveredBanner([recovered], 'r1')).toBeUndefined();
+  });
+
+  it('shows again when the dismissed id belongs to an older recovery', () => {
+    expect(shouldShowRecoveredBanner([recovered], 'r0')).toEqual(recovered);
+  });
+
+  it('does not show without history snapshots', () => {
+    expect(shouldShowRecoveredBanner([], undefined)).toBeUndefined();
   });
 });

@@ -1,27 +1,31 @@
 import { Layers, Save } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/dashboard/components/EmptyState';
+import { HistorySection } from '@/dashboard/components/HistorySection';
 import { OpenWindowsPane } from '@/dashboard/components/OpenWindowsPane';
 import { ProgressToast } from '@/dashboard/components/ProgressToast';
+import { RecoveredBanner } from '@/dashboard/components/RecoveredBanner';
 import {
   type PendingRestore,
   RestoreConfirmDialog,
 } from '@/dashboard/components/RestoreConfirmDialog';
 import { type RestoreScope, SessionCard } from '@/dashboard/components/SessionCard';
+import { SessionSettingsRow } from '@/dashboard/components/SessionSettingsRow';
 import { useOpenWindows } from '@/dashboard/hooks/useOpenWindows';
 import { useRestore } from '@/dashboard/hooks/useRestore';
 import { useSessionIndex } from '@/dashboard/hooks/useSessionIndex';
 import { errorMessage } from '@/dashboard/lib/errors';
 import { needsRestoreConfirm } from '@/dashboard/lib/restore-summary';
-import { pickWindow } from '@/dashboard/lib/session-utils';
+import { pickWindow, shouldShowRecoveredBanner, splitByKind } from '@/dashboard/lib/session-utils';
+import { RECOVERED_DISMISSED_KEY, readUiState, writeUiState } from '@/dashboard/lib/ui-state';
 import { currentWindowTarget } from '@/dashboard/lib/window-actions';
 import { type CaptureScope, captureSession } from '@/sessions/capture';
 import { ensureUniqueName } from '@/sessions/naming';
 import type { RestoreTarget } from '@/sessions/restore';
 import { sessionRepo } from '@/sessions/storage';
-import type { Session, SessionSettings } from '@/types';
+import type { Session, SessionSettings, SessionSummary } from '@/types';
 
 const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
 
@@ -43,6 +47,10 @@ export function Dashboard() {
   const [notice, setNotice] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [pending, setPending] = useState<PendingRestore | undefined>(undefined);
+  // Which recovered snapshot's banner was dismissed in this tab (sessionStorage, read once).
+  const [dismissedRecovered, setDismissedRecovered] = useState(() =>
+    readUiState(RECOVERED_DISMISSED_KEY),
+  );
   // Focus target after a card deletes itself: the card (and with it the button that had focus)
   // unmounts, which would otherwise drop keyboard focus to <body>. <main> outlives both the list
   // and the empty state that replaces it once the last session is gone.
@@ -122,11 +130,35 @@ export function Dashboard() {
     void runRestore(session, target, lazy);
   };
 
+  /** Restores a row that only has its index entry (the History rows, the recovered banner). */
+  const restoreSummary = async (summary: SessionSummary): Promise<void> => {
+    setError(undefined);
+    try {
+      const session = await sessionRepo.get(summary.id);
+      if (session === undefined) {
+        setError('This snapshot no longer exists.');
+        return;
+      }
+      await requestRestore(session, 'newWindows');
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  const dismissRecovered = (summary: SessionSummary) => {
+    writeUiState(RECOVERED_DISMISSED_KEY, summary.id);
+    setDismissedRecovered(summary.id);
+  };
+
   const focusList = () => {
     mainRef.current?.focus({ preventScroll: true });
   };
 
   const busy = saving || running;
+  // History snapshots share the index with saved sessions: the saved list must filter, and the
+  // History section gets the rest (both newest first — see splitByKind).
+  const { saved, history } = useMemo(() => splitByKind(sessions), [sessions]);
+  const recovered = shouldShowRecoveredBanner(history, dismissedRecovered);
 
   return (
     <div className="mx-auto max-w-6xl p-6">
@@ -145,6 +177,17 @@ export function Dashboard() {
       </header>
 
       <Separator className="my-4" />
+
+      {recovered !== undefined && (
+        <RecoveredBanner
+          summary={recovered}
+          restoring={running}
+          onRestore={(summary) => void restoreSummary(summary)}
+          onDismiss={dismissRecovered}
+        />
+      )}
+
+      <SessionSettingsRow />
 
       {notice !== undefined && (
         <p role="status" aria-live="polite" className="mb-3 rounded-md bg-muted px-3 py-2 text-sm">
@@ -176,7 +219,7 @@ export function Dashboard() {
           <h2 className="mb-3 text-sm font-semibold">Saved sessions</h2>
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : sessions.length === 0 ? (
+          ) : saved.length === 0 ? (
             <EmptyState
               onSaveWindow={() => void save('window')}
               onSaveAll={() => void save('all')}
@@ -185,7 +228,7 @@ export function Dashboard() {
             />
           ) : (
             <ul className="space-y-3">
-              {sessions.map((summary) => (
+              {saved.map((summary) => (
                 <SessionCard
                   key={summary.id}
                   summary={summary}
@@ -199,6 +242,16 @@ export function Dashboard() {
               ))}
             </ul>
           )}
+
+          <HistorySection
+            summaries={history}
+            restoring={running}
+            onRestore={(session) => requestRestore(session, 'newWindows')}
+            onNotice={(message) => {
+              setError(undefined);
+              setNotice(message);
+            }}
+          />
         </main>
       </div>
 

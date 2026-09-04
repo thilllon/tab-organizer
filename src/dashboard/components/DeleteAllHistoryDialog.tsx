@@ -7,36 +7,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { pluralize } from '@/dashboard/lib/format';
 
-export interface DeleteSessionDialogProps {
-  name: string;
-  /** Overridden by the History section, whose rows delete a snapshot rather than a session. */
-  title?: string;
+export interface DeleteAllHistoryDialogProps {
+  /** How many unprotected snapshots the confirm covers. */
+  count: number;
   open: boolean;
   onOpenChange(open: boolean): void;
   onConfirm(): void;
-  /**
-   * Radix's close-time focus hand-off (defaults to the trigger). Call `event.preventDefault()`
-   * and focus something else when the trigger is about to unmount.
-   */
-  onCloseAutoFocus?(event: Event): void;
 }
 
-export function DeleteSessionDialog({
-  name,
-  title = 'Delete session?',
+/**
+ * Confirm for the History section's "Delete all unprotected" — `removeAllHistory` never touches
+ * saved sessions or protected snapshots, and the copy says so.
+ */
+export function DeleteAllHistoryDialog({
+  count,
   open,
   onOpenChange,
   onConfirm,
-  onCloseAutoFocus,
-}: DeleteSessionDialogProps) {
+}: DeleteAllHistoryDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>Delete unprotected snapshots?</DialogTitle>
           <DialogDescription>
-            “{name}” will be removed from this device. This cannot be undone.
+            {pluralize(count, 'snapshot')} will be removed from this device. Protected snapshots and
+            saved sessions are kept. This cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -44,7 +42,7 @@ export function DeleteSessionDialog({
             Cancel
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Delete
+            Delete snapshots
           </Button>
         </DialogFooter>
       </DialogContent>
