@@ -1,12 +1,22 @@
 import { captureSession } from '@/sessions/capture';
+import {
+  ensureHistoryAlarm,
+  HISTORY_ALARM,
+  HISTORY_FIRST_ALARM,
+  promoteRecoveredSnapshot,
+  scheduleFirstSnapshot,
+  takeHistorySnapshot,
+} from '@/sessions/history';
 import { ensureUniqueName } from '@/sessions/naming';
 import { openDashboard } from '@/sessions/open-dashboard';
-import { sessionRepo } from '@/sessions/storage';
+import { SETTINGS_KEY, sessionRepo } from '@/sessions/storage';
 
 /**
  * Session-related service-worker listeners. Imported once from ./index.ts. Every listener is
  * registered synchronously at module top level (MV3 requirement). No tab/window listeners here —
- * ever (see AGENTS.md).
+ * ever (see AGENTS.md). History snapshots are driven by `chrome.alarms` only (spec §5), which is
+ * why `'alarms'` sits in the manifest permissions: `chrome.alarms.onAlarm.addListener` below runs
+ * while this module evaluates, and a missing permission would take the whole worker down.
  */
 
 export const MENU_IDS = {
@@ -125,11 +135,64 @@ async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<vo
     await sessionRepo.migrateAll().catch(report);
   }
   await sessionRepo.reconcile();
+  // Chrome drops every alarm on extension update/reload, so the periodic history alarm is
+  // re-asserted for all reasons (a no-op replace when it already exists).
+  await ensureHistoryAlarm();
 }
 
 async function onStartup(): Promise<void> {
   clearBadge();
   await sessionRepo.reconcile();
+  // Crash recovery first, so the last snapshot of the previous browser session is protected
+  // before any new snapshot can push it out of the ring. Caught locally (like migrateAll above)
+  // so a failed promotion still lets the alarms below be armed.
+  await promoteRecoveredSnapshot().catch(report);
+  const settings = await sessionRepo.getSettings();
+  await ensureHistoryAlarm(settings);
+  // One-shot 'history-first' 1 min out: Chrome is still restoring tabs while onStartup runs,
+  // and a capture now would record half-loaded windows.
+  await scheduleFirstSnapshot(settings);
+}
+
+/**
+ * `alarms.onAlarm` handler. Both history alarms take an `origin: 'alarm'` snapshot;
+ * `takeHistorySnapshot` itself returns `'disabled'` (without querying windows) when the user
+ * turned history off after the alarm was scheduled, so no settings read is needed here.
+ */
+function onAlarm(alarm: chrome.alarms.Alarm): void {
+  if (alarm.name !== HISTORY_ALARM && alarm.name !== HISTORY_FIRST_ALARM) {
+    return;
+  }
+  takeHistorySnapshot({ origin: 'alarm' }).catch(report);
+}
+
+/**
+ * Second `action.onClicked` listener (the first, in ./index.ts, is the sort — untouched). Runs
+ * concurrently with the sort and is never awaited by it: the snapshot only needs the URLs, which
+ * it captures before a `closeAllButOne` duplicate pass closes any (tab order may reflect an
+ * in-progress sort — acceptable, recovery is about URLs). `takeHistorySnapshot` gates on
+ * `historyEnabled` before touching any window, so a click costs one storage read while history is
+ * off. Errors are reported, never thrown: the click must keep sorting no matter what.
+ */
+function onActionClicked(): void {
+  takeHistorySnapshot({ origin: 'manual' }).catch(report);
+}
+
+/**
+ * `storage.onChanged` handler: a `sessionSettings` write from the dashboard or Options page
+ * (history toggled, interval changed) re-arms or clears the alarms. The stored value is re-read
+ * through `sessionRepo.getSettings()` rather than taken from `changes[...].newValue` so it goes
+ * through the same normalisation (and default fallback when the key was removed) as every other
+ * settings read.
+ */
+function onStorageChanged(
+  changes: { [key: string]: chrome.storage.StorageChange },
+  areaName: chrome.storage.AreaName,
+): void {
+  if (areaName !== 'local' || !(SETTINGS_KEY in changes)) {
+    return;
+  }
+  ensureHistoryAlarm().catch(report);
 }
 
 function report(err: unknown): void {
@@ -151,3 +214,9 @@ chrome.contextMenus.onClicked.addListener((info) => {
 chrome.commands.onCommand.addListener((command) => {
   handleMenuOrCommand(command).catch(report);
 });
+
+chrome.alarms.onAlarm.addListener(onAlarm);
+
+chrome.action.onClicked.addListener(onActionClicked);
+
+chrome.storage.onChanged.addListener(onStorageChanged);

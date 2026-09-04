@@ -47,7 +47,17 @@ const manifest = defineManifest((env) => {
         matches: [],
       },
     ],
-    permissions: ['tabs', 'tabGroups', 'storage', 'contextMenus', 'unlimitedStorage', 'favicon'],
+    // `alarms` is touched at module-evaluation time (`chrome.alarms.onAlarm.addListener` in
+    // src/background/sessions.ts), so it must ship with that listener — see AGENTS.md.
+    permissions: [
+      'tabs',
+      'tabGroups',
+      'storage',
+      'contextMenus',
+      'unlimitedStorage',
+      'favicon',
+      'alarms',
+    ],
     // Shipped unbound on purpose: Chrome silently drops conflicting suggested_key values and the
     // UI must not promise a key. Users bind them at chrome://extensions/shortcuts.
     commands: {

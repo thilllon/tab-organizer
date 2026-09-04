@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { INDEX_KEY } from '@/sessions/storage';
+import { HISTORY_ALARM, HISTORY_FIRST_ALARM } from '@/sessions/history';
+import { INDEX_KEY, SETTINGS_KEY } from '@/sessions/storage';
 import { getChromeFake } from '@/test/chrome-fake';
-import type { SessionIndex } from '@/types';
+import { SESSION_SCHEMA_VERSION, type Session, type SessionIndex } from '@/types';
 import {
   COMMAND_IDS,
   clearBadge,
@@ -33,6 +34,42 @@ function sessionKeys(): string[] {
 function readIndex(): SessionIndex | undefined {
   const raw = getChromeFake().state.local.get(INDEX_KEY);
   return raw as SessionIndex | undefined;
+}
+
+function historySummaries(): SessionIndex['sessions'] {
+  return (readIndex()?.sessions ?? []).filter((summary) => summary.kind === 'history');
+}
+
+function alarmNames(): string[] {
+  return [...getChromeFake().state.alarms.keys()].sort();
+}
+
+/** An unprotected alarm snapshot as `takeHistorySnapshot` would have stored it earlier. */
+function historySession(id: string, createdAt: number): Session {
+  return {
+    schemaVersion: SESSION_SCHEMA_VERSION,
+    id,
+    kind: 'history',
+    name: 'Snapshot',
+    origin: 'alarm',
+    createdAt,
+    updatedAt: createdAt,
+    windows: [
+      {
+        state: 'normal',
+        focused: false,
+        groups: [],
+        tabs: [{ url: `https://${id}.example/`, title: id, pinned: false, active: true }],
+      },
+    ],
+  };
+}
+
+/** Loads a fresh copy of the worker module against this test's fake (see AGENTS.md "Testing"). */
+async function loadWorker(): Promise<typeof import('@/sessions/storage')> {
+  vi.resetModules();
+  await import('./sessions');
+  return await import('@/sessions/storage');
 }
 
 afterEach(() => {
@@ -287,5 +324,383 @@ describe('listener wiring', () => {
       expect(fake.state.badge.text).toBe('');
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('registers no chrome.tabs / windows / tabGroups listeners (AGENTS.md rule)', async () => {
+    await loadWorker();
+
+    // The fake exposes these namespaces without events on purpose: a listener registration
+    // would throw at import time, so reaching this line already proves the rule holds.
+    expect('onCreated' in chrome.tabs).toBe(false);
+    expect('onCreated' in chrome.windows).toBe(false);
+    expect('onCreated' in chrome.tabGroups).toBe(false);
+    expect(chrome.alarms.onAlarm.hasListeners()).toBe(true);
+    expect(chrome.action.onClicked.hasListeners()).toBe(true);
+    expect(chrome.storage.onChanged.hasListeners()).toBe(true);
+  });
+});
+
+describe('history wiring (spec §5)', () => {
+  it(`the '${HISTORY_ALARM}' alarm takes an origin 'alarm' history snapshot`, async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    await seedWindow(['https://a.example/', 'https://a.example/2'], true);
+
+    fake.fire.alarm(HISTORY_ALARM);
+
+    await vi.waitFor(() => {
+      expect(historySummaries()).toHaveLength(1);
+    });
+    expect(historySummaries()[0]).toMatchObject({
+      kind: 'history',
+      origin: 'alarm',
+      windowCount: 1,
+      tabCount: 2,
+    });
+    expect(historySummaries()[0].name).toMatch(/^Snapshot /);
+    expect(sessionKeys()).toHaveLength(1);
+  });
+
+  it(`the one-shot '${HISTORY_FIRST_ALARM}' alarm takes a snapshot too`, async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    await seedWindow(['https://a.example/'], true);
+
+    fake.fire.alarm(HISTORY_FIRST_ALARM);
+
+    await vi.waitFor(() => {
+      expect(historySummaries()).toHaveLength(1);
+    });
+    expect(historySummaries()[0].origin).toBe('alarm');
+  });
+
+  it('an unrelated alarm is ignored (no capture, no write)', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    await seedWindow(['https://a.example/'], true);
+    const getAllSpy = vi.spyOn(chrome.windows, 'getAll');
+
+    fake.fire.alarm('someone-elses-alarm');
+    // Give a (wrongly) started snapshot every chance to land before asserting nothing did.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(getAllSpy).not.toHaveBeenCalled();
+    expect(sessionKeys()).toHaveLength(0);
+  });
+
+  it('an alarm while history is off stores nothing and never queries windows', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    await sessionRepo.setSettings({ historyEnabled: false });
+    await seedWindow(['https://a.example/'], true);
+    const getAllSpy = vi.spyOn(chrome.windows, 'getAll');
+
+    fake.fire.alarm(HISTORY_ALARM);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(getAllSpy).not.toHaveBeenCalled();
+    expect(sessionKeys()).toHaveLength(0);
+  });
+
+  it('a failed alarm snapshot is reported, not thrown, and leaves the badge alone', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await seedWindow(['https://a.example/'], true);
+    fake.failNext('storage.local.set', 1, 'QUOTA_BYTES exceeded');
+
+    expect(() => fake.fire.alarm(HISTORY_ALARM)).not.toThrow();
+
+    await vi.waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    });
+    expect(sessionKeys()).toHaveLength(0);
+    // History is silent: only explicit saves drive the action badge.
+    expect(fake.state.badge.text).toBe('');
+  });
+
+  it("the icon click takes a concurrent origin 'manual' snapshot while history is on", async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    await seedWindow(['https://a.example/', 'https://b.example/'], true);
+
+    fake.fire.actionClicked();
+
+    await vi.waitFor(() => {
+      expect(historySummaries()).toHaveLength(1);
+    });
+    expect(historySummaries()[0]).toMatchObject({ origin: 'manual', tabCount: 2 });
+  });
+
+  it('the icon click takes no snapshot while history is off (windows are not queried)', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    await sessionRepo.setSettings({ historyEnabled: false });
+    await seedWindow(['https://a.example/'], true);
+    const getAllSpy = vi.spyOn(chrome.windows, 'getAll');
+
+    fake.fire.actionClicked();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(getAllSpy).not.toHaveBeenCalled();
+    expect(sessionKeys()).toHaveLength(0);
+  });
+
+  it('the icon-click listener returns synchronously and never throws, even when storage fails', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await seedWindow(['https://a.example/'], true);
+    fake.failNext('storage.local.set', 1, 'QUOTA_BYTES exceeded');
+
+    // fire.actionClicked runs every listener synchronously: a throwing snapshot listener would
+    // surface here and (in Chrome) break the sort listener registered next to it.
+    expect(() => fake.fire.actionClicked()).not.toThrow();
+
+    await vi.waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    });
+    expect(sessionKeys()).toHaveLength(0);
+  });
+
+  it('a second icon click with an unchanged layout is deduplicated by the content hash', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    await seedWindow(['https://a.example/'], true);
+
+    fake.fire.actionClicked();
+    await vi.waitFor(() => {
+      expect(historySummaries()).toHaveLength(1);
+    });
+    fake.fire.actionClicked();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(historySummaries()).toHaveLength(1);
+  });
+
+  it('turning history off through sessionSettings clears both alarms', async () => {
+    const { sessionRepo } = await loadWorker();
+    await chrome.alarms.create(HISTORY_ALARM, { periodInMinutes: 5 });
+    await chrome.alarms.create(HISTORY_FIRST_ALARM, { delayInMinutes: 1 });
+    await chrome.alarms.create('unrelated', { delayInMinutes: 3 });
+
+    await sessionRepo.setSettings({ historyEnabled: false });
+
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual(['unrelated']);
+    });
+  });
+
+  it('turning history on / changing the interval re-arms the periodic alarm', async () => {
+    const { sessionRepo } = await loadWorker();
+    await sessionRepo.setSettings({ historyEnabled: false });
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([]);
+    });
+
+    await sessionRepo.setSettings({ historyEnabled: true, historyIntervalMinutes: 30 });
+
+    await vi.waitFor(() => {
+      expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 30 });
+    });
+    expect(alarmNames()).toEqual([HISTORY_ALARM]);
+
+    await sessionRepo.setSettings({ historyIntervalMinutes: 10 });
+
+    await vi.waitFor(() => {
+      expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 10 });
+    });
+    expect(alarmNames()).toEqual([HISTORY_ALARM]);
+  });
+
+  it('storage changes to other keys or the sync area do not touch the alarms', async () => {
+    const { sessionRepo } = await loadWorker();
+    const createSpy = vi.spyOn(chrome.alarms, 'create');
+    const clearSpy = vi.spyOn(chrome.alarms, 'clear');
+
+    await sessionRepo.setHistoryMeta({ lastHash: 'abcd1234', lastSnapshotAt: Date.now() });
+    await chrome.storage.local.set({ unrelatedLocalKey: 1 });
+    // Same key name in the wrong area (SortSettings live in sync; SessionSettings never do).
+    await chrome.storage.sync.set({ [SETTINGS_KEY]: { historyEnabled: false }, sortBy: 'url' });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(createSpy).not.toHaveBeenCalled();
+    expect(clearSpy).not.toHaveBeenCalled();
+    expect(alarmNames()).toEqual([]);
+  });
+
+  it('removing sessionSettings falls back to the defaults (history on) and arms the alarm', async () => {
+    const { sessionRepo } = await loadWorker();
+    await sessionRepo.setSettings({ historyEnabled: false });
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([]);
+    });
+
+    // Raw removal on purpose: models a future "Delete all session data" wiping the key.
+    await chrome.storage.local.remove(SETTINGS_KEY);
+
+    await vi.waitFor(() => {
+      expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 5 });
+    });
+  });
+
+  it('onInstalled (install) arms the periodic alarm after reconcile, with the default interval', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    const reconcileSpy = vi.spyOn(sessionRepo, 'reconcile');
+    const createSpy = vi.spyOn(chrome.alarms, 'create');
+
+    fake.fire.installed({ reason: 'install' });
+
+    await vi.waitFor(() => {
+      expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 5 });
+    });
+    expect(alarmNames()).toEqual([HISTORY_ALARM]);
+    expect(fake.state.menus).toHaveLength(4);
+    expect(reconcileSpy).toHaveBeenCalledTimes(1);
+    expect(reconcileSpy.mock.invocationCallOrder[0]).toBeLessThan(
+      createSpy.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('onInstalled (update) re-asserts the alarm Chrome dropped, replacing without duplicates', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    await sessionRepo.setSettings({ historyIntervalMinutes: 10 });
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([HISTORY_ALARM]);
+    });
+    fake.state.alarms.clear();
+
+    fake.fire.installed({ reason: 'update', previousVersion: '6.0.0' });
+
+    await vi.waitFor(() => {
+      expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 10 });
+    });
+    expect(await chrome.alarms.getAll()).toHaveLength(1);
+  });
+
+  it('onInstalled leaves the alarms empty while history is off', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    await sessionRepo.setSettings({ historyEnabled: false });
+    const reconcileSpy = vi.spyOn(sessionRepo, 'reconcile');
+
+    fake.fire.installed({ reason: 'install' });
+
+    await vi.waitFor(() => {
+      expect(reconcileSpy).toHaveBeenCalledTimes(1);
+      expect(fake.state.menus).toHaveLength(4);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(alarmNames()).toEqual([]);
+  });
+
+  it('onStartup promotes the last snapshot, arms the periodic alarm and the one-shot first alarm', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 7, 29, 14, 3).getTime() });
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    const olderAt = new Date(2026, 7, 29, 13, 50).getTime();
+    const newestAt = new Date(2026, 7, 29, 13, 58).getTime();
+    await sessionRepo.put(historySession('older', olderAt));
+    await sessionRepo.put(historySession('newest', newestAt));
+    fake.state.badge.text = '✓';
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([HISTORY_FIRST_ALARM, HISTORY_ALARM]);
+    });
+    expect(fake.state.badge.text).toBe('');
+    expect(fake.state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 5 });
+    expect(fake.state.alarms.get(HISTORY_FIRST_ALARM)).toEqual({ delayInMinutes: 1 });
+    const byId = Object.fromEntries(
+      (await sessionRepo.listSummaries()).map((s) => [s.id, [s.origin, s.protected]]),
+    );
+    expect(byId).toEqual({ newest: ['recovered', true], older: ['alarm', undefined] });
+    expect(await sessionRepo.get('newest')).toMatchObject({
+      origin: 'recovered',
+      protected: true,
+      name: 'Previous session (recovered) 2026-08-29 13:58',
+    });
+  });
+
+  it('onStartup runs reconcile → promote → ensureHistoryAlarm → scheduleFirstSnapshot in order', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    await sessionRepo.put(historySession('only', Date.now() - 60_000));
+    const reconcileSpy = vi.spyOn(sessionRepo, 'reconcile');
+    const promoteSpy = vi.spyOn(sessionRepo, 'markRecovered');
+    const createSpy = vi.spyOn(chrome.alarms, 'create');
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(createSpy).toHaveBeenCalledTimes(2);
+    });
+    expect(createSpy.mock.calls.map((call) => call[0])).toEqual([
+      HISTORY_ALARM,
+      HISTORY_FIRST_ALARM,
+    ]);
+    const order = [
+      reconcileSpy.mock.invocationCallOrder[0],
+      promoteSpy.mock.invocationCallOrder[0],
+      createSpy.mock.invocationCallOrder[0],
+      createSpy.mock.invocationCallOrder[1],
+    ];
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('onStartup with history off still promotes the recovered snapshot but arms no alarm', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    await sessionRepo.setSettings({ historyEnabled: false });
+    await sessionRepo.put(historySession('last', Date.now() - 60_000));
+    await chrome.alarms.create(HISTORY_ALARM, { periodInMinutes: 5 });
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([]);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(alarmNames()).toEqual([]);
+    expect((await sessionRepo.get('last'))?.origin).toBe('recovered');
+  });
+
+  it('onStartup still arms the alarms when the promotion fails (error is reported)', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await sessionRepo.put(historySession('gone', Date.now() - 60_000));
+    // A dashboard delete racing the startup promotion: the summary is listed but the body
+    // is gone by the time markRecovered runs.
+    vi.spyOn(sessionRepo, 'markRecovered').mockRejectedValue(new Error('Session not found: gone'));
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([HISTORY_FIRST_ALARM, HISTORY_ALARM]);
+    });
+    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+  });
+
+  it('the first alarm after startup captures the restored windows as a snapshot', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+
+    fake.fire.startup();
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([HISTORY_FIRST_ALARM, HISTORY_ALARM]);
+    });
+    // Chrome finished restoring its tabs in the meantime …
+    await seedWindow(['https://a.example/', 'https://a.example/2'], true);
+    // … and the one-shot alarm fires 1 min later.
+    fake.fire.alarm(HISTORY_FIRST_ALARM);
+
+    await vi.waitFor(() => {
+      expect(historySummaries()).toHaveLength(1);
+    });
+    expect(historySummaries()[0]).toMatchObject({ origin: 'alarm', tabCount: 2 });
   });
 });

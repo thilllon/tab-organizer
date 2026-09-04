@@ -295,6 +295,26 @@ describe('chrome fake: failNext and events', () => {
     ]);
   });
 
+  it('fire.actionClicked reaches every action.onClicked listener with the active tab', async () => {
+    const fake = getChromeFake();
+    const seen: string[] = [];
+    // Two listeners, as in the real worker (sort in index.ts + snapshot in sessions.ts).
+    chrome.action.onClicked.addListener((tab) => {
+      seen.push(`first:${tab.url}`);
+    });
+    chrome.action.onClicked.addListener((tab) => {
+      seen.push(`second:${tab.url}`);
+    });
+
+    // No tab at all: Chrome never fires the event without a tab, and neither does the fake.
+    fake.fire.actionClicked();
+    expect(seen).toEqual([]);
+
+    await chrome.windows.create({ url: 'https://a.test/' });
+    fake.fire.actionClicked();
+    expect(seen).toEqual(['first:https://a.test/', 'second:https://a.test/']);
+  });
+
   it('runtime, badge, menus and alarms are inspectable', async () => {
     const fake = getChromeFake();
     expect(chrome.runtime.id).toBe('fakeextid');
