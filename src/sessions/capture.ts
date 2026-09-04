@@ -239,8 +239,9 @@ export function captureWindowsWithIds(
     }));
 }
 
-// Default to "The Marvellous Suspender", the same de facto default as src/background/index.ts.
-// Shared with the dashboard (src/dashboard/lib/sanitize-options.ts imports both exports).
+// Default to "The Marvellous Suspender". This is the single source of truth for the id: the sort
+// engine (src/background/index.ts), the dashboard (src/dashboard/lib/sanitize-options.ts) and the
+// options page all import it from here.
 export const THE_MARVELLOUS_SUSPENDER_EXTENSION_ID = 'noogafoofpebimajpfpamcfhoaifemoa';
 
 /** `chrome-extension://<suspender id>/suspended.html#`, honouring the Options-page override. */

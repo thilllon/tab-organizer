@@ -1,14 +1,15 @@
+import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/sessions/capture';
 import type { DuplicateTabHandling, SortSettings } from '@/types';
 import { findDuplicateTabs, hashStringToColor, sortByCustom, sortByTitleOrUrl } from './sort';
 import './sessions';
-
-// Default to "The Marvellous Suspender" as the de facto The Great Suspender replacement
-const THE_MARVELLOUS_SUSPENDER_EXTENSION_ID = 'noogafoofpebimajpfpamcfhoaifemoa';
 
 let tabSuspenderExtensionId = '';
 let suspendedPrefix = `chrome-extension://${tabSuspenderExtensionId}/suspended.html#`;
 let suspendedPrefixLen = suspendedPrefix.length;
 
+// `tabSuspenderExtensionId` defaults to "The Marvellous Suspender", the de facto The Great
+// Suspender replacement. The id is declared once, in src/sessions/capture.ts, whose
+// `loadSuspendedPrefix()` reads the very same stored setting for the sessions feature.
 const DEFAULT_SETTINGS: SortSettings = {
   sortBy: 'url',
   groupFrom: 'leftToRight',

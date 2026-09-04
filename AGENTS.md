@@ -272,10 +272,22 @@ Session types (spec §3): `SESSION_SCHEMA_VERSION`, `SessionId`, `SessionKind` (
 
 ### `src/options/Options.tsx` — Settings UI
 
-React component using shadcn/ui (Radix UI + Tailwind). Provides radio groups for:
+React component using shadcn/ui (Radix UI + Tailwind). It exposes every field of `SortSettings`:
 
+- **Sort Mode**: `url` / `title` / `custom`
+- **Grouping direction** (`leftToRight` / `rightToLeft`) and **Preserve order within groups** — both
+  apply to the `custom` mode only and are disabled, with an explanation, under the other two
+- **Pinned Tabs**: sort pinned tabs, off by default
+- **Suspended Tabs**: group suspended tabs together, plus the suspender extension id (32 letters
+  `a`–`p`; empty resolves to the default before it reaches storage, because the sort engine has no
+  empty-id fallback). A malformed id blocks Save.
 - **Tab Grouping**: `subdomain` (full hostname) vs `domain` (base domain)
 - **Duplicate Tabs**: `none` / `closeAllButOne` / `group`
+
+The parsing, validation and disabled-control rules live in `src/options/lib/sort-settings.ts`
+(`parseSortSettings`, `toStoredSortSettings`, `isExtensionId`, `disabledSortControls`, …) with tests;
+`Options.tsx` stays a thin component. Adding a sort setting means adding it there, to the section
+list above and to `SORT_SETTING_KEYS`, so the load path reads every key the Save path writes.
 
 Settings are loaded from `chrome.storage.sync` on mount and saved explicitly via a "Save" button. The footer displays the extension version (from `chrome.runtime.getManifest()`) and a link to the GitHub repository. A "Sessions" card below the two radio-group sections renders `SessionSettingsFields` (shared with the dashboard's settings row): the automatic-snapshot switch, the interval (5 / 10 / 30 min), "Keep last N snapshots" (1–200, default 20) and the lazy-restore mode (`auto` / `always` / `never`). Every field writes through `useSessionSettings` → `sessionRepo.setSettings()` into `chrome.storage.local` immediately, rather than through the sort settings' "Save" button and two buttons: "Open Sessions dashboard" → `openDashboard()` (`src/sessions/open-dashboard.ts`) and "Set keyboard shortcuts" → `openShortcutSettings()` (`src/sessions/shortcuts.ts`).
 
