@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { DeleteSessionDialog } from '@/dashboard/components/DeleteSessionDialog';
+import { ExportMenu } from '@/dashboard/components/ExportMenu';
 import { WindowTree } from '@/dashboard/components/WindowTree';
 import { useSessionBody } from '@/dashboard/hooks/useSessionBody';
 import { errorMessage } from '@/dashboard/lib/errors';
@@ -27,6 +28,8 @@ export interface SessionCardProps {
   restoring: boolean;
   onRestore(session: Session, scope: RestoreScope): Promise<void>;
   onRestoreWindow(session: Session, windowIndex: number, scope: RestoreScope): Promise<void>;
+  /** "Exported …" / "Copied …" from the export menus; shown in the dashboard's notice banner. */
+  onNotice(message: string): void;
   /** Called once the session is removed; the card is about to unmount, so move focus elsewhere. */
   onDeleted?(): void;
 }
@@ -45,6 +48,7 @@ export function SessionCard({
   restoring,
   onRestore,
   onRestoreWindow,
+  onNotice,
   onDeleted,
 }: SessionCardProps) {
   const [expanded, setExpanded] = useState(false);
@@ -272,6 +276,14 @@ export function SessionCard({
           Restore
         </Button>
 
+        {/* The body is only loaded while the card is expanded; collapsed, the menu reads it. */}
+        <ExportMenu
+          summary={summary}
+          session={body.session}
+          onNotice={onNotice}
+          onError={setError}
+        />
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="icon-sm" variant="ghost" aria-label="More actions">
@@ -365,8 +377,27 @@ export function SessionCard({
                           <X />
                           Remove window
                         </Button>
+                        <ExportMenu
+                          summary={summary}
+                          session={body.session}
+                          windowIndex={index}
+                          size="icon-xs"
+                          onNotice={onNotice}
+                          onError={setError}
+                        />
                       </>
                     }
+                    renderGroupActions={(groupIndex) => (
+                      <ExportMenu
+                        summary={summary}
+                        session={body.session}
+                        windowIndex={index}
+                        groupIndex={groupIndex}
+                        size="icon-xs"
+                        onNotice={onNotice}
+                        onError={setError}
+                      />
+                    )}
                     renderTabActions={(tabIndex) => (
                       <Button
                         size="icon-xs"

@@ -1,9 +1,10 @@
-import { Layers, Save } from 'lucide-react';
+import { Download, Layers, Save, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/dashboard/components/EmptyState';
 import { HistorySection } from '@/dashboard/components/HistorySection';
+import { ImportDialog } from '@/dashboard/components/ImportDialog';
 import { OpenWindowsPane } from '@/dashboard/components/OpenWindowsPane';
 import { ProgressToast } from '@/dashboard/components/ProgressToast';
 import { RecoveredBanner } from '@/dashboard/components/RecoveredBanner';
@@ -19,7 +20,18 @@ import { useOpenWindows } from '@/dashboard/hooks/useOpenWindows';
 import { useRestore } from '@/dashboard/hooks/useRestore';
 import { useSearchCorpus } from '@/dashboard/hooks/useSearchCorpus';
 import { useSessionIndex } from '@/dashboard/hooks/useSessionIndex';
+import { downloadExport } from '@/dashboard/lib/download';
 import { errorMessage } from '@/dashboard/lib/errors';
+import {
+  type CollectProgress,
+  collectProgressNotice,
+  collectSessionBodies,
+  exportAllNotice,
+  NOTHING_TO_EXPORT_ALL,
+  shouldReportProgress,
+  shouldTickProgress,
+} from '@/dashboard/lib/export-actions';
+import { importedNotice } from '@/dashboard/lib/import-preview';
 import { openTabInBackground } from '@/dashboard/lib/open-tab';
 import { needsRestoreConfirm } from '@/dashboard/lib/restore-summary';
 import {
@@ -35,6 +47,7 @@ import { pickWindow, shouldShowRecoveredBanner, splitByKind } from '@/dashboard/
 import { RECOVERED_DISMISSED_KEY, readUiState, writeUiState } from '@/dashboard/lib/ui-state';
 import { currentWindowTarget, goToTab } from '@/dashboard/lib/window-actions';
 import { type CaptureScope, captureSession } from '@/sessions/capture';
+import { toJson } from '@/sessions/export';
 import { ensureUniqueName } from '@/sessions/naming';
 import type { RestoreTarget } from '@/sessions/restore';
 import { DEFAULT_LIMIT_PER_SOURCE, search } from '@/sessions/search';
@@ -58,6 +71,8 @@ export function Dashboard() {
   const { restore, progress, running, cancel, cancelling, lastResult, cancelled, dismiss } =
     useRestore();
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [notice, setNotice] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [pending, setPending] = useState<PendingRestore | undefined>(undefined);
@@ -97,6 +112,48 @@ export function Dashboard() {
       setError(errorMessage(err));
     } finally {
       setSaving(false);
+    }
+  };
+
+  /** One place for the "Exported …" / "Copied …" / "Imported …" confirmations rows send up. */
+  const announce = (message: string) => {
+    setError(undefined);
+    setNotice(message);
+  };
+
+  /**
+   * The whole store as one `ExportBundle` (spec §8): every saved session and every history
+   * snapshot, read body by body through `sessionRepo`. Bodies that cannot be read are reported
+   * in the confirmation rather than failing the backup.
+   */
+  const exportAll = async () => {
+    setError(undefined);
+    setNotice(undefined);
+    setExporting(true);
+    try {
+      const summaries = await sessionRepo.listSummaries();
+      if (summaries.length === 0) {
+        setNotice(NOTHING_TO_EXPORT_ALL);
+        return;
+      }
+      const onProgress = shouldReportProgress(summaries.length)
+        ? (progress: CollectProgress) => {
+            if (shouldTickProgress(progress)) {
+              setNotice(collectProgressNotice(progress));
+            }
+          }
+        : undefined;
+      const { sessions: bodies, skipped } = await collectSessionBodies(summaries, onProgress);
+      if (bodies.length === 0) {
+        setNotice(NOTHING_TO_EXPORT_ALL);
+        return;
+      }
+      downloadExport('backup', 'json', toJson(bodies, Date.now()));
+      setNotice(exportAllNotice(bodies.length, skipped.length));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -267,6 +324,14 @@ export function Dashboard() {
           onActivate={() => void activateItem(items[highlight] ?? items[0])}
         />
         <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            <Upload />
+            Import
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void exportAll()} disabled={exporting}>
+            <Download />
+            Export all (JSON backup)
+          </Button>
           <Button variant="outline" size="sm" onClick={() => void save('window')} disabled={busy}>
             <Save />
             Save this window
@@ -338,6 +403,7 @@ export function Dashboard() {
               <EmptyState
                 onSaveWindow={() => void save('window')}
                 onSaveAll={() => void save('all')}
+                onImport={() => setImportOpen(true)}
                 saving={saving}
                 running={running}
               />
@@ -352,6 +418,7 @@ export function Dashboard() {
                     onRestoreWindow={(session, windowIndex, scope) =>
                       requestRestore(session, scope, windowIndex)
                     }
+                    onNotice={announce}
                     onDeleted={focusList}
                   />
                 ))}
@@ -362,15 +429,17 @@ export function Dashboard() {
               summaries={history}
               restoring={running}
               onRestore={(session) => requestRestore(session, 'newWindows')}
-              onNotice={(message) => {
-                setError(undefined);
-                setNotice(message);
-              }}
+              onNotice={announce}
             />
           </main>
         </div>
       )}
 
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={(count) => announce(importedNotice(count))}
+      />
       <RestoreConfirmDialog
         pending={pending}
         onConfirm={confirmRestore}

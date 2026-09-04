@@ -24,6 +24,8 @@ export interface WindowTreeProps {
   onOpenTab?(tabIndex: number): Promise<string | undefined> | undefined;
   /** Trailing icon buttons for the tab at that absolute index. */
   renderTabActions?(tabIndex: number): ReactNode;
+  /** Trailing buttons on a group header, by that group's index in `window.groups`. */
+  renderGroupActions?(groupIndex: number): ReactNode;
 }
 
 export function WindowTree({
@@ -33,6 +35,7 @@ export function WindowTree({
   actions,
   onOpenTab,
   renderTabActions,
+  renderGroupActions,
 }: WindowTreeProps) {
   const segments = segmentTabs(window.tabs);
 
@@ -49,16 +52,17 @@ export function WindowTree({
       </header>
       <ul className="p-1">
         {segments.map((segment, segmentIndex) => {
-          const group =
-            segment.groupIndex !== undefined ? window.groups[segment.groupIndex] : undefined;
-          if (group !== undefined) {
+          const groupIndex = segment.groupIndex;
+          const group = groupIndex !== undefined ? window.groups[groupIndex] : undefined;
+          if (group !== undefined && groupIndex !== undefined) {
             return (
               <GroupSection
                 // biome-ignore lint/suspicious/noArrayIndexKey: no stable segment id
-                key={`group-${segmentIndex}-${String(segment.groupIndex)}`}
+                key={`group-${segmentIndex}-${String(groupIndex)}`}
                 group={group}
                 tabs={segment.tabs}
                 startIndex={segment.startIndex}
+                actions={renderGroupActions?.(groupIndex)}
                 onOpenTab={onOpenTab}
                 renderTabActions={renderTabActions}
               />

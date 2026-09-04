@@ -1,15 +1,31 @@
-import { FolderOpen, History, Keyboard, Layers, MousePointerClick, Save } from 'lucide-react';
+import {
+  FolderOpen,
+  History,
+  Keyboard,
+  Layers,
+  MousePointerClick,
+  Save,
+  Upload,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openShortcutSettings } from '@/sessions/shortcuts';
 
 export interface EmptyStateProps {
   onSaveWindow(): void;
   onSaveAll(): void;
+  /** Opens the dashboard's import dialog — the first session can come from a file too. */
+  onImport(): void;
   saving: boolean;
   running: boolean;
 }
 
-export function EmptyState({ onSaveWindow, onSaveAll, saving, running }: EmptyStateProps) {
+export function EmptyState({
+  onSaveWindow,
+  onSaveAll,
+  onImport,
+  saving,
+  running,
+}: EmptyStateProps) {
   return (
     <section className="flex flex-col items-center gap-4 rounded-lg border border-dashed px-6 py-12 text-center">
       <FolderOpen className="size-10 text-muted-foreground" />
@@ -53,6 +69,10 @@ export function EmptyState({ onSaveWindow, onSaveAll, saving, running }: EmptySt
         <Button size="sm" onClick={onSaveAll} disabled={saving || running}>
           <Layers />
           Save all windows
+        </Button>
+        <Button variant="outline" size="sm" onClick={onImport}>
+          <Upload />
+          Import sessions
         </Button>
         <Button
           variant="ghost"

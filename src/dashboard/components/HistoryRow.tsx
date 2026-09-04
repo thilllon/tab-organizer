@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { DeleteSessionDialog } from '@/dashboard/components/DeleteSessionDialog';
+import { ExportMenu } from '@/dashboard/components/ExportMenu';
 import { WindowTree } from '@/dashboard/components/WindowTree';
 import { useSessionBody } from '@/dashboard/hooks/useSessionBody';
 import { errorMessage } from '@/dashboard/lib/errors';
@@ -18,7 +19,7 @@ export interface HistoryRowProps {
   restoring: boolean;
   /** Runs through the Dashboard's `useRestore`, so the >100-tab confirm and the toast apply. */
   onRestore(session: Session): Promise<void>;
-  /** Bubbles "Saved …" up to the Dashboard's notice banner. */
+  /** Bubbles "Saved …" / "Exported …" up to the Dashboard's notice banner. */
   onNotice(message: string): void;
   /** Called once the snapshot is removed; this row is about to unmount, so move focus elsewhere. */
   onDeleted?(): void;
@@ -131,6 +132,14 @@ export function HistoryRow({
           <Save />
           Save as session
         </Button>
+        {/* Snapshots export exactly like saved sessions; the body is read on demand. */}
+        <ExportMenu
+          summary={summary}
+          session={body.session}
+          size="icon-xs"
+          onNotice={onNotice}
+          onError={setError}
+        />
         <Button
           size="icon-xs"
           variant="ghost"
