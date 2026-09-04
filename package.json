@@ -1,8 +1,8 @@
 {
   "name": "tab-organizer",
   "displayName": "Tab Organizer",
-  "description": "Chrome extension that sorts and organizes your browser tabs.",
-  "version": "6.0.0",
+  "description": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
+  "version": "7.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/thilllon/tab-organizer.git"

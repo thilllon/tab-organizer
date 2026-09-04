@@ -524,7 +524,7 @@ class Preparation {
       if (!(await Preparation.isVisible(search))) {
         return 'no search field on the dashboard yet';
       }
-      await search.first().fill('research');
+      await search.first().fill('github');
       await page.waitForTimeout(500);
       return null;
     });

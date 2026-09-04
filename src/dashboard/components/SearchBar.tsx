@@ -129,14 +129,14 @@ export function SearchBar({
 
   return (
     <search className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-      <div className="relative min-w-60 flex-1">
+      <div className="relative min-w-72 flex-1">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           ref={inputRef}
           type="text"
           value={text}
           aria-label="Search"
-          placeholder="Search open tabs and sessions (press /)"
+          placeholder="Search tabs and sessions (press /)"
           className="pr-9 pl-8"
           onChange={(event) => {
             setText(event.target.value);
