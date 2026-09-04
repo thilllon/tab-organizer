@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { QuotaNotice } from '@/dashboard/components/QuotaNotice';
 import { errorMessage } from '@/dashboard/lib/errors';
 import { pluralize } from '@/dashboard/lib/format';
 import {
@@ -23,6 +24,8 @@ import {
   importFormatLabel,
   utf8ByteLength,
 } from '@/dashboard/lib/import-preview';
+import { isQuotaError } from '@/dashboard/lib/quota';
+import { revealStorageMeter } from '@/dashboard/lib/storage-meter';
 import { type ImportFormat, importSessions } from '@/sessions/import';
 import { sessionRepo } from '@/sessions/storage';
 import type { Session } from '@/types';
@@ -60,6 +63,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [quotaFull, setQuotaFull] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // A dialog reopened after an import must not still show the previous one's preview.
@@ -68,6 +72,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
       setText('');
       setFileName(undefined);
       setError(undefined);
+      setQuotaFull(false);
       setBusy(false);
     }
   }, [open]);
@@ -132,6 +137,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
       return;
     }
     setBusy(true);
+    setQuotaFull(false);
     try {
       for (const session of parsed.sessions) {
         await sessionRepo.put(session);
@@ -139,7 +145,14 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
       onImported(parsed.sessions.length);
       onOpenChange(false);
     } catch (err) {
-      setError(errorMessage(err));
+      // An import writes session after session, so a full disk shows up here more often than
+      // anywhere else — and the sessions written before it are kept (spec §4).
+      if (isQuotaError(err)) {
+        setError(undefined);
+        setQuotaFull(true);
+      } else {
+        setError(errorMessage(err));
+      }
     } finally {
       setBusy(false);
     }
@@ -181,6 +194,16 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
             }}
           />
         </div>
+
+        {quotaFull && (
+          <QuotaNotice
+            onShowStorage={() => {
+              onOpenChange(false);
+              // Radix locks body scrolling while the dialog is open; scroll once it has closed.
+              revealStorageMeter(250);
+            }}
+          />
+        )}
 
         {shownError !== undefined && (
           <p

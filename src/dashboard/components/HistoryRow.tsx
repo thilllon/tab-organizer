@@ -9,6 +9,7 @@ import { WindowTree } from '@/dashboard/components/WindowTree';
 import { useSessionBody } from '@/dashboard/hooks/useSessionBody';
 import { errorMessage } from '@/dashboard/lib/errors';
 import { formatDateTime, formatSessionMeta } from '@/dashboard/lib/format';
+import { isQuotaError } from '@/dashboard/lib/quota';
 import { historyOriginLabel } from '@/dashboard/lib/session-utils';
 import { sessionRepo } from '@/sessions/storage';
 import type { Session, SessionSummary } from '@/types';
@@ -21,6 +22,11 @@ export interface HistoryRowProps {
   onRestore(session: Session): Promise<void>;
   /** Bubbles "Saved …" / "Exported …" up to the Dashboard's notice banner. */
   onNotice(message: string): void;
+  /**
+   * A failed write ("Save as session", protect) whose cause is the storage quota: the Dashboard
+   * owns that notice, because its answer — the storage meter — lives outside this row.
+   */
+  onWriteError(err: unknown): void;
   /** Called once the snapshot is removed; this row is about to unmount, so move focus elsewhere. */
   onDeleted?(): void;
 }
@@ -35,6 +41,7 @@ export function HistoryRow({
   restoring,
   onRestore,
   onNotice,
+  onWriteError,
   onDeleted,
 }: HistoryRowProps) {
   const [expanded, setExpanded] = useState(false);
@@ -53,7 +60,14 @@ export function HistoryRow({
       await action();
       setError(undefined);
     } catch (err) {
-      setError(errorMessage(err));
+      if (isQuotaError(err)) {
+        // "Save as session" copies a whole snapshot; a full disk is the one failure the user can
+        // do something about, and the way to do it is the storage meter the Dashboard owns.
+        setError(undefined);
+        onWriteError(err);
+      } else {
+        setError(errorMessage(err));
+      }
     } finally {
       setBusy(false);
     }
@@ -166,7 +180,8 @@ export function HistoryRow({
           {body.session !== undefined && (
             // Plain overflow container, not Radix's ScrollArea — see SessionCard for why.
             <div className="max-h-96 overflow-y-auto">
-              <div className="space-y-2 pr-3">
+              {/* Its own little tree: this row is a list item, not a node of the saved tree. */}
+              <div role="tree" aria-label={`Windows in ${summary.name}`} className="space-y-2 pr-3">
                 {body.session.windows.map((window, index) => (
                   <WindowTree
                     // biome-ignore lint/suspicious/noArrayIndexKey: no stable window id

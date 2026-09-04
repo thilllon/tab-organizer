@@ -7,6 +7,7 @@ import { HistorySection } from '@/dashboard/components/HistorySection';
 import { ImportDialog } from '@/dashboard/components/ImportDialog';
 import { OpenWindowsPane } from '@/dashboard/components/OpenWindowsPane';
 import { ProgressToast } from '@/dashboard/components/ProgressToast';
+import { QuotaNotice } from '@/dashboard/components/QuotaNotice';
 import { RecoveredBanner } from '@/dashboard/components/RecoveredBanner';
 import {
   type PendingRestore,
@@ -33,6 +34,7 @@ import {
 } from '@/dashboard/lib/export-actions';
 import { importedNotice } from '@/dashboard/lib/import-preview';
 import { openTabInBackground } from '@/dashboard/lib/open-tab';
+import { isQuotaError } from '@/dashboard/lib/quota';
 import { needsRestoreConfirm } from '@/dashboard/lib/restore-summary';
 import {
   buildSearchGroups,
@@ -44,6 +46,7 @@ import {
   sessionNameMatches,
 } from '@/dashboard/lib/search-nav';
 import { pickWindow, shouldShowRecoveredBanner, splitByKind } from '@/dashboard/lib/session-utils';
+import { revealStorageMeter } from '@/dashboard/lib/storage-meter';
 import { RECOVERED_DISMISSED_KEY, readUiState, writeUiState } from '@/dashboard/lib/ui-state';
 import { currentWindowTarget, goToTab } from '@/dashboard/lib/window-actions';
 import { type CaptureScope, captureSession } from '@/sessions/capture';
@@ -75,6 +78,9 @@ export function Dashboard() {
   const [importOpen, setImportOpen] = useState(false);
   const [notice, setNotice] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  // A write that failed on the storage quota: one fixed sentence plus a way to the meter, rather
+  // than Chrome's "Resource::kQuotaBytes quota exceeded" in the error banner (spec §4).
+  const [quotaFull, setQuotaFull] = useState(false);
   const [pending, setPending] = useState<PendingRestore | undefined>(undefined);
   // Which recovered snapshot's banner was dismissed in this tab (sessionStorage, read once).
   const [dismissedRecovered, setDismissedRecovered] = useState(() =>
@@ -93,10 +99,25 @@ export function Dashboard() {
   const [highlight, setHighlight] = useState(NO_HIGHLIGHT);
   const { corpus, warming, ensureLoaded } = useSearchCorpus({ summaries: sessions, openWindows });
 
+  /**
+   * Every failed *write* goes through here: a full disk is not something the user can debug from
+   * Chrome's wording, so it becomes the one quota notice (with its link to the storage meter)
+   * and everything else stays a plain error.
+   */
+  const reportWriteError = (err: unknown) => {
+    if (isQuotaError(err)) {
+      setError(undefined);
+      setQuotaFull(true);
+      return;
+    }
+    setError(errorMessage(err));
+  };
+
   const save = async (scope: CaptureScope) => {
     setSaving(true);
     setError(undefined);
     setNotice(undefined);
+    setQuotaFull(false);
     try {
       const session = await captureSession(scope);
       if (session.windows.length === 0) {
@@ -109,7 +130,7 @@ export function Dashboard() {
       await sessionRepo.put(named);
       setNotice(`Saved “${named.name}”.`);
     } catch (err) {
-      setError(errorMessage(err));
+      reportWriteError(err);
     } finally {
       setSaving(false);
     }
@@ -118,6 +139,7 @@ export function Dashboard() {
   /** One place for the "Exported …" / "Copied …" / "Imported …" confirmations rows send up. */
   const announce = (message: string) => {
     setError(undefined);
+    setQuotaFull(false);
     setNotice(message);
   };
 
@@ -354,13 +376,14 @@ export function Dashboard() {
         />
       )}
 
-      <SessionSettingsRow />
+      <SessionSettingsRow summaries={sessions} onNotice={announce} />
 
       {notice !== undefined && (
         <p role="status" aria-live="polite" className="mb-3 rounded-md bg-muted px-3 py-2 text-sm">
           {notice}
         </p>
       )}
+      {quotaFull && <QuotaNotice className="mb-3" onShowStorage={() => revealStorageMeter()} />}
       {(error ?? indexError) !== undefined && (
         <p
           role="alert"
@@ -396,7 +419,9 @@ export function Dashboard() {
 
           {/* tabIndex -1: programmatic focus target only (see mainRef); never in the tab order. */}
           <main ref={mainRef} tabIndex={-1} className="min-w-0 outline-none">
-            <h2 className="mb-3 text-sm font-semibold">Saved sessions</h2>
+            <h2 id="saved-sessions-heading" className="mb-3 text-sm font-semibold">
+              Saved sessions
+            </h2>
             {loading ? (
               <p className="text-sm text-muted-foreground">Loading…</p>
             ) : saved.length === 0 ? (
@@ -408,7 +433,15 @@ export function Dashboard() {
                 running={running}
               />
             ) : (
-              <ul className="space-y-3">
+              <ul
+                // Spec §12 Phase 6: the saved sessions are a real tree (session -> window ->
+                // group -> tab). The list stays a <ul> of <li>s so the rows are still list items
+                // for anything that does not follow the tree roles.
+                // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: see above
+                role="tree"
+                aria-labelledby="saved-sessions-heading"
+                className="space-y-3"
+              >
                 {saved.map((summary) => (
                   <SessionCard
                     key={summary.id}
@@ -430,6 +463,7 @@ export function Dashboard() {
               restoring={running}
               onRestore={(session) => requestRestore(session, 'newWindows')}
               onNotice={announce}
+              onWriteError={reportWriteError}
             />
           </main>
         </div>

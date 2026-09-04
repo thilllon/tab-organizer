@@ -39,6 +39,10 @@ export function Favicon({ url, size = 32 }: FaviconProps) {
       width={RENDER_PX}
       height={RENDER_PX}
       alt=""
+      // A 10,000-tab session would otherwise ask Chrome's favicon cache for 10,000 bitmaps at
+      // once; lazy + async keeps that to the rows actually on screen and off the main thread.
+      loading="lazy"
+      decoding="async"
       className="shrink-0"
       onError={() => setFailedUrl(url)}
     />

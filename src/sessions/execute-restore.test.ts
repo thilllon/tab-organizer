@@ -783,3 +783,37 @@ describe('executeRestore', () => {
     }
   });
 });
+
+describe('executeRestore progress reporting', () => {
+  it('names the window each chunk belongs to, so the toast can show "Window 2 of 3"', async () => {
+    const seen: { done: number; total: number; index: number; count: number }[] = [];
+
+    await executeRestore(makePlan([WINDOW_A, WINDOW_B], { chunkSize: 2 }), {
+      onProgress: (done, total, window) => {
+        seen.push({ done, total, index: window.index, count: window.count });
+      },
+    });
+
+    // WINDOW_A: 5 tabs in chunks of 2 (2, 4, 5); WINDOW_B: 2 tabs in one chunk.
+    expect(seen).toEqual([
+      { done: 2, total: 7, index: 0, count: 2 },
+      { done: 4, total: 7, index: 0, count: 2 },
+      { done: 5, total: 7, index: 0, count: 2 },
+      { done: 7, total: 7, index: 1, count: 2 },
+    ]);
+  });
+
+  it('names the window of a failed windows.create too', async () => {
+    const fake = getChromeFake();
+    fake.failNext('windows.create', 1, 'Invalid value for bounds');
+    const seen: number[] = [];
+
+    await executeRestore(makePlan([WINDOW_B, WINDOW_A]), {
+      onProgress: (_done, _total, window) => {
+        seen.push(window.index);
+      },
+    });
+
+    expect(seen).toEqual([0, 1]);
+  });
+});

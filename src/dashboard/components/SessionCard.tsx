@@ -16,6 +16,7 @@ import { WindowTree } from '@/dashboard/components/WindowTree';
 import { useSessionBody } from '@/dashboard/hooks/useSessionBody';
 import { errorMessage } from '@/dashboard/lib/errors';
 import { formatDateTime, formatSessionMeta } from '@/dashboard/lib/format';
+import { sessionRowKeyAction } from '@/dashboard/lib/row-keys';
 import { removeTabFromSession, removeWindowFromSession } from '@/dashboard/lib/session-edit';
 import { sessionRepo } from '@/sessions/storage';
 import type { Session, SessionSummary } from '@/types';
@@ -206,6 +207,28 @@ export function SessionCard({
     }
   };
 
+  /**
+   * Tree-node keys on the row itself (spec §12 Phase 6): Enter expands/collapses, Delete asks for
+   * the same confirm the actions menu opens. Keys pressed on something *inside* the row belong to
+   * that control — Enter on the Restore button must restore, not collapse the card — so anything
+   * that did not target the row is left alone.
+   */
+  const handleRowKey = (event: KeyboardEvent<HTMLLIElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    const action = sessionRowKeyAction(event.key, { editing });
+    if (action === undefined) {
+      return;
+    }
+    event.preventDefault();
+    if (action === 'toggle') {
+      setExpanded((value) => !value);
+      return;
+    }
+    setConfirmingDelete(true);
+  };
+
   const handleRemoveTab = (windowIndex: number, tabIndex: number) => {
     void editSession((session) => removeTabFromSession(session, windowIndex, tabIndex));
   };
@@ -215,7 +238,16 @@ export function SessionCard({
   };
 
   return (
-    <li className="rounded-lg border bg-background p-4">
+    // A tree node in the saved-sessions tree: focusable so Enter/Delete reach `handleRowKey`,
+    // and `aria-expanded` mirrors the chevron's own state.
+    <li
+      role="treeitem"
+      aria-expanded={expanded}
+      aria-label={summary.name}
+      tabIndex={0}
+      onKeyDown={handleRowKey}
+      className="rounded-lg border bg-background p-4 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
       <div className="flex items-start gap-3">
         <Button
           size="icon-sm"
@@ -244,7 +276,7 @@ export function SessionCard({
               <button
                 ref={nameButtonRef}
                 type="button"
-                className="min-w-0 truncate text-left text-sm font-medium hover:underline"
+                className="min-w-0 truncate rounded-sm text-left text-sm font-medium outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 title="Rename"
                 onClick={startRename}
               >
@@ -346,7 +378,9 @@ export function SessionCard({
             // percentage height against a `max-height`-only parent resolves to auto, so nothing
             // ever clipped and the tree overflowed the card instead of scrolling.
             <div className="max-h-96 overflow-y-auto">
-              <div className="space-y-2 pr-3">
+              {/* The windows of this session: `WindowTree` renders each as a `treeitem`. */}
+              {/* biome-ignore lint/a11y/useSemanticElements: <fieldset> is for form controls; this is the ARIA group holding this session's window nodes. */}
+              <div role="group" className="space-y-2 pr-3">
                 {body.session.windows.map((window, index) => (
                   <WindowTree
                     // biome-ignore lint/suspicious/noArrayIndexKey: no stable window id

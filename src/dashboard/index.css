@@ -1,1 +1,23 @@
 @import "../options/index.css";
+
+/*
+ * Large sessions (spec §12 Phase 6). A session can hold thousands of tabs, and even with the
+ * row paging in `tab-paging.ts` a few hundred rows are mounted at once. `content-visibility:
+ * auto` lets Chrome skip layout, paint and style work for the ones scrolled out of view, while
+ * keeping them in the DOM — so find-in-page, the tab order and the accessibility tree still see
+ * them (unlike `content-visibility: hidden`).
+ *
+ * `contain-intrinsic-size: auto <size>` is the placeholder size used while a subtree is skipped:
+ * the `auto` keyword makes Chrome remember the real size once measured, so the scrollbar stops
+ * jumping after the first pass. The values are the measured heights of a tab row and of a small
+ * window section; being a little off only costs a scrollbar adjustment, never a wrong layout.
+ */
+.cv-tab-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 28px;
+}
+
+.cv-window {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
+}

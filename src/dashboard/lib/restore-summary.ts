@@ -73,6 +73,11 @@ export function formatRestoreSummary(
     parts.push(`${pluralize(result.discarded, 'tab')} will load when clicked`);
   }
   if (options.cancelled === true) {
+    // Cancel stops the restore; it never undoes it (spec §14: "already-created tabs are kept").
+    // Say so, or the windows left behind look like a half-failed restore to clean up by hand.
+    if (result.restored > 0) {
+      parts.push('the tabs already opened were kept');
+    }
     return parts.join(' · ');
   }
   const { tabErrors, structuralProblems } = splitRestoreErrors(result);

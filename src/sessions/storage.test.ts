@@ -466,6 +466,47 @@ describe('sessionRepo.remove / removeAll', () => {
 
     expect([...fake.state.local.keys()].sort()).toEqual(['installedVersion', SETTINGS_KEY]);
   });
+
+  it('removeAll takes the lock and removes bodies before the index', async () => {
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+    const requestSpy = vi.spyOn(navigator.locks, 'request');
+    const removeSpy = vi.spyOn(chrome.storage.local, 'remove');
+
+    await sessionRepo.removeAll();
+
+    expect(requestSpy.mock.calls[0][0]).toBe(LOCK_NAME);
+    // Bodies first, then the index + historyMeta (spec §4 delete order).
+    expect(removeSpy.mock.calls[0][0]).toEqual([sessionKey('id-a')]);
+    expect(removeSpy.mock.calls[1][0]).toEqual([INDEX_KEY, HISTORY_META_KEY]);
+  });
+
+  it('removeAll removes every session body on a runtime without getKeys()', async () => {
+    const fake = getChromeFake();
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+    await sessionRepo.put(makeSession({ id: 'id-b', kind: 'history' }));
+    await sessionRepo.setSettings({ historyEnabled: false });
+    fake.state.local.set(HISTORY_META_KEY, { lastHash: 'x', lastSnapshotAt: 1 });
+    // Chrome < 130: reconcile() and removeAll() share the guarded get(null) fallback.
+    const area: { getKeys?: unknown } = chrome.storage.local;
+    area.getKeys = undefined;
+
+    await sessionRepo.removeAll();
+
+    expect([...fake.state.local.keys()]).toEqual([SETTINGS_KEY]);
+    expect(await sessionRepo.listSummaries()).toEqual([]);
+    expect(await sessionRepo.getSettings()).toEqual({
+      ...DEFAULT_SESSION_SETTINGS,
+      historyEnabled: false,
+    });
+  });
+
+  it('removeAll leaves a store that has never been written alone', async () => {
+    const fake = getChromeFake();
+
+    await sessionRepo.removeAll();
+
+    expect([...fake.state.local.keys()]).toEqual([]);
+  });
 });
 
 describe('sessionRepo.reconcile', () => {

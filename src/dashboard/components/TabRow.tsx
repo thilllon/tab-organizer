@@ -33,14 +33,16 @@ export function TabRow({ tab, onOpen, actions }: TabRowProps) {
   };
 
   return (
-    <li>
+    // `cv-tab-row` (index.css) lets Chrome skip layout for rows scrolled out of view — the one
+    // thing that keeps a 10,000-tab session scrolling smoothly.
+    <li role="treeitem" tabIndex={-1} className="cv-tab-row">
       {/* The actions sit beside the row button, never inside it: a button may not nest buttons. */}
       <div className="flex items-center gap-1 rounded-md pr-1 hover:bg-accent">
         <button
           type="button"
           onClick={open}
           title={error ?? tab.url}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <Favicon url={tab.url} />
           <span className="min-w-0 flex-1 truncate">

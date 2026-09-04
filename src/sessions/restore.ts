@@ -63,8 +63,19 @@ export interface ScreenRect {
   availHeight: number;
 }
 
+/** Which window of the plan `executeRestore` is filling right now (0-based). */
+export interface RestoreProgressWindow {
+  index: number;
+  count: number;
+}
+
 export interface RestoreHooks {
-  onProgress?: (done: number, total: number) => void;
+  /**
+   * Called after every chunk (and once for a window that could not be opened) with the tabs done
+   * so far. `window` says which window of the plan those tabs belong to, so the dashboard's toast
+   * can show "Window 2 of 3"; a two-argument callback stays valid.
+   */
+  onProgress?: (done: number, total: number, window: RestoreProgressWindow) => void;
   signal?: AbortSignal;
   screen?: ScreenRect;
 }
@@ -559,10 +570,14 @@ export async function executeRestore(
   let focusWindowId: number | undefined;
   let lastWindowId: number | undefined;
 
-  for (const planned of plan.windows) {
+  for (const [windowIndex, planned] of plan.windows.entries()) {
     if (hooks.signal?.aborted) {
       break;
     }
+    const windowProgress: RestoreProgressWindow = {
+      index: windowIndex,
+      count: plan.windows.length,
+    };
     let opened: OpenedWindow;
     try {
       opened = await openTargetWindow(plan.target, planned.snapshot, hooks);
@@ -572,7 +587,7 @@ export async function executeRestore(
         errors.push({ url: tab.url, message: errorMessage(err) });
       }
       done += planned.tabs.length;
-      hooks.onProgress?.(done, plan.totalTabs);
+      hooks.onProgress?.(done, plan.totalTabs, windowProgress);
       continue;
     }
     const created: (number | undefined)[] = [];
@@ -587,7 +602,7 @@ export async function executeRestore(
         created.push(...ids);
       }
       done += chunk.length;
-      hooks.onProgress?.(done, plan.totalTabs);
+      hooks.onProgress?.(done, plan.totalTabs, windowProgress);
       if (hooks.signal?.aborted) {
         break;
       }

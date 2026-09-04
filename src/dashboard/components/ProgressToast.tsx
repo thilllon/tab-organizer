@@ -1,10 +1,17 @@
 import { LoaderCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { RestoreProgress } from '@/dashboard/hooks/useRestore';
+import {
+  formatRate,
+  formatWindowLine,
+  LAZY_RESTORE_HINT,
+  lazyRestoreSummaryHint,
+} from '@/dashboard/lib/restore-progress';
 import { formatRestoreSummary, splitRestoreErrors } from '@/dashboard/lib/restore-summary';
 import type { RestoreResult } from '@/sessions/restore';
 
 export interface ProgressToastProps {
-  progress?: { done: number; total: number };
+  progress?: RestoreProgress;
   result?: RestoreResult;
   /** True while a cancel has been requested and the running restore is still winding down. */
   cancelling: boolean;
@@ -31,6 +38,16 @@ export function ProgressToast({
   // M counts attempted tabs only — see the comment on formatRestoreSummary.
   const total =
     result === undefined ? 0 : result.restored + result.skipped.length + tabErrors.length;
+  // Which window, and how fast — both undefined until they would say something true (a
+  // single-window restore, or too short a sample to measure).
+  const windowLine =
+    progress === undefined
+      ? undefined
+      : formatWindowLine(progress.windowIndex, progress.windowCount);
+  const rate =
+    progress === undefined ? undefined : formatRate(progress.done, Date.now() - progress.startedAt);
+  const pace = [windowLine, rate].filter((part) => part !== undefined).join(' · ');
+  const lazyDone = result === undefined ? undefined : lazyRestoreSummaryHint(result.discarded);
 
   return (
     <output
@@ -42,6 +59,8 @@ export function ProgressToast({
           <LoaderCircle className="size-4 animate-spin" />
           <div className="flex-1 text-sm">
             Restoring {progress.done} of {progress.total} tabs…
+            {pace !== '' && <p className="text-xs text-muted-foreground">{pace}</p>}
+            {progress.lazy && <p className="text-xs text-muted-foreground">{LAZY_RESTORE_HINT}</p>}
             <div className="mt-2 h-1.5 overflow-hidden rounded bg-muted">
               <div
                 className="h-full bg-primary transition-[width]"
@@ -61,6 +80,9 @@ export function ProgressToast({
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1 text-sm">
             <p>{formatRestoreSummary(result, total, { cancelled })}</p>
+            {lazyDone !== undefined && (
+              <p className="mt-1 text-xs text-muted-foreground">{lazyDone}</p>
+            )}
             {(result.skipped.length > 0 ||
               tabErrors.length > 0 ||
               structuralProblems.length > 0) && (

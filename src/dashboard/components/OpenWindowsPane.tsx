@@ -104,7 +104,8 @@ export function OpenWindowsPane({
           No open windows to show.
         </p>
       ) : (
-        <div className="mt-3 space-y-2">
+        // The live windows are a tree too (spec §12 Phase 6): window -> group -> tab.
+        <div role="tree" aria-labelledby="open-windows-heading" className="mt-3 space-y-2">
           {windows.map((window, index) => (
             <WindowTree
               key={window.windowId}

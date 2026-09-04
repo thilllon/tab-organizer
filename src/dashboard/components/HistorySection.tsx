@@ -16,6 +16,8 @@ export interface HistorySectionProps {
   restoring: boolean;
   onRestore(session: Session): Promise<void>;
   onNotice(message: string): void;
+  /** Raised to the Dashboard when a row's write fails on the storage quota (spec §4). */
+  onWriteError(err: unknown): void;
 }
 
 /**
@@ -23,7 +25,13 @@ export interface HistorySectionProps {
  * they are a safety net, not the main list. The open state is remembered per dashboard tab in
  * `sessionStorage`, so expanding it survives the re-render but not a new tab.
  */
-export function HistorySection({ summaries, restoring, onRestore, onNotice }: HistorySectionProps) {
+export function HistorySection({
+  summaries,
+  restoring,
+  onRestore,
+  onNotice,
+  onWriteError,
+}: HistorySectionProps) {
   const [open, setOpen] = useState(() => readUiState(HISTORY_OPEN_KEY) === 'true');
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -107,6 +115,7 @@ export function HistorySection({ summaries, restoring, onRestore, onNotice }: Hi
                   restoring={restoring}
                   onRestore={onRestore}
                   onNotice={onNotice}
+                  onWriteError={onWriteError}
                   onDeleted={() => triggerRef.current?.focus({ preventScroll: true })}
                 />
               ))}

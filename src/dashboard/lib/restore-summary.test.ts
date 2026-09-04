@@ -160,7 +160,9 @@ describe('formatRestoreSummary', () => {
       formatRestoreSummary({ restored: 25, discarded: 20, skipped: [], errors: [] }, 25, {
         cancelled: true,
       }),
-    ).toBe('Restore cancelled — 25 tabs opened · 20 tabs will load when clicked');
+    ).toBe(
+      'Restore cancelled — 25 tabs opened · 20 tabs will load when clicked · the tabs already opened were kept',
+    );
   });
 
   it('reports a cancelled restore as a plain count instead of a fraction', () => {
@@ -168,7 +170,7 @@ describe('formatRestoreSummary', () => {
       formatRestoreSummary({ restored: 25, discarded: 0, skipped: [], errors: [] }, 25, {
         cancelled: true,
       }),
-    ).toBe('Restore cancelled — 25 tabs opened');
+    ).toBe('Restore cancelled — 25 tabs opened · the tabs already opened were kept');
   });
 
   it('uses the singular form for a cancelled restore of one tab', () => {
@@ -176,6 +178,16 @@ describe('formatRestoreSummary', () => {
       formatRestoreSummary({ restored: 1, discarded: 0, skipped: [], errors: [] }, 1, {
         cancelled: true,
       }),
-    ).toBe('Restore cancelled — 1 tab opened');
+    ).toBe('Restore cancelled — 1 tab opened · the tabs already opened were kept');
+  });
+});
+
+describe('formatRestoreSummary — cancelled with nothing opened', () => {
+  it('does not claim tabs were kept when the cancel landed before the first tab', () => {
+    expect(
+      formatRestoreSummary({ restored: 0, discarded: 0, skipped: [], errors: [] }, 0, {
+        cancelled: true,
+      }),
+    ).toBe('Restore cancelled — 0 tabs opened');
   });
 });
