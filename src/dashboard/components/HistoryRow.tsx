@@ -56,9 +56,13 @@ export function HistoryRow({
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
+    // Cleared when the attempt STARTS, not when it succeeds: an action may report a problem by
+    // calling `setError` and returning normally (`handleRestore` does, when the snapshot's body
+    // has been pruned), and clearing afterwards would erase that message in the same flush --
+    // leaving a restore that silently did nothing.
+    setError(undefined);
     try {
       await action();
-      setError(undefined);
     } catch (err) {
       if (isQuotaError(err)) {
         // "Save as session" copies a whole snapshot; a full disk is the one failure the user can

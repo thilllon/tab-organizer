@@ -329,6 +329,37 @@ describe('entriesFromOpenWindows', () => {
     expect(entries[0]).not.toHaveProperty('windowId');
     expect(entries[0]).not.toHaveProperty('tabId');
   });
+
+  // `windowTypes: ['normal']` at the call site filters the window *type*, not incognito-ness.
+  it('contributes no entries for an incognito window', () => {
+    const windows = [
+      makeWindow({
+        id: 9,
+        incognito: true,
+        tabs: [makeTab({ id: 90, index: 0, url: 'https://secret.example/', title: 'Secret' })],
+      }),
+    ];
+    expect(entriesFromOpenWindows(windows, [])).toEqual([]);
+  });
+
+  it('keeps a normal window standing beside an incognito one, and numbers it as window 1', () => {
+    const windows = [
+      makeWindow({
+        id: 9,
+        incognito: true,
+        tabs: [makeTab({ id: 90, index: 0, url: 'https://secret.example/', title: 'Secret' })],
+      }),
+      makeWindow({
+        id: 7,
+        tabs: [makeTab({ id: 70, index: 0, url: 'https://kept.example/', title: 'Kept' })],
+      }),
+    ];
+
+    const entries = entriesFromOpenWindows(windows, []);
+
+    expect(entries.map((e) => e.title)).toEqual(['Kept']);
+    expect(entries.map((e) => [e.windowIndex, e.windowId, e.tabId])).toEqual([[0, 7, 70]]);
+  });
 });
 
 describe('matchEntry', () => {

@@ -225,10 +225,8 @@ export const sessionRepo = {
       }
       const next = mutate(existing);
       if (next === null) {
-        // Same order as remove(): index read (and validated) first, then body, then index.
-        const index = await readIndex();
-        await chrome.storage.local.remove(sessionKey(id));
-        await writeIndex(index.sessions.filter((summary) => summary.id !== id));
+        // Same path as remove(): body, index, then the `historyMeta` staleness check.
+        await removeBodiesAndIndex(await readIndex(), [id]);
         return null;
       }
       if (next.id !== id) {
@@ -242,10 +240,11 @@ export const sessionRepo = {
 
   remove(id: SessionId): Promise<void> {
     return withLock(async () => {
-      // Index read first (validated), then body, then index -- see writeBodyAndIndex.
-      const index = await readIndex();
-      await chrome.storage.local.remove(sessionKey(id));
-      await writeIndex(index.sessions.filter((summary) => summary.id !== id));
+      // Index read first (validated), then body, then index -- see writeBodyAndIndex. Deleting a
+      // single snapshot goes through the same helper as pruneHistory/removeAllHistory so it too
+      // drops a `historyMeta` left fingerprinting the snapshot just removed: otherwise the next
+      // alarm compares against a hash nothing holds and returns 'skipped-unchanged' forever.
+      await removeBodiesAndIndex(await readIndex(), [id]);
     });
   },
 

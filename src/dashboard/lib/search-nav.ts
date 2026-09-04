@@ -150,6 +150,49 @@ export function prevIndex(current: number, length: number): number {
   return current - 1;
 }
 
+/** What Enter should do with the row list on screen. */
+export type ActivationDecision =
+  | { action: 'activate'; index: number }
+  /** The list on screen still describes an older query; activate nothing until it catches up. */
+  | { action: 'wait' }
+  /** Nothing to act on: no results, or a highlight that no longer addresses a row. */
+  | { action: 'none' };
+
+/**
+ * Resolves an Enter press against the render it is resolved in (spec §7 keyboard rules).
+ *
+ * Two things make a naive `items[highlight] ?? items[0]` wrong:
+ * - the search box commits the typed query and asks for the activation in the same event handler,
+ *   and those state updates are batched, so the rows on screen can still be the previous query's.
+ *   `typedQuery !== committedQuery` therefore means "wait", never "activate something".
+ * - `highlight` is an index into a list that is rebuilt on every tab event. Once it points past
+ *   the end, the row the user highlighted is gone — which is *not* the same as having highlighted
+ *   nothing, and must not silently activate row 0 (for a tier-1 row: restoring a whole session).
+ *
+ * Only `NO_HIGHLIGHT` (nothing highlighted at all) falls back to the first row, which is what a
+ * search box is expected to do when you type and press Enter.
+ */
+export function resolveActivation(state: {
+  typedQuery: string;
+  committedQuery: string;
+  highlight: number;
+  itemCount: number;
+}): ActivationDecision {
+  if (state.typedQuery !== state.committedQuery) {
+    return { action: 'wait' };
+  }
+  if (state.itemCount <= 0) {
+    return { action: 'none' };
+  }
+  if (state.highlight === NO_HIGHLIGHT) {
+    return { action: 'activate', index: 0 };
+  }
+  if (state.highlight < 0 || state.highlight >= state.itemCount) {
+    return { action: 'none' };
+  }
+  return { action: 'activate', index: state.highlight };
+}
+
 /** The shape of an event target this module needs; `HTMLElement` satisfies it structurally. */
 export interface EditableTargetLike {
   tagName?: string;

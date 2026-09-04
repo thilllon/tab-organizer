@@ -6,6 +6,7 @@ import {
   NO_HIGHLIGHT,
   nextIndex,
   prevIndex,
+  resolveActivation,
   sessionNameMatches,
 } from '@/dashboard/lib/search-nav';
 import { type SearchEntry, search } from '@/sessions/search';
@@ -143,6 +144,54 @@ describe('nextIndex / prevIndex', () => {
   it('recovers from a highlight left past the end of a shorter list', () => {
     expect(nextIndex(9, 3)).toBe(0);
     expect(prevIndex(9, 3)).toBe(2);
+  });
+});
+
+describe('resolveActivation', () => {
+  const state = {
+    typedQuery: 'docs',
+    committedQuery: 'docs',
+    highlight: NO_HIGHLIGHT,
+    itemCount: 3,
+  };
+
+  it('activates the first row when nothing is highlighted', () => {
+    expect(resolveActivation(state)).toEqual({ action: 'activate', index: 0 });
+  });
+
+  it('activates the highlighted row', () => {
+    expect(resolveActivation({ ...state, highlight: 2 })).toEqual({ action: 'activate', index: 2 });
+  });
+
+  // "The row I highlighted is gone" is not "I highlighted nothing": it must not fall back to
+  // row 0, which for a tier-1 row would restore a session the user never chose.
+  it('activates nothing when the highlight is past the end of a shrunken list', () => {
+    expect(resolveActivation({ ...state, highlight: 3 })).toEqual({ action: 'none' });
+    expect(resolveActivation({ ...state, highlight: 99 })).toEqual({ action: 'none' });
+    expect(resolveActivation({ ...state, highlight: -2 })).toEqual({ action: 'none' });
+  });
+
+  it('activates nothing when there are no rows', () => {
+    expect(resolveActivation({ ...state, itemCount: 0 })).toEqual({ action: 'none' });
+    expect(resolveActivation({ ...state, highlight: 0, itemCount: 0 })).toEqual({ action: 'none' });
+  });
+
+  // The rows on screen still belong to the previous query: wait for the commit to land rather
+  // than activate a row the user never saw.
+  it('waits while the committed query lags the typed text, whatever is highlighted', () => {
+    expect(resolveActivation({ ...state, committedQuery: 'do' })).toEqual({ action: 'wait' });
+    expect(resolveActivation({ ...state, committedQuery: '', highlight: 1 })).toEqual({
+      action: 'wait',
+    });
+    // Including the very first Enter, where nothing is committed and no row could exist yet.
+    expect(
+      resolveActivation({
+        typedQuery: 'docs',
+        committedQuery: '',
+        highlight: NO_HIGHLIGHT,
+        itemCount: 0,
+      }),
+    ).toEqual({ action: 'wait' });
   });
 });
 

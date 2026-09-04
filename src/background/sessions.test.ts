@@ -447,6 +447,18 @@ describe('history wiring (spec §5)', () => {
     expect(historySummaries()[0]).toMatchObject({ origin: 'manual', tabCount: 2 });
   });
 
+  it('the icon click clears a badge left over from an earlier save', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    await seedWindow(['https://a.example/'], true);
+    // A '!' armed by a failed save whose 2 s clear timer died with the service worker.
+    fake.state.badge.text = '!';
+
+    fake.fire.actionClicked();
+
+    expect(fake.state.badge.text).toBe('');
+  });
+
   it('the icon click takes no snapshot while history is off (windows are not queried)', async () => {
     const { sessionRepo } = await loadWorker();
     const fake = getChromeFake();

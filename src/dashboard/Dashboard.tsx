@@ -42,6 +42,7 @@ import {
   NO_HIGHLIGHT,
   nextIndex,
   prevIndex,
+  resolveActivation,
   type SearchItem,
   sessionNameMatches,
 } from '@/dashboard/lib/search-nav';
@@ -97,6 +98,9 @@ export function Dashboard() {
   const [includeHistory, setIncludeHistory] = useState(false);
   const [limitPerSource, setLimitPerSource] = useState(DEFAULT_LIMIT_PER_SOURCE);
   const [highlight, setHighlight] = useState(NO_HIGHLIGHT);
+  // The text an Enter press was made against, until the results describe that same text; see the
+  // effect below. `undefined` means "no activation waiting".
+  const [pendingActivation, setPendingActivation] = useState<string | undefined>(undefined);
   const { corpus, warming, ensureLoaded } = useSearchCorpus({ summaries: sessions, openWindows });
 
   /**
@@ -322,6 +326,32 @@ export function Dashboard() {
     }
   };
 
+  // Enter is resolved one render *after* the key press: SearchBar commits the query and requests
+  // the activation in the same handler, so anything activated inside that handler would come from
+  // the previous render's `items`/`highlight`. Deferring (rather than making the first Enter only
+  // commit the query) keeps "type, then Enter" activating the top match on the first press, which
+  // is what a search box is expected to do — while `resolveActivation` guarantees the rows it acts
+  // on are the ones the typed query produced. No dependency array: every render is exactly when a
+  // waiting activation may have become resolvable, and with nothing pending this costs one check.
+  useEffect(() => {
+    if (pendingActivation === undefined) {
+      return;
+    }
+    const decision = resolveActivation({
+      typedQuery: pendingActivation,
+      committedQuery: query,
+      highlight,
+      itemCount: items.length,
+    });
+    if (decision.action === 'wait') {
+      return;
+    }
+    setPendingActivation(undefined);
+    if (decision.action === 'activate') {
+      void activateItem(items[decision.index]);
+    }
+  });
+
   const moveHighlight = (direction: 'next' | 'prev') => {
     setHighlight((current) =>
       direction === 'next' ? nextIndex(current, items.length) : prevIndex(current, items.length),
@@ -335,15 +365,20 @@ export function Dashboard() {
         <SearchBar
           includeHistory={includeHistory}
           onQueryChange={(next) => {
-            setQuery(next);
-            resetResults();
+            // Only a *different* query re-ranks. Enter re-commits the text that is already
+            // committed, and that must not clear the highlight the user arrowed to (nor collapse
+            // a "show more") before the activation below reads it.
+            if (next !== query) {
+              setQuery(next);
+              resetResults();
+            }
           }}
           onIncludeHistoryChange={(value) => {
             setIncludeHistory(value);
             resetResults();
           }}
           onMove={moveHighlight}
-          onActivate={() => void activateItem(items[highlight] ?? items[0])}
+          onActivate={setPendingActivation}
         />
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>

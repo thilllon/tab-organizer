@@ -175,6 +175,11 @@ function onAlarm(alarm: chrome.alarms.Alarm): void {
  * off. Errors are reported, never thrown: the click must keep sorting no matter what.
  */
 function onActionClicked(): void {
+  // The badge is browser state, but the timer that clears it is worker state: a worker torn down
+  // during those 2 s leaves a stale save/error badge on the icon indefinitely. Every other entry
+  // point clears it first (`handleMenuOrCommand`, `onStartup`), so the icon click does too --
+  // synchronously and without awaiting anything, leaving the sort in ./index.ts untouched.
+  clearBadge();
   takeHistorySnapshot({ origin: 'manual' }).catch(report);
 }
 

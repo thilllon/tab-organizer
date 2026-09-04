@@ -15,8 +15,13 @@ export interface SearchBarProps {
   onIncludeHistoryChange(value: boolean): void;
   /** ArrowDown / ArrowUp: move the highlighted result. */
   onMove(direction: 'next' | 'prev'): void;
-  /** Enter: activate the highlighted result, or the first one when none is highlighted. */
-  onActivate(): void;
+  /**
+   * Enter: activate the highlighted result, or the first one when none is highlighted. Called
+   * with the text the press was made against, because the query committed just above it lands
+   * asynchronously — the parent resolves the activation once its results describe this text
+   * (see `resolveActivation`).
+   */
+  onActivate(typedQuery: string): void;
 }
 
 /**
@@ -115,9 +120,11 @@ export function SearchBar({
     if (event.key === 'Enter') {
       event.preventDefault();
       // Flush a keystroke still inside the 100 ms debounce first, so the results the activation
-      // runs against are the ones the query describes.
+      // runs against are the ones the query describes. Both calls land in the same React batch,
+      // so the activation cannot be performed here (it would see the previous render's results);
+      // the parent is handed the typed text and resolves it against the render that follows.
       commitNow(text);
-      onActivate();
+      onActivate(text);
     }
   };
 

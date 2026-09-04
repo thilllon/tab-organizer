@@ -107,8 +107,9 @@ export function entriesFromSession(session: Session, source: 'saved' | 'history'
 
 /**
  * Entries for the live tabs of populated windows (`windows.getAll({ populate: true })`).
- * Tabs without a url are dropped, as are our own extension pages when `excludeUrlPrefix`
- * is given. Runtime ids are kept on the entries (in memory only) so results can focus tabs.
+ * Incognito windows are skipped, then tabs without a url are dropped, as are our own extension
+ * pages when `excludeUrlPrefix` is given. Runtime ids are kept on the entries (in memory only)
+ * so results can focus tabs.
  */
 export function entriesFromOpenWindows(
   windows: chrome.windows.Window[],
@@ -123,7 +124,17 @@ export function entriesFromOpenWindows(
   const now = Date.now();
 
   const entries: SearchEntry[] = [];
-  for (const [windowIndex, win] of windows.entries()) {
+  // Counts only the windows that are kept, so "Window N" numbers them exactly like the
+  // open-windows pane (which reads the same windows through `captureWindowsWithIds`).
+  let windowIndex = 0;
+  for (const win of windows) {
+    // Same rule as `captureWindow` (src/sessions/capture.ts): an incognito window is never read.
+    // `windows.getAll({ windowTypes: ['normal'] })` filters the window *type*, not incognito-ness,
+    // so without this an incognito title or url would surface in search once the user allows the
+    // extension in incognito — which PRIVACY_POLICY.md rules out without qualification.
+    if (win.incognito) {
+      continue;
+    }
     const tabs = [...(win.tabs ?? [])].sort((a, b) => a.index - b.index);
     for (const tab of tabs) {
       // Same resolution as capture: a navigating tab reports its destination as `pendingUrl`.
@@ -160,6 +171,7 @@ export function entriesFromOpenWindows(
       }
       entries.push(entry);
     }
+    windowIndex += 1;
   }
   return entries;
 }

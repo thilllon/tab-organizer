@@ -381,6 +381,17 @@ describe('sessionRepo.update', () => {
     expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['id-b']);
   });
 
+  it('drops a historyMeta fingerprinting the snapshot mutate deletes', async () => {
+    await sessionRepo.put(makeSession({ id: 'h1', kind: 'history', contentHash: 'aaaa0001' }));
+    await sessionRepo.setHistoryMeta({ lastHash: 'aaaa0001', lastSnapshotAt: 1_000 });
+
+    expect(await sessionRepo.update('h1', () => null)).toBeNull();
+
+    // Left behind, the next alarm would keep answering 'skipped-unchanged' against a hash no
+    // stored snapshot holds any more, and automatic snapshots would stop for good.
+    await expect(sessionRepo.getHistoryMeta()).resolves.toBeUndefined();
+  });
+
   it('writes the body before the index', async () => {
     await sessionRepo.put(makeSession({ id: 'id-a' }));
     const setSpy = vi.spyOn(chrome.storage.local, 'set');
@@ -452,6 +463,26 @@ describe('sessionRepo.remove / removeAll', () => {
     await sessionRepo.remove('ghost');
 
     expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['id-a']);
+  });
+
+  it('drops historyMeta when the deleted snapshot was the one it fingerprints', async () => {
+    await sessionRepo.put(makeSession({ id: 'h1', kind: 'history', contentHash: 'aaaa0001' }));
+    await sessionRepo.put(makeSession({ id: 'h2', kind: 'history', contentHash: 'aaaa0002' }));
+    await sessionRepo.setHistoryMeta({ lastHash: 'aaaa0002', lastSnapshotAt: 2_000 });
+
+    await sessionRepo.remove('h1');
+
+    // h2 still holds the fingerprinted state, so the dedupe baseline stays.
+    await expect(sessionRepo.getHistoryMeta()).resolves.toEqual({
+      lastHash: 'aaaa0002',
+      lastSnapshotAt: 2_000,
+    });
+
+    await sessionRepo.remove('h2');
+
+    // Deleting the newest snapshot must not leave a baseline nothing holds: the next alarm would
+    // return 'skipped-unchanged' for ever.
+    await expect(sessionRepo.getHistoryMeta()).resolves.toBeUndefined();
   });
 
   it('removeAll deletes every session body, the index and history meta but keeps settings', async () => {

