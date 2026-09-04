@@ -44,28 +44,48 @@ Pin the icon, click it, done — every tab in the window is sorted and grouped b
 
 ## Features
 
-|                               |                                                                                                                                                                                                                                                    |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **▸ One-click sorting**       | Click the toolbar icon. No menus, no dialogs — the current window is organized instantly.                                                                                                                                                          |
-| **▸ Three sort modes**        | By URL, by title, or custom grouping that keeps sites in the order you first opened them.                                                                                                                                                          |
-| **▸ Smart grouping**          | Group by full hostname (`mail.google.com` ≠ `drive.google.com`) or by domain (all of Google together, `.co.uk`-style TLDs handled).                                                                                                                |
-| **▸ Native tab groups**       | Existing Chrome tab groups are sorted by name (prefix with `1-`, `2-` to pin an order) and tidied inside.                                                                                                                                          |
-| **▸ Duplicate detection**     | Leave duplicates alone, close all but one, or collect them into a labeled group to review first.                                                                                                                                                   |
-| **▸ Pinned & suspended tabs** | Pinned tabs stay put unless you say otherwise; tabs suspended by The Marvellous Suspender sort by their real URL.                                                                                                                                  |
-| **▸ Sessions**                | Right-click the icon → save this window or all windows; the full-page Sessions dashboard restores them exactly (order, pinned, groups, active tab). Automatic local snapshots every 5 min for crash recovery, off in one click (coming in v7.0.0). |
+|                               |                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **▸ One-click sorting**       | Click the toolbar icon. No menus, no dialogs — the current window is organized instantly.                                                                                                                                                                                                                                             |
+| **▸ Three sort modes**        | By URL, by title, or custom grouping that keeps sites in the order you first opened them.                                                                                                                                                                                                                                             |
+| **▸ Smart grouping**          | Group by full hostname (`mail.google.com` ≠ `drive.google.com`) or by domain (all of Google together, `.co.uk`-style TLDs handled).                                                                                                                                                                                                   |
+| **▸ Native tab groups**       | Existing Chrome tab groups are sorted by name (prefix with `1-`, `2-` to pin an order) and tidied inside.                                                                                                                                                                                                                             |
+| **▸ Duplicate detection**     | Leave duplicates alone, close all but one, or collect them into a labeled group to review first.                                                                                                                                                                                                                                      |
+| **▸ Pinned & suspended tabs** | Pinned tabs stay put unless you say otherwise; tabs suspended by The Marvellous Suspender sort by their real URL.                                                                                                                                                                                                                     |
+| **▸ Sessions**                | Right-click the icon → save this window or all windows. The full-page Sessions dashboard lists open windows, saved sessions and history, restores exactly (order, pinned, groups, active tab, window state) into new windows or the current one, searches every tab, and imports/exports JSON, Markdown, text, HTML bookmarks or CSV. |
+| **▸ Snapshots & recovery**    | Every 5 minutes (only when something changed) a snapshot of all open windows is kept locally — the 20 most recent, protect any to keep it. After a crash, "Previous session (recovered)" is one click away. On by default, off in one click.                                                                                          |
 
 ## Settings
 
-Right-click the icon → **Options** to choose the grouping level and how duplicates are handled.
+Right-click the icon → **Options** to choose the grouping level, how duplicates are handled, and whether automatic snapshots run (and how often).
 
 <p align="center">
   <img src="screenshots/screenshot-1280x800.png" alt="Options page" width="640" />
 </p>
 
+## Sessions
+
+Three ways in, none of them on the icon click (a left-click only ever sorts):
+
+1. **Right-click the icon** → _Save this window as session_, _Save all windows as session_, _Open Sessions_. A ✓ badge confirms a save.
+2. **Keyboard shortcuts** — _Save the current window as a session_ and _Open the Sessions dashboard_ are registered as Chrome commands with no preset keys; bind them at `chrome://extensions/shortcuts` (there is a button for it in Options and in the dashboard).
+3. **Options** → _Open Sessions dashboard_.
+
+The dashboard is a full extension page (`dashboard.html`), opened once and re-focused thereafter. It shows:
+
+- **Open windows** — a live view of every window and tab; save, close or jump to any of them, or restore a saved window _into_ the current one.
+- **Saved sessions** — rename inline, expand to windows → groups → tabs with site icons, open a single tab in the background, remove a tab or window from a session, restore a session or one window (new windows, exact order, pinned tabs, groups incl. collapsed, active tab, window state), delete with confirmation. Restores run in batches with progress and Cancel; more than 50 tabs load lazily, more than 100 ask first; unopenable URLs are skipped and reported.
+- **History** — automatic snapshots every 5 min (or 10/30; on by default, off in Options or the dashboard settings), deduplicated, 20 kept, protect / save as session / delete / delete all unprotected, and a "Previous session (recovered)" entry after Chrome restarts.
+- **Search** — one box across open tabs, saved sessions and (optionally) history; `/` focuses it, `Esc` clears, arrows move, `Enter` opens.
+- **Import / Export** — JSON (round-trips exactly), Markdown, plain text, Netscape HTML (imports into Chrome bookmarks), CSV, per group / window / session / everything, plus _Copy links_ and _Copy as Markdown_. Import from a file or pasted text with a preview.
+- **Storage meter** with _Delete all session data_, and a dark theme.
+
+Everything lives in `chrome.storage.local` on the device — never synced, never uploaded.
+
 ## Privacy
 
 - **Zero network requests** — works entirely offline, no analytics, no telemetry.
-- **Permissions** — `tabs`, `tabGroups`, `storage` (settings via Chrome sync; sessions in local storage on this device only), `contextMenus` (icon menu), `unlimitedStorage` (large sessions), `favicon` (site icons from Chrome's local cache). Automatic snapshots (coming in v7.0.0) use `alarms` and can be turned off.
+- **Seven permissions, no host permissions** — `tabs`, `tabGroups`, `storage` (settings via Chrome sync; sessions in local storage on this device only), `contextMenus` (icon menu), `unlimitedStorage` (large sessions), `favicon` (site icons from Chrome's local cache), `alarms` (snapshot timer; none exists when snapshots are off). Requires Chrome 123 or newer.
 - **No content scripts** — nothing is ever injected into a web page.
 - Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
 

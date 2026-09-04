@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Tab Organizer** is a Chrome extension (Manifest V3) that sorts and organizes browser tabs and saves/restores sets of windows and tabs as sessions. It groups tabs by hostname/domain, handles duplicate tabs, supports suspended tab detection, and keeps a local-only session store (saved sessions plus, from Phase 3, automatic history snapshots). All operations are entirely local with zero external data transmission.
+**Tab Organizer** is a Chrome extension (Manifest V3) that sorts and organizes browser tabs and saves/restores sets of windows and tabs as sessions. It groups tabs by hostname/domain, handles duplicate tabs, supports suspended tab detection, and keeps a local-only session store (saved sessions plus automatic history snapshots, on by default) with unified search, import and export. All operations are entirely local with zero external data transmission.
 
 - Repository: `https://github.com/thilllon/tab-organizer`
 - Chrome Web Store: `https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg`
@@ -16,9 +16,9 @@
 
 This is a **Chrome Extension** with three execution contexts:
 
-1. **Background Service Worker** (`src/background/index.ts` + `src/background/sessions.ts`) — The core engine. Runs as a Manifest V3 service worker. `index.ts` handles tab sorting, grouping and duplicate detection, triggered by the icon click (`chrome.action.onClicked`). `sessions.ts` (imported by `index.ts` with a single `import './sessions';` line) registers, synchronously at module top level, the sessions listeners: `runtime.onInstalled` (recreate context menus; `sessionRepo.migrateAll()` when `details.reason === 'update'`, then `sessionRepo.reconcile()`), `runtime.onStartup` (clear badge, reconcile), `contextMenus.onClicked` and `commands.onCommand` (save window / save all / open dashboard). The worker wakes only on those events (and, from Phase 3, on the history alarm); there are **no** `chrome.tabs.on*` / `chrome.windows.on*` / `chrome.tabGroups.on*` listeners in the worker.
-2. **Options Page** (`src/options/`) — A React SPA rendered in `options.html`. Configures sort settings (`chrome.storage.sync`) and has a "Sessions" card that opens the dashboard and the Chrome shortcuts page.
-3. **Sessions Dashboard** (`src/dashboard/`) — A React SPA rendered in `dashboard.html` (second Vite/crxjs HTML entry, `build.rollupOptions.input`). Lists saved sessions from the index, loads bodies on demand, renames/deletes, and **runs restores in the page** (never in the service worker, so the worker's idle/lifetime limits do not apply). It talks to `chrome.*` directly — there is no message passing to the worker. `openDashboard()` (`src/sessions/open-dashboard.ts`) is a singleton: it focuses an existing dashboard tab or creates one.
+1. **Background Service Worker** (`src/background/index.ts` + `src/background/sessions.ts`) — The core engine. Runs as a Manifest V3 service worker. `index.ts` handles tab sorting, grouping and duplicate detection, triggered by the icon click (`chrome.action.onClicked`). `sessions.ts` (imported by `index.ts` with a single `import './sessions';` line) registers, synchronously at module top level, the sessions listeners: `runtime.onInstalled` (recreate context menus; `sessionRepo.migrateAll()` when `details.reason === 'update'`, then `sessionRepo.reconcile()`, then `ensureHistoryAlarm()`), `runtime.onStartup` (clear badge, reconcile, `promoteRecoveredSnapshot()`, re-arm the periodic alarm, one-shot `history-first` alarm), `contextMenus.onClicked` and `commands.onCommand` (save window / save all / open dashboard), `alarms.onAlarm` (`takeHistorySnapshot({ origin: 'alarm' })`), a **second** `action.onClicked` listener (fire-and-forget `takeHistorySnapshot({ origin: 'manual' })` alongside the sort, which it never awaits or alters) and `storage.onChanged` (re-arm or clear the alarm when `sessionSettings` changes). The worker wakes only on those events — plus the history alarm while snapshots are enabled (the default); with snapshots off no alarm exists and it wakes on user actions only. There are **no** `chrome.tabs.on*` / `chrome.windows.on*` / `chrome.tabGroups.on*` listeners in the worker.
+2. **Options Page** (`src/options/`) — A React SPA rendered in `options.html`. Configures sort settings (`chrome.storage.sync`) and has a "Sessions" card with the automatic-snapshot switch and interval (written to `sessionSettings` in `chrome.storage.local` through `sessionRepo.setSettings()`; the worker's `storage.onChanged` listener re-arms the alarm) plus buttons that open the dashboard and the Chrome shortcuts page.
+3. **Sessions Dashboard** (`src/dashboard/`) — A React SPA rendered in `dashboard.html` (second Vite/crxjs HTML entry, `build.rollupOptions.input`). Header: save buttons, the search box, Import and Export. Body: a live **Open windows** pane (`useOpenWindows` registers `chrome.tabs/windows/tabGroups.on*` listeners _in the page_ and refetches with a short coalescing delay), the **Saved sessions** list (index only; bodies on demand; rename, delete, remove a tab/window, export/copy, restore to new windows or into a chosen open window), a collapsible **History** section (snapshots: restore, save as session, protect, delete, delete all unprotected; recovered banner after a browser restart) and a settings row (snapshot switch/interval, lazy-restore mode, `StorageMeter` with "Delete all session data", light/dark theme). It **runs restores in the page** (never in the service worker, so the worker's idle/lifetime limits do not apply) and talks to `chrome.*` directly — there is no message passing to the worker. `openDashboard()` (`src/sessions/open-dashboard.ts`) is a singleton: it focuses an existing dashboard tab or creates one.
 
 There is **no popup**, **no content script**, **no message-passing protocol** and **no external server**. The extension icon click directly triggers sorting and nothing else.
 
@@ -66,7 +66,21 @@ SessionCard Restore -> useRestore()
 -> ProgressToast with restored / skipped / errors
 ```
 
-Settings are persisted in `chrome.storage.sync` and loaded fresh on every sort invocation. Session data lives in `chrome.storage.local` and is read through `sessionRepo` only. The dashboard reloads its list when `chrome.storage.onChanged` reports a change to `sessionIndex`.
+History snapshot (service worker; the alarm, or the icon click while snapshots are on):
+
+```
+alarms.onAlarm('history-snapshot' | 'history-first') / second action.onClicked listener
+-> takeHistorySnapshot({ origin }) (src/sessions/history.ts)
+-> sessionRepo.getSettings(): 'disabled' when historyEnabled is false (no window query at all)
+-> captureSession('all') -> contentHash(windows) vs historyMeta.lastHash -> 'skipped-unchanged'
+-> sessionRepo.put({ kind: 'history', name: 'Snapshot <stamp> · N windows · M tabs' })
+-> sessionRepo.pruneHistory(historyMaxSnapshots)   // oldest unprotected history first; never 'saved'
+-> sessionRepo.setHistoryMeta({ lastHash, lastSnapshotAt })
+```
+
+Search, export and import run entirely in the dashboard page: `useSearchCorpus` builds `SearchEntry[]` per session body (pre-warmed on idle, invalidated per key by `storage.onChanged`) plus the open-windows snapshot and feeds `search()` from `src/sessions/search.ts`; `ExportMenu` calls the pure serializers in `src/sessions/export.ts` and hands the text to `src/dashboard/lib/download.ts` (Blob URL + `<a download>` — no `downloads` permission) or to the clipboard; `ImportDialog` runs `importSessions()` from `src/sessions/import.ts` (type guards in `guards.ts`), shows a preview, then `sessionRepo.put()` per session.
+
+Sort settings are persisted in `chrome.storage.sync` and loaded fresh on every sort invocation. Session data and `sessionSettings` live in `chrome.storage.local` and are read through `sessionRepo` only. The dashboard reloads its list when `chrome.storage.onChanged` reports a change to `sessionIndex`, and `useSessionSettings` re-reads on a `sessionSettings` change.
 
 ### Directory Structure
 
@@ -86,23 +100,32 @@ tab-organizer/
 │   │   ├── capture.ts (+test)     # captureWindows() (pure) + captureSession() (chrome wrapper)
 │   │   ├── storage.ts (+test)     # sessionRepo, withLock(), storage keys — the ONLY writer of session data
 │   │   ├── restore.ts (+test)     # sanitizeRestoreUrl(), clampToScreen(), planRestore() (pure), executeRestore()
+│   │   ├── suspender.ts (+test)   # unwrapSuspendedUrl() — verbatim remainder after `uri=` (capture + restore)
+│   │   ├── history.ts (+test)     # takeHistorySnapshot(), promoteRecoveredSnapshot(), ensureHistoryAlarm(), scheduleFirstSnapshot()
+│   │   ├── search.ts (+test)      # tokenizer / matcher / ranker over SearchEntry[] (open > saved > history)
+│   │   ├── export.ts (+test)      # toJson/toMarkdown/toText/toHtml/toCsv, scopeToSession(), exportFilename()
+│   │   ├── import.ts (+test)      # detectFormat(), parseJson/parseNetscapeHtml/parseTextOrMarkdown, importSessions()
+│   │   ├── guards.ts (+test)      # hand-written type guards for external data (isSession, isExportBundle, …)
 │   │   ├── open-dashboard.ts      # openDashboard() singleton
-│   │   └── shortcuts.ts           # openShortcutSettings() — shared by Options and the dashboard empty state
+│   │   └── shortcuts.ts           # openShortcutSettings() — shared by Options and the dashboard
 │   ├── dashboard/
 │   │   ├── index.tsx          # React entry point for dashboard.html
 │   │   ├── index.css          # @import '../options/index.css'
-│   │   ├── Dashboard.tsx      # Header (save buttons) + session list + empty state
-│   │   ├── hooks/             # useSessionIndex, useSessionBody, useRestore
-│   │   ├── lib/               # Page-side helpers (+ adjacent tests): errors, format, group-colors,
-│   │   │                      #   open-tab, restore-summary, sanitize-options, segments, session-utils
-│   │   └── components/        # SessionCard, WindowTree, GroupSection, TabRow, Favicon, ProgressToast,
-│   │                          #   EmptyState, RestoreConfirmDialog, DeleteSessionDialog
+│   │   ├── Dashboard.tsx      # Header (save/search/import/export) + open-windows pane + session list + history + settings
+│   │   ├── hooks/             # useSessionIndex, useSessionBody, useRestore, useOpenWindows (page-side tab listeners),
+│   │   │                      #   useSessionSettings, useSearchCorpus
+│   │   ├── lib/               # Page-side helpers (+ adjacent tests): errors, format, group-colors, open-tab,
+│   │   │                      #   restore-summary, sanitize-options, segments, session-utils, download,
+│   │   │                      #   search-corpus, open-windows
+│   │   └── components/        # SessionCard, WindowTree, GroupSection, TabRow, Favicon, ProgressToast, EmptyState,
+│   │                          #   RestoreConfirmDialog, DeleteSessionDialog, OpenWindowsPane, HistorySection,
+│   │                          #   SearchBar, SearchResults, ExportMenu, ImportDialog, StorageMeter
 │   ├── options/
 │   │   ├── index.tsx          # React entry point
 │   │   ├── Options.tsx        # Settings UI component + "Sessions" card
 │   │   └── index.css          # Tailwind CSS with shadcn theme
-│   ├── components/ui/         # Reusable UI components (shadcn/ui: button, radio-group, label, input,
-│   │                          #   dialog, dropdown-menu, badge, separator, collapsible)
+│   ├── components/ui/         # Reusable UI components (shadcn/ui via the CLI: button, radio-group, label, input,
+│   │                          #   dialog, dropdown-menu, badge, separator, collapsible, plus later additions)
 │   ├── lib/
 │   │   └── utils.ts           # cn() utility (clsx + tailwind-merge)
 │   ├── test/
@@ -115,12 +138,12 @@ tab-organizer/
 ├── scripts/
 │   ├── zip.ts                 # Packages dist/ into package/<name>-<version>.zip for Web Store
 │   ├── generate-ico.ts        # Generates multi-size .ico from SVG (macOS: qlmanage + sips)
-│   ├── prepare-registration.ts # Full visual-asset pipeline (build, screenshots, video, promo images, demo.gif, description.txt)
+│   ├── prepare-registration.ts # Full visual-asset pipeline (build, sort + dashboard-*.png screenshots, video, promo images, demo.gif, description.txt)
 │   ├── build-listing.ts       # docs/README.md `### Description` -> docs/description.txt (CWS plain text); + build-listing.test.ts
 │   ├── promo-template.html    # HTML template for CWS promotional images
 │   ├── tab-bar-template.html  # HTML template for tab bar mockup screenshots
 │   └── get-window-id.py       # macOS window-bounds helper for screenshot cropping
-├── screenshots/               # Generated CWS assets (screenshots, promo images, demo video)
+├── screenshots/               # Generated CWS assets (sort + dashboard-*.png screenshots, promo images, demo video)
 ├── docs/
 │   ├── README.md              # Chrome Web Store listing — single source of truth (text, assets, privacy answers)
 │   └── description.txt        # GENERATED by `pnpm listing`; paste into the store's Description field
@@ -180,26 +203,35 @@ Contains all pure sorting and grouping functions, extracted for testability. No 
 
 ### `src/background/sessions.ts` — Sessions listeners (service worker)
 
-Registers listeners synchronously at module top level; imported by `index.ts`. Exports for tests: `MENU_IDS = { saveWindow: 'save-window', saveAll: 'save-all', openDashboard: 'open-dashboard' }`, `COMMAND_IDS = { saveSession: 'save-session', openDashboard: 'open-dashboard' }` (must equal the `commands` block in `vite.config.ts`), `registerContextMenus()`, `handleMenuOrCommand(id)`, `showSavedBadge()`, `clearBadge()`.
+Registers listeners synchronously at module top level; imported by `index.ts`. Exports for tests: `MENU_IDS = { saveWindow: 'save-window', saveAll: 'save-all', openDashboard: 'open-dashboard' }`, `COMMAND_IDS = { saveSession: 'save-session', openDashboard: 'open-dashboard' }` (must equal the `commands` block in `vite.config.ts`), `registerContextMenus()`, `handleMenuOrCommand(id)`, `showSavedBadge()`, `clearBadge()`. Alarm names come from `src/sessions/history.ts` (`HISTORY_ALARM = 'history-snapshot'`, `HISTORY_FIRST_ALARM = 'history-first'`).
 
-| Listener                                        | Behaviour                                                                                                                                                                                             |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runtime.onInstalled`                           | `contextMenus.removeAll()` then create the 3 menu items (idempotent); on `details.reason === 'update'` runs `sessionRepo.migrateAll()` first (errors caught locally); then `sessionRepo.reconcile()`. |
-| `runtime.onStartup`                             | `clearBadge()`; `sessionRepo.reconcile()`.                                                                                                                                                            |
-| `contextMenus.onClicked` / `commands.onCommand` | `clearBadge()`; `save-window`/`save-session` → capture current window; `save-all` → all windows; `open-dashboard`.                                                                                    |
+| Listener                                        | Behaviour                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `runtime.onInstalled`                           | `contextMenus.removeAll()` then create the 3 menu items (idempotent); on `details.reason === 'update'` runs `sessionRepo.migrateAll()` first (errors caught locally); then `sessionRepo.reconcile()`; then `ensureHistoryAlarm()` (Chrome drops every alarm on update/reload). |
+| `runtime.onStartup`                             | `clearBadge()`; `sessionRepo.reconcile()`; `promoteRecoveredSnapshot()` (errors caught locally); `ensureHistoryAlarm(settings)`; `scheduleFirstSnapshot(settings)` (one-shot `history-first`, 1 min out, so the first capture happens after Chrome has restored its tabs).     |
+| `contextMenus.onClicked` / `commands.onCommand` | `clearBadge()`; `save-window`/`save-session` → capture current window; `save-all` → all windows; `open-dashboard`.                                                                                                                                                             |
+| `alarms.onAlarm`                                | `history-snapshot` / `history-first` → `takeHistorySnapshot({ origin: 'alarm' })`; other alarm names ignored. `takeHistorySnapshot` returns `'disabled'` itself when history is off, so no settings read here.                                                                 |
+| `action.onClicked` (second listener)            | `takeHistorySnapshot({ origin: 'manual' })`, fire-and-forget, concurrent with the sort in `index.ts` (never awaited by it, never alters it). Costs one storage read while history is off. Errors are reported, never thrown — the click must keep sorting.                     |
+| `storage.onChanged`                             | `areaName === 'local'` and `sessionSettings` in `changes` → `ensureHistoryAlarm()` (re-reads through `sessionRepo.getSettings()` for the same normalisation as every other read). Re-arms on interval change, clears both alarms when history is turned off.                   |
 
 ### `src/sessions/` — Session domain
 
-| Module              | Exports                                                                                                                                                                                                                                      |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `naming.ts`         | `defaultSessionName(date, windowCount, tabCount)`, `slugify(name)`                                                                                                                                                                           |
-| `migrate.ts`        | `migrateSession(record)`, `migrateIndex(record)`, `UnknownSchemaVersionError` (identity for v1; unknown versions throw and the UI shows the record read-only)                                                                                |
-| `hash.ts`           | `contentHash(windows)` — titles excluded, so a title change never produces a new snapshot                                                                                                                                                    |
-| `capture.ts`        | `captureWindows(windows, groups, options)` (pure), `captureSession(scope, name?)`                                                                                                                                                            |
-| `storage.ts`        | `sessionRepo` (`listSummaries`, `get`, `put`, `rename`, `remove`, `removeAll`, `reconcile`, `migrateAll`, `getSettings`, `setSettings`), `withLock`, `toSummary`, `INDEX_KEY`, `SETTINGS_KEY`, `HISTORY_META_KEY`, `sessionKey`, `LOCK_NAME` |
-| `restore.ts`        | `sanitizeRestoreUrl`, `clampToScreen`, `planRestore` (pure), `executeRestore`, `withRetryOnce`, `isTabsCannotBeEditedError`                                                                                                                  |
-| `open-dashboard.ts` | `openDashboard()` — focuses the existing dashboard tab or opens one                                                                                                                                                                          |
-| `shortcuts.ts`      | `openShortcutSettings()` — `chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })`, used by Options and the dashboard empty state                                                                                                     |
+| Module              | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `naming.ts`         | `defaultSessionName(date, windowCount, tabCount)`, `slugify(name)`                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `migrate.ts`        | `migrateSession(record)`, `migrateIndex(record)`, `UnknownSchemaVersionError` (identity for v1; unknown versions throw and the UI shows the record read-only)                                                                                                                                                                                                                                                                                                         |
+| `hash.ts`           | `contentHash(windows)` — titles excluded, so a title change never produces a new snapshot                                                                                                                                                                                                                                                                                                                                                                             |
+| `capture.ts`        | `captureWindows(windows, groups, options)` (pure), `captureSession(scope, name?)`                                                                                                                                                                                                                                                                                                                                                                                     |
+| `storage.ts`        | `sessionRepo` (`listSummaries`, `get`, `put`, `rename`, `remove`, `removeAll`, `reconcile`, `migrateAll`, `getSettings`, `setSettings`, `getHistoryMeta`, `setHistoryMeta`, `pruneHistory`, `setProtected`, `markRecovered`, `duplicateAsSaved`, `removeAllHistory`), `withLock`, `toSummary`, `HistoryMeta`, `INDEX_KEY`, `SETTINGS_KEY`, `HISTORY_META_KEY`, `sessionKey`, `LOCK_NAME`                                                                              |
+| `restore.ts`        | `sanitizeRestoreUrl`, `clampToScreen`, `planRestore` (pure), `executeRestore`, `withRetryOnce`, `isTabsCannotBeEditedError`; `RestoreTarget = { kind: 'newWindows' } \| { kind: 'window'; windowId }`; `DEFAULT_CHUNK_SIZE = 25`, `LAZY_AUTO_THRESHOLD = 50`                                                                                                                                                                                                          |
+| `suspender.ts`      | `unwrapSuspendedUrl(url, prefix)` — returns the raw remainder after the first `uri=` parameter (the suspender appends the real url unencoded, so `URLSearchParams` would corrupt it); `null` for a wrapper without `uri=`                                                                                                                                                                                                                                             |
+| `history.ts`        | `takeHistorySnapshot({ origin })` → `{ outcome: 'saved' \| 'skipped-empty' \| 'skipped-unchanged' \| 'disabled', sessionId?, pruned }`, `promoteRecoveredSnapshot()` (newest unprotected alarm/manual/startup snapshot captured after the last recovered one → `origin: 'recovered'`, protected, renamed), `ensureHistoryAlarm(settings?)`, `scheduleFirstSnapshot(settings?)`, `defaultHistoryName`, `recoveredSnapshotName`, `HISTORY_ALARM`, `HISTORY_FIRST_ALARM` |
+| `search.ts`         | `SearchEntry`, `SEARCH_SOURCES` (`'open' \| 'saved' \| 'history'`), `entriesFrom*` builders (hostname precomputed once), `search(entries, query, { limitPerSource, includeHistory })` — lowercase whitespace tokens, AND over title/url/hostname, rank hostname-prefix > title > url, then source order, then recency; per-source `count`/`hasMore`                                                                                                                   |
+| `export.ts`         | `ExportScope` (session / window / group), `scopeToSession`, `toJson` (`ExportBundle`), `toMarkdown`, `toText`, `toHtml` (Netscape bookmark file), `toCsv` (`CSV_HEADER = 'session,window,group,index,pinned,title,url'`, RFC 4180 `csvEscape`), `escapeHtml`, `serialize(format, …)`, `exportFilename(base, format, date)` → `tab-organizer-<slug>-<yyyyMMdd-HHmm>.<ext>`, `extensionFor`, `mimeTypeFor`                                                              |
+| `import.ts`         | `ImportFormat = 'json' \| 'html' \| 'markdown' \| 'text'` (CSV is export-only), `detectFormat(text)`, `parseJson`, `parseNetscapeHtml` (own tokenizer — no `DOMParser`, so it runs under vitest), `parseTextOrMarkdown` (blank line = new window, `(pinned)` marker), `importSessions(text, now)` → sessions with fresh ids, `kind: 'saved'`, `origin: 'import'`, name suffix "(imported)"                                                                            |
+| `guards.ts`         | `isRecord`, `isTabSnapshot`, `isGroupSnapshot`, `isWindowSnapshot` (checks `groupIndex` bounds and ≤ 1 active tab), `isSession`, `isExportBundle` — tolerant of extra fields, strict on required ones; the only validation path for pasted/uploaded data                                                                                                                                                                                                              |
+| `open-dashboard.ts` | `openDashboard()` — focuses the existing dashboard tab or opens one                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `shortcuts.ts`      | `openShortcutSettings()` — `chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })`, used by Options and the dashboard                                                                                                                                                                                                                                                                                                                                          |
 
 ### `src/types.ts` — Shared Types
 
@@ -232,13 +264,13 @@ React component using shadcn/ui (Radix UI + Tailwind). Provides radio groups for
 - **Tab Grouping**: `subdomain` (full hostname) vs `domain` (base domain)
 - **Duplicate Tabs**: `none` / `closeAllButOne` / `group`
 
-Settings are loaded from `chrome.storage.sync` on mount and saved explicitly via a "Save" button. The footer displays the extension version (from `chrome.runtime.getManifest()`) and a link to the GitHub repository. A "Sessions" card below the two radio-group sections has two buttons: "Open Sessions dashboard" → `openDashboard()` (`src/sessions/open-dashboard.ts`) and "Set keyboard shortcuts" → `openShortcutSettings()` (`src/sessions/shortcuts.ts`).
+Settings are loaded from `chrome.storage.sync` on mount and saved explicitly via a "Save" button. The footer displays the extension version (from `chrome.runtime.getManifest()`) and a link to the GitHub repository. A "Sessions" card below the two radio-group sections holds the automatic-snapshot switch and interval (5 / 10 / 30 min; `useSessionSettings` → `sessionRepo.setSettings()` into `chrome.storage.local`, applied immediately rather than through the sort settings' "Save" button) and two buttons: "Open Sessions dashboard" → `openDashboard()` (`src/sessions/open-dashboard.ts`) and "Set keyboard shortcuts" → `openShortcutSettings()` (`src/sessions/shortcuts.ts`).
 
 ### `vite.config.ts` — Build & Manifest
 
 The Chrome extension manifest is **defined inline** in `vite.config.ts` using `@crxjs/vite-plugin`'s `defineManifest()`. There is no separate `manifest.json` file. When modifying extension metadata, permissions, or entry points, edit this file.
 
-Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`, `favicon` (Phase 3 adds `alarms`). Commands: `save-session`, `open-dashboard` — shipped without `suggested_key`; `_execute_action` is never defined. Second HTML entry `dashboard.html` is registered via `build.rollupOptions.input` because crxjs only auto-builds manifest-referenced pages. `defineConfig` comes from `vitest/config` so `test.setupFiles: ['src/test/setup.ts']` applies.
+Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`, `favicon`, `alarms`. `minimum_chrome_version: '123'` (promise-form `contextMenus.removeAll()` is awaited unguarded; `favicon` needs 104; `storage.local.getKeys()` (130) is behind a `typeof` guard so it does not raise the floor). Commands: `save-session`, `open-dashboard` — shipped without `suggested_key`; `_execute_action` is never defined. Second HTML entry `dashboard.html` is registered via `build.rollupOptions.input` because crxjs only auto-builds manifest-referenced pages. `defineConfig` comes from `vitest/config` so `test.setupFiles: ['src/test/setup.ts']` applies.
 
 ---
 
@@ -329,44 +361,46 @@ The manifest is generated at build time from `vite.config.ts`. Key points:
 - **No content scripts**: All operations use Chrome APIs only
 - **Second page**: `dashboard.html` (Sessions dashboard). Opened only through `openDashboard()` so there is ever one dashboard tab.
 - **Commands**: `save-session`, `open-dashboard`, unbound by default (users assign keys at `chrome://extensions/shortcuts`).
+- **Minimum Chrome**: `minimum_chrome_version: '123'`. Raise it only for an API used without a runtime guard, and say why in the `vite.config.ts` comment.
 
 ### Permissions Explained
 
-| Permission         | Why                                                                                                      |
-| ------------------ | -------------------------------------------------------------------------------------------------------- |
-| `tabs`             | Read tab URLs and titles for sorting and session capture; create/discard tabs on restore                 |
-| `tabGroups`        | Create, move, and update tab groups; recreate groups on restore                                          |
-| `storage`          | `chrome.storage.sync` for `SortSettings`; `chrome.storage.local` for sessions, index, session settings   |
-| `contextMenus`     | "Save this window / Save all windows / Open Sessions" on the action icon (`contexts: ['action']`)        |
-| `unlimitedStorage` | Sessions with thousands of tabs exceed the 10 MB local quota; data stays on the device                   |
-| `favicon`          | `chrome-extension://<id>/_favicon/?pageUrl=…` in the dashboard, from Chrome's local cache — zero network |
-| `alarms` (Phase 3) | Timer for automatic history snapshots; no alarm exists while `historyEnabled` is false                   |
+| Permission         | Why                                                                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tabs`             | Read tab URLs and titles for sorting and session capture; create/discard tabs on restore                                                        |
+| `tabGroups`        | Create, move, and update tab groups; recreate groups on restore                                                                                 |
+| `storage`          | `chrome.storage.sync` for `SortSettings`; `chrome.storage.local` for sessions, index, session settings                                          |
+| `contextMenus`     | "Save this window / Save all windows / Open Sessions" on the action icon (`contexts: ['action']`)                                               |
+| `unlimitedStorage` | Sessions with thousands of tabs exceed the 10 MB local quota; data stays on the device                                                          |
+| `favicon`          | `chrome-extension://<id>/_favicon/?pageUrl=…` in the dashboard, from Chrome's local cache — zero network                                        |
+| `alarms`           | Timer for automatic history snapshots (`history-snapshot` periodic + one-shot `history-first`); no alarm exists while `historyEnabled` is false |
 
-Every permission change must be mirrored in the same PR in `docs/README.md` (Description permissions list + Privacy justifications table), `PRIVACY_POLICY.md` (Permissions + Last Updated) and this table (spec §10).
+No `host_permissions`, no `downloads` (export uses a Blob URL + `<a download>` in the page), no `default_popup`, no `side_panel`. Every permission change must be mirrored in the same PR in `docs/README.md` (Description permissions list + Privacy justifications table + the CWS privacy-form note), `PRIVACY_POLICY.md` (Permissions + Last Updated), `README.md` (Privacy bullet) and this table (spec §10).
 
 ### Storage Schema
 
-**`chrome.storage.sync`** — `SortSettings` (defaults `DEFAULT_SETTINGS` in `src/background/index.ts`) plus `installedVersion`, `newInstall`, `newUpdate` written by the existing `onInstalled` handler. Untouched by the sessions feature.
+**`chrome.storage.sync`** — `SortSettings` (defaults `DEFAULT_SETTINGS` in `src/background/index.ts`) plus `installedVersion`, `newInstall`, `newUpdate` written by the existing `onInstalled` handler. Sessions code only ever **reads** it — `tabSuspenderExtensionId`, so capture and the restore sanitiser can unwrap suspender URLs — and never writes it. Session data and `sessionSettings` must never go to sync (100 KB total, 8 KB per item, write-rate limits).
 
 **`chrome.storage.local`** — session data, one key per record, never one big array:
 
-| Key               | Value                                                                                   |
-| ----------------- | --------------------------------------------------------------------------------------- |
-| `session:<uuid>`  | `Session` body (windows → groups/tabs)                                                  |
-| `sessionIndex`    | `SessionIndex` — `SessionSummary[]` newest-first by `updatedAt`, authoritative key list |
-| `sessionSettings` | `SessionSettings` (device-local; defaults `DEFAULT_SESSION_SETTINGS` in `src/types.ts`) |
-| `historyMeta`     | `{ lastHash, lastSnapshotAt }` (Phase 3)                                                |
+| Key               | Value                                                                                                                                    |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `session:<uuid>`  | `Session` body (windows → groups/tabs)                                                                                                   |
+| `sessionIndex`    | `SessionIndex` — `SessionSummary[]` newest-first by `updatedAt`, authoritative key list                                                  |
+| `sessionSettings` | `SessionSettings` (device-local; defaults `DEFAULT_SESSION_SETTINGS` in `src/types.ts`)                                                  |
+| `historyMeta`     | `{ lastHash, lastSnapshotAt }` — dedupe baseline for `takeHistorySnapshot()`; removed again when the snapshot it fingerprints is deleted |
 
-Write order is body → index (put) and body → index (delete). `sessionRepo.reconcile()` (dashboard mount, `onInstalled`, `onStartup`) re-indexes orphan `session:*` bodies via `chrome.storage.local.getKeys()` (guarded fallback to `get(null)`) and drops index entries without a body.
+Write order is body → index (put) and body → index (delete). `sessionRepo.reconcile()` (dashboard mount, `onInstalled`, `onStartup`) re-indexes orphan `session:*` bodies via `chrome.storage.local.getKeys()` (guarded fallback to `get(null)`) and drops index entries without a body. `sessionRepo.removeAll()` ("Delete all session data" in the dashboard's `StorageMeter`) removes every `session:*` body, `sessionIndex` and `historyMeta` under the lock; `sessionSettings` survives. `chrome.storage.local.getBytesInUse()` feeds the meter.
 
 ### Sessions rules (do not break)
 
 - **Single write path.** Every write to session keys goes through `sessionRepo` in `src/sessions/storage.ts`, which serializes with `withLock()` (`navigator.locks.request('tab-organizer:sessions', …)`, shared by the service worker and both extension pages; promise-chain fallback when Web Locks are unavailable). Never call `chrome.storage.local.set/remove` for session keys anywhere else.
-- **Never add tab listeners to the service worker.** No `chrome.tabs.on*`, `chrome.windows.on*`, `chrome.tabGroups.on*` in `src/background/**` — ever. History (Phase 3) uses `chrome.alarms` only; live open-window views (Phase 2) register their listeners inside the dashboard page.
+- **Never add tab listeners to the service worker.** No `chrome.tabs.on*`, `chrome.windows.on*`, `chrome.tabGroups.on*` in `src/background/**` — ever. History uses `chrome.alarms` only; the dashboard's live open-windows pane registers its listeners inside the page (`useOpenWindows`), where they die with the tab. Every worker listener is registered synchronously at module top level of `src/background/sessions.ts` — never inside an async callback or after an `await`.
+- **`chrome.storage.sync` is read-only for sessions code** (the suspender id). Session data and session settings live in `chrome.storage.local` only.
 - **The icon click stays `sortTabGroups()` only.** No `default_popup`, no dialogs, no `openDashboard()` on `action.onClicked`. `sort.ts` and the duplicate handlers are not edited by session work.
 - **Restore runs in the dashboard page**, never in the worker. Own extension pages are excluded from every capture.
 - **No Chrome runtime ids in stored data** — groups are referenced by `groupIndex`; pinned tabs never carry `groupIndex`; at most one `active` tab per window.
-- **A chrome namespace touched at module-evaluation time needs its permission in the same commit.** Anything `src/background/sessions.ts` (or any module it imports) reads or calls while the module body runs — `chrome.alarms.onAlarm.addListener(…)`, `chrome.something.CONSTANT`, a top-level `chrome.x.y()` — runs before `index.ts`'s own body, because `import './sessions';` is hoisted. A missing permission makes that line throw, the whole service-worker module fails to evaluate, `chrome.action.onClicked` is never registered, and **tab sorting dies too** — a permission typo takes out the unrelated core feature, not just sessions. So add the permission to `vite.config.ts` in the very same commit as the code that touches the namespace (never "wire it up now, add the permission later"). Phase 3's `alarms` is the next case: `chrome.alarms.onAlarm.addListener` and `'alarms'` in `permissions` must land together.
+- **A chrome namespace touched at module-evaluation time needs its permission in the same commit.** Anything `src/background/sessions.ts` (or any module it imports) reads or calls while the module body runs — `chrome.alarms.onAlarm.addListener(…)`, `chrome.something.CONSTANT`, a top-level `chrome.x.y()` — runs before `index.ts`'s own body, because `import './sessions';` is hoisted. A missing permission makes that line throw, the whole service-worker module fails to evaluate, `chrome.action.onClicked` is never registered, and **tab sorting dies too** — a permission typo takes out the unrelated core feature, not just sessions. So add the permission to `vite.config.ts` in the very same commit as the code that touches the namespace (never "wire it up now, add the permission later"). `alarms` is the live example: `chrome.alarms.onAlarm.addListener` in `sessions.ts` and `'alarms'` in `permissions` landed together and must stay together.
 
 ---
 
@@ -391,6 +425,15 @@ Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions update
 
 Scheduled security scanning for JavaScript/TypeScript (Fridays at 19:42 UTC).
 
+### Release procedure (Chrome Web Store)
+
+`pnpm release` runs release-it (`.release-it.json`): `before:bump` executes `scripts/prepare-registration.ts` (build, sort and `screenshots/dashboard-*.png` captures, demo video/GIF, promo tiles, `docs/description.txt`), then the version is bumped, `after:bump` runs `pnpm build` + `scripts/zip.ts` (→ `package/<name>-<version>.zip`), and a GitHub release is created. It requires the `main` branch and hooks/CI green.
+
+1. Merge the feature branch into `main`; make sure `docs/README.md`, `PRIVACY_POLICY.md` (Last Updated), `README.md` and this file describe what ships, and that `package.json` `description` (the store Summary) is ≤ 132 characters.
+2. `pnpm release --increment major` for a relaunch like v7.0.0 — or `pnpm release --no-increment` when `package.json` already carries the version to publish (release-it then only regenerates assets, builds, zips and tags).
+3. In the CWS Developer Dashboard: upload `package/*.zip`, paste `docs/description.txt` into Description, upload the screenshots and promo tiles listed in `docs/README.md` (Graphic assets) in that order, copy the Privacy answers, and re-review the privacy form's data-type rows ("Web history": stored locally on the device, not transmitted).
+4. Submit for review. Never run `pnpm release` from a feature branch or a worktree, and never edit `docs/description.txt` by hand.
+
 ---
 
 ## Testing
@@ -403,7 +446,7 @@ Unit tests use **Vitest** and live adjacent to their source files. Pure sorting 
 - `findDuplicateTabs` — duplicate detection, `pendingUrl` fallback, special scheme handling
 - `sortByTitleOrUrl` — title/URL sorting, pinned tab exclusion, edge cases (empty arrays, mixed schemes, large diverse tab sets)
 
-`vite.config.ts` sets `test.setupFiles: ['src/test/setup.ts']`, which installs `createChromeFake()` from `src/test/chrome-fake.ts` on `globalThis.chrome` before every test (typed against `@types/chrome`, no `any`) and a `navigator.locks` shim. Tests reach the fake through `getChromeFake()` (`state`, `fire.installed/startup/menuClicked/command/alarm`, `failNext('tabs.create', n, message)`). Session tests live next to their modules: `src/sessions/*.test.ts` (naming, migrate, hash, capture invariants, storage order/reconcile/lock, planner chunking and step order, executeRestore against the fake) and `src/background/sessions.test.ts` (menus recreated on install, badge, handlers).
+`vite.config.ts` sets `test.setupFiles: ['src/test/setup.ts']`, which installs `createChromeFake()` from `src/test/chrome-fake.ts` on `globalThis.chrome` before every test (typed against `@types/chrome`, no `any`) and a `navigator.locks` shim. Tests reach the fake through `getChromeFake()` (`state`, `fire.installed/startup/menuClicked/command/alarm`, `failNext('tabs.create', n, message)`). Session tests live next to their modules: `src/sessions/*.test.ts` (naming, migrate, hash, capture invariants, storage order/reconcile/lock/prune/protect, planner chunking and step order, executeRestore against the fake, history dedupe/prune/recovery promotion/alarm re-arm, search tokenising and ranking, export serializers incl. CSV quoting and HTML escaping, import detection/parsers/JSON round-trip, guards on malformed input, suspender unwrap) and `src/background/sessions.test.ts` (menus recreated on install, badge, handlers, alarm / second-click / `storage.onChanged` wiring). Page-side logic is tested in `src/dashboard/hooks/*.test.ts` and `src/dashboard/lib/*.test.ts`; React components themselves are not unit-tested (vitest runs in Node without a DOM) — keep decisions in pure helpers with tests and leave components thin.
 
 **Testing a module that registers `chrome.*` listeners at import time** (`src/background/index.ts`, `src/background/sessions.ts`): `src/test/setup.ts` assigns one throw-away fake to `globalThis.chrome` at module load (just so these modules are importable at all), then installs a **fresh** fake in `beforeEach`. A `import './sessions'` at the top of a test file runs once, before any `beforeEach`, and registers its listeners on the throw-away instance — every later `getChromeFake().fire.*` call reaches a different fake, so nothing fires. The fix is to defer the import into the test body, after `beforeEach` has installed that test's fake: `vi.resetModules(); await import('./sessions');`. `src/background/sessions.test.ts`'s `describe('listener wiring', …)` block does exactly this per test (`onInstalled`/`onStartup`/menu-click/command tests); the same file's other tests call the statically-imported `handleMenuOrCommand()`, `registerContextMenus()`, etc. directly, which is fine since those don't depend on which fake the listeners were registered against. (`src/sessions/storage.test.ts` also calls `vi.resetModules()` before re-importing `./storage`, but for an unrelated reason — getting a fresh copy of that module's own `fallbackChain` state to test the no-`navigator.locks` code path in isolation, not a listener-registration issue.)
 
@@ -444,7 +487,15 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 
 1. Put pure logic in `src/sessions/<module>.ts` with an adjacent `*.test.ts` (use `getChromeFake()` only for the thin chrome wrapper)
 2. Persist through `sessionRepo` only — extend `src/sessions/storage.ts` if a new operation is needed, inside `withLock()`
-3. UI goes in `src/dashboard/` (hooks under `hooks/`, components under `components/`); the service worker only gets new _event_ listeners (`onInstalled`, `onStartup`, menus, commands, alarms) in `src/background/sessions.ts`
+3. UI goes in `src/dashboard/` (hooks under `hooks/`, components under `components/`, pure page helpers under `lib/` with tests); the service worker only gets new _event_ listeners (`onInstalled`, `onStartup`, menus, commands, alarms, `storage.onChanged`) in `src/background/sessions.ts`, registered at module top level
+4. Icon-only buttons need `aria-label`; dialogs use the shadcn `Dialog`, menus the shadcn `DropdownMenu`; comment non-obvious Chrome behaviour at the call site
+
+### Changing a session setting
+
+1. Extend `SessionSettings` / `DEFAULT_SESSION_SETTINGS` in `src/types.ts` and `normalizeSettings()` in `src/sessions/storage.ts` (unknown or invalid stored values must fall back to the default)
+2. Read/write through `sessionRepo.getSettings()` / `setSettings(patch)` — `useSessionSettings` in the dashboard and the Options "Sessions" card; never `chrome.storage.local` directly
+3. If the setting affects the alarm, `ensureHistoryAlarm()` already re-runs on every `sessionSettings` change via the worker's `storage.onChanged` listener — do not add another listener
+4. Document the new setting in `docs/README.md` (Settings + FAQ) and, if it changes what is stored or for how long, in `PRIVACY_POLICY.md`
 
 ### Adding a new sort mode
 
@@ -457,7 +508,7 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 ## Gotchas & Edge Cases
 
 - **No `manifest.json` file**: The manifest is defined inline in `vite.config.ts`. Don't look for a separate manifest file.
-- **Suspended tabs**: The extension integrates with "The Marvellous Suspender". Suspended tab URLs are wrapped in `chrome-extension://<id>/suspended.html#uri=<real-url>`. The `tabToUrl()` function unwraps them.
+- **Suspended tabs**: The extension integrates with "The Marvellous Suspender". Suspended tab URLs are wrapped in `chrome-extension://<id>/suspended.html#ttl=…&pos=…&uri=<real-url>` with the real URL appended raw (not percent-encoded). Sorting unwraps with `tabToUrl()` in `sort.ts`; capture and the restore sanitiser use `unwrapSuspendedUrl()` in `src/sessions/suspender.ts`, which returns the verbatim remainder after `uri=` — parsing it with `URLSearchParams` would cut the URL at its first `&`. A wrapper that cannot be unwrapped keeps the raw wrapper URL at capture time and is skipped by `sanitizeRestoreUrl` (foreign `chrome-extension://`) at restore time.
 - **Tab group IDs**: `-1` means ungrouped in the Chrome API. The code uses this convention throughout.
 - **Module-scoped state**: `tabSuspenderExtensionId`, `suspendedPrefix`, and `suspendedPrefixLen` are module-level variables in `index.ts`, updated in `sortTabs()`. Sort functions in `sort.ts` receive these as parameters rather than accessing globals, keeping them pure and testable.
 - **Tab ID arrays**: Chrome's `tabs.move()` and `tabs.group()` require `[number, ...number[]]` tuple type for non-empty arrays.
@@ -467,3 +518,9 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 - **`chrome.tabs.Tab.id` and `chrome.windows.Window.id/state/type/left/top/width/height` are optional** in `@types/chrome` 0.2.x — always narrow before use; never `!`. `Tab.windowId`/`groupId` are required (`-1` = no group).
 - **`chrome.storage.local.getKeys()`** needs Chrome 130+; only `reconcile()` uses it, behind a `typeof … === 'function'` guard.
 - **Dashboard singleton**: the sorter still moves/dedupes the dashboard tab like any tab; `openDashboard()` focusing an existing tab is what keeps "close duplicates" harmless.
+- **Alarms do not survive an extension update or reload**: `ensureHistoryAlarm()` re-asserts the periodic alarm from `onInstalled` and `onStartup` (`alarms.create` with an existing name replaces it, no churn). If `historyEnabled` is true and `chrome.alarms.getAll()` in the worker console shows nothing, history has silently stopped — that is the first thing to check.
+- **The first post-launch snapshot is delayed on purpose**: `onStartup` arms the one-shot `history-first` alarm 1 minute out because Chrome is still restoring tabs while `onStartup` runs; a capture then would record half-loaded windows.
+- **`promoteRecoveredSnapshot()` is idempotent**: only snapshots captured _after_ the newest existing recovered one qualify, so a restart with no new snapshot in between never turns another ring entry into a protected one.
+- **History dedupe hashes URLs, not titles**: `contentHash()` covers url/pinned/groupIndex/group title, so a page changing its `<title>` never produces a new snapshot; deleting the snapshot that `historyMeta.lastHash` points at also drops `historyMeta`, otherwise the next capture of that layout would be skipped forever.
+- **Import never trusts input**: everything pasted or uploaded goes through `src/sessions/guards.ts`; imported sessions get fresh ids, `kind: 'saved'`, `origin: 'import'` and never keep `protected`. Netscape HTML is parsed with the module's own tokenizer — `DOMParser` is unavailable under vitest (Node, no DOM).
+- **Open-windows pane listeners live in the page**: `useOpenWindows` registers `chrome.tabs/windows/tabGroups.on*` in `dashboard.html` and coalesces refetches; `windowId`/`tabId` in `SearchEntry` for open tabs are in-memory only and are never written to storage.
