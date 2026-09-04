@@ -16,8 +16,8 @@ describe('segmentTabs', () => {
   it('keeps ungrouped tabs as single-tab segments in strip order', () => {
     const tabs = [tab('https://a/'), tab('https://b/')];
     expect(segmentTabs(tabs)).toEqual([
-      { groupIndex: undefined, tabs: [tabs[0]] },
-      { groupIndex: undefined, tabs: [tabs[1]] },
+      { groupIndex: undefined, tabs: [tabs[0]], startIndex: 0 },
+      { groupIndex: undefined, tabs: [tabs[1]], startIndex: 1 },
     ]);
   });
 
@@ -30,15 +30,20 @@ describe('segmentTabs', () => {
       tab('https://d/', 1),
     ];
     expect(segmentTabs(tabs)).toEqual([
-      { groupIndex: undefined, tabs: [tabs[0]] },
-      { groupIndex: 0, tabs: [tabs[1], tabs[2]] },
-      { groupIndex: undefined, tabs: [tabs[3]] },
-      { groupIndex: 1, tabs: [tabs[4]] },
+      { groupIndex: undefined, tabs: [tabs[0]], startIndex: 0 },
+      { groupIndex: 0, tabs: [tabs[1], tabs[2]], startIndex: 1 },
+      { groupIndex: undefined, tabs: [tabs[3]], startIndex: 3 },
+      { groupIndex: 1, tabs: [tabs[4]], startIndex: 4 },
     ]);
   });
 
   it('starts a new segment when the group index changes between neighbours', () => {
     const tabs = [tab('https://a/', 0), tab('https://b/', 1), tab('https://c/', 0)];
     expect(segmentTabs(tabs).map((segment) => segment.groupIndex)).toEqual([0, 1, 0]);
+  });
+
+  it('numbers each segment with the absolute index of its first tab', () => {
+    const tabs = [tab('https://a/', 0), tab('https://b/', 0), tab('https://c/'), tab('https://d/')];
+    expect(segmentTabs(tabs).map((segment) => segment.startIndex)).toEqual([0, 2, 3]);
   });
 });

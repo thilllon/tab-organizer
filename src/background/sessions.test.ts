@@ -329,11 +329,26 @@ describe('listener wiring', () => {
   it('registers no chrome.tabs / windows / tabGroups listeners (AGENTS.md rule)', async () => {
     await loadWorker();
 
-    // The fake exposes these namespaces without events on purpose: a listener registration
-    // would throw at import time, so reaching this line already proves the rule holds.
-    expect('onCreated' in chrome.tabs).toBe(false);
-    expect('onCreated' in chrome.windows).toBe(false);
-    expect('onCreated' in chrome.tabGroups).toBe(false);
+    // The fake does model these events (the dashboard's open-windows pane needs them), so the
+    // rule is asserted directly: after importing the worker, not one of them has a listener.
+    const tabEvents = [
+      chrome.tabs.onCreated,
+      chrome.tabs.onRemoved,
+      chrome.tabs.onUpdated,
+      chrome.tabs.onMoved,
+      chrome.tabs.onAttached,
+      chrome.tabs.onDetached,
+      chrome.tabs.onActivated,
+      chrome.tabs.onReplaced,
+      chrome.windows.onCreated,
+      chrome.windows.onRemoved,
+      chrome.windows.onFocusChanged,
+      chrome.tabGroups.onCreated,
+      chrome.tabGroups.onUpdated,
+      chrome.tabGroups.onRemoved,
+      chrome.tabGroups.onMoved,
+    ];
+    expect(tabEvents.map((event) => event.hasListeners())).toEqual(tabEvents.map(() => false));
     expect(chrome.alarms.onAlarm.hasListeners()).toBe(true);
     expect(chrome.action.onClicked.hasListeners()).toBe(true);
     expect(chrome.storage.onChanged.hasListeners()).toBe(true);

@@ -3,6 +3,12 @@ import type { TabSnapshot } from '@/types';
 export interface TabSegment {
   groupIndex?: number;
   tabs: TabSnapshot[];
+  /**
+   * Index of this segment's first tab in the window's `tabs` array. Row actions ("Remove from
+   * session", "Close tab") address a tab by that absolute index, which segmenting would otherwise
+   * lose.
+   */
+  startIndex: number;
 }
 
 /**
@@ -12,7 +18,7 @@ export interface TabSegment {
  */
 export function segmentTabs(tabs: TabSnapshot[]): TabSegment[] {
   const segments: TabSegment[] = [];
-  for (const tab of tabs) {
+  tabs.forEach((tab, index) => {
     const last = segments[segments.length - 1];
     if (
       tab.groupIndex !== undefined &&
@@ -22,8 +28,8 @@ export function segmentTabs(tabs: TabSnapshot[]): TabSegment[] {
     ) {
       last.tabs.push(tab);
     } else {
-      segments.push({ groupIndex: tab.groupIndex, tabs: [tab] });
+      segments.push({ groupIndex: tab.groupIndex, tabs: [tab], startIndex: index });
     }
-  }
+  });
   return segments;
 }

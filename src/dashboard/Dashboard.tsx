@@ -3,37 +3,43 @@ import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/dashboard/components/EmptyState';
+import { OpenWindowsPane } from '@/dashboard/components/OpenWindowsPane';
 import { ProgressToast } from '@/dashboard/components/ProgressToast';
 import {
   type PendingRestore,
   RestoreConfirmDialog,
 } from '@/dashboard/components/RestoreConfirmDialog';
-import { SessionCard } from '@/dashboard/components/SessionCard';
+import { type RestoreScope, SessionCard } from '@/dashboard/components/SessionCard';
+import { useOpenWindows } from '@/dashboard/hooks/useOpenWindows';
 import { useRestore } from '@/dashboard/hooks/useRestore';
 import { useSessionIndex } from '@/dashboard/hooks/useSessionIndex';
 import { errorMessage } from '@/dashboard/lib/errors';
 import { needsRestoreConfirm } from '@/dashboard/lib/restore-summary';
 import { pickWindow } from '@/dashboard/lib/session-utils';
-import { captureSession } from '@/sessions/capture';
+import { currentWindowTarget } from '@/dashboard/lib/window-actions';
+import { type CaptureScope, captureSession } from '@/sessions/capture';
 import { ensureUniqueName } from '@/sessions/naming';
 import type { RestoreTarget } from '@/sessions/restore';
 import { sessionRepo } from '@/sessions/storage';
 import type { Session, SessionSettings } from '@/types';
 
-type SaveScope = 'window' | 'all';
-
 const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
 
-const NOTHING_TO_SAVE: Record<SaveScope, string> = {
+const NOTHING_TO_SAVE = {
   window: 'Nothing to save — this window only contains the Sessions dashboard.',
   all: 'Nothing to save — no open window contains anything besides the Sessions dashboard.',
-};
+} as const;
+
+function nothingToSave(scope: CaptureScope): string {
+  return scope === 'all' ? NOTHING_TO_SAVE.all : NOTHING_TO_SAVE.window;
+}
 
 export function Dashboard() {
   const { sessions, loading, error: indexError } = useSessionIndex();
+  const openWindows = useOpenWindows();
   const { restore, progress, running, cancel, cancelling, lastResult, cancelled, dismiss } =
     useRestore();
-  const [saving, setSaving] = useState<SaveScope | undefined>(undefined);
+  const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [pending, setPending] = useState<PendingRestore | undefined>(undefined);
@@ -42,14 +48,14 @@ export function Dashboard() {
   // and the empty state that replaces it once the last session is gone.
   const mainRef = useRef<HTMLElement>(null);
 
-  const save = async (scope: SaveScope) => {
-    setSaving(scope);
+  const save = async (scope: CaptureScope) => {
+    setSaving(true);
     setError(undefined);
     setNotice(undefined);
     try {
       const session = await captureSession(scope);
       if (session.windows.length === 0) {
-        setNotice(NOTHING_TO_SAVE[scope]);
+        setNotice(nothingToSave(scope));
         return;
       }
       // Two saves in the same minute would otherwise share the default name.
@@ -60,7 +66,7 @@ export function Dashboard() {
     } catch (err) {
       setError(errorMessage(err));
     } finally {
-      setSaving(undefined);
+      setSaving(false);
     }
   };
 
@@ -83,16 +89,18 @@ export function Dashboard() {
   };
 
   // `windowIndex`, when given, scopes the restore to a single window of `session`. `pickWindow`
-  // runs in here (inside the try) rather than in the JSX callback, so a bad index (RangeError)
-  // lands in the error banner instead of escaping into the click handler.
+  // and `currentWindowTarget` run in here (inside the try) rather than in the JSX callback, so a
+  // bad index (RangeError) or a window that cannot be identified lands in the error banner
+  // instead of escaping into the click handler.
   const requestRestore = async (
     session: Session,
-    target: RestoreTarget,
+    scope: RestoreScope,
     windowIndex?: number,
   ): Promise<void> => {
     setError(undefined);
     setNotice(undefined);
     try {
+      const target = scope === 'here' ? await currentWindowTarget() : NEW_WINDOWS;
       const scoped = windowIndex === undefined ? session : pickWindow(session, windowIndex);
       if (needsRestoreConfirm(scoped)) {
         const settings = await sessionRepo.getSettings();
@@ -118,25 +126,18 @@ export function Dashboard() {
     mainRef.current?.focus({ preventScroll: true });
   };
 
+  const busy = saving || running;
+
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <div className="mx-auto max-w-6xl p-6">
       <header className="flex flex-wrap items-center gap-3">
         <h1 className="text-lg font-semibold tracking-wide text-primary uppercase">Sessions</h1>
         <div className="ml-auto flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void save('window')}
-            disabled={saving !== undefined || running}
-          >
+          <Button variant="outline" size="sm" onClick={() => void save('window')} disabled={busy}>
             <Save />
             Save this window
           </Button>
-          <Button
-            size="sm"
-            onClick={() => void save('all')}
-            disabled={saving !== undefined || running}
-          >
+          <Button size="sm" onClick={() => void save('all')} disabled={busy}>
             <Layers />
             Save all windows
           </Button>
@@ -159,34 +160,47 @@ export function Dashboard() {
         </p>
       )}
 
-      {/* tabIndex -1: programmatic focus target only (see mainRef); never in the tab order. */}
-      <main ref={mainRef} tabIndex={-1} className="outline-none">
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : sessions.length === 0 ? (
-          <EmptyState
-            onSaveWindow={() => void save('window')}
-            onSaveAll={() => void save('all')}
-            saving={saving !== undefined}
-            running={running}
-          />
-        ) : (
-          <ul className="space-y-3">
-            {sessions.map((summary) => (
-              <SessionCard
-                key={summary.id}
-                summary={summary}
-                restoring={running}
-                onRestore={(session) => requestRestore(session, NEW_WINDOWS)}
-                onRestoreWindow={(session, windowIndex) =>
-                  requestRestore(session, NEW_WINDOWS, windowIndex)
-                }
-                onDeleted={focusList}
-              />
-            ))}
-          </ul>
-        )}
-      </main>
+      {/* One column below `lg`, then open windows on the left at a third of the width. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <OpenWindowsPane
+          windows={openWindows.windows}
+          currentWindowId={openWindows.currentWindowId}
+          loading={openWindows.loading}
+          error={openWindows.error}
+          onSaveWindow={(windowId) => void save({ windowId })}
+          busy={busy}
+        />
+
+        {/* tabIndex -1: programmatic focus target only (see mainRef); never in the tab order. */}
+        <main ref={mainRef} tabIndex={-1} className="min-w-0 outline-none">
+          <h2 className="mb-3 text-sm font-semibold">Saved sessions</h2>
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : sessions.length === 0 ? (
+            <EmptyState
+              onSaveWindow={() => void save('window')}
+              onSaveAll={() => void save('all')}
+              saving={saving}
+              running={running}
+            />
+          ) : (
+            <ul className="space-y-3">
+              {sessions.map((summary) => (
+                <SessionCard
+                  key={summary.id}
+                  summary={summary}
+                  restoring={running}
+                  onRestore={(session, scope) => requestRestore(session, scope)}
+                  onRestoreWindow={(session, windowIndex, scope) =>
+                    requestRestore(session, scope, windowIndex)
+                  }
+                  onDeleted={focusList}
+                />
+              ))}
+            </ul>
+          )}
+        </main>
+      </div>
 
       <RestoreConfirmDialog
         pending={pending}

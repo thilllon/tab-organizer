@@ -341,3 +341,186 @@ describe('chrome fake: failNext and events', () => {
     expect(getChromeFake().state.tabs.size).toBe(0);
   });
 });
+
+describe('chrome fake: tab / window / group events', () => {
+  /** Every event the dashboard's open-windows pane subscribes to, as `name -> emitted args`. */
+  function recordAll(): string[] {
+    const log: string[] = [];
+    chrome.tabs.onCreated.addListener((tab) => log.push(`tabs.onCreated:${String(tab.id)}`));
+    chrome.tabs.onRemoved.addListener((tabId, info) =>
+      log.push(`tabs.onRemoved:${tabId}:${String(info.isWindowClosing)}:${info.windowId}`),
+    );
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo) =>
+      log.push(`tabs.onUpdated:${tabId}:${Object.keys(changeInfo).join(',')}`),
+    );
+    chrome.tabs.onMoved.addListener((tabId, info) =>
+      log.push(`tabs.onMoved:${tabId}:${info.fromIndex}->${info.toIndex}`),
+    );
+    chrome.tabs.onAttached.addListener((tabId, info) =>
+      log.push(`tabs.onAttached:${tabId}:${info.newWindowId}`),
+    );
+    chrome.tabs.onDetached.addListener((tabId, info) =>
+      log.push(`tabs.onDetached:${tabId}:${info.oldWindowId}`),
+    );
+    chrome.tabs.onActivated.addListener((info) =>
+      log.push(`tabs.onActivated:${info.tabId}:${info.windowId}`),
+    );
+    chrome.tabs.onReplaced.addListener((added, removed) =>
+      log.push(`tabs.onReplaced:${added}:${removed}`),
+    );
+    chrome.windows.onCreated.addListener((win) => log.push(`windows.onCreated:${String(win.id)}`));
+    chrome.windows.onRemoved.addListener((id) => log.push(`windows.onRemoved:${id}`));
+    chrome.windows.onFocusChanged.addListener((id) => log.push(`windows.onFocusChanged:${id}`));
+    chrome.tabGroups.onCreated.addListener((g) => log.push(`tabGroups.onCreated:${g.id}`));
+    chrome.tabGroups.onUpdated.addListener((g) =>
+      log.push(`tabGroups.onUpdated:${g.id}:${g.title}`),
+    );
+    chrome.tabGroups.onRemoved.addListener((g) => log.push(`tabGroups.onRemoved:${g.id}`));
+    chrome.tabGroups.onMoved.addListener((g) => log.push(`tabGroups.onMoved:${g.id}`));
+    return log;
+  }
+
+  it('tabs.create fires onCreated, then onActivated when the new tab takes focus', async () => {
+    const log = recordAll();
+    const tab = await chrome.tabs.create({ url: 'https://a.test' });
+    expect(log).toEqual([
+      `tabs.onCreated:${String(tab.id)}`,
+      `tabs.onActivated:${String(tab.id)}:1`,
+    ]);
+  });
+
+  it('a background tabs.create fires onCreated only', async () => {
+    await chrome.tabs.create({ url: 'https://first.test' });
+    const log = recordAll();
+    const tab = await chrome.tabs.create({ url: 'https://a.test', active: false });
+    expect(log).toEqual([`tabs.onCreated:${String(tab.id)}`]);
+  });
+
+  it('tabs.remove fires onRemoved and activates the neighbour', async () => {
+    const a = await chrome.tabs.create({ url: 'https://a.test', active: false });
+    const b = await chrome.tabs.create({ url: 'https://b.test' });
+    if (a.id === undefined || b.id === undefined) {
+      throw new Error('expected ids');
+    }
+    const log = recordAll();
+    await chrome.tabs.remove(b.id);
+    expect(log).toEqual([`tabs.onRemoved:${b.id}:false:1`, `tabs.onActivated:${a.id}:1`]);
+  });
+
+  it('closing the last tab of a window fires onRemoved with isWindowClosing and windows.onRemoved', async () => {
+    const win = await chrome.windows.create({ url: 'https://only.test', focused: false });
+    const tabId = win?.tabs?.[0]?.id;
+    if (win?.id === undefined || tabId === undefined) {
+      throw new Error('expected window and tab');
+    }
+    const log = recordAll();
+    await chrome.tabs.remove(tabId);
+    expect(log).toEqual([`tabs.onRemoved:${tabId}:true:${win.id}`, `windows.onRemoved:${win.id}`]);
+  });
+
+  it('windows.create fires windows.onCreated, onFocusChanged and the tab events', async () => {
+    const log = recordAll();
+    const win = await chrome.windows.create({ url: 'https://w.test' });
+    const tabId = win?.tabs?.[0]?.id;
+    expect(log).toEqual([
+      `windows.onCreated:${String(win?.id)}`,
+      `windows.onFocusChanged:${String(win?.id)}`,
+      `tabs.onCreated:${String(tabId)}`,
+      `tabs.onActivated:${String(tabId)}:${String(win?.id)}`,
+    ]);
+  });
+
+  it('windows.remove fires onRemoved for every tab, then windows.onRemoved', async () => {
+    const win = await chrome.windows.create({ url: 'https://a.test', focused: false });
+    if (win?.id === undefined) {
+      throw new Error('expected window');
+    }
+    await chrome.tabs.create({ windowId: win.id, url: 'https://b.test', active: false });
+    const log = recordAll();
+    await chrome.windows.remove(win.id);
+    const removals = log.filter((entry) => entry.startsWith('tabs.onRemoved:'));
+    expect(removals).toHaveLength(2);
+    expect(removals.every((entry) => entry.includes(':true:'))).toBe(true);
+    expect(log.at(-1)).toBe(`windows.onRemoved:${win.id}`);
+  });
+
+  it('windows.update fires onFocusChanged, with WINDOW_ID_NONE when focus is dropped', async () => {
+    const log = recordAll();
+    await chrome.windows.update(1, { focused: false });
+    await chrome.windows.update(1, { focused: true });
+    await chrome.windows.update(1, { focused: true });
+    expect(log).toEqual(['windows.onFocusChanged:-1', 'windows.onFocusChanged:1']);
+  });
+
+  it('tabs.move fires onMoved inside a window and onDetached/onAttached across windows', async () => {
+    const a = await chrome.tabs.create({ url: 'https://a.test', active: false });
+    const b = await chrome.tabs.create({ url: 'https://b.test', active: false });
+    const other = await chrome.windows.create({ url: 'https://o.test', focused: false });
+    if (a.id === undefined || b.id === undefined || other?.id === undefined) {
+      throw new Error('expected ids');
+    }
+    const log = recordAll();
+    await chrome.tabs.move(b.id, { index: 0 });
+    await chrome.tabs.move(a.id, { windowId: other.id, index: -1 });
+    expect(log).toEqual([
+      `tabs.onMoved:${b.id}:1->0`,
+      `tabs.onDetached:${a.id}:1`,
+      `tabs.onAttached:${a.id}:${other.id}`,
+    ]);
+  });
+
+  it('tabs.update fires onUpdated for url and pinned changes only', async () => {
+    const tab = await chrome.tabs.create({ url: 'https://a.test' });
+    if (tab.id === undefined) {
+      throw new Error('expected id');
+    }
+    const log = recordAll();
+    await chrome.tabs.update(tab.id, { url: 'https://b.test' });
+    await chrome.tabs.update(tab.id, { pinned: true });
+    await chrome.tabs.update(tab.id, { active: true });
+    expect(log).toEqual([`tabs.onUpdated:${tab.id}:url`, `tabs.onUpdated:${tab.id}:pinned`]);
+  });
+
+  it('grouping fires tabGroups.onCreated plus a tabs.onUpdated per member, ungrouping onRemoved', async () => {
+    const a = await chrome.tabs.create({ url: 'https://a.test', active: false });
+    const b = await chrome.tabs.create({ url: 'https://b.test', active: false });
+    if (a.id === undefined || b.id === undefined) {
+      throw new Error('expected ids');
+    }
+    const log = recordAll();
+    const groupId = await chrome.tabs.group({ tabIds: [a.id, b.id] });
+    await chrome.tabGroups.update(groupId, { title: 'Work' });
+    await chrome.tabGroups.move(groupId, { index: -1 });
+    await chrome.tabs.ungroup([a.id, b.id]);
+    expect(log).toEqual([
+      `tabGroups.onCreated:${groupId}`,
+      `tabs.onUpdated:${a.id}:groupId`,
+      `tabs.onUpdated:${b.id}:groupId`,
+      `tabGroups.onUpdated:${groupId}:Work`,
+      `tabGroups.onMoved:${groupId}`,
+      `tabs.onUpdated:${a.id}:groupId`,
+      `tabs.onUpdated:${b.id}:groupId`,
+      `tabGroups.onRemoved:${groupId}`,
+    ]);
+  });
+
+  it('fire.tabReplaced reaches tabs.onReplaced listeners', () => {
+    const log = recordAll();
+    getChromeFake().fire.tabReplaced(9, 8);
+    expect(log).toEqual(['tabs.onReplaced:9:8']);
+  });
+
+  it('removeListener stops delivery', async () => {
+    let calls = 0;
+    const listener = () => {
+      calls += 1;
+    };
+    chrome.tabs.onCreated.addListener(listener);
+    expect(chrome.tabs.onCreated.hasListener(listener)).toBe(true);
+    await chrome.tabs.create({ url: 'https://a.test', active: false });
+    chrome.tabs.onCreated.removeListener(listener);
+    expect(chrome.tabs.onCreated.hasListener(listener)).toBe(false);
+    await chrome.tabs.create({ url: 'https://b.test', active: false });
+    expect(calls).toBe(1);
+  });
+});

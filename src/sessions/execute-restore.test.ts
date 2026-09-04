@@ -538,6 +538,71 @@ describe('executeRestore', () => {
     vi.restoreAllMocks();
   });
 
+  it('restores into an existing window: groups recreated, nothing focused, no placeholder', async () => {
+    const fake = getChromeFake();
+    const [existingWindowId] = [...fake.state.windows.keys()];
+    await chrome.tabs.create({
+      windowId: existingWindowId,
+      url: 'https://existing.example/',
+      active: true,
+    });
+    const other = await chrome.windows.create({ url: 'https://other.example/', focused: true });
+    const updateWindowSpy = vi.spyOn(chrome.windows, 'update');
+
+    const result = await executeRestore(
+      makePlan([WINDOW_A], { target: { kind: 'window', windowId: existingWindowId } }),
+    );
+
+    expect(result.errors).toEqual([]);
+    // The snapshot's groups are recreated fresh in the target window, styled and collapsed.
+    const groups = [...fake.state.groups.values()].filter(
+      (group) => group.windowId === existingWindowId,
+    );
+    expect(groups.map((group) => [group.title, group.color, group.collapsed])).toEqual([
+      ['Work', 'blue', false],
+      ['News', 'red', true],
+    ]);
+    expect(stripOf(existingWindowId).map((row) => [row.url, row.pinned, row.group])).toEqual([
+      ['https://pinned.example/', true, null],
+      ['https://existing.example/', false, null],
+      ['https://work.example/a', false, 'Work'],
+      ['https://work.example/b', false, 'Work'],
+      ['https://news.example/', false, 'News'],
+      ['https://loose.example/', false, null],
+    ]);
+    // WINDOW_A is `focused: true`, but a restore into an existing window never steals focus.
+    expect(updateWindowSpy.mock.calls.filter(([, info]) => info.focused !== undefined)).toEqual([]);
+    expect(fake.state.windows.get(other?.id ?? -1)?.focused).toBe(true);
+    vi.restoreAllMocks();
+  });
+
+  it('appends every window of a multi-window session into the one target window', async () => {
+    const fake = getChromeFake();
+    const [existingWindowId] = [...fake.state.windows.keys()];
+    const before = snapshotWindowIds();
+
+    const result = await executeRestore(
+      makePlan([WINDOW_B, WINDOW_A], { target: { kind: 'window', windowId: existingWindowId } }),
+    );
+
+    expect(newWindowIds(before)).toHaveLength(0);
+    expect(result.restored).toBe(7);
+    expect(stripOf(existingWindowId).map((row) => row.url)).toEqual([
+      'https://pinned.example/',
+      'https://b1.example/',
+      'https://b2.example/',
+      'https://work.example/a',
+      'https://work.example/b',
+      'https://news.example/',
+      'https://loose.example/',
+    ]);
+    // Each snapshot window keeps its own groups even when they land in one browser window.
+    expect([...fake.state.groups.values()].map((group) => group.title).sort()).toEqual([
+      'News',
+      'Work',
+    ]);
+  });
+
   it('restores a window spanning multiple chunks in full, with cumulative progress and correct groups', async () => {
     const progress: [number, number][] = [];
     const before = snapshotWindowIds();

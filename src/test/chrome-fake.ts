@@ -120,6 +120,11 @@ export interface FakeFire {
   command(name: string): void;
   alarm(name: string): void;
   actionClicked(tab?: chrome.tabs.Tab): void;
+  /**
+   * `chrome.tabs.onReplaced` (prerender/instant swap). No fake mutation produces it, so it is
+   * driven explicitly; the dashboard's open-windows pane listens for it.
+   */
+  tabReplaced(addedTabId: number, removedTabId: number): void;
 }
 
 export interface ChromeFake {
@@ -132,6 +137,8 @@ export interface ChromeFake {
 }
 
 const NO_GROUP = -1;
+/** `chrome.windows.WINDOW_ID_NONE` — reported by `onFocusChanged` when no window has focus. */
+const WINDOW_ID_NONE = -1;
 
 // ---------------------------------------------------------------------------
 // Converters (fake state -> @types/chrome shapes)
@@ -209,6 +216,36 @@ export function createChromeFake(): ChromeFake {
   });
   state.nextId.window += 1;
 
+  // ---- events emitted by tab/window/group mutations ------------------------
+  //
+  // Registered by the dashboard's live open-windows pane (src/dashboard/lib/open-windows.ts),
+  // never by the service worker (AGENTS.md: no tab listeners there). Every mutating method of the
+  // fake emits the matching event *after* the state change, so a listener always observes the new
+  // state. Only the events the extension actually listens to are modelled.
+
+  const onTabCreated = makeEvent<(tab: chrome.tabs.Tab) => void>();
+  const onTabRemoved = makeEvent<(tabId: number, removeInfo: chrome.tabs.OnRemovedInfo) => void>();
+  const onTabUpdated =
+    makeEvent<
+      (tabId: number, changeInfo: chrome.tabs.OnUpdatedInfo, tab: chrome.tabs.Tab) => void
+    >();
+  const onTabMoved = makeEvent<(tabId: number, moveInfo: chrome.tabs.OnMovedInfo) => void>();
+  const onTabAttached =
+    makeEvent<(tabId: number, attachInfo: chrome.tabs.OnAttachedInfo) => void>();
+  const onTabDetached =
+    makeEvent<(tabId: number, detachInfo: chrome.tabs.OnDetachedInfo) => void>();
+  const onTabActivated = makeEvent<(activeInfo: chrome.tabs.OnActivatedInfo) => void>();
+  const onTabReplaced = makeEvent<(addedTabId: number, removedTabId: number) => void>();
+
+  const onWindowCreated = makeEvent<(window: chrome.windows.Window) => void>();
+  const onWindowRemoved = makeEvent<(windowId: number) => void>();
+  const onWindowFocusChanged = makeEvent<(windowId: number) => void>();
+
+  const onGroupCreated = makeEvent<(group: chrome.tabGroups.TabGroup) => void>();
+  const onGroupUpdated = makeEvent<(group: chrome.tabGroups.TabGroup) => void>();
+  const onGroupRemoved = makeEvent<(group: chrome.tabGroups.TabGroup) => void>();
+  const onGroupMoved = makeEvent<(group: chrome.tabGroups.TabGroup) => void>();
+
   // ---- failure injection -------------------------------------------------
 
   const failures = new Map<FailableApi, { remaining: number; message: string }>();
@@ -248,8 +285,12 @@ export function createChromeFake(): ChromeFake {
   }
 
   function activate(tab: FakeTab): void {
+    const changed = !tab.active;
     for (const sibling of stripOf(tab.windowId)) {
       sibling.active = sibling.id === tab.id;
+    }
+    if (changed) {
+      onTabActivated.emit({ tabId: tab.id, windowId: tab.windowId });
     }
   }
 
@@ -322,6 +363,7 @@ export function createChromeFake(): ChromeFake {
     });
     state.tabs.set(tab.id, tab);
     reindex(windowId);
+    onTabCreated.emit(toChromeTab(tab));
     const shouldActivate = (props.active ?? true) || strip.length === 1;
     if (shouldActivate) {
       activate(tab);
@@ -333,15 +375,20 @@ export function createChromeFake(): ChromeFake {
     const tab = requireTab(tabId);
     state.tabs.delete(tabId);
     const strip = stripOf(tab.windowId);
+    // Chrome's own rule: the flag is set when this removal is what empties (and closes) the window.
+    const windowClosing = strip.length === 0;
     if (strip.length === 0) {
       state.windows.delete(tab.windowId);
     } else {
       reindex(tab.windowId);
-      if (tab.active) {
-        const next = strip[Math.min(tab.index, strip.length - 1)];
-        if (next) {
-          activate(next);
-        }
+    }
+    onTabRemoved.emit(tab.id, { isWindowClosing: windowClosing, windowId: tab.windowId });
+    if (strip.length === 0) {
+      onWindowRemoved.emit(tab.windowId);
+    } else if (tab.active) {
+      const next = strip[Math.min(tab.index, strip.length - 1)];
+      if (next) {
+        activate(next);
       }
     }
     dropEmptyGroups();
@@ -352,6 +399,7 @@ export function createChromeFake(): ChromeFake {
       const members = [...state.tabs.values()].some((tab) => tab.groupId === group.id);
       if (!members) {
         state.groups.delete(group.id);
+        onGroupRemoved.emit(toChromeGroup(group));
       }
     }
   }
@@ -524,8 +572,10 @@ export function createChromeFake(): ChromeFake {
     },
     async update(tabId: number, props: chrome.tabs.UpdateProperties): Promise<chrome.tabs.Tab> {
       const tab = requireTab(tabId);
+      const changeInfo: chrome.tabs.OnUpdatedInfo = {};
       if (props.url !== undefined) {
         tab.url = props.url;
+        changeInfo.url = props.url;
       }
       if (props.pinned !== undefined) {
         tab.pinned = props.pinned;
@@ -534,6 +584,10 @@ export function createChromeFake(): ChromeFake {
           dropEmptyGroups();
         }
         reindex(tab.windowId);
+        changeInfo.pinned = props.pinned;
+      }
+      if (Object.keys(changeInfo).length > 0) {
+        onTabUpdated.emit(tab.id, changeInfo, toChromeTab(tab));
       }
       if (props.active) {
         activate(tab);
@@ -557,6 +611,7 @@ export function createChromeFake(): ChromeFake {
         const targetWindowId = props.windowId ?? tab.windowId;
         requireWindow(targetWindowId);
         const sourceWindowId = tab.windowId;
+        const fromIndex = tab.index;
         tab.windowId = targetWindowId;
         const strip = stripOf(targetWindowId).filter((entry) => entry.id !== tab.id);
         const position = props.index < 0 ? strip.length : Math.min(props.index, strip.length);
@@ -567,6 +622,14 @@ export function createChromeFake(): ChromeFake {
         reindex(targetWindowId);
         if (sourceWindowId !== targetWindowId) {
           reindex(sourceWindowId);
+          onTabDetached.emit(tab.id, { oldWindowId: sourceWindowId, oldPosition: fromIndex });
+          onTabAttached.emit(tab.id, { newWindowId: targetWindowId, newPosition: tab.index });
+        } else if (tab.index !== fromIndex) {
+          onTabMoved.emit(tab.id, {
+            windowId: targetWindowId,
+            fromIndex,
+            toIndex: tab.index,
+          });
         }
         moved.push(tab);
       }
@@ -604,9 +667,11 @@ export function createChromeFake(): ChromeFake {
         };
         state.nextId.group += 1;
         state.groups.set(group.id, group);
+        onGroupCreated.emit(toChromeGroup(group));
       }
       for (const tab of members) {
         tab.groupId = group.id;
+        onTabUpdated.emit(tab.id, { groupId: group.id }, toChromeTab(tab));
       }
       dropEmptyGroups();
       return group.id;
@@ -614,7 +679,9 @@ export function createChromeFake(): ChromeFake {
     async ungroup(tabIds: number | number[]): Promise<void> {
       const ids = Array.isArray(tabIds) ? tabIds : [tabIds];
       for (const id of ids) {
-        requireTab(id).groupId = NO_GROUP;
+        const tab = requireTab(id);
+        tab.groupId = NO_GROUP;
+        onTabUpdated.emit(tab.id, { groupId: NO_GROUP }, toChromeTab(tab));
       }
       dropEmptyGroups();
     },
@@ -638,6 +705,14 @@ export function createChromeFake(): ChromeFake {
     async get(tabId: number): Promise<chrome.tabs.Tab> {
       return toChromeTab(requireTab(tabId));
     },
+    onCreated: onTabCreated,
+    onRemoved: onTabRemoved,
+    onUpdated: onTabUpdated,
+    onMoved: onTabMoved,
+    onAttached: onTabAttached,
+    onDetached: onTabDetached,
+    onActivated: onTabActivated,
+    onReplaced: onTabReplaced,
   };
 
   // ---- windows -------------------------------------------------------------
@@ -702,6 +777,10 @@ export function createChromeFake(): ChromeFake {
         }
       }
       state.windows.set(window.id, window);
+      onWindowCreated.emit(toChromeWindow(window, true));
+      if (window.focused) {
+        onWindowFocusChanged.emit(window.id);
+      }
       const urls =
         data?.url === undefined ? ['about:blank'] : Array.isArray(data.url) ? data.url : [data.url];
       urls.forEach((url, index) => {
@@ -718,12 +797,16 @@ export function createChromeFake(): ChromeFake {
         window.state = info.state;
       }
       if (info.focused !== undefined) {
+        const wasFocused = window.focused;
         if (info.focused) {
           for (const other of state.windows.values()) {
             other.focused = false;
           }
         }
         window.focused = info.focused;
+        if (wasFocused !== info.focused) {
+          onWindowFocusChanged.emit(info.focused ? window.id : WINDOW_ID_NONE);
+        }
       }
       if (info.left !== undefined) {
         window.left = info.left;
@@ -743,10 +826,15 @@ export function createChromeFake(): ChromeFake {
       requireWindow(windowId);
       for (const tab of stripOf(windowId)) {
         state.tabs.delete(tab.id);
+        onTabRemoved.emit(tab.id, { isWindowClosing: true, windowId });
       }
       state.windows.delete(windowId);
+      onWindowRemoved.emit(windowId);
       dropEmptyGroups();
     },
+    onCreated: onWindowCreated,
+    onRemoved: onWindowRemoved,
+    onFocusChanged: onWindowFocusChanged,
   };
 
   // ---- tabGroups -----------------------------------------------------------
@@ -775,6 +863,7 @@ export function createChromeFake(): ChromeFake {
       if (props.collapsed !== undefined) {
         group.collapsed = props.collapsed;
       }
+      onGroupUpdated.emit(toChromeGroup(group));
       return toChromeGroup(group);
     },
     async move(
@@ -786,11 +875,16 @@ export function createChromeFake(): ChromeFake {
         requireWindow(props.windowId);
         group.windowId = props.windowId;
       }
+      onGroupMoved.emit(toChromeGroup(group));
       return toChromeGroup(group);
     },
     async get(groupId: number): Promise<chrome.tabGroups.TabGroup> {
       return toChromeGroup(requireGroup(groupId));
     },
+    onCreated: onGroupCreated,
+    onUpdated: onGroupUpdated,
+    onRemoved: onGroupRemoved,
+    onMoved: onGroupMoved,
   };
 
   // ---- runtime / contextMenus / commands / action / alarms / extension -----
@@ -903,6 +997,9 @@ export function createChromeFake(): ChromeFake {
     },
     alarm(name) {
       onAlarm.emit({ name, persistAcrossSessions: true, scheduledTime: Date.now() });
+    },
+    tabReplaced(addedTabId, removedTabId) {
+      onTabReplaced.emit(addedTabId, removedTabId);
     },
     actionClicked(tab) {
       if (tab) {

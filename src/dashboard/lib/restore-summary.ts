@@ -1,5 +1,5 @@
 import { pluralize } from '@/dashboard/lib/format';
-import type { RestoreResult } from '@/sessions/restore';
+import type { RestoreResult, RestoreTarget } from '@/sessions/restore';
 import type { Session } from '@/types';
 
 /** Spec §6: confirm (with the lazy checkbox) when a restore would open more than 100 tabs. */
@@ -11,6 +11,17 @@ export function countTabs(session: Session): number {
 
 export function needsRestoreConfirm(session: Session): boolean {
   return countTabs(session) > RESTORE_CONFIRM_THRESHOLD;
+}
+
+/**
+ * One sentence for the confirm dialog: a `newWindows` restore opens windows, a `window` restore
+ * appends to the one the dashboard is in and opens none (spec §6 "restore into current window").
+ */
+export function formatRestoreDestination(session: Session, target: RestoreTarget): string {
+  if (target.kind === 'window') {
+    return `${session.name} will be added to this window.`;
+  }
+  return `${session.name} will open ${pluralize(session.windows.length, 'window')}.`;
 }
 
 // executeRestore records group/activation/window-state failures as `errors` entries whose `url`

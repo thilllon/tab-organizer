@@ -45,6 +45,29 @@ describe('captureSession', () => {
     expect(session.name).toMatch(/· 1 window · 1 tab$/);
   });
 
+  it('{ windowId } captures that window whatever has focus', async () => {
+    const target = await seedWindow(['https://a.example/', 'https://a.example/2'], false);
+    await seedWindow(['https://b.example/'], true);
+
+    const session = await captureSession({ windowId: target });
+
+    expect(session.windows).toHaveLength(1);
+    expect(session.windows[0].tabs.map((t) => t.url)).toEqual([
+      'https://a.example/',
+      'https://a.example/2',
+    ]);
+    expect(session.name).toMatch(/· 1 window · 2 tabs$/);
+  });
+
+  it('{ windowId } of a window that is gone yields no windows', async () => {
+    await seedWindow(['https://a.example/'], true);
+
+    const session = await captureSession({ windowId: 9999 }, 'Gone');
+
+    expect(session.windows).toEqual([]);
+    expect(session.name).toBe('Gone');
+  });
+
   it('uses the given name verbatim and drops own extension pages', async () => {
     const fake = getChromeFake();
     await seedWindow(['https://a.example/', chrome.runtime.getURL('dashboard.html')], true);

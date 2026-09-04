@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { TabRow } from '@/dashboard/components/TabRow';
@@ -9,9 +10,19 @@ import type { GroupSnapshot, TabSnapshot } from '@/types';
 export interface GroupSectionProps {
   group: GroupSnapshot;
   tabs: TabSnapshot[];
+  /** Index of `tabs[0]` in the window's tab strip; row callbacks get absolute indices. */
+  startIndex: number;
+  onOpenTab?(tabIndex: number): Promise<string | undefined> | undefined;
+  renderTabActions?(tabIndex: number): ReactNode;
 }
 
-export function GroupSection({ group, tabs }: GroupSectionProps) {
+export function GroupSection({
+  group,
+  tabs,
+  startIndex,
+  onOpenTab,
+  renderTabActions,
+}: GroupSectionProps) {
   const [open, setOpen] = useState(!group.collapsed);
 
   return (
@@ -33,8 +44,13 @@ export function GroupSection({ group, tabs }: GroupSectionProps) {
         <CollapsibleContent>
           <ul className="ml-5 border-l pl-2">
             {tabs.map((tab, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.
-              <TabRow key={`${index}-${tab.url}`} tab={tab} />
+              <TabRow
+                // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.
+                key={`${index}-${tab.url}`}
+                tab={tab}
+                onOpen={onOpenTab === undefined ? undefined : () => onOpenTab(startIndex + index)}
+                actions={renderTabActions?.(startIndex + index)}
+              />
             ))}
           </ul>
         </CollapsibleContent>

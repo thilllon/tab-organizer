@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Session } from '@/types';
 import {
   countTabs,
+  formatRestoreDestination,
   formatRestoreSummary,
   needsRestoreConfirm,
   RESTORE_CONFIRM_THRESHOLD,
@@ -40,6 +41,23 @@ describe('countTabs / needsRestoreConfirm', () => {
     expect(RESTORE_CONFIRM_THRESHOLD).toBe(100);
     expect(needsRestoreConfirm(sessionWithTabs(100))).toBe(false);
     expect(needsRestoreConfirm(sessionWithTabs(50, 51))).toBe(true);
+  });
+});
+
+describe('formatRestoreDestination', () => {
+  it('counts the windows a newWindows restore opens', () => {
+    expect(formatRestoreDestination(sessionWithTabs(1, 2), { kind: 'newWindows' })).toBe(
+      'n will open 2 windows.',
+    );
+    expect(formatRestoreDestination(sessionWithTabs(1), { kind: 'newWindows' })).toBe(
+      'n will open 1 window.',
+    );
+  });
+
+  it('says nothing about windows when restoring into an existing one', () => {
+    expect(formatRestoreDestination(sessionWithTabs(1, 2), { kind: 'window', windowId: 7 })).toBe(
+      'n will be added to this window.',
+    );
   });
 });
 

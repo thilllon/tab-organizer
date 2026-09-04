@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type CaptureOptions, captureWindows } from './capture';
+import { type CaptureOptions, captureWindows, captureWindowsWithIds } from './capture';
 
 const SUSPENDED_PREFIX = 'chrome-extension://suspenderid/suspended.html#';
 
@@ -424,5 +424,70 @@ describe('captureWindows', () => {
     expect(json).not.toContain('"id"');
     expect(json).not.toContain('windowId');
     expect(json).not.toContain('groupId');
+  });
+});
+
+describe('captureWindowsWithIds', () => {
+  it('carries the window, group and tab runtime ids alongside the snapshot fields', () => {
+    const groups = [makeGroup({ id: 100, title: 'G', color: 'red', collapsed: true })];
+    const win = makeWindow({
+      id: 7,
+      tabs: tabsInOrder(
+        { id: 11, url: 'https://p.com/', pinned: true },
+        { id: 12, url: 'https://a.com/', groupId: 100 },
+      ),
+    });
+
+    const [view] = captureWindowsWithIds([win], groups, OPTIONS);
+
+    expect(view.windowId).toBe(7);
+    expect(view.groups).toEqual([{ title: 'G', color: 'red', collapsed: true, groupId: 100 }]);
+    expect(view.tabs).toEqual([
+      { url: 'https://p.com/', title: 'Example', pinned: true, active: false, tabId: 11 },
+      {
+        url: 'https://a.com/',
+        title: 'Example',
+        pinned: false,
+        active: false,
+        groupIndex: 0,
+        tabId: 12,
+      },
+    ]);
+  });
+
+  it('keeps a window left with no capturable tabs, unlike captureWindows', () => {
+    const win = makeWindow({
+      id: 3,
+      tabs: tabsInOrder({ url: 'chrome-extension://fakeextid/dashboard.html' }),
+    });
+
+    expect(captureWindows([win], [], OPTIONS)).toEqual([]);
+    const views = captureWindowsWithIds([win], [], OPTIONS);
+    expect(views).toHaveLength(1);
+    expect(views[0]).toMatchObject({ windowId: 3, tabs: [], groups: [] });
+  });
+
+  it('still drops incognito and non-normal windows, and tabs without an id', () => {
+    const incognito = makeWindow({ id: 1, incognito: true, tabs: tabsInOrder({}) });
+    const popup = makeWindow({ id: 2, type: 'popup', tabs: tabsInOrder({}) });
+    const normal = makeWindow({
+      id: 3,
+      tabs: [
+        makeTab({ id: undefined, index: 0, url: 'https://no-id.com/' }),
+        makeTab({ id: 42, index: 1, url: 'https://keep.com/' }),
+      ],
+    });
+
+    const views = captureWindowsWithIds([incognito, popup, normal], [], OPTIONS);
+
+    expect(views.map((view) => view.windowId)).toEqual([3]);
+    expect(views[0].tabs.map((tab) => tab.tabId)).toEqual([42]);
+  });
+
+  it('drops a window that has no runtime id', () => {
+    const win = makeWindow({ id: undefined, tabs: tabsInOrder({}) });
+
+    expect(captureWindowsWithIds([win], [], OPTIONS)).toEqual([]);
+    expect(captureWindows([win], [], OPTIONS)).toHaveLength(1);
   });
 });

@@ -207,6 +207,39 @@ export const sessionRepo = {
     });
   },
 
+  /**
+   * Read-modify-write of one session under the lock (spec §12 Phase 2 — editing a saved session).
+   * `mutate` receives the stored body and returns the replacement, or `null` to delete the session
+   * (removing the last window of a session is a delete). The body is rewritten first and the index
+   * entry re-derived from it, so counts and `bytes` always describe what is stored.
+   *
+   * `updatedAt` is written exactly as `mutate` leaves it: an in-place edit keeps the session where
+   * it is in the newest-first list instead of jumping it to the top. Resolves with the session as
+   * written, or `null` when it was deleted; throws when `id` has no body.
+   */
+  update(id: SessionId, mutate: (session: Session) => Session | null): Promise<Session | null> {
+    return withLock(async () => {
+      const existing = await readBody(id);
+      if (existing === undefined) {
+        throw new Error(`Session not found: ${id}`);
+      }
+      const next = mutate(existing);
+      if (next === null) {
+        // Same order as remove(): index read (and validated) first, then body, then index.
+        const index = await readIndex();
+        await chrome.storage.local.remove(sessionKey(id));
+        await writeIndex(index.sessions.filter((summary) => summary.id !== id));
+        return null;
+      }
+      if (next.id !== id) {
+        // Would write the body under a different key and leave the original orphaned.
+        throw new TypeError(`update() must not change the session id (${id} -> ${next.id})`);
+      }
+      await writeBodyAndIndex(next);
+      return next;
+    });
+  },
+
   remove(id: SessionId): Promise<void> {
     return withLock(async () => {
       // Index read first (validated), then body, then index -- see writeBodyAndIndex.

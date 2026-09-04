@@ -335,6 +335,90 @@ describe('sessionRepo.rename', () => {
   });
 });
 
+describe('sessionRepo.update', () => {
+  it('rewrites the body and re-derives the summary counts and bytes', async () => {
+    await sessionRepo.put(
+      makeSession({
+        id: 'id-a',
+        windows: [makeWindow(['https://a.com/', 'https://b.com/']), makeWindow(['https://c.com/'])],
+      }),
+    );
+    const before = (await sessionRepo.listSummaries())[0];
+
+    const written = await sessionRepo.update('id-a', (session) => ({
+      ...session,
+      windows: session.windows.slice(0, 1),
+    }));
+
+    expect(written?.windows).toHaveLength(1);
+    expect((await sessionRepo.get('id-a'))?.windows).toHaveLength(1);
+    const after = (await sessionRepo.listSummaries())[0];
+    expect(after.windowCount).toBe(1);
+    expect(after.tabCount).toBe(2);
+    expect(after.bytes).toBeLessThan(before.bytes);
+  });
+
+  it('leaves updatedAt to the mutate function, keeping the list order', async () => {
+    await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
+    vi.setSystemTime(6_000);
+    await sessionRepo.put(makeSession({ id: 'id-b', name: 'B' }));
+    vi.setSystemTime(9_000);
+
+    await sessionRepo.update('id-a', (session) => ({ ...session, name: 'A edited' }));
+
+    expect((await sessionRepo.get('id-a'))?.updatedAt).toBe(5_000);
+    expect((await sessionRepo.listSummaries()).map((s) => s.name)).toEqual(['B', 'A edited']);
+  });
+
+  it('deletes the session, body and index entry, when mutate returns null', async () => {
+    const fake = getChromeFake();
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+    await sessionRepo.put(makeSession({ id: 'id-b' }));
+
+    expect(await sessionRepo.update('id-a', () => null)).toBeNull();
+
+    expect(fake.state.local.has(sessionKey('id-a'))).toBe(false);
+    expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['id-b']);
+  });
+
+  it('writes the body before the index', async () => {
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+    const setSpy = vi.spyOn(chrome.storage.local, 'set');
+
+    await sessionRepo.update('id-a', (session) => ({ ...session, name: 'Edited' }));
+
+    expect(setSpy.mock.calls.map(([items]) => Object.keys(items)[0])).toEqual([
+      sessionKey('id-a'),
+      INDEX_KEY,
+    ]);
+  });
+
+  it('runs under the sessions lock', async () => {
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+    const requestSpy = vi.spyOn(navigator.locks, 'request');
+
+    await sessionRepo.update('id-a', (session) => session);
+
+    expect(requestSpy.mock.calls[0][0]).toBe(LOCK_NAME);
+  });
+
+  it('rejects for an unknown id', async () => {
+    await expect(sessionRepo.update('missing', (session) => session)).rejects.toThrow(
+      'Session not found: missing',
+    );
+  });
+
+  it('refuses a mutate that changes the session id', async () => {
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+
+    await expect(
+      sessionRepo.update('id-a', (session) => ({ ...session, id: 'id-other' })),
+    ).rejects.toThrow('update() must not change the session id');
+    expect((await sessionRepo.get('id-a'))?.id).toBe('id-a');
+    expect(await sessionRepo.get('id-other')).toBeUndefined();
+  });
+});
+
 describe('sessionRepo.remove / removeAll', () => {
   it('removes the body then the index entry', async () => {
     const fake = getChromeFake();

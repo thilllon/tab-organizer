@@ -1,4 +1,4 @@
-import { ChevronRight, Ellipsis, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronRight, Ellipsis, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,14 +15,18 @@ import { WindowTree } from '@/dashboard/components/WindowTree';
 import { useSessionBody } from '@/dashboard/hooks/useSessionBody';
 import { errorMessage } from '@/dashboard/lib/errors';
 import { formatDateTime, formatSessionMeta } from '@/dashboard/lib/format';
+import { removeTabFromSession, removeWindowFromSession } from '@/dashboard/lib/session-edit';
 import { sessionRepo } from '@/sessions/storage';
 import type { Session, SessionSummary } from '@/types';
+
+/** Where a restore goes: brand-new windows, or the window the dashboard itself is in. */
+export type RestoreScope = 'newWindows' | 'here';
 
 export interface SessionCardProps {
   summary: SessionSummary;
   restoring: boolean;
-  onRestore(session: Session): Promise<void>;
-  onRestoreWindow(session: Session, windowIndex: number): Promise<void>;
+  onRestore(session: Session, scope: RestoreScope): Promise<void>;
+  onRestoreWindow(session: Session, windowIndex: number, scope: RestoreScope): Promise<void>;
   /** Called once the session is removed; the card is about to unmount, so move focus elsewhere. */
   onDeleted?(): void;
 }
@@ -150,7 +154,7 @@ export function SessionCard({
     }
   };
 
-  const handleRestore = async () => {
+  const handleRestore = async (scope: RestoreScope) => {
     setBusy(true);
     try {
       const session = body.session ?? (await sessionRepo.get(summary.id));
@@ -159,7 +163,7 @@ export function SessionCard({
         return;
       }
       setError(undefined);
-      await onRestore(session);
+      await onRestore(session, scope);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -167,12 +171,43 @@ export function SessionCard({
     }
   };
 
-  const handleRestoreWindow = (windowIndex: number) => {
+  const handleRestoreWindow = (windowIndex: number, scope: RestoreScope) => {
     if (body.session === undefined) {
       return;
     }
     setError(undefined);
-    void onRestoreWindow(body.session, windowIndex);
+    void onRestoreWindow(body.session, windowIndex, scope);
+  };
+
+  /**
+   * Applies a pure edit (src/dashboard/lib/session-edit.ts) to the stored body under the lock.
+   * `mutate` runs twice on purpose: once here on the loaded body to find out whether the edit
+   * would empty the session -- that asks for confirmation instead of deleting silently -- and once
+   * inside `sessionRepo.update`, on the body as it actually is on disk.
+   */
+  const editSession = async (mutate: (session: Session) => Session | null) => {
+    const loaded = body.session;
+    if (loaded === undefined) {
+      return;
+    }
+    try {
+      if (mutate(loaded) === null) {
+        setConfirmingDelete(true);
+        return;
+      }
+      await sessionRepo.update(summary.id, mutate);
+      setError(undefined);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  const handleRemoveTab = (windowIndex: number, tabIndex: number) => {
+    void editSession((session) => removeTabFromSession(session, windowIndex, tabIndex));
+  };
+
+  const handleRemoveWindow = (windowIndex: number) => {
+    void editSession((session) => removeWindowFromSession(session, windowIndex));
   };
 
   return (
@@ -228,7 +263,11 @@ export function SessionCard({
 
         {summary.kind === 'history' && <Badge variant="secondary">history</Badge>}
 
-        <Button size="sm" onClick={() => void handleRestore()} disabled={busy || restoring}>
+        <Button
+          size="sm"
+          onClick={() => void handleRestore('newWindows')}
+          disabled={busy || restoring}
+        >
           <RotateCcw />
           Restore
         </Button>
@@ -252,6 +291,15 @@ export function SessionCard({
               }
             }}
           >
+            <DropdownMenuItem
+              disabled={busy || restoring}
+              onSelect={() => {
+                void handleRestore('here');
+              }}
+            >
+              <RotateCcw />
+              Restore into this window
+            </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
                 renameRequestedRef.current = true;
@@ -293,8 +341,42 @@ export function SessionCard({
                     key={`window-${index}`}
                     window={window}
                     index={index}
-                    onRestoreWindow={() => handleRestoreWindow(index)}
-                    restoring={busy || restoring}
+                    actions={
+                      <>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => handleRestoreWindow(index, 'newWindows')}
+                          disabled={busy || restoring}
+                        >
+                          <RotateCcw />
+                          Restore window
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => handleRestoreWindow(index, 'here')}
+                          disabled={busy || restoring}
+                        >
+                          <RotateCcw />
+                          Restore window here
+                        </Button>
+                        <Button size="xs" variant="ghost" onClick={() => handleRemoveWindow(index)}>
+                          <X />
+                          Remove window
+                        </Button>
+                      </>
+                    }
+                    renderTabActions={(tabIndex) => (
+                      <Button
+                        size="icon-xs"
+                        variant="ghost"
+                        aria-label="Remove from session"
+                        onClick={() => handleRemoveTab(index, tabIndex)}
+                      >
+                        <X />
+                      </Button>
+                    )}
                   />
                 ))}
               </div>

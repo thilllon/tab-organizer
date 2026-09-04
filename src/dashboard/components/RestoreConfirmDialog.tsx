@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { countTabs } from '@/dashboard/lib/restore-summary';
+import { countTabs, formatRestoreDestination } from '@/dashboard/lib/restore-summary';
 import { isLazyRestore, type RestoreTarget } from '@/sessions/restore';
 import type { Session, SessionSettings } from '@/types';
 
@@ -60,9 +60,8 @@ export function RestoreConfirmDialog({ pending, onConfirm, onCancel }: RestoreCo
         <DialogHeader>
           <DialogTitle>Restore {tabCount} tabs?</DialogTitle>
           <DialogDescription>
-            {shown?.session.name ?? ''} will open {shown?.session.windows.length ?? 0}{' '}
-            {shown !== undefined && shown.session.windows.length === 1 ? 'window' : 'windows'}.
-            Large restores can take a while and use a lot of memory.
+            {shown === undefined ? '' : formatRestoreDestination(shown.session, shown.target)} Large
+            restores can take a while and use a lot of memory.
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center gap-2">
