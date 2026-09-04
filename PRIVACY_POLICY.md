@@ -30,7 +30,7 @@ Your sorting preferences (the grouping mode and how duplicate tabs are handled) 
 
 Automatic snapshots are **on by default**. Every 5 minutes (you can choose 10 or 30 instead), and each time you click the icon to sort, the extension records the layout of your open windows as described above, but only when something changed since the last snapshot. Snapshots are stored in the same local storage as saved sessions and are subject to the same rules.
 
-To turn snapshots off, open Options (right-click the icon → Options) or the settings in the Sessions dashboard and switch automatic snapshots off. With snapshots off, no timer exists and the extension runs only when you use it.
+To turn snapshots off, open Options (right-click the icon → Options) or the settings in the Sessions dashboard and switch automatic snapshots off. With snapshots off, no timer exists. The extension still wakes briefly when Chrome starts, when it is installed or updated, and when you change a setting, to keep its own saved data tidy; none of that touches the network.
 
 ## Data Retention
 
