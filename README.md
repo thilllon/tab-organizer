@@ -53,11 +53,11 @@ Pin the icon, click it, done — every tab in the window is sorted and grouped b
 | **▸ Duplicate detection**     | Leave duplicates alone, close all but one, or collect them into a labeled group to review first.                                                                                                                                                                                                                                      |
 | **▸ Pinned & suspended tabs** | Pinned tabs stay put unless you say otherwise; tabs suspended by The Marvellous Suspender sort by their real URL.                                                                                                                                                                                                                     |
 | **▸ Sessions**                | Right-click the icon → save this window or all windows. The full-page Sessions dashboard lists open windows, saved sessions and history, restores exactly (order, pinned, groups, active tab, window state) into new windows or the current one, searches every tab, and imports/exports JSON, Markdown, text, HTML bookmarks or CSV. |
-| **▸ Snapshots & recovery**    | Every 5 minutes (only when something changed) a snapshot of all open windows is kept locally — the 20 most recent, protect any to keep it. After a crash, "Previous session (recovered)" is one click away. On by default, off in one click.                                                                                          |
+| **▸ Snapshots & recovery**    | Every 5 minutes (only when something changed) a snapshot of all open windows is kept locally — the 20 most recent by default, and you choose the interval and how many to keep; protect any to keep it for good. After a crash, "Previous session (recovered)" is one click away. On by default, off in one click.                    |
 
 ## Settings
 
-Right-click the icon → **Options** to choose the grouping level, how duplicates are handled, and whether automatic snapshots run (and how often).
+Right-click the icon → **Options** to choose the grouping level, how duplicates are handled, and the session settings: automatic snapshots on/off, their interval, how many to keep, and the lazy-restore mode.
 
 <p align="center">
   <img src="screenshots/screenshot-1280x800.png" alt="Options page" width="640" />
@@ -75,10 +75,10 @@ The dashboard is a full extension page (`dashboard.html`), opened once and re-fo
 
 - **Open windows** — a live view of every window and tab; save, close or jump to any of them, or restore a saved window _into_ the current one.
 - **Saved sessions** — rename inline, expand to windows → groups → tabs with site icons, open a single tab in the background, remove a tab or window from a session, restore a session or one window (new windows, exact order, pinned tabs, groups incl. collapsed, active tab, window state), delete with confirmation. Restores run in batches with progress and Cancel; more than 50 tabs load lazily, more than 100 ask first; unopenable URLs are skipped and reported.
-- **History** — automatic snapshots every 5 min (or 10/30; on by default, off in Options or the dashboard settings), deduplicated, 20 kept, protect / save as session / delete / delete all unprotected, and a "Previous session (recovered)" entry after Chrome restarts.
-- **Search** — one box across open tabs, saved sessions and (optionally) history; `/` focuses it, `Esc` clears, arrows move, `Enter` opens.
-- **Import / Export** — JSON (round-trips exactly), Markdown, plain text, Netscape HTML (imports into Chrome bookmarks), CSV, per group / window / session / everything, plus _Copy links_ and _Copy as Markdown_. Import from a file or pasted text with a preview.
-- **Storage meter** with _Delete all session data_, and a dark theme.
+- **History** — automatic snapshots every 5 min (or 10/30; on by default, off in Options or the dashboard settings), deduplicated, the newest 20 kept by default, protect / save as session / delete / delete all unprotected, and a "Previous session (recovered)" entry after Chrome restarts.
+- **Search** — one box across open tabs, saved sessions and (optionally) history; `/` focuses it from anywhere on the page, `Esc` clears, arrows move, `Enter` opens the highlighted result.
+- **Import / Export** — per group / window / session: JSON (round-trips exactly), Markdown, plain text, Netscape HTML (imports into Chrome bookmarks) or CSV; _Export all_ in the header writes every saved session as one JSON backup. Plus _Copy links_ and _Copy as Markdown_. Import from a file or pasted text with a preview.
+- **Settings and storage** — snapshots on/off, the interval, how many snapshots to keep and the lazy-restore mode (the same four controls as the Options page), plus a storage meter splitting saved sessions from snapshots and a two-step _Delete all session data_ that keeps your settings. Light and dark follow your system setting; there is no theme switch.
 
 Everything lives in `chrome.storage.local` on the device — never synced, never uploaded.
 

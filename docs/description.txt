@@ -68,25 +68,25 @@ Save what you have open, close it, and bring it all back later — Session Buddy
 Right-click the Tab Organizer icon and choose "Save this window as session" or "Save all windows as session", press a keyboard shortcut you assign, or use the Save buttons in the dashboard. Every window is captured with its tabs in order, pinned tabs, the active tab, tab groups (name, color, collapsed state) and window size, position and state. Tabs suspended by The Marvellous Suspender are saved by their real URL. Incognito windows, empty windows and Tab Organizer's own pages are never captured.
 
 ▸ Restore Exactly
-Pick a session and click Restore. Windows are recreated with the same tab order, pinned tabs, active tab, tab groups (including collapsed ones) and window state. Restore a whole session, a single window or a single tab, or choose "Restore into this window" to append a saved window's tabs and groups to the window you are in. Large restores run in small batches with a progress indicator and a Cancel button; sessions with more than 50 tabs are opened lazily (tabs load when you click them) so Chrome stays responsive, and restores of more than 100 tabs ask for confirmation first. Pages Chrome cannot open (javascript: or data: URLs, other extensions' pages, file:// pages when file access is not allowed) are skipped and listed in the result — nothing else is affected. Restoring never deletes the saved session.
+Pick a session and click Restore. Windows are recreated with the same tab order, pinned tabs, active tab, tab groups (including collapsed ones) and window state. Restore a whole session or a single window, or choose "Restore into this window" to append a saved window's tabs and groups to the window you are in. Large restores run in small batches with a progress indicator and a Cancel button; sessions with more than 50 tabs are opened lazily (tabs load when you click them) so Chrome stays responsive, and restores of more than 100 tabs ask for confirmation first. Pages Chrome cannot open (javascript: or data: URLs, other extensions' pages, file:// pages when file access is not allowed) are skipped and listed in the result — nothing else is affected. Restoring never deletes the saved session.
 
 ▸ Sessions Dashboard
-A full-page dashboard, not a cramped popup. Your open windows are listed live on one side — save, close or jump to any window or tab from there. Saved sessions can be renamed inline, expanded to show windows → groups → tabs with site icons, trimmed (remove a tab or a window from a saved session), exported, or deleted with a confirmation. Click any saved tab to open it in the background. The dashboard has a dark theme, and it is only ever one tab: opening it again focuses the one you already have. Open it from the icon's right-click menu, from Options, or with a keyboard shortcut.
+A full-page dashboard, not a cramped popup. Your open windows are listed live on one side — save, close or jump to any window or tab from there. Saved sessions can be renamed inline, expanded to show windows → groups → tabs with site icons, trimmed (remove a tab or a window from a saved session), exported, or deleted with a confirmation. Click any saved tab to open it in the background. The dashboard follows your system's light or dark setting, and it is only ever one tab: opening it again focuses the one you already have. Open it from the icon's right-click menu, from Options, or with a keyboard shortcut.
 
 ▸ Automatic Snapshots and Crash Recovery
-Every 5 minutes (or 10 or 30 — your choice) Tab Organizer takes a snapshot of all your open windows, but only when something actually changed. It keeps the 20 most recent snapshots and drops the oldest automatically; protect a snapshot to keep it for good, or save it as a regular session. After Chrome restarts, the last snapshot becomes "Previous session (recovered)", is protected, and is pointed out in the dashboard so you can get everything back after a crash. Snapshots are on by default and live only on this device — turn them off in Options or in the dashboard settings and no timer exists at all.
+Every 5 minutes (or 10 or 30 — your choice) Tab Organizer takes a snapshot of all your open windows, but only when something actually changed. It keeps the 20 most recent snapshots (you choose how many) and drops the oldest automatically; protect a snapshot to keep it for good, or save it as a regular session. After Chrome restarts, the last snapshot becomes "Previous session (recovered)", is protected, and is pointed out in the dashboard so you can get everything back after a crash. Snapshots are on by default and live only on this device — turn them off in Options or in the dashboard settings and no timer exists at all.
 
 ▸ Unified Search
-One search box finds tabs across your open windows, saved sessions and (optionally) history by title, URL or site. Results are grouped by source with counts, best matches first. Press / to jump to the search box, Esc to clear it, the arrow keys to move through results and Enter to open the first one.
+One search box finds tabs across your open windows, saved sessions and (optionally) history by title, URL or site. Results are grouped by source with counts, best matches first. Press / to jump to the search box, Esc to clear it, the arrow keys to move through results and Enter to open the highlighted one.
 
 ▸ Import, Export and Copy
-Export a tab group, a window, a session or everything as JSON (a complete backup that imports back exactly), Markdown, plain text (one URL per line), Netscape HTML (imports straight into Chrome's bookmark manager) or CSV. "Copy links" and "Copy as Markdown" put any row on your clipboard. Import from a file or by pasting: Tab Organizer JSON, HTML bookmark exports, Markdown link lists and plain URL lists (a blank line starts a new window) — with a preview of what will be created before anything is saved.
+Export a tab group, a window or a session as JSON (which imports back exactly), Markdown, plain text (one URL per line), Netscape HTML (imports straight into Chrome's bookmark manager) or CSV, and every saved session at once as a single JSON backup. "Copy links" and "Copy as Markdown" put any row on your clipboard. Import from a file or by pasting: Tab Organizer JSON, HTML bookmark exports, Markdown link lists and plain URL lists (a blank line starts a new window) — with a preview of what will be created before anything is saved.
 
 ▸ Keyboard Shortcuts
 Two commands — save the current window as a session, and open the Sessions dashboard — are ready to bind in Chrome's shortcut settings (chrome://extensions/shortcuts). No keys are pre-assigned, so nothing conflicts with the shortcuts you already use; a "Set keyboard shortcuts" button in Options and in the dashboard takes you straight there.
 
 ▸ Local-First, Always
-Saved sessions and snapshots are stored in Chrome's local extension storage on this device. They are not synced, not uploaded, and not readable by any web page. A storage meter in the dashboard shows how much space sessions use, and "Delete all session data" removes every session and snapshot in one action. Uninstalling the extension removes everything as well.
+Saved sessions and snapshots are stored in Chrome's local extension storage on this device. They are not synced, not uploaded, and not readable by any web page. A storage meter in the dashboard shows how much space sessions use, and "Delete all session data" removes every session and snapshot in one action, keeping your settings. Uninstalling the extension removes everything as well.
 
 SETTINGS
 
@@ -99,7 +99,7 @@ Right-click the Tab Organizer icon and select "Options" to configure:
   - Keep one, close the rest: Automatically close duplicates
   - Group into tab group: Collect duplicates into a labeled group for review
 • Sessions
-  - Automatic snapshots: on or off, and the interval (5, 10 or 30 minutes) — also in the dashboard settings
+  - Automatic snapshots: on or off, the interval (5, 10 or 30 minutes), how many to keep, and lazy restore — the same controls as the dashboard settings row
   - Open the Sessions dashboard and set keyboard shortcuts
 
 PRIVACY & SECURITY
@@ -144,7 +144,7 @@ Q: Where are my saved sessions stored?
 A: In Chrome's local extension storage on this device only. Sessions are never synced, never uploaded and never shared with any web page. Delete a session from the dashboard whenever you like, use "Delete all session data" to remove everything, or uninstall the extension and Chrome removes all of it. Use Export (JSON) in the dashboard to keep your own backup.
 
 Q: What do automatic snapshots record, and can I turn them off?
-A: A snapshot is the same data as a saved session — tab URLs, titles, pinned state, tab groups and window layout — taken on the interval you choose (5 minutes by default) when something changed, and also right before each sort when you click the icon. The 20 most recent unprotected snapshots are kept on this device. Turn snapshots off in Options or in the dashboard settings; with snapshots off, the extension only runs when you use it.
+A: A snapshot is the same data as a saved session — tab URLs, titles, pinned state, tab groups and window layout — taken on the interval you choose (5 minutes by default) when something changed, and each time you click the icon to sort. The most recent unprotected snapshots are kept on this device (20 by default). Turn snapshots off in Options or in the dashboard settings; with snapshots off, the extension only runs when you use it.
 
 Q: How do I restore a session?
 A: Right-click the icon → Open Sessions, then click Restore on a session (or on a single window inside it). Windows are recreated in new windows with the original order, pinned tabs, groups and active tab; "Restore into this window" adds a saved window's tabs to the window you are in instead. Restoring never deletes the saved session.
@@ -162,7 +162,7 @@ Q: Does saving a session change my open tabs?
 A: No. Saving only reads your tabs. Sorting still happens only when you left-click the icon.
 
 Q: What happens if I don't like the result?
-A: Use Ctrl+Z (Cmd+Z on Mac) immediately after sorting to undo tab moves in Chrome. Closed duplicate tabs cannot be recovered this way — use Chrome's "Recently closed" menu (Ctrl+Shift+T), or restore the snapshot Tab Organizer took right before the sort.
+A: Use Ctrl+Z (Cmd+Z on Mac) immediately after sorting to undo tab moves in Chrome. Closed duplicate tabs cannot be recovered this way — use Chrome's "Recently closed" menu (Ctrl+Shift+T), or restore the snapshot Tab Organizer took when you clicked the icon.
 
 Q: Does it support other Chromium browsers?
 A: Tab Organizer needs Chrome 123 or newer and should work on any Chromium-based browser of that generation that supports Manifest V3 and the Tab Groups API, including Microsoft Edge and Brave.

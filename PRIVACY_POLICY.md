@@ -1,6 +1,6 @@
 # Privacy Policy - Tab Organizer
 
-Last Updated: September 2, 2026
+Last Updated: September 4, 2026
 
 ## Overview
 
@@ -24,19 +24,19 @@ Incognito windows, empty windows and the extension's own pages are never capture
 
 This data never leaves your device: it is not synced through your Google account, not uploaded to any server, and not accessible to web pages. The only way session data leaves the extension is when you choose to export it — Export writes a file or copies text to your clipboard, on your explicit action only.
 
-Your sorting preferences (sort method, grouping mode, duplicate handling) are stored with Chrome's sync storage. If you have Chrome sync enabled, those preferences — and nothing else — may sync across devices signed into the same Chrome account. Session data and session settings are never placed in sync storage.
+Your sorting preferences (the grouping mode and how duplicate tabs are handled) are stored with Chrome's sync storage, together with the version number recorded when the extension was installed or updated. If you have Chrome sync enabled, those preferences — and nothing else — may sync across devices signed into the same Chrome account. Session data and session settings are never placed in sync storage.
 
 ### Automatic snapshots
 
-Automatic snapshots are **on by default**. Every 5 minutes (you can choose 10 or 30 instead), and right before each sort when you click the icon, the extension records the layout of your open windows as described above, but only when something changed since the last snapshot. Snapshots are stored in the same local storage as saved sessions and are subject to the same rules.
+Automatic snapshots are **on by default**. Every 5 minutes (you can choose 10 or 30 instead), and each time you click the icon to sort, the extension records the layout of your open windows as described above, but only when something changed since the last snapshot. Snapshots are stored in the same local storage as saved sessions and are subject to the same rules.
 
 To turn snapshots off, open Options (right-click the icon → Options) or the settings in the Sessions dashboard and switch automatic snapshots off. With snapshots off, no timer exists and the extension runs only when you use it.
 
 ## Data Retention
 
 - Saved sessions are kept until you delete them in the Sessions dashboard.
-- Automatic snapshots are kept in a rolling set: only the 20 most recent unprotected snapshots are retained, and older ones are removed automatically. A snapshot you mark as protected, and the "Previous session (recovered)" snapshot created after a browser restart, are kept until you delete them. Snapshots can be deleted one at a time or all at once.
-- "Delete all session data" in the Sessions dashboard removes every saved session and snapshot immediately.
+- Automatic snapshots are kept in a rolling set: only the most recent unprotected snapshots are retained (20 by default — you choose how many in Options or in the Sessions dashboard), and older ones are removed automatically. A snapshot you mark as protected, and the "Previous session (recovered)" snapshot created after a browser restart, are kept until you delete them. Snapshots can be deleted one at a time or all at once.
+- "Delete all session data" in the Sessions dashboard removes every saved session and snapshot immediately; your settings are kept.
 - Uninstalling the extension makes Chrome delete all of its stored data.
 
 ## Permissions

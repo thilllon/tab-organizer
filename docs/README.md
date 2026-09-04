@@ -107,23 +107,23 @@ Right-click the Tab Organizer icon and choose "Save this window as session" or "
 
 ##### Restore Exactly
 
-Pick a session and click Restore. Windows are recreated with the same tab order, pinned tabs, active tab, tab groups (including collapsed ones) and window state. Restore a whole session, a single window or a single tab, or choose "Restore into this window" to append a saved window's tabs and groups to the window you are in. Large restores run in small batches with a progress indicator and a Cancel button; sessions with more than 50 tabs are opened lazily (tabs load when you click them) so Chrome stays responsive, and restores of more than 100 tabs ask for confirmation first. Pages Chrome cannot open (javascript: or data: URLs, other extensions' pages, file:// pages when file access is not allowed) are skipped and listed in the result — nothing else is affected. Restoring never deletes the saved session.
+Pick a session and click Restore. Windows are recreated with the same tab order, pinned tabs, active tab, tab groups (including collapsed ones) and window state. Restore a whole session or a single window, or choose "Restore into this window" to append a saved window's tabs and groups to the window you are in. Large restores run in small batches with a progress indicator and a Cancel button; sessions with more than 50 tabs are opened lazily (tabs load when you click them) so Chrome stays responsive, and restores of more than 100 tabs ask for confirmation first. Pages Chrome cannot open (javascript: or data: URLs, other extensions' pages, file:// pages when file access is not allowed) are skipped and listed in the result — nothing else is affected. Restoring never deletes the saved session.
 
 ##### Sessions Dashboard
 
-A full-page dashboard, not a cramped popup. Your open windows are listed live on one side — save, close or jump to any window or tab from there. Saved sessions can be renamed inline, expanded to show windows → groups → tabs with site icons, trimmed (remove a tab or a window from a saved session), exported, or deleted with a confirmation. Click any saved tab to open it in the background. The dashboard has a dark theme, and it is only ever one tab: opening it again focuses the one you already have. Open it from the icon's right-click menu, from Options, or with a keyboard shortcut.
+A full-page dashboard, not a cramped popup. Your open windows are listed live on one side — save, close or jump to any window or tab from there. Saved sessions can be renamed inline, expanded to show windows → groups → tabs with site icons, trimmed (remove a tab or a window from a saved session), exported, or deleted with a confirmation. Click any saved tab to open it in the background. The dashboard follows your system's light or dark setting, and it is only ever one tab: opening it again focuses the one you already have. Open it from the icon's right-click menu, from Options, or with a keyboard shortcut.
 
 ##### Automatic Snapshots and Crash Recovery
 
-Every 5 minutes (or 10 or 30 — your choice) Tab Organizer takes a snapshot of all your open windows, but only when something actually changed. It keeps the 20 most recent snapshots and drops the oldest automatically; protect a snapshot to keep it for good, or save it as a regular session. After Chrome restarts, the last snapshot becomes "Previous session (recovered)", is protected, and is pointed out in the dashboard so you can get everything back after a crash. Snapshots are on by default and live only on this device — turn them off in Options or in the dashboard settings and no timer exists at all.
+Every 5 minutes (or 10 or 30 — your choice) Tab Organizer takes a snapshot of all your open windows, but only when something actually changed. It keeps the 20 most recent snapshots (you choose how many) and drops the oldest automatically; protect a snapshot to keep it for good, or save it as a regular session. After Chrome restarts, the last snapshot becomes "Previous session (recovered)", is protected, and is pointed out in the dashboard so you can get everything back after a crash. Snapshots are on by default and live only on this device — turn them off in Options or in the dashboard settings and no timer exists at all.
 
 ##### Unified Search
 
-One search box finds tabs across your open windows, saved sessions and (optionally) history by title, URL or site. Results are grouped by source with counts, best matches first. Press / to jump to the search box, Esc to clear it, the arrow keys to move through results and Enter to open the first one.
+One search box finds tabs across your open windows, saved sessions and (optionally) history by title, URL or site. Results are grouped by source with counts, best matches first. Press / to jump to the search box, Esc to clear it, the arrow keys to move through results and Enter to open the highlighted one.
 
 ##### Import, Export and Copy
 
-Export a tab group, a window, a session or everything as JSON (a complete backup that imports back exactly), Markdown, plain text (one URL per line), Netscape HTML (imports straight into Chrome's bookmark manager) or CSV. "Copy links" and "Copy as Markdown" put any row on your clipboard. Import from a file or by pasting: Tab Organizer JSON, HTML bookmark exports, Markdown link lists and plain URL lists (a blank line starts a new window) — with a preview of what will be created before anything is saved.
+Export a tab group, a window or a session as JSON (which imports back exactly), Markdown, plain text (one URL per line), Netscape HTML (imports straight into Chrome's bookmark manager) or CSV, and every saved session at once as a single JSON backup. "Copy links" and "Copy as Markdown" put any row on your clipboard. Import from a file or by pasting: Tab Organizer JSON, HTML bookmark exports, Markdown link lists and plain URL lists (a blank line starts a new window) — with a preview of what will be created before anything is saved.
 
 ##### Keyboard Shortcuts
 
@@ -131,7 +131,7 @@ Two commands — save the current window as a session, and open the Sessions das
 
 ##### Local-First, Always
 
-Saved sessions and snapshots are stored in Chrome's local extension storage on this device. They are not synced, not uploaded, and not readable by any web page. A storage meter in the dashboard shows how much space sessions use, and "Delete all session data" removes every session and snapshot in one action. Uninstalling the extension removes everything as well.
+Saved sessions and snapshots are stored in Chrome's local extension storage on this device. They are not synced, not uploaded, and not readable by any web page. A storage meter in the dashboard shows how much space sessions use, and "Delete all session data" removes every session and snapshot in one action, keeping your settings. Uninstalling the extension removes everything as well.
 
 #### Settings
 
@@ -145,7 +145,7 @@ Right-click the Tab Organizer icon and select "Options" to configure:
   - Keep one, close the rest: Automatically close duplicates
   - Group into tab group: Collect duplicates into a labeled group for review
 - Sessions
-  - Automatic snapshots: on or off, and the interval (5, 10 or 30 minutes) — also in the dashboard settings
+  - Automatic snapshots: on or off, the interval (5, 10 or 30 minutes), how many to keep, and lazy restore — the same controls as the dashboard settings row
   - Open the Sessions dashboard and set keyboard shortcuts
 
 #### Privacy & Security
@@ -191,7 +191,7 @@ Q: Where are my saved sessions stored?\
 A: In Chrome's local extension storage on this device only. Sessions are never synced, never uploaded and never shared with any web page. Delete a session from the dashboard whenever you like, use "Delete all session data" to remove everything, or uninstall the extension and Chrome removes all of it. Use Export (JSON) in the dashboard to keep your own backup.
 
 Q: What do automatic snapshots record, and can I turn them off?\
-A: A snapshot is the same data as a saved session — tab URLs, titles, pinned state, tab groups and window layout — taken on the interval you choose (5 minutes by default) when something changed, and also right before each sort when you click the icon. The 20 most recent unprotected snapshots are kept on this device. Turn snapshots off in Options or in the dashboard settings; with snapshots off, the extension only runs when you use it.
+A: A snapshot is the same data as a saved session — tab URLs, titles, pinned state, tab groups and window layout — taken on the interval you choose (5 minutes by default) when something changed, and each time you click the icon to sort. The most recent unprotected snapshots are kept on this device (20 by default). Turn snapshots off in Options or in the dashboard settings; with snapshots off, the extension only runs when you use it.
 
 Q: How do I restore a session?\
 A: Right-click the icon → Open Sessions, then click Restore on a session (or on a single window inside it). Windows are recreated in new windows with the original order, pinned tabs, groups and active tab; "Restore into this window" adds a saved window's tabs to the window you are in instead. Restoring never deletes the saved session.
@@ -209,7 +209,7 @@ Q: Does saving a session change my open tabs?\
 A: No. Saving only reads your tabs. Sorting still happens only when you left-click the icon.
 
 Q: What happens if I don't like the result?\
-A: Use Ctrl+Z (Cmd+Z on Mac) immediately after sorting to undo tab moves in Chrome. Closed duplicate tabs cannot be recovered this way — use Chrome's "Recently closed" menu (Ctrl+Shift+T), or restore the snapshot Tab Organizer took right before the sort.
+A: Use Ctrl+Z (Cmd+Z on Mac) immediately after sorting to undo tab moves in Chrome. Closed duplicate tabs cannot be recovered this way — use Chrome's "Recently closed" menu (Ctrl+Shift+T), or restore the snapshot Tab Organizer took when you clicked the icon.
 
 Q: Does it support other Chromium browsers?\
 A: Tab Organizer needs Chrome 123 or newer and should work on any Chromium-based browser of that generation that supports Manifest V3 and the Tab Groups API, including Microsoft Edge and Brave.
@@ -228,7 +228,7 @@ If you encounter any issues or have feature requests, please file an issue on ou
 
 ### Graphic assets
 
-All images are generated by `pnpm release` (`scripts/prepare-registration.ts`) into `screenshots/`. Upload them in the order listed.
+All images are generated by `pnpm release` (`scripts/prepare-registration.ts`) into `screenshots/`. Upload them in the order listed. Each optional step of that script can be skipped on its own with a `SKIP_*` environment flag (`SKIP_BUILD`, `SKIP_OPTIONS`, `SKIP_DASHBOARD`, `SKIP_DEMO`, `SKIP_VIDEO`, `SKIP_NATIVE`, `SKIP_MOCKUPS`, `SKIP_PROMO`, `SKIP_GIF`, `SKIP_LISTING`), so one asset can be regenerated without redoing the rest.
 
 #### Store icon (128 × 128)
 
@@ -246,13 +246,19 @@ All images are generated by `pnpm release` (`scripts/prepare-registration.ts`) i
 
    ![After: sorted and grouped by domain](../screenshots/after-sort.png)
 
-3. `screenshots/dashboard-sessions.png` — the Sessions dashboard: open windows pane, saved sessions with an expanded window → group → tab tree, history section _(generated by the next `pnpm release`)_
+3. `screenshots/dashboard-sessions.png` — the Sessions dashboard: open windows pane, saved sessions with an expanded window → group → tab tree, history section
 
-4. `screenshots/dashboard-search.png` — unified search across open tabs, saved sessions and history _(generated by the next `pnpm release`)_
+   ![Sessions dashboard](../screenshots/dashboard-sessions.png)
 
-5. `screenshots/dashboard-restore.png` — a large restore in progress with the progress indicator and Cancel button _(generated by the next `pnpm release`)_
+4. `screenshots/dashboard-search.png` — unified search across open tabs, saved sessions and history
 
-Alternates kept in the repository: `screenshots/dashboard-import.png` (import dialog with preview, generated with the above), `screenshots/screenshot-1280x800.png` (options page) and its 640 × 400 variant `screenshots/screenshot-640x400.png`, and the native macOS captures `screenshots/before-sort-native.png` / `screenshots/after-sort-native.png`.
+   ![Unified search](../screenshots/dashboard-search.png)
+
+5. `screenshots/dashboard-restore.png` — a large restore in progress with the progress indicator and Cancel button
+
+   ![Restore in progress](../screenshots/dashboard-restore.png)
+
+`scripts/prepare-registration.ts` captures five dashboard screenshots; the two not in the upload list above are kept as alternates: `screenshots/dashboard-import.png` (import dialog with its preview) and `screenshots/dashboard-history.png` (the History section with snapshots and the recovered entry). Also in the repository: `screenshots/screenshot-1280x800.png` (options page) and its 640 × 400 variant `screenshots/screenshot-640x400.png`, and the native macOS captures `screenshots/before-sort-native.png` / `screenshots/after-sort-native.png`.
 
 #### Small promo tile (440 × 280)
 
@@ -327,7 +333,7 @@ https://github.com/thilllon/tab-organizer/blob/main/PRIVACY_POLICY.md — the fu
 
 ## Updating the store listing
 
-1. Edit this file. Keep the [Description](#description) section within the store's plain-text conventions: `####` headings become UPPER-CASE section titles, `#####` headings become `▸` feature titles, list items become `•` bullets, links become `text (url)`. The Description must stay under 16,000 characters and the Summary (`package.json` `description`) under 132 — `pnpm listing` fails otherwise.
+1. Edit this file. Keep the [Description](#description) section within the store's plain-text conventions: `####` headings become UPPER-CASE section titles, `#####` headings become `▸` feature titles, list items become `•` bullets, links become `text (url)`. The Description must stay under 16,000 characters and the Summary (`package.json` `description`) under 132 — `pnpm listing` fails otherwise. The generated text currently sits within ~60 characters of that 16,000 ceiling, so anything added here needs something else trimmed in the same edit — check the count with `pnpm listing`.
 2. Commit — the pre-commit hook runs `pnpm listing`, which regenerates `docs/description.txt` (CI verifies it is up to date). Run `pnpm listing` manually to preview.
 3. Run `pnpm release` on `main` to regenerate every image (including the `screenshots/dashboard-*.png` captures and the promo tiles), the demo video/GIF and `description.txt`, bump the version, build and produce the ZIP in `package/`. Use `pnpm release --increment major` for a major relaunch such as v7.0.0, or `pnpm release --no-increment` when `package.json` already carries the version to publish.
 4. In the [Developer Dashboard](https://chrome.google.com/webstore/devconsole): upload the ZIP from `package/`, paste `docs/description.txt` into **Description**, upload the screenshots and promo tiles listed above in that order, and copy the [Privacy](#privacy) answers — including the data-type rows of the privacy form, which must be re-reviewed whenever a permission or the snapshot default changes.
