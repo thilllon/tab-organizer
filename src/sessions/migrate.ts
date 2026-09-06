@@ -1,4 +1,4 @@
-import type { Session, SessionIndex, SessionSummary } from '@/types';
+import type { Session, SessionIndex, SessionSummary, UnreadableSession } from '@/types';
 import { SESSION_SCHEMA_VERSION } from '@/types';
 
 export class UnknownSchemaVersionError extends Error {
@@ -6,6 +6,23 @@ export class UnknownSchemaVersionError extends Error {
     super(`Unknown session schema version: ${String(version)}`);
     this.name = 'UnknownSchemaVersionError';
   }
+}
+
+/**
+ * The schema version of a body written by a *newer* Tab Organizer, or `undefined` when `err` is
+ * anything else (a malformed record, or a version this build cannot place). Callers use it to
+ * tell "I am too old to read this" -- which the UI can explain and the user can fix by updating
+ * -- from "this record is damaged", which it cannot (spec §3).
+ */
+export function futureSchemaVersion(err: unknown): number | undefined {
+  if (!(err instanceof UnknownSchemaVersionError)) {
+    return undefined;
+  }
+  const { version } = err;
+  if (typeof version !== 'number' || !Number.isInteger(version)) {
+    return undefined;
+  }
+  return version > SESSION_SCHEMA_VERSION ? version : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -35,6 +52,7 @@ function isSessionSummary(value: unknown): value is SessionSummary {
     protected: isProtected,
     autoProtected,
     contentHash,
+    unreadable,
   } = value;
 
   if (
@@ -64,8 +82,21 @@ function isSessionSummary(value: unknown): value is SessionSummary {
   if (contentHash !== undefined && typeof contentHash !== 'string') {
     return false;
   }
+  if (unreadable !== undefined && !isUnreadableSession(unreadable)) {
+    return false;
+  }
 
   return true;
+}
+
+/** `SessionSummary.unreadable` as `reconcile()` writes it; anything else drops the entry. */
+function isUnreadableSession(value: unknown): value is UnreadableSession {
+  return (
+    isRecord(value) &&
+    value.reason === 'unknown-schema' &&
+    typeof value.version === 'number' &&
+    Number.isInteger(value.version)
+  );
 }
 
 /**

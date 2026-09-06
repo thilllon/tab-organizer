@@ -25,6 +25,12 @@ export interface StorageBreakdown {
   other: number;
   savedCount: number;
   snapshotCount: number;
+  /**
+   * Snapshots "Delete all unprotected" would actually remove (spec §4: the quota path must offer
+   * more than "delete everything"). Zero disables that button — the meter never offers an action
+   * that would free nothing.
+   */
+  unprotectedSnapshotCount: number;
 }
 
 /** Percentages for the thin bar; they sum to 100 (or to 0 when nothing is stored). */
@@ -41,18 +47,22 @@ export interface StorageSegments {
 export const SNAPSHOT_HINT_MIN_BYTES = 1024 * 1024;
 
 export function summarizeStorage(
-  summaries: Pick<SessionSummary, 'kind' | 'bytes'>[],
+  summaries: Pick<SessionSummary, 'kind' | 'bytes' | 'protected'>[],
   totalBytes: number,
 ): StorageBreakdown {
   let saved = 0;
   let snapshots = 0;
   let savedCount = 0;
   let snapshotCount = 0;
+  let unprotectedSnapshotCount = 0;
   for (const summary of summaries) {
     const bytes = Number.isFinite(summary.bytes) ? Math.max(0, summary.bytes) : 0;
     if (summary.kind === 'history') {
       snapshots += bytes;
       snapshotCount += 1;
+      if (summary.protected !== true) {
+        unprotectedSnapshotCount += 1;
+      }
     } else {
       saved += bytes;
       savedCount += 1;
@@ -66,6 +76,7 @@ export function summarizeStorage(
     other: Math.max(0, total - saved - snapshots),
     savedCount,
     snapshotCount,
+    unprotectedSnapshotCount,
   };
 }
 

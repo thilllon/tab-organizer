@@ -137,6 +137,10 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
  * halves together mean a damaged index is both survivable and repaired.
  */
 async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<void> {
+  // Spec §2: every handler clears the badge first. An install/update starts a brand-new worker,
+  // so the 2 s `setTimeout` that would have cleared a ✓ or ! from the previous one is gone while
+  // the badge text — browser state — survives on the icon.
+  clearBadge();
   await registerContextMenus().catch(report);
   if (details.reason === 'update') {
     await sessionRepo.migrateAll().catch(report);
@@ -171,6 +175,11 @@ async function onStartup(): Promise<void> {
  * turned history off after the alarm was scheduled, so no settings read is needed here.
  */
 function onAlarm(alarm: chrome.alarms.Alarm): void {
+  // Before the name check, like every other handler (spec §2): an alarm is often the *only* thing
+  // that wakes the worker for minutes at a time, so it is the one chance to clear a badge whose
+  // clear timer died with a previous worker. It can cut a fresh badge a fraction short when an
+  // alarm lands inside those 2 s; a stale ✓ that never goes away is the worse failure.
+  clearBadge();
   if (alarm.name !== HISTORY_ALARM && alarm.name !== HISTORY_FIRST_ALARM) {
     return;
   }

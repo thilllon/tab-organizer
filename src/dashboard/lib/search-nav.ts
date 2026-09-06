@@ -37,6 +37,10 @@ export interface SearchGroup {
  * Tier-1 matches: sessions whose *name* contains every token, answered from the index alone (no
  * body reads). History snapshots only take part while "Include history" is checked, exactly like
  * the tier-2 entries. Order is the index's (newest first).
+ *
+ * A session this build cannot read (spec §3) is never a result: activating a tier-1 row restores
+ * it, and the whole point of the read-only row in the saved list is that this build cannot. Its
+ * tier-2 entries do not exist either — nothing could read the body to build them.
  */
 export function sessionNameMatches(
   summaries: readonly SessionSummary[],
@@ -49,7 +53,9 @@ export function sessionNameMatches(
   const includeHistory = options.includeHistory ?? false;
   return summaries.filter(
     (summary) =>
-      (summary.kind !== 'history' || includeHistory) && matchSessionName(summary.name, [...tokens]),
+      summary.unreadable === undefined &&
+      (summary.kind !== 'history' || includeHistory) &&
+      matchSessionName(summary.name, [...tokens]),
   );
 }
 

@@ -1,4 +1,4 @@
-import type { Session, SessionOrigin, SessionSummary } from '@/types';
+import type { Session, SessionOrigin, SessionSummary, UnreadableSession } from '@/types';
 
 /** Returns a copy of `session` that contains only `windows[windowIndex]`. */
 export function pickWindow(session: Session, windowIndex: number): Session {
@@ -28,6 +28,20 @@ export function splitByKind(summaries: readonly SessionSummary[]): {
     (summary.kind === 'history' ? history : saved).push(summary);
   }
   return { saved, history };
+}
+
+/**
+ * What the saved list says instead of a session this build cannot read (spec §3): the store was
+ * written by a newer Tab Organizer and the fix is an update, not a repair. The row stays inert
+ * (no restore / rename / export / expand) but keeps Delete, so the user is never stuck with an
+ * entry they can neither open nor get rid of.
+ */
+export const UNREADABLE_SESSION_MESSAGE =
+  'Saved by a newer version of Tab Organizer — update to open';
+
+/** The version that wrote it, for the row's second line: "schema v2". */
+export function unreadableSchemaLabel(unreadable: UnreadableSession): string {
+  return `schema v${unreadable.version}`;
 }
 
 /** Badge text for a snapshot row: the alarm is the "automatic" one users recognise. */

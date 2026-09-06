@@ -33,6 +33,11 @@ export function selectPrewarmIds(
     if (summary.kind !== 'saved') {
       continue;
     }
+    // A body this build cannot migrate (spec §3) has nothing to search and never will until the
+    // extension is updated; reading it would only cache an empty list and log a warning.
+    if (summary.unreadable !== undefined) {
+      continue;
+    }
     ids.push(summary.id);
     total += summary.bytes;
     if (total >= budgetBytes) {
@@ -81,10 +86,11 @@ export function scheduleIdle(callback: () => void, timeout: number = IDLE_TIMEOU
  * The tier-2 body cache behind the dashboard's unified search (spec §7): one `SearchEntry[]` per
  * session, built once by `entriesFromSession()` so a keystroke only tokenises and matches.
  *
- * Reads go through `sessionRepo.get()` (never `chrome.storage` directly) and nothing here writes.
- * A body that cannot be read at all — a record from a newer schema version — is cached as an
- * empty list rather than retried on every query: the session stays listed, it is just not
- * searchable.
+ * Reads go through `sessionRepo.getMany()` (never `chrome.storage` directly) and nothing here
+ * writes: every id a call needs is fetched in ONE `chrome.storage.local.get([...keys])`, so the
+ * idle pre-warm costs one round trip rather than one per session (spec §4). A body that cannot be
+ * read at all — a record from a newer schema version — is cached as an empty list rather than
+ * retried on every query: the session stays listed, it is just not searchable.
  */
 export class SearchCorpusCache {
   private readonly entries = new Map<SessionId, SearchEntry[]>();
@@ -115,11 +121,18 @@ export class SearchCorpusCache {
     return this.entries.size;
   }
 
-  /** Loads every id that is neither cached nor already being loaded; resolves when all are in. */
+  /**
+   * Loads every id that is neither cached nor already being loaded; resolves when all are in.
+   *
+   * The ids this call is responsible for are read together in a single `sessionRepo.getMany()`,
+   * so a 40-session pre-warm makes one storage request. Ids another call is already loading are
+   * awaited rather than re-read, which keeps the per-id coalescing the invalidation relies on.
+   */
   async ensureLoaded(ids: Iterable<SessionId>): Promise<void> {
     const pending: Promise<void>[] = [];
+    const mine: SessionId[] = [];
     for (const id of ids) {
-      if (this.entries.has(id)) {
+      if (this.entries.has(id) || mine.includes(id)) {
         continue;
       }
       const running = this.inflight.get(id);
@@ -127,11 +140,17 @@ export class SearchCorpusCache {
         pending.push(running);
         continue;
       }
-      const load = this.load(id).finally(() => {
-        this.inflight.delete(id);
-      });
-      this.inflight.set(id, load);
-      pending.push(load);
+      mine.push(id);
+    }
+    if (mine.length > 0) {
+      const batch = this.loadBatch(mine);
+      for (const id of mine) {
+        const load = batch.finally(() => {
+          this.inflight.delete(id);
+        });
+        this.inflight.set(id, load);
+        pending.push(load);
+      }
     }
     await Promise.all(pending);
   }
@@ -215,21 +234,38 @@ export class SearchCorpusCache {
     this.revisions.set(id, (this.revisions.get(id) ?? 0) + 1);
   }
 
-  private async load(id: SessionId): Promise<void> {
-    const revision = this.revisions.get(id) ?? 0;
-    let entries: SearchEntry[];
+  /**
+   * One `sessionRepo.getMany()` for the whole batch. Every id is cached either way — a session
+   * deleted between the index read and this load, and a body that cannot be migrated, both cache
+   * an empty list, which is what stops the next query re-reading them. A failed read of the batch
+   * itself (storage unavailable) is the only case that caches nothing, so a later call retries.
+   */
+  private async loadBatch(ids: SessionId[]): Promise<void> {
+    const revisions = new Map(ids.map((id) => [id, this.revisions.get(id) ?? 0]));
+    let loaded: Awaited<ReturnType<typeof sessionRepo.getMany>>;
     try {
-      const session = await sessionRepo.get(id);
-      // A session deleted between the index read and this load simply has no entries.
-      entries = session === undefined ? [] : entriesFromSession(session, session.kind);
+      loaded = await sessionRepo.getMany(ids);
     } catch (err) {
-      console.warn('[tab-organizer:sessions] search corpus load failed', id, errorMessage(err));
-      entries = [];
-    }
-    if ((this.revisions.get(id) ?? 0) !== revision) {
+      console.warn('[tab-organizer:sessions] search corpus load failed', ids, errorMessage(err));
       return;
     }
-    this.entries.set(id, entries);
-    this.mutationCount += 1;
+    for (const id of ids) {
+      const failure = loaded.failed.get(id);
+      if (failure !== undefined) {
+        console.warn(
+          '[tab-organizer:sessions] search corpus load failed',
+          id,
+          errorMessage(failure),
+        );
+      }
+      // A load that started before an invalidation drops its result rather than re-caching a body
+      // that has since changed or vanished.
+      if ((this.revisions.get(id) ?? 0) !== revisions.get(id)) {
+        continue;
+      }
+      const session = loaded.bodies.get(id);
+      this.entries.set(id, session === undefined ? [] : entriesFromSession(session, session.kind));
+      this.mutationCount += 1;
+    }
   }
 }

@@ -452,6 +452,30 @@ describe('chrome fake: tab / window / group events', () => {
     expect(log).toEqual(['windows.onFocusChanged:-1', 'windows.onFocusChanged:1']);
   });
 
+  it('tabs.move places several tabs as a block, in the order given', async () => {
+    // What the sorter relies on: one `tabs.move([...ids], { index })` per group, whose whole
+    // point is that the ids arrive in sorted order. Chrome puts them on consecutive indices;
+    // dropping each on `index` instead would silently reverse every sort.
+    const win = await chrome.windows.create({ url: 'https://c.example/' });
+    const windowId = win?.id ?? -1;
+    const a = await chrome.tabs.create({ windowId, url: 'https://a.example/', active: false });
+    const b = await chrome.tabs.create({ windowId, url: 'https://b.example/', active: false });
+    const c = (await chrome.tabs.query({ windowId, url: 'https://c.example/' }))[0];
+
+    await chrome.tabs.move([a.id ?? -1, b.id ?? -1, c.id ?? -1], { index: 0 });
+
+    const strip = (await chrome.tabs.query({ windowId })).map((tab) => tab.url);
+    expect(strip).toEqual(['https://a.example/', 'https://b.example/', 'https://c.example/']);
+
+    // index -1 appends each in turn, which preserves the order too.
+    await chrome.tabs.move([a.id ?? -1, b.id ?? -1], { index: -1 });
+    expect((await chrome.tabs.query({ windowId })).map((tab) => tab.url)).toEqual([
+      'https://c.example/',
+      'https://a.example/',
+      'https://b.example/',
+    ]);
+  });
+
   it('tabs.move fires onMoved inside a window and onDetached/onAttached across windows', async () => {
     const a = await chrome.tabs.create({ url: 'https://a.test', active: false });
     const b = await chrome.tabs.create({ url: 'https://b.test', active: false });

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '@/types';
-import { migrateIndex, migrateSession, UnknownSchemaVersionError } from './migrate';
+import {
+  futureSchemaVersion,
+  migrateIndex,
+  migrateSession,
+  UnknownSchemaVersionError,
+} from './migrate';
 
 const session: Session = {
   schemaVersion: 1,
@@ -40,6 +45,28 @@ describe('migrateSession', () => {
     } catch (error) {
       expect(error instanceof UnknownSchemaVersionError && error.version).toBe(2);
     }
+  });
+});
+
+describe('futureSchemaVersion', () => {
+  it('names the version of a body written by a newer Tab Organizer', () => {
+    try {
+      migrateSession({ ...session, schemaVersion: 2 });
+      expect.unreachable('migrateSession must reject a v2 record');
+    } catch (error) {
+      // What `reconcile()` puts on the index entry, so the row can say "schema v2" (spec §3).
+      expect(futureSchemaVersion(error)).toBe(2);
+    }
+  });
+
+  it('is undefined for everything that is not a newer version', () => {
+    expect(futureSchemaVersion(new TypeError('Not a session record'))).toBeUndefined();
+    expect(futureSchemaVersion(undefined)).toBeUndefined();
+    // Not a number, and an older/garbage version: damaged, not "from the future".
+    expect(futureSchemaVersion(new UnknownSchemaVersionError('2'))).toBeUndefined();
+    expect(futureSchemaVersion(new UnknownSchemaVersionError(undefined))).toBeUndefined();
+    expect(futureSchemaVersion(new UnknownSchemaVersionError(0))).toBeUndefined();
+    expect(futureSchemaVersion(new UnknownSchemaVersionError(1.5))).toBeUndefined();
   });
 });
 
@@ -97,6 +124,27 @@ describe('migrateIndex', () => {
     ).toEqual({
       schemaVersion: 1,
       sessions: [validSummary],
+    });
+  });
+
+  it('keeps a valid unreadable marker and drops an entry with a malformed one', () => {
+    const base = {
+      id: 'a1',
+      kind: 'saved' as const,
+      name: 'Work',
+      origin: 'manual' as const,
+      createdAt: 1,
+      updatedAt: 2,
+      windowCount: 0,
+      tabCount: 0,
+      bytes: 10,
+    };
+    const marked = { ...base, unreadable: { reason: 'unknown-schema', version: 2 } };
+    const malformed = { ...base, id: 'a2', unreadable: { reason: 'nope' } };
+
+    expect(migrateIndex({ schemaVersion: 1, sessions: [marked, malformed] })).toEqual({
+      schemaVersion: 1,
+      sessions: [marked],
     });
   });
 

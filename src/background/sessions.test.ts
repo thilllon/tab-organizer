@@ -40,6 +40,14 @@ function historySummaries(): SessionIndex['sessions'] {
   return (readIndex()?.sessions ?? []).filter((summary) => summary.kind === 'history');
 }
 
+/** The tab strip of `windowId` in index order. */
+function stripUrls(windowId: number): string[] {
+  return [...getChromeFake().state.tabs.values()]
+    .filter((tab) => tab.windowId === windowId)
+    .sort((a, b) => a.index - b.index)
+    .map((tab) => tab.url);
+}
+
 function alarmNames(): string[] {
   return [...getChromeFake().state.alarms.keys()].sort();
 }
@@ -310,6 +318,33 @@ describe('listener wiring', () => {
     });
   });
 
+  it('onInstalled clears a badge left behind by a previous worker', async () => {
+    // Spec §2: the badge is browser state, the 2 s clear timer is worker state. An update starts
+    // a new worker, so nothing else would ever clear a ✓ the old one left on the icon.
+    vi.resetModules();
+    await import('./sessions');
+    const fake = getChromeFake();
+    fake.state.badge.text = '✓';
+
+    fake.fire.installed({ reason: 'update', previousVersion: '6.0.0' });
+
+    await vi.waitFor(() => {
+      expect(fake.state.badge.text).toBe('');
+    });
+  });
+
+  it('an alarm clears a badge left behind by a previous worker', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    fake.state.badge.text = '!';
+
+    fake.fire.alarm(HISTORY_ALARM);
+
+    await vi.waitFor(() => {
+      expect(fake.state.badge.text).toBe('');
+    });
+  });
+
   it('onStartup clears the badge and reconciles', async () => {
     vi.resetModules();
     await import('./sessions');
@@ -352,6 +387,50 @@ describe('listener wiring', () => {
     expect(chrome.alarms.onAlarm.hasListeners()).toBe(true);
     expect(chrome.action.onClicked.hasListeners()).toBe(true);
     expect(chrome.storage.onChanged.hasListeners()).toBe(true);
+  });
+});
+
+/**
+ * Spec §12 Phase 1 / §14: "plain click still only sorts". The whole feature was added on the
+ * promise that the icon click keeps doing exactly what it always did, so the invariant gets a
+ * test of its own — against `./index`, the module Chrome actually loads, with both
+ * `action.onClicked` listeners registered (the sorter's and the snapshot one this file adds).
+ */
+describe('the icon click', () => {
+  it('sorts the focused window and opens nothing', async () => {
+    vi.resetModules();
+    await import('./index');
+    const fake = getChromeFake();
+    const windowId = await seedWindow(
+      ['https://c.example/', 'https://a.example/', 'https://b.example/'],
+      true,
+    );
+    const tabsBefore = fake.state.tabs.size;
+    const windowsBefore = fake.state.windows.size;
+    // Spied after seeding: these must not be called by the click itself.
+    const createTab = vi.spyOn(chrome.tabs, 'create');
+    const createWindow = vi.spyOn(chrome.windows, 'create');
+
+    // A `default_popup` in the manifest would swallow this event entirely, so the sort below is
+    // also the proof that there is no popup: the click reaches the worker.
+    fake.fire.actionClicked();
+
+    await vi.waitFor(() => {
+      expect(stripUrls(windowId)).toEqual([
+        'https://a.example/',
+        'https://b.example/',
+        'https://c.example/',
+      ]);
+    });
+
+    // No dashboard tab, no new window, no tab of any kind: the click sorted and stopped.
+    expect(createTab).not.toHaveBeenCalled();
+    expect(createWindow).not.toHaveBeenCalled();
+    expect(fake.state.tabs.size).toBe(tabsBefore);
+    expect(fake.state.windows.size).toBe(windowsBefore);
+    expect(
+      [...fake.state.tabs.values()].some((tab) => tab.url.startsWith('chrome-extension://')),
+    ).toBe(false);
   });
 });
 

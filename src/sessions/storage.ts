@@ -7,7 +7,12 @@ import {
   type SessionSettings,
   type SessionSummary,
 } from '@/types';
-import { migrateIndex, migrateSession, UnknownSchemaVersionError } from './migrate';
+import {
+  futureSchemaVersion,
+  migrateIndex,
+  migrateSession,
+  UnknownSchemaVersionError,
+} from './migrate';
 import { defaultSessionName } from './naming';
 
 export const INDEX_KEY = 'sessionIndex';
@@ -125,6 +130,7 @@ async function writeBodyAndIndex(body: Session): Promise<void> {
 /** Field-by-field: does the index entry still describe this body? */
 function sameSummary(a: SessionSummary, b: SessionSummary): boolean {
   return (
+    sameUnreadable(a.unreadable, b.unreadable) &&
     a.kind === b.kind &&
     a.name === b.name &&
     a.origin === b.origin &&
@@ -137,6 +143,59 @@ function sameSummary(a: SessionSummary, b: SessionSummary): boolean {
     a.tabCount === b.tabCount &&
     a.bytes === b.bytes
   );
+}
+
+/**
+ * Compared explicitly rather than by identity: the marker is what makes the row inert, so an
+ * entry that gains it (a downgrade) or loses it (the user updated again) must be rewritten.
+ */
+function sameUnreadable(a: SessionSummary['unreadable'], b: SessionSummary['unreadable']): boolean {
+  if (a === undefined || b === undefined) {
+    return a === b;
+  }
+  return a.reason === b.reason && a.version === b.version;
+}
+
+/**
+ * The index entry for a body this build is too old to read (spec §3). An existing entry is kept
+ * and merely marked -- it was written by this schema and its name and counts are true -- while a
+ * body with no entry gets a minimal one built from whatever top-level fields survived: only the
+ * `name` is worth showing, and `bytes` is real, so the storage meter still accounts for it.
+ *
+ * A synthesised entry is `kind: 'saved'`, whatever the record claims: that puts it in the saved
+ * list (where the read-only row is rendered) and, more importantly, out of reach of the history
+ * ring buffer and of "Delete all unprotected" -- neither of which should be able to delete a
+ * session this build cannot even read. Counts are 0 because nothing could count them.
+ */
+function unreadableSummary(
+  id: SessionId,
+  record: unknown,
+  existing: SessionSummary | undefined,
+  version: number,
+): SessionSummary {
+  const bytes = byteLength(JSON.stringify(record));
+  const name = isRecord(record) && typeof record.name === 'string' ? record.name : undefined;
+  const base: SessionSummary = existing ?? {
+    id,
+    kind: 'saved',
+    name: name === undefined || name === '' ? 'Unnamed session' : name,
+    origin: 'manual',
+    createdAt: readTimestamp(record, 'createdAt'),
+    updatedAt: readTimestamp(record, 'updatedAt'),
+    windowCount: 0,
+    tabCount: 0,
+    bytes,
+  };
+  return { ...base, bytes, unreadable: { reason: 'unknown-schema', version } };
+}
+
+/** A stored epoch-ms field, or 0 — an unreadable row sorts to the end rather than throwing. */
+function readTimestamp(record: unknown, field: string): number {
+  if (!isRecord(record)) {
+    return 0;
+  }
+  const value = record[field];
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
 async function listStorageKeys(): Promise<string[]> {
@@ -184,6 +243,13 @@ async function readSettings(): Promise<SessionSettings> {
   return normalizeSettings(raw[SETTINGS_KEY]);
 }
 
+/** What `sessionRepo.getMany` read: the bodies it could migrate, and why the rest failed. */
+export interface BatchedBodies {
+  bodies: Map<SessionId, Session>;
+  /** Ids whose stored record could not be migrated, keyed to the error `migrateSession` threw. */
+  failed: Map<SessionId, unknown>;
+}
+
 export const sessionRepo = {
   async listSummaries(): Promise<SessionSummary[]> {
     const index = await readIndex();
@@ -192,6 +258,40 @@ export const sessionRepo = {
 
   get(id: SessionId): Promise<Session | undefined> {
     return readBody(id);
+  },
+
+  /**
+   * Several bodies in ONE `chrome.storage.local.get([...keys])` (spec §4: "a read that needs more
+   * than one body batches them into a single request"). The search corpus's idle pre-warm is the
+   * caller this exists for -- it used to make one round trip per session.
+   *
+   * Each record is migrated on its own, so one bad body cannot fail the batch: ids whose body is
+   * gone are simply absent from `bodies`, and ids whose record could not be migrated are in
+   * `failed` with the error that says why (the caller decides whether that is worth reporting).
+   * Duplicate ids are read once. This is a read: it takes no lock and writes nothing.
+   */
+  async getMany(ids: readonly SessionId[]): Promise<BatchedBodies> {
+    const bodies = new Map<SessionId, Session>();
+    const failed = new Map<SessionId, unknown>();
+    const unique = [...new Set(ids)];
+    if (unique.length === 0) {
+      return { bodies, failed };
+    }
+    const records: Record<string, unknown> = await chrome.storage.local.get(
+      unique.map((id) => sessionKey(id)),
+    );
+    for (const id of unique) {
+      const record = records[sessionKey(id)];
+      if (record === undefined || record === null) {
+        continue;
+      }
+      try {
+        bodies.set(id, migrateSession(record));
+      } catch (err) {
+        failed.set(id, err);
+      }
+    }
+    return { bodies, failed };
   },
 
   put(session: Session): Promise<void> {
@@ -266,8 +366,15 @@ export const sessionRepo = {
   /**
    * Repairs the index from the bodies (spec §4): drops entries whose body is gone, re-indexes
    * orphan bodies (a `put` interrupted between its two writes) and re-derives entries that no
-   * longer describe their body (a `rename` interrupted the same way). A body that fails
-   * migration or is malformed is skipped, keeping whatever index entry it had.
+   * longer describe their body (a `rename` interrupted the same way). A malformed body is
+   * skipped, keeping whatever index entry it had.
+   *
+   * A body written by a *newer* schema version is the one failure that is kept rather than
+   * skipped (spec §3): its entry is marked `unreadable` -- synthesising one when the body has no
+   * entry at all -- so the dashboard can list it as an inert row the user can still delete.
+   * Skipping it instead was the real hazard: after a downgrade the index is itself unreadable,
+   * this pass rebuilds it from the bodies, and every skipped body would vanish from the list
+   * while sitting untouched on disk, with nothing to tell the user why.
    *
    * This is the one read path that tolerates an unreadable index (future schema version, or
    * garbage): it is the repair path, so it treats such an index as empty and rebuilds it from
@@ -307,11 +414,17 @@ export const sessionRepo = {
           // toSummary is inside the try too: a malformed nested window (e.g. `windows: [null]`)
           // passes migrateSession's shallow checks and must cost this body only, not the pass.
           summary = toSummary(migrateSession(record), byteLength(JSON.stringify(record)));
-        } catch {
-          if (existing !== undefined) {
-            kept.push(existing);
+        } catch (err) {
+          const version = futureSchemaVersion(err);
+          if (version === undefined) {
+            // Damaged, not from the future: nothing readable to show, so it keeps its old entry
+            // (if any) and is otherwise left out, exactly as before.
+            if (existing !== undefined) {
+              kept.push(existing);
+            }
+            continue;
           }
-          continue;
+          summary = unreadableSummary(id, record, existing, version);
         }
         if (existing !== undefined && sameSummary(existing, summary)) {
           kept.push(existing);

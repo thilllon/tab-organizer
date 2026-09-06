@@ -2,8 +2,10 @@ import { HardDrive, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DeleteAllDataDialog } from '@/dashboard/components/DeleteAllDataDialog';
+import { DeleteAllHistoryDialog } from '@/dashboard/components/DeleteAllHistoryDialog';
 import { isIndexChange } from '@/dashboard/hooks/useSessionIndex';
 import { errorMessage } from '@/dashboard/lib/errors';
+import { pluralize } from '@/dashboard/lib/format';
 import {
   STORAGE_METER_ID,
   snapshotHint,
@@ -27,6 +29,12 @@ export interface StorageMeterProps {
  * total, split into saved sessions and automatic snapshots from the index's `bytes` fields, plus
  * the hint that names the snapshots when they are what is filling the disk.
  *
+ * Two remedies sit beside it, because this is where a quota notice sends the user (spec §4: the
+ * toast links to the meter *and* to "Delete old history"): "Delete all unprotected", the one that
+ * actually frees the space and keeps every saved session, and only then the all-or-nothing
+ * "Delete all session data". The first is the same action the History section offers, behind the
+ * same confirm — the quota path never points at that collapsed section, so it is repeated here.
+ *
  * The total is re-read whenever the index changes — every write goes through `sessionRepo`, which
  * rewrites `sessionIndex`, and `useSessionIndex` turns that `storage.onChanged` into a new
  * `summaries` array — so saving, deleting, importing or pruning all move the bar.
@@ -35,6 +43,7 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
   const [bytes, setBytes] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [confirming, setConfirming] = useState(false);
+  const [confirmingHistory, setConfirmingHistory] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -86,6 +95,23 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
     })();
   };
 
+  const deleteUnprotectedSnapshots = () => {
+    setConfirmingHistory(false);
+    setBusy(true);
+    void (async () => {
+      try {
+        const removed = await sessionRepo.removeAllHistory({ unprotectedOnly: true });
+        setError(undefined);
+        onNotice(`Deleted ${pluralize(removed.length, 'unprotected snapshot')}.`);
+      } catch (err) {
+        setError(errorMessage(err));
+      } finally {
+        setBusy(false);
+        await refresh();
+      }
+    })();
+  };
+
   return (
     <section
       id={STORAGE_METER_ID}
@@ -103,16 +129,28 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           {bytes === undefined ? 'Measuring…' : storageTotalLine(breakdown)}
           {bytes === undefined ? '' : ` · ${storageDetailLine(breakdown)}`}
         </p>
-        <Button
-          variant="outline"
-          size="xs"
-          className="ml-auto text-destructive hover:text-destructive"
-          disabled={busy}
-          onClick={() => setConfirming(true)}
-        >
-          <Trash2 />
-          Delete all session data
-        </Button>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="xs"
+            // Nothing to free: every snapshot is protected, or there are none.
+            disabled={busy || breakdown.unprotectedSnapshotCount === 0}
+            onClick={() => setConfirmingHistory(true)}
+          >
+            <Trash2 />
+            Delete all unprotected
+          </Button>
+          <Button
+            variant="outline"
+            size="xs"
+            className="text-destructive hover:text-destructive"
+            disabled={busy}
+            onClick={() => setConfirming(true)}
+          >
+            <Trash2 />
+            Delete all session data
+          </Button>
+        </div>
       </div>
 
       {/* Decorative: the same numbers are in the line above, spelled out. */}
@@ -128,6 +166,13 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           {error}
         </p>
       )}
+
+      <DeleteAllHistoryDialog
+        count={breakdown.unprotectedSnapshotCount}
+        open={confirmingHistory}
+        onOpenChange={setConfirmingHistory}
+        onConfirm={deleteUnprotectedSnapshots}
+      />
 
       <DeleteAllDataDialog
         open={confirming}

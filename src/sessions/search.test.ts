@@ -582,7 +582,22 @@ describe('search', () => {
     });
   });
 
-  it('searches 10,000 entries in under 100 ms', () => {
+  it('searches 10,000 entries in under 40 ms', () => {
+    /*
+     * Spec §12 Phase 4 asks for 10,000 entries in under 20 ms. Measured on this machine with
+     * `search(big, 'git issue', { includeHistory: true })` repeated 12x per process, over four
+     * fresh vitest processes (ms):
+     *
+     *   cold (first call, JIT still warming): 5.2  6.1  7.6  8.7
+     *   warm (calls 2-12):                    1.0 - 3.5, median ~1.8
+     *
+     * So the spec's 20 ms is met roughly 2x over even cold. The bound here is 40 ms — ~4.6x the
+     * worst cold run — because this is the only figure CI has to hit on a shared runner that can
+     * be several times slower than a dev machine, and a flaky perf test gets deleted rather than
+     * investigated. It is still tight enough to catch what it is for: an accidental O(n²) or a
+     * per-entry `new URL()` creeping back in would cost hundreds of ms, not tens.
+     */
+
     // 5 hosts × 6 words (coprime) so every host/title combination occurs in the corpus.
     const hosts = ['github.com', 'www.google.com', 'docs.example.org', 'mail.example.net', 'x.io'];
     const words = ['GitHub', 'Issue', 'Pull request', 'Dashboard', 'Notes', '한국어 문서'];
@@ -607,7 +622,7 @@ describe('search', () => {
     const elapsed = performance.now() - started;
 
     expect(result.total).toBeGreaterThan(0);
-    expect(elapsed).toBeLessThan(100);
+    expect(elapsed).toBeLessThan(40);
   });
 });
 
@@ -692,5 +707,48 @@ describe('splitOnMatches', () => {
     const segments = splitOnMatches(text, tokenize('the o quick'));
     expect(segments.map((s) => s.text).join('')).toBe(text);
     expect(segments.some((s) => s.text === '')).toBe(false);
+  });
+});
+
+/**
+ * Spec §12 Phase 4 / §7: result highlighting goes through `splitOnMatches()` and there is no
+ * `dangerouslySetInnerHTML` anywhere — true by construction today, and this is what keeps it true.
+ *
+ * Biome's `lint/security/noDangerouslySetInnerHtml` (in the recommended preset, so already an
+ * error in `pnpm format`) covers the JSX-attribute form; this catches the two ways round it that
+ * a lint rule cannot — a `biome-ignore` comment, and the prop passed through
+ * `createElement`/a spread object — for the price of one glob.
+ */
+describe('the source tree', () => {
+  // Every module under src/, as text. `import.meta.glob` rather than a `node:fs` walk: this
+  // tsconfig gives src/ the chrome typings only, so node built-ins are not importable here.
+  const SOURCES = import.meta.glob<string>('../**/*.{ts,tsx}', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  });
+
+  // Assembled at runtime so this file is not its own violation.
+  const FORBIDDEN = ['dangerously', 'SetInnerHTML'].join('');
+
+  /**
+   * Comments are stripped first: modules explain *why* they avoid the prop (see `splitOnMatches`
+   * above), and a doc comment saying so must not read as a violation. The `(?<!:)` keeps
+   * `https://` out of the line-comment rule.
+   */
+  function code(source: string): string {
+    return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(?<!:)\/\/.*$/gm, '');
+  }
+
+  it(`never uses ${['dangerously', 'SetInnerHTML'].join('')}`, () => {
+    const files = Object.entries(SOURCES);
+    // Guard against the glob silently matching nothing (a moved directory would pass vacuously).
+    expect(files.length).toBeGreaterThan(50);
+
+    const offenders = files
+      .filter(([, source]) => code(source).includes(FORBIDDEN))
+      .map(([file]) => file);
+
+    expect(offenders).toEqual([]);
   });
 });

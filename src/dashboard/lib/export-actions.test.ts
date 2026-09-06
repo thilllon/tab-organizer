@@ -5,6 +5,7 @@ import { sessionKey, sessionRepo } from '@/sessions/storage';
 import type { Session, SessionSummary } from '@/types';
 import {
   buildExportScope,
+  COPIED_LINK,
   collectProgressNotice,
   collectSessionBodies,
   copiedLinksNotice,
@@ -128,6 +129,12 @@ describe('notices', () => {
     expect(copiedLinksNotice(12)).toBe('Copied 12 links.');
     expect(copiedLinksNotice(1)).toBe('Copied 1 link.');
     expect(copiedMarkdownNotice(12)).toBe('Copied 12 links as Markdown.');
+  });
+
+  it('confirms a single tab row copy without counting to one', () => {
+    // SessionCard's per-tab "Copy link" button (spec §8 "Copy links ... on tab rows").
+    expect(COPIED_LINK).toBe('Copied link.');
+    expect(COPIED_LINK).not.toBe(copiedLinksNotice(1));
   });
 
   it('reports skipped bodies in the export-all confirmation', () => {

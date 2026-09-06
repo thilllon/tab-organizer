@@ -91,6 +91,12 @@ export function copiedMarkdownNotice(count: number): string {
   return `Copied ${pluralize(count, 'link')} as Markdown.`;
 }
 
+/**
+ * The tab row's own "Copy link" (spec §8): one url, so it is a sentence rather than a count --
+ * "Copied 1 link." would be counting to one. The multi-link notices above stay as they are.
+ */
+export const COPIED_LINK = 'Copied link.';
+
 /** Nothing was in scope — an empty group, or a window whose tabs were all removed. */
 export const NOTHING_TO_EXPORT = 'Nothing to export — this selection has no tabs.';
 

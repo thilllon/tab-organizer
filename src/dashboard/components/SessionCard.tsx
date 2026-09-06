@@ -1,4 +1,4 @@
-import { ChevronRight, Ellipsis, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
+import { ChevronRight, Ellipsis, Link, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,9 @@ import { DeleteSessionDialog } from '@/dashboard/components/DeleteSessionDialog'
 import { ExportMenu } from '@/dashboard/components/ExportMenu';
 import { WindowTree } from '@/dashboard/components/WindowTree';
 import { useSessionBody } from '@/dashboard/hooks/useSessionBody';
+import { copyText } from '@/dashboard/lib/download';
 import { errorMessage } from '@/dashboard/lib/errors';
+import { COPIED_LINK } from '@/dashboard/lib/export-actions';
 import { formatDateTime, formatSessionMeta } from '@/dashboard/lib/format';
 import { sessionRowKeyAction } from '@/dashboard/lib/row-keys';
 import { removeTabFromSession, removeWindowFromSession } from '@/dashboard/lib/session-edit';
@@ -237,6 +239,23 @@ export function SessionCard({
     void editSession((session) => removeWindowFromSession(session, windowIndex));
   };
 
+  /**
+   * Per-tab "Copy link" (spec §8: copy actions on tab rows too). One url is not worth a whole
+   * `ExportMenu` -- and not worth a tab arm on `ExportScope` either -- so it is a single button
+   * that writes the stored url straight to the clipboard. `copyText` never throws: a browser
+   * that refuses clipboard access comes back as a readable message for the card's error line.
+   */
+  const handleCopyTabLink = (url: string) => {
+    void copyText(url).then((result) => {
+      if (result.ok) {
+        setError(undefined);
+        onNotice(COPIED_LINK);
+        return;
+      }
+      setError(result.error);
+    });
+  };
+
   return (
     // A tree node in the saved-sessions tree: focusable so Enter/Delete reach `handleRowKey`,
     // and `aria-expanded` mirrors the chevron's own state.
@@ -433,14 +452,24 @@ export function SessionCard({
                       />
                     )}
                     renderTabActions={(tabIndex) => (
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        aria-label="Remove from session"
-                        onClick={() => handleRemoveTab(index, tabIndex)}
-                      >
-                        <X />
-                      </Button>
+                      <>
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          aria-label="Copy link"
+                          onClick={() => handleCopyTabLink(window.tabs[tabIndex].url)}
+                        >
+                          <Link />
+                        </Button>
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          aria-label="Remove from session"
+                          onClick={() => handleRemoveTab(index, tabIndex)}
+                        >
+                          <X />
+                        </Button>
+                      </>
                     )}
                   />
                 ))}

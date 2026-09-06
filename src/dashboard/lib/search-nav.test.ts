@@ -63,6 +63,21 @@ describe('sessionNameMatches', () => {
   it('matches nothing without tokens', () => {
     expect(sessionNameMatches(summaries, [])).toEqual([]);
   });
+
+  it('never offers a session this build cannot read', () => {
+    // Activating a tier-1 row restores the session; a body from a newer schema cannot be
+    // restored, so it must not be offered here either (spec §3).
+    const withFuture = [
+      ...summaries,
+      summary({
+        id: 'f',
+        name: 'Work from the future',
+        unreadable: { reason: 'unknown-schema', version: 2 },
+      }),
+    ];
+
+    expect(sessionNameMatches(withFuture, ['work']).map((item) => item.id)).toEqual(['a']);
+  });
 });
 
 describe('buildSearchGroups', () => {

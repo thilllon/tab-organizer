@@ -34,6 +34,41 @@ const WINDOW_A: WindowSnapshot = {
   ],
 };
 
+/**
+ * The Phase 1 acceptance fixture, verbatim (spec §12 Phase 1): "2 pinned, 2 groups one collapsed,
+ * a suspended tab and one `file://` tab". The suspended tab must come back as the page it wraps,
+ * and the `file://` tab is the one skip (`fileAccessAllowed: false` in SANITIZE).
+ */
+const WINDOW_PHASE_1: WindowSnapshot = {
+  state: 'normal',
+  focused: true,
+  groups: [
+    { title: 'Work', color: 'blue', collapsed: false },
+    { title: 'Reading', color: 'yellow', collapsed: true },
+  ],
+  tabs: [
+    { url: 'https://pin-1.example/', title: 'Pin 1', pinned: true, active: false },
+    { url: 'https://pin-2.example/', title: 'Pin 2', pinned: true, active: false },
+    { url: 'https://work.example/a', title: 'Work A', pinned: false, active: true, groupIndex: 0 },
+    {
+      // Saved by the suspender, so the stored url is the wrapper; the restore opens the real page.
+      url: `${SANITIZE.suspendedPrefix}ttl=Suspended&uri=https://work.example/b`,
+      title: 'Work B (suspended)',
+      pinned: false,
+      active: false,
+      groupIndex: 0,
+    },
+    {
+      url: 'https://reading.example/',
+      title: 'Reading',
+      pinned: false,
+      active: false,
+      groupIndex: 1,
+    },
+    { url: 'file:///home/user/notes.html', title: 'Notes', pinned: false, active: false },
+  ],
+};
+
 const WINDOW_B: WindowSnapshot = {
   state: 'normal',
   focused: false,
@@ -199,6 +234,44 @@ describe('executeRestore', () => {
     ]);
 
     expect(result).toEqual({ restored: 5, discarded: 0, skipped: [], errors: [] });
+  });
+
+  it('recreates the Phase 1 acceptance fixture and reports 1 skipped', async () => {
+    // Spec §12 Phase 1 acceptance: "restore of a fixture (2 pinned, 2 groups one collapsed,
+    // suspended tab, one file:// tab) recreates order/pinned/groups/collapsed/active and reports
+    // 1 skipped". The pieces have their own tests; this is the fixture as written.
+    const before = snapshotWindowIds();
+
+    const result = await executeRestore(makePlan([WINDOW_PHASE_1]));
+
+    const created = newWindowIds(before);
+    expect(created).toHaveLength(1);
+    const windowId = created[0];
+
+    expect(stripOf(windowId)).toEqual([
+      { url: 'https://pin-1.example/', pinned: true, active: false, group: null },
+      { url: 'https://pin-2.example/', pinned: true, active: false, group: null },
+      { url: 'https://work.example/a', pinned: false, active: true, group: 'Work' },
+      // Unwrapped: the suspender's wrapper never comes back.
+      { url: 'https://work.example/b', pinned: false, active: false, group: 'Work' },
+      { url: 'https://reading.example/', pinned: false, active: false, group: 'Reading' },
+    ]);
+
+    const groups = [...getChromeFake().state.groups.values()]
+      .filter((group) => group.windowId === windowId)
+      .map(({ title, color, collapsed }) => ({ title, color, collapsed }));
+    expect(groups).toEqual([
+      { title: 'Work', color: 'blue', collapsed: false },
+      { title: 'Reading', color: 'yellow', collapsed: true },
+    ]);
+
+    expect(result).toEqual({
+      restored: 5,
+      discarded: 0,
+      skipped: ['file:///home/user/notes.html'],
+      errors: [],
+    });
+    expect(getChromeFake().state.windows.get(windowId)?.focused).toBe(true);
   });
 
   it('applies clamped bounds for normal windows and focuses the snapshot-focused window last', async () => {
@@ -816,6 +889,95 @@ describe('executeRestore', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+/**
+ * Spec §12 Phase 6 acceptance: "a 1,000-tab restore completes without freezing, cancel works".
+ * The multi-chunk path is covered at ~26 tabs elsewhere; this pins the shape of a restore two
+ * orders of magnitude larger — the chunk count, that every single tab is created, and that a
+ * cancel lands on a chunk boundary with the tabs already created kept.
+ */
+describe('executeRestore at 1,000 tabs', () => {
+  const TAB_COUNT = 1_000;
+
+  /** One window of `TAB_COUNT` distinct http tabs, the first active, none pinned or grouped. */
+  function bigWindow(): WindowSnapshot {
+    return {
+      state: 'normal',
+      focused: true,
+      groups: [],
+      tabs: Array.from({ length: TAB_COUNT }, (_, index) => ({
+        url: `https://big.example/${index}`,
+        title: `Tab ${index}`,
+        pinned: false,
+        active: index === 0,
+      })),
+    };
+  }
+
+  it('plans 40 chunks of 25 and creates every tab', async () => {
+    const plan = makePlan([bigWindow()]);
+    const [planned] = plan.windows;
+
+    // The planner is what keeps the page responsive: 25 tabs per chunk, one macrotask apart.
+    expect(plan.totalTabs).toBe(TAB_COUNT);
+    expect(planned.chunks).toHaveLength(TAB_COUNT / 25);
+    expect(planned.chunks.every((chunk) => chunk.length === 25)).toBe(true);
+    expect(plan.skipped).toEqual([]);
+
+    const before = snapshotWindowIds();
+    const progress: number[] = [];
+    const result = await executeRestore(plan, {
+      onProgress: (done) => {
+        progress.push(done);
+      },
+    });
+    const [windowId] = newWindowIds(before);
+
+    expect(result.errors).toEqual([]);
+    expect(result.restored).toBe(TAB_COUNT);
+    // One progress tick per chunk, cumulative and in order.
+    expect(progress).toHaveLength(TAB_COUNT / 25);
+    expect(progress.at(0)).toBe(25);
+    expect(progress.at(-1)).toBe(TAB_COUNT);
+
+    const strip = stripOf(windowId);
+    expect(strip).toHaveLength(TAB_COUNT);
+    expect(strip[0].url).toBe('https://big.example/0');
+    expect(strip.at(-1)?.url).toBe(`https://big.example/${TAB_COUNT - 1}`);
+    // Every url exactly once, and no about:blank placeholder left behind.
+    expect(new Set(strip.map((row) => row.url)).size).toBe(TAB_COUNT);
+    expect(strip.some((row) => row.url === 'about:blank')).toBe(false);
+  });
+
+  it('stops a cancel on a chunk boundary and keeps what was already created', async () => {
+    const controller = new AbortController();
+    const progress: number[] = [];
+    const before = snapshotWindowIds();
+
+    const result = await executeRestore(makePlan([bigWindow()]), {
+      signal: controller.signal,
+      onProgress: (done) => {
+        progress.push(done);
+        // Mid-restore, from the toast's Cancel button.
+        if (done === 500) {
+          controller.abort();
+        }
+      },
+    });
+    const [windowId] = newWindowIds(before);
+
+    // Chunk boundary, not "somewhere around 500": the executor checks the signal between chunks.
+    expect(progress.at(-1)).toBe(500);
+    expect(progress).toHaveLength(500 / 25);
+    // What was kept is reported, and it is exactly what is on screen.
+    expect(result.restored).toBe(500);
+    const strip = stripOf(windowId);
+    expect(strip).toHaveLength(500);
+    expect(strip.at(-1)?.url).toBe('https://big.example/499');
+    expect(strip.some((row) => row.url === 'about:blank')).toBe(false);
+    expect(result.errors).toEqual([]);
   });
 });
 

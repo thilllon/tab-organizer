@@ -63,6 +63,16 @@ describe('selectPrewarmIds', () => {
     expect(selectPrewarmIds(summaries, 1_000)).toEqual(['a', 'b', 'c']);
   });
 
+  it('never pre-warms a body this build cannot read', () => {
+    const summaries = [
+      summary({ id: 'a' }),
+      summary({ id: 'future', unreadable: { reason: 'unknown-schema', version: 2 } }),
+      summary({ id: 'b' }),
+    ];
+
+    expect(selectPrewarmIds(summaries)).toEqual(['a', 'b']);
+  });
+
   it('never pre-warms history snapshots, whatever the budget', () => {
     const summaries = [
       summary({ id: 'h1', kind: 'history', bytes: 10 }),
@@ -146,6 +156,40 @@ describe('SearchCorpusCache', () => {
     await cache.ensureLoaded(['a']);
     expect(get).not.toHaveBeenCalled();
     get.mockRestore();
+  });
+
+  it('reads a whole pre-warm batch in one storage request (spec §4)', async () => {
+    await sessionRepo.put(makeSession('a', ['https://a.example/']));
+    await sessionRepo.put(makeSession('b', ['https://b.example/']));
+    await sessionRepo.put(makeSession('c', ['https://c.example/']));
+    const cache = new SearchCorpusCache();
+    const get = vi.spyOn(chrome.storage.local, 'get');
+
+    await cache.ensureLoaded(['a', 'b', 'c']);
+
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(cache.entriesFor(['a', 'b', 'c']).map((entry) => entry.url)).toEqual([
+      'https://a.example/',
+      'https://b.example/',
+      'https://c.example/',
+    ]);
+    get.mockRestore();
+  });
+
+  it('keeps the rest of a batch when one body cannot be read', async () => {
+    await sessionRepo.put(makeSession('a', ['https://a.example/']));
+    await chrome.storage.local.set({ [sessionKey('future')]: { schemaVersion: 99, id: 'future' } });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const cache = new SearchCorpusCache();
+
+    await cache.ensureLoaded(['future', 'a', 'gone']);
+
+    expect(cache.entriesFor(['a']).map((entry) => entry.url)).toEqual(['https://a.example/']);
+    // Both the unreadable and the deleted body are cached as empty, so no query retries them.
+    expect(cache.isLoaded('future')).toBe(true);
+    expect(cache.isLoaded('gone')).toBe(true);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('coalesces concurrent loads of the same session into one read', async () => {

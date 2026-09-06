@@ -296,6 +296,64 @@ describe('sessionRepo.put / get / listSummaries', () => {
   });
 });
 
+describe('sessionRepo.getMany', () => {
+  it('reads every body in ONE chrome.storage.local.get (spec §4)', async () => {
+    await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
+    await sessionRepo.put(makeSession({ id: 'id-b', name: 'B' }));
+    await sessionRepo.put(makeSession({ id: 'id-c', name: 'C' }));
+    const get = vi.spyOn(chrome.storage.local, 'get');
+
+    const { bodies, failed } = await sessionRepo.getMany(['id-a', 'id-b', 'id-c']);
+
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get).toHaveBeenCalledWith(['session:id-a', 'session:id-b', 'session:id-c']);
+    expect([...bodies.keys()]).toEqual(['id-a', 'id-b', 'id-c']);
+    expect([...bodies.values()].map((body) => body.name)).toEqual(['A', 'B', 'C']);
+    expect(failed.size).toBe(0);
+  });
+
+  it('reads a duplicated id once and makes no request for an empty list', async () => {
+    await sessionRepo.put(makeSession({ id: 'id-a' }));
+    const get = vi.spyOn(chrome.storage.local, 'get');
+
+    await expect(sessionRepo.getMany([])).resolves.toEqual({
+      bodies: new Map(),
+      failed: new Map(),
+    });
+    expect(get).not.toHaveBeenCalled();
+
+    const { bodies } = await sessionRepo.getMany(['id-a', 'id-a']);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get).toHaveBeenCalledWith(['session:id-a']);
+    expect(bodies.size).toBe(1);
+  });
+
+  it('lets one bad body cost only itself: mixed missing, damaged, future and valid', async () => {
+    const fake = getChromeFake();
+    await sessionRepo.put(makeSession({ id: 'ok-1', name: 'One' }));
+    await sessionRepo.put(makeSession({ id: 'ok-2', name: 'Two' }));
+    fake.state.local.set(sessionKey('future'), {
+      ...makeSession({ id: 'future' }),
+      schemaVersion: 2,
+    });
+    fake.state.local.set(sessionKey('junk'), 'not an object');
+
+    const { bodies, failed } = await sessionRepo.getMany([
+      'ok-1',
+      'gone',
+      'future',
+      'junk',
+      'ok-2',
+    ]);
+
+    expect([...bodies.keys()]).toEqual(['ok-1', 'ok-2']);
+    // A body that is simply absent is not a failure — it was deleted, not broken.
+    expect([...failed.keys()]).toEqual(['future', 'junk']);
+    expect(failed.get('future')).toBeInstanceOf(UnknownSchemaVersionError);
+    expect(failed.get('junk')).toBeInstanceOf(TypeError);
+  });
+});
+
 describe('sessionRepo migration error propagation', () => {
   it('get rejects with UnknownSchemaVersionError for a body from a future schema', async () => {
     const fake = getChromeFake();
@@ -567,20 +625,112 @@ describe('sessionRepo.reconcile', () => {
     expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['id-a']);
   });
 
-  it('leaves bodies that fail migration alone', async () => {
+  it('leaves a malformed body alone and out of the index', async () => {
     const fake = getChromeFake();
-    fake.state.local.set(sessionKey('future'), {
-      ...makeSession({ id: 'future' }),
-      schemaVersion: 2,
-    });
     fake.state.local.set(sessionKey('junk'), 'not an object');
 
     const result = await sessionRepo.reconcile();
 
     expect(result).toEqual({ reindexed: 0, dropped: 0 });
-    expect(fake.state.local.has(sessionKey('future'))).toBe(true);
     expect(fake.state.local.has(sessionKey('junk'))).toBe(true);
     await expect(sessionRepo.listSummaries()).resolves.toEqual([]);
+  });
+
+  it('keeps a body from a future schema and reports it as unreadable (spec §3)', async () => {
+    // The downgrade case: a v2 store opened by this v1 build. Skipping the body here would rebuild
+    // the index without it, and the user would see an empty list with their sessions still on disk.
+    const fake = getChromeFake();
+    fake.state.local.set(sessionKey('future'), {
+      ...makeSession({ id: 'future', name: 'From the future' }),
+      schemaVersion: 2,
+    });
+    fake.state.local.set(sessionKey('id-a'), makeSession({ id: 'id-a', name: 'A' }));
+
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 2, dropped: 0 });
+    expect(fake.state.local.has(sessionKey('future'))).toBe(true);
+    const summaries = await sessionRepo.listSummaries();
+    expect(summaries.map((s) => s.id).sort()).toEqual(['future', 'id-a']);
+    const unreadable = summaries.find((s) => s.id === 'future');
+    expect(unreadable?.unreadable).toEqual({ reason: 'unknown-schema', version: 2 });
+    // The name survives (it is a plain string in any schema); the counts cannot and are not faked.
+    expect(unreadable?.name).toBe('From the future');
+    expect(unreadable?.kind).toBe('saved');
+    expect(unreadable?.windowCount).toBe(0);
+    expect(unreadable?.tabCount).toBe(0);
+    // The valid body beside it is untouched and still readable.
+    expect(summaries.find((s) => s.id === 'id-a')?.unreadable).toBeUndefined();
+    await expect(sessionRepo.get('id-a')).resolves.toMatchObject({ name: 'A' });
+  });
+
+  it('survives a full downgrade: unreadable index plus none but future bodies', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(INDEX_KEY, { schemaVersion: 2, sessions: [] });
+    fake.state.local.set(sessionKey('f1'), {
+      ...makeSession({ id: 'f1', name: 'One' }),
+      schemaVersion: 2,
+    });
+    fake.state.local.set(sessionKey('f2'), {
+      ...makeSession({ id: 'f2', name: 'Two' }),
+      schemaVersion: 2,
+    });
+
+    await sessionRepo.reconcile();
+
+    const summaries = await sessionRepo.listSummaries();
+    expect(summaries.map((s) => s.name).sort()).toEqual(['One', 'Two']);
+    expect(summaries.every((s) => s.unreadable?.reason === 'unknown-schema')).toBe(true);
+    expect(fake.state.local.has(sessionKey('f1'))).toBe(true);
+    expect(fake.state.local.has(sessionKey('f2'))).toBe(true);
+  });
+
+  it('lets an unreadable session be deleted, and only that one', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(sessionKey('future'), {
+      ...makeSession({ id: 'future' }),
+      schemaVersion: 2,
+    });
+    await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
+    await sessionRepo.reconcile();
+
+    // remove() never reads the body, so the one action the row offers works.
+    await expect(sessionRepo.remove('future')).resolves.toBeUndefined();
+
+    expect(fake.state.local.has(sessionKey('future'))).toBe(false);
+    expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['id-a']);
+  });
+
+  it('drops the unreadable marker once the body can be read again', async () => {
+    const fake = getChromeFake();
+    const body = makeSession({ id: 'id-a', name: 'A' });
+    fake.state.local.set(sessionKey('id-a'), { ...body, schemaVersion: 2 });
+    await sessionRepo.reconcile();
+    expect((await sessionRepo.listSummaries())[0].unreadable).toBeDefined();
+
+    // The user updated Tab Organizer again (here: the body is v1 once more).
+    fake.state.local.set(sessionKey('id-a'), body);
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 1, dropped: 0 });
+    const summary = (await sessionRepo.listSummaries())[0];
+    expect(summary.unreadable).toBeUndefined();
+    expect(summary.tabCount).toBe(2);
+  });
+
+  it('does not re-write the index for an unreadable body it has already marked', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(sessionKey('future'), {
+      ...makeSession({ id: 'future' }),
+      schemaVersion: 2,
+    });
+    await sessionRepo.reconcile();
+    const setSpy = vi.spyOn(chrome.storage.local, 'set');
+
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 0, dropped: 0 });
+    expect(setSpy).not.toHaveBeenCalled();
   });
 
   it('skips a body with a malformed nested window instead of aborting the whole pass', async () => {
@@ -597,15 +747,33 @@ describe('sessionRepo.reconcile', () => {
     expect(fake.state.local.has(sessionKey('bad'))).toBe(true);
   });
 
-  it('keeps the existing index entry of an indexed body that no longer migrates', async () => {
+  it('marks the existing index entry of an indexed body that no longer migrates', async () => {
     const fake = getChromeFake();
     await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
     fake.state.local.set(sessionKey('id-a'), { ...makeSession({ id: 'id-a' }), schemaVersion: 2 });
 
     const result = await sessionRepo.reconcile();
 
+    // The entry it already had is kept -- name and counts were written by this schema and are
+    // true -- and only gains the marker that makes the row read-only.
+    expect(result).toEqual({ reindexed: 1, dropped: 0 });
+    const summaries = await sessionRepo.listSummaries();
+    expect(summaries.map((s) => s.name)).toEqual(['A']);
+    expect(summaries[0].unreadable).toEqual({ reason: 'unknown-schema', version: 2 });
+    expect(summaries[0].tabCount).toBe(2);
+  });
+
+  it('keeps the existing index entry of an indexed body that is merely damaged', async () => {
+    const fake = getChromeFake();
+    await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
+    fake.state.local.set(sessionKey('id-a'), 'not an object');
+
+    const result = await sessionRepo.reconcile();
+
     expect(result).toEqual({ reindexed: 0, dropped: 0 });
-    expect((await sessionRepo.listSummaries()).map((s) => s.name)).toEqual(['A']);
+    const summaries = await sessionRepo.listSummaries();
+    expect(summaries.map((s) => s.name)).toEqual(['A']);
+    expect(summaries[0].unreadable).toBeUndefined();
   });
 
   it('re-derives an index entry whose body was renamed (rename interrupted before the index write)', async () => {

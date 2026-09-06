@@ -600,12 +600,21 @@ export function createChromeFake(): ChromeFake {
         removeTab(id);
       }
     },
+    /**
+     * Chrome moves several tabs as a *block*: they land on consecutive indices starting at
+     * `index`, in the order given, not all on `index` itself (which would reverse them). The
+     * sorter moves a whole group in one call (`src/background/index.ts`), so getting this wrong
+     * would make a sorted list come back reversed. `index: -1` appends each in turn, which
+     * preserves the order for free.
+     */
     async move(
       tabIds: number | number[],
       props: chrome.tabs.MoveProperties,
     ): Promise<chrome.tabs.Tab | chrome.tabs.Tab[]> {
       const ids = Array.isArray(tabIds) ? tabIds : [tabIds];
       const moved: FakeTab[] = [];
+      // Where the next tab of the block goes, per target window; seeded from `props.index`.
+      const nextPosition = new Map<number, number>();
       for (const id of ids) {
         const tab = requireTab(id);
         const targetWindowId = props.windowId ?? tab.windowId;
@@ -614,7 +623,9 @@ export function createChromeFake(): ChromeFake {
         const fromIndex = tab.index;
         tab.windowId = targetWindowId;
         const strip = stripOf(targetWindowId).filter((entry) => entry.id !== tab.id);
-        const position = props.index < 0 ? strip.length : Math.min(props.index, strip.length);
+        const requested = nextPosition.get(targetWindowId) ?? props.index;
+        const position = requested < 0 ? strip.length : Math.min(requested, strip.length);
+        nextPosition.set(targetWindowId, requested < 0 ? -1 : position + 1);
         strip.splice(position, 0, tab);
         strip.forEach((entry, index) => {
           entry.index = index;

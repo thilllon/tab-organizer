@@ -17,6 +17,7 @@ import { SearchBar } from '@/dashboard/components/SearchBar';
 import { SearchResults } from '@/dashboard/components/SearchResults';
 import { type RestoreScope, SessionCard } from '@/dashboard/components/SessionCard';
 import { SessionSettingsRow } from '@/dashboard/components/SessionSettingsRow';
+import { UnreadableSessionRow } from '@/dashboard/components/UnreadableSessionRow';
 import { useOpenWindows } from '@/dashboard/hooks/useOpenWindows';
 import { useRestore } from '@/dashboard/hooks/useRestore';
 import { useSearchCorpus } from '@/dashboard/hooks/useSearchCorpus';
@@ -292,7 +293,12 @@ export function Dashboard() {
     }
     void ensureLoaded(
       sessions
-        .filter((summary) => includeHistory || summary.kind !== 'history')
+        .filter(
+          (summary) =>
+            // Nothing can read an unreadable body, so asking for it would only cache an empty
+            // list and log a warning per query.
+            summary.unreadable === undefined && (includeHistory || summary.kind !== 'history'),
+        )
         .map((summary) => summary.id),
     );
   }, [searching, includeHistory, sessions, ensureLoaded]);
@@ -477,19 +483,31 @@ export function Dashboard() {
                 aria-labelledby="saved-sessions-heading"
                 className="space-y-3"
               >
-                {saved.map((summary) => (
-                  <SessionCard
-                    key={summary.id}
-                    summary={summary}
-                    restoring={running}
-                    onRestore={(session, scope) => requestRestore(session, scope)}
-                    onRestoreWindow={(session, windowIndex, scope) =>
-                      requestRestore(session, scope, windowIndex)
-                    }
-                    onNotice={announce}
-                    onDeleted={focusList}
-                  />
-                ))}
+                {saved.map((summary) =>
+                  // A body written by a newer Tab Organizer (spec §3): listed, explained and
+                  // deletable, but nothing here can read it, so it gets an inert row instead of
+                  // a card whose every action would fail.
+                  summary.unreadable === undefined ? (
+                    <SessionCard
+                      key={summary.id}
+                      summary={summary}
+                      restoring={running}
+                      onRestore={(session, scope) => requestRestore(session, scope)}
+                      onRestoreWindow={(session, windowIndex, scope) =>
+                        requestRestore(session, scope, windowIndex)
+                      }
+                      onNotice={announce}
+                      onDeleted={focusList}
+                    />
+                  ) : (
+                    <UnreadableSessionRow
+                      key={summary.id}
+                      summary={summary}
+                      unreadable={summary.unreadable}
+                      onDeleted={focusList}
+                    />
+                  ),
+                )}
               </ul>
             )}
 

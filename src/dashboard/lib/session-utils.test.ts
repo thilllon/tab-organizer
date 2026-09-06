@@ -5,6 +5,8 @@ import {
   pickWindow,
   shouldShowRecoveredBanner,
   splitByKind,
+  UNREADABLE_SESSION_MESSAGE,
+  unreadableSchemaLabel,
 } from './session-utils';
 
 function makeWindow(url: string): WindowSnapshot {
@@ -135,5 +137,17 @@ describe('shouldShowRecoveredBanner', () => {
 
   it('does not show without history snapshots', () => {
     expect(shouldShowRecoveredBanner([], undefined)).toBeUndefined();
+  });
+});
+
+describe('unreadable sessions (spec §3)', () => {
+  it('explains that the fix is an update, not a repair', () => {
+    expect(UNREADABLE_SESSION_MESSAGE).toBe(
+      'Saved by a newer version of Tab Organizer — update to open',
+    );
+  });
+
+  it('names the schema version that wrote the body', () => {
+    expect(unreadableSchemaLabel({ reason: 'unknown-schema', version: 2 })).toBe('schema v2');
   });
 });

@@ -12,8 +12,12 @@ import type { SessionKind } from '@/types';
 
 const MB = 1024 * 1024;
 
-function entry(kind: SessionKind, bytes: number): { kind: SessionKind; bytes: number } {
-  return { kind, bytes };
+function entry(
+  kind: SessionKind,
+  bytes: number,
+  isProtected?: boolean,
+): { kind: SessionKind; bytes: number; protected?: boolean } {
+  return isProtected === undefined ? { kind, bytes } : { kind, bytes, protected: isProtected };
 }
 
 function breakdown(patch: Partial<StorageBreakdown> = {}): StorageBreakdown {
@@ -24,6 +28,7 @@ function breakdown(patch: Partial<StorageBreakdown> = {}): StorageBreakdown {
     other: 0,
     savedCount: 0,
     snapshotCount: 0,
+    unprotectedSnapshotCount: 0,
     ...patch,
   };
 }
@@ -42,7 +47,36 @@ describe('summarizeStorage', () => {
       other: 1500,
       savedCount: 2,
       snapshotCount: 2,
+      unprotectedSnapshotCount: 2,
     });
+  });
+
+  // The enable/disable rule for the meter's "Delete all unprotected" button (spec §4): the quota
+  // path must offer the action that frees the space, and must not offer it when it would free
+  // nothing.
+  it('counts only the snapshots "Delete all unprotected" would remove', () => {
+    const result = summarizeStorage(
+      [
+        entry('saved', 100),
+        entry('history', 100),
+        entry('history', 100, true),
+        entry('history', 100, false),
+      ],
+      1000,
+    );
+
+    expect(result.snapshotCount).toBe(3);
+    expect(result.unprotectedSnapshotCount).toBe(2);
+  });
+
+  it('offers nothing to delete when every snapshot is protected, or there are none', () => {
+    expect(
+      summarizeStorage([entry('history', 100, true), entry('history', 100, true)], 1000)
+        .unprotectedSnapshotCount,
+    ).toBe(0);
+    // A saved session is never a snapshot, protected or not.
+    expect(summarizeStorage([entry('saved', 100)], 1000).unprotectedSnapshotCount).toBe(0);
+    expect(summarizeStorage([], 0).unprotectedSnapshotCount).toBe(0);
   });
 
   it('reports zero for an empty store', () => {

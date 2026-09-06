@@ -78,6 +78,19 @@ export interface Session {
   windows: WindowSnapshot[]; // normal, non-incognito windows only; empty windows dropped
 }
 
+/**
+ * Why the body behind an index entry cannot be read (spec §3). There is one reason today: the
+ * record was written by a newer schema version than this build understands, so `migrateSession`
+ * refuses it. `reconcile()` marks the entry instead of dropping it, so a store written by a newer
+ * Tab Organizer and then opened by an older one still lists its sessions -- read-only, with an
+ * explanation -- rather than showing an empty dashboard while the bodies sit on disk.
+ */
+export interface UnreadableSession {
+  reason: 'unknown-schema';
+  /** The `schemaVersion` found on the stored body; always > SESSION_SCHEMA_VERSION. */
+  version: number;
+}
+
 export interface SessionSummary {
   // what the index holds
   id: SessionId;
@@ -92,6 +105,12 @@ export interface SessionSummary {
   windowCount: number;
   tabCount: number;
   bytes: number; // JSON length at last write
+  /**
+   * Set only by `reconcile()`, for a body this build cannot migrate. The row is rendered inert
+   * (no restore / rename / export / expand, delete still available) and `windowCount`/`tabCount`
+   * are not to be trusted -- nothing could read the body to count them.
+   */
+  unreadable?: UnreadableSession;
 }
 
 export interface SessionIndex {
