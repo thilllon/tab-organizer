@@ -14,7 +14,7 @@ Owner decisions (2026-08-29): history snapshots ON by default; `favicon` permiss
 **Goals**
 
 - Session Buddy parity for the core loop: save all/current windows in one action, restore exactly (windows, tab order, pinned, active tab, tab groups title/color/collapsed, window state), a full-page dashboard with open windows + saved sessions + history, crash/restart recovery, unified search, import/export (JSON/CSV/Markdown/text/Netscape HTML), copy links, thousands of tabs, local-first.
-- The icon click stays byte-for-byte `sortTabGroups()`: no `default_popup`, no dialogs on the click path. The sort code (`sort.ts`, `sortTabGroups`, `sortTabs`, duplicate handlers) is not edited in any phase.
+- The icon click stays byte-for-byte `sortTabGroups()`: no `default_popup`, no dialogs on the click path. The sort code (`sort.ts`, `sortTabGroups`, `sortTabs`, duplicate handlers) is not edited in any phase. (Amended — see §16.A.)
 - Zero network requests, no content scripts, no accounts. The service worker wakes on user actions (click, context menu, shortcut, dashboard) and — because history snapshots are on by default — on the snapshot alarm; turning history off returns it to user-action-only.
 - Every phase is independently shippable with accurate docs/privacy text and typecheck/biome/vitest/build green.
 
@@ -54,7 +54,7 @@ export type SessionOrigin =
 export type TabGroupColor = `${chrome.tabGroups.Color}`; // same form as hashStringToColor()
 
 export interface TabSnapshot {
-  url: string; // pendingUrl ?? url; suspender wrappers unwrapped via tabToUrl()
+  url: string; // pendingUrl ?? url; suspender wrappers unwrapped via unwrapSuspendedUrl()
   title: string;
   pinned: boolean;
   active: boolean; // at most one true per window
@@ -67,10 +67,17 @@ export interface GroupSnapshot {
   collapsed: boolean;
 }
 
+export interface WindowBounds {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 export interface WindowSnapshot {
   state: "normal" | "minimized" | "maximized" | "fullscreen";
   focused: boolean;
-  bounds?: { left: number; top: number; width: number; height: number }; // only when state === 'normal'
+  bounds?: WindowBounds; // only when state === 'normal'
   groups: GroupSnapshot[]; // first-appearance order
   tabs: TabSnapshot[]; // tab-strip order; pinned first (Chrome invariant)
 }
@@ -84,6 +91,7 @@ export interface Session {
   createdAt: number; // epoch ms
   updatedAt: number;
   protected?: boolean; // history only: exempt from pruning (recovered / user-pinned)
+  autoProtected?: boolean; // the pin came from promoteRecoveredSnapshot(), not from the user
   contentHash?: string; // FNV-1a over windows->tabs (url, pinned, groupIndex, group title); titles excluded
   windows: WindowSnapshot[]; // normal, non-incognito windows only; empty windows dropped
 }
@@ -97,6 +105,7 @@ export interface SessionSummary {
   createdAt: number;
   updatedAt: number;
   protected?: boolean;
+  autoProtected?: boolean;
   contentHash?: string;
   windowCount: number;
   tabCount: number;
@@ -140,8 +149,8 @@ Rules: Chrome runtime ids (tab/window/group) are never persisted; groups are ref
 - **Backend**: `chrome.storage.local` + `unlimitedStorage` (no install warning; the default quota is 10 MB and a power user — 10 sessions × 1,000 tabs + 20 snapshots × 500 tabs ≈ 5 MB at ~250 B/tab — gets too close).
 - **Keys**: `session:<id>` → `Session`; `sessionIndex` → `SessionIndex`; `sessionSettings` → `SessionSettings`; `historyMeta` → `{ lastHash: string; lastSnapshotAt: number }`. Never one big array.
 - **Writes** go through `src/sessions/storage.ts` (`sessionRepo`) and are serialized with `navigator.locks.request('tab-organizer:sessions', fn)` (Web Locks are shared across the SW and extension pages of the same origin). Order: body first, then index. Delete: body first, then index.
-- **Reconcile** (`sessionRepo.reconcile()`): run on dashboard mount and `runtime.onStartup`/`onInstalled`. Uses `chrome.storage.local.getKeys()` (Chrome 130+; typed in @types/chrome 0.2.x) with a `get(null)`-then-`Object.keys` fallback guarded by `typeof chrome.storage.local.getKeys === 'function'`. Orphan `session:*` bodies are loaded one at a time and re-indexed; index entries without a body are dropped. The index is the authoritative key source for everything else (search, export-all), so `get(null)` never runs on the hot path.
-- **Reads**: the dashboard loads the index only; bodies via `get([...keys])` on expand/restore/search/export.
+- **Reconcile** (`sessionRepo.reconcile()`): run on dashboard mount and `runtime.onStartup`/`onInstalled`. Uses `chrome.storage.local.getKeys()` (Chrome 130+; typed in @types/chrome 0.2.x) with a `get(null)`-then-`Object.keys` fallback guarded by `typeof chrome.storage.local.getKeys === 'function'`. Orphan `session:*` bodies are loaded one at a time and re-indexed; index entries without a body are dropped; an entry whose body no longer matches it (a rename interrupted between the two writes) is re-derived. Reconcile is the repair path, so it is the one reader that tolerates an unreadable index: it treats it as empty and rebuilds it from the bodies. Every _mutation_ still rejects on a future-schema index — a build must not overwrite a store written by a newer one. The index is the authoritative key source for everything else (search, export-all), so `get(null)` never runs on the hot path.
+- **Reads**: the dashboard loads the index only; bodies are read on demand (expand/restore/search/export) through `sessionRepo`, never `chrome.storage` directly, and a read that needs more than one body batches them into a single request.
 - **Quota errors**: every `set` wrapped; on quota rejection show a toast with a link to the storage meter (`getBytesInUse()`) and "Delete old history".
 - **Migration**: `schemaVersion` on `Session` and `SessionIndex`; `migrate()` lazily on read and eagerly (one key at a time, under the lock) in `onInstalled` when `details.reason === 'update'`.
 - **Delete all data**: a "Delete all session data" action (dashboard settings row, Phase 6 `StorageMeter`) that removes every `session:*` key, `sessionIndex`, `historyMeta` under the lock; required by the privacy policy wording.
@@ -150,19 +159,21 @@ Rules: Chrome runtime ids (tab/window/group) are never persisted; groups are ref
 
 ## 5. Background / service-worker design
 
-`src/background/index.ts` gains exactly one line: `import './sessions';`. `src/background/sessions.ts` registers all listeners synchronously at module top level:
+`src/background/index.ts` gains exactly one line: `import './sessions';` (amended — see §16.B). `src/background/sessions.ts` registers all listeners synchronously at module top level:
 
-| Listener                                                  | Behaviour                                                                                                                                                                                                                                                                                                                                                            |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runtime.onInstalled`                                     | `contextMenus.removeAll()` → create 3 items; `reconcile()`; run migrations on `update`; `ensureHistoryAlarm()` (P3). The existing onInstalled handler in `index.ts` remains as is.                                                                                                                                                                                   |
-| `runtime.onStartup`                                       | `clearBadge()`; `reconcile()`; P3: `promoteRecoveredSnapshot()` then `ensureHistoryAlarm()` with a one-shot `alarms.create('history-first', { delayInMinutes: 1 })` so the first post-launch snapshot happens after Chrome finishes restoring tabs.                                                                                                                  |
-| `contextMenus.onClicked` / `commands.onCommand`           | `clearBadge()`; switch on id: `saveSession('window' \| 'all')` → `captureSession()` → `sessionRepo.put()` → badge ✓; or `openDashboard()`.                                                                                                                                                                                                                           |
-| `alarms.onAlarm` (P3)                                     | `history-snapshot` / `history-first` → `takeHistorySnapshot({ origin: 'alarm' })`.                                                                                                                                                                                                                                                                                   |
-| `action.onClicked` (P3, runs only while `historyEnabled`) | Second listener added in `sessions.ts` (not in `index.ts`): if `historyEnabled`, fire-and-forget `takeHistorySnapshot({ origin: 'manual' })` concurrently with the sort. The sort path is untouched and not awaited on; the snapshot captures URLs before `closeAllButOne` closes them (order may reflect an in-progress sort — acceptable, recovery is about URLs). |
+| Listener                                        | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runtime.onInstalled`                           | `contextMenus.removeAll()` → create 3 items; `reconcile()`; run migrations on `update`; `ensureHistoryAlarm()` (P3). The existing onInstalled handler in `index.ts` remains as is.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `runtime.onStartup`                             | `clearBadge()`; `reconcile()`; P3: `promoteRecoveredSnapshot()` then `ensureHistoryAlarm()` with a one-shot `alarms.create('history-first', { delayInMinutes: 1 })` so the first post-launch snapshot happens after Chrome finishes restoring tabs.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `contextMenus.onClicked` / `commands.onCommand` | `clearBadge()`; switch on id: `saveSession('window' \| 'all')` → `captureSession()` → `sessionRepo.put()` → badge ✓; or `openDashboard()`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `alarms.onAlarm` (P3)                           | `history-snapshot` / `history-first` → `takeHistorySnapshot({ origin: 'alarm' })`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `action.onClicked` (P3)                         | Second listener added in `sessions.ts` (not in `index.ts`), registered unconditionally at top level — MV3 forbids adding it later, so the `historyEnabled` gate lives inside `takeHistorySnapshot`, which returns `'disabled'` before touching any window: a click while history is off costs one storage read. Fire-and-forget, concurrently with the sort. The sort path is untouched and not awaited on; the snapshot captures URLs before `closeAllButOne` closes them (order may reflect an in-progress sort — acceptable, recovery is about URLs). The handler also calls `clearBadge()` first, so a worker torn down mid-timeout cannot leave a stale badge. |
 
 Deliberately absent: `chrome.tabs.*`, `chrome.windows.*`, `chrome.tabGroups.*` listeners. Alarms are created/cleared only when `historyEnabled` changes (`storage.onChanged` on `sessionSettings` in the SW) and re-asserted in `onStartup`/`onInstalled` (alarms are cleared on extension update/reload). `alarms.create` with an existing name replaces it (no churn). No module-scope mutable state is relied on between events.
 
-`captureSession(scope)`: `chrome.windows.getAll({ populate: true, windowTypes: ['normal'] })` + `chrome.tabGroups.query({})` (two calls total) → pure `captureWindows(windows, groups, { excludeUrlPrefix, suspendedPrefix })` in `src/sessions/capture.ts`: filter `incognito`, drop own-extension tabs, drop empty windows, unwrap suspended via `isSuspended`/`tabToUrl` (imported from `src/background/sort.ts`), build `groups[]` by first appearance, strip `groupIndex` from pinned tabs, keep `bounds` only when `state === 'normal'`. Default name: `defaultSessionName(date, scope)` → `"Session 2026-08-29 14:03 · 3 windows · 87 tabs"`.
+`captureSession(scope)` opens with one `Promise.all` of four calls: `chrome.windows.getAll({ populate: true, windowTypes: ['normal'] })`, `chrome.tabGroups.query({})`, `chrome.windows.getLastFocused({ windowTypes: ['normal'] })` (which window the `'window'` scope means — the `{ windowId }` scope names its own) and a `chrome.storage.sync.get` for the suspender id, which the Options page can override. Then pure `captureWindows(windows, groups, { ownUrlPrefix, suspendedPrefix })` in `src/sessions/capture.ts`: filter `incognito`, drop own-extension tabs, drop empty windows, unwrap suspended urls, build `groups[]` by first appearance, strip `groupIndex` from pinned tabs, keep `bounds` only when `state === 'normal'`. Default name: `defaultSessionName(date, windowCount, tabCount)` → `"Session 2026-08-29 14:03 · 3 windows · 87 tabs"`.
+
+**Suspender unwrapping** is deliberately split from the sorter: `capture.ts` imports `isSuspended` from `src/background/sort.ts` but not `tabToUrl`. `tabToUrl` parses the wrapper suffix with `URLSearchParams`, which corrupts the inner url — it cuts at its first `&` (`?v=abc&list=PL123` → `?v=abc`), decodes `%XX` and turns `+` into a space — a data-loss bug in the Phase 0–1 code, harmless for a sort key but not for a url we must reopen years later. `src/sessions/suspender.ts` (`unwrapSuspendedUrl`) instead mirrors the suspender's own parser: take everything after the first `uri=` parameter verbatim.
 
 **Messaging protocol**: none required — dashboard/options are extension pages with full `chrome.*` access and share `sessionRepo` under the Web Lock. Restore runs in the dashboard page (never in the SW, so the 30 s idle / 5 min limits are irrelevant); progress is React state; `window.onbeforeunload` warns while a restore is in flight. If a page ever needs the SW, add `src/messages.ts` with `type Message = { type: 'open-dashboard' } | ...` and `sendMessage<T extends Message>()` returning `{ ok: true, data } | { ok: false, error }`; not planned in any phase.
 
@@ -174,13 +185,13 @@ Pure `planRestore(session, opts): RestorePlan` (unit-tested) + `executeRestore(p
 
 ```
 sanitizeRestoreUrl(url): string | null
-  unwrap suspender wrapper (tabToUrl) → real url
+  unwrap suspender wrapper (unwrapSuspendedUrl) → real url
   http(s), ftp, chrome://, chrome-extension://<own id>, about:blank → url
   file://  → url only if await chrome.extension.isAllowedFileSchemeAccess() else null
   javascript:, data:, view-source:, chrome-extension://<other id>, blob: → null
   windows.create/tabs.create rejections are still caught per tab (belt and braces)
 
-planRestore(session, { target: 'newWindows' | { windowId }, lazy: 'auto'|'always'|'never', chunkSize = 25 })
+planRestore(session, { target: {kind:'newWindows'} | {kind:'window', windowId}, lazy: 'auto'|'always'|'never', chunkSize = 25 })
   for each window w (non-empty after sanitize; skipped ones reported):
     tabs = w.tabs with url := sanitize(url), skip null (collect in plan.skipped)
     assert pinned tabs have no groupIndex; assert at most one active
@@ -189,10 +200,11 @@ planRestore(session, { target: 'newWindows' | { windowId }, lazy: 'auto'|'always
 
 executeRestore(plan):
   for each window step-set:
-    if target === 'newWindows':
+    if target.kind === 'newWindows':
       win = await chrome.windows.create({ url: 'about:blank', focused: false,
-              state: w.state in ('minimized','fullscreen') ? 'normal' : w.state,
-              ...(w.state==='normal' && clampToScreen(w.bounds)) })
+              state: 'normal',                   // ALWAYS normal; any other state is applied post-hoc below
+              ...(w.state==='normal' && clampToScreen(w.bounds, screen)) })
+              // retried once without left/top/width/height if Chrome refuses the bounds
       placeholderId = win.tabs[0].id           // avoids: unopenable first URL aborting the window, unpinned seed
     else: windowId = target.windowId; placeholderId = undefined
     created: (number|undefined)[] = []
@@ -202,8 +214,9 @@ executeRestore(plan):
                       isTabsCannotBeEditedError)          // "Tabs cannot be edited right now" (user dragging a tab)
           .catch(err => { errors.push({url:t.url, err}); return undefined })))
       created.push(...results.map(r => r?.id))
-      if lazy: for each r where r && !t.active && !t.pinned:
-        await chrome.tabs.discard(r.id).catch(() => {})    // never active/pinned; ignore "still initializing"
+      if lazy: for each r where r && !t.active && !t.pinned:   // concurrently within the chunk
+        if await waitForCommit(r.id):                      // poll tabs.get until url !== '' (50 ms, 5 s cap)
+          await chrome.tabs.discard(r.id).catch(() => {})  // may return a NEW id; ignore "still initializing"
       onProgress(created.length, tabs.length); if signal.aborted break
       await new Promise(r => setTimeout(r, 0))            // yield
     // groups only after ALL tabs of this window exist (groups cannot be empty; order already contiguous)
@@ -214,11 +227,11 @@ executeRestore(plan):
       await chrome.tabGroups.update(groupId, { title: g.title, color: g.color })
     for each group: await chrome.tabGroups.update(groupId, { collapsed: g.collapsed })  // last; placeholder is active so no active-tab conflict
     activeId = created[tabs.findIndex(t => t.active)] ?? first defined created
-    if target === 'newWindows' && activeId: await chrome.tabs.update(activeId, { active: true })
+    if target.kind === 'newWindows' && activeId: await chrome.tabs.update(activeId, { active: true })
     if placeholderId: await chrome.tabs.remove(placeholderId).catch(()=>{})   // after activation so focus doesn't jump
-    if w.state === 'minimized' || 'fullscreen': await chrome.windows.update(windowId, { state: w.state })
-  focus the window whose snapshot had focused:true (or last created)
-  return { restored, skipped: plan.skipped, errors }   // dashboard toast: "Restored 410 of 412 tabs · 2 could not be opened" with URL list
+    if target.kind === 'newWindows' && w.state !== 'normal': await chrome.windows.update(windowId, { state: w.state })
+  focus the window whose snapshot had focused:true (or the last created non-minimized one)
+  return { restored, discarded, skipped: plan.skipped, errors }   // dashboard toast: "Restored 410 of 412 tabs · 120 tabs will load when clicked · 2 could not be opened" with URL list
 ```
 
 - **Restore into current window** (Phase 2): appended at the end; pinned tabs are created `pinned: true` and Chrome places them at the pinned edge (documented); groups recreated fresh; the session's active tab is not activated (user stays on the dashboard).
@@ -226,7 +239,9 @@ executeRestore(plan):
 - **Confirm** (shadcn dialog in the dashboard, not on the click path) when `tabCount > 100`, with the lazy checkbox; also before deleting a session.
 - **Large sessions**: chunk 25 + yield; lazy discard above 50 tabs; cancel button (checked between chunks; created tabs stay); restoring never deletes the session; history snapshots restore identically.
 - **Incognito**: never captured (filtered; invisible anyway unless "Allow in Incognito"); restore always creates normal windows.
-- `clampToScreen(bounds)`: intersect with `window.screen.availWidth/Height`, drop if the resulting size < 200×200.
+- **Window state**: every window is created `{ state: 'normal', focused: false }` and _any_ non-normal state is applied afterwards with `windows.update`. Chrome rejects `windows.create` with "Invalid value for state" for `{ state: 'minimized', focused: true }`, for `{ state: 'maximized' | 'fullscreen', focused: false }`, and for any non-normal state combined with bounds — so no non-normal state can be created directly without either stealing focus or losing the bounds. Both the create-time restriction and the post-hoc path are asserted in the chrome fake and in `execute-restore.test.ts`. Consequence: a minimized window is not eligible for the "focus something" fallback, since focusing it would undo the state just applied.
+- **Lazy discard** waits for the tab's navigation to commit (poll `tabs.get` until `url` is no longer `''`, 50 ms apart, 5 s cap) before calling `tabs.discard`. `tabs.discard` does _not_ reject on an uncommitted tab: it silently unloads it with `url: ''`, losing the URL for good — the exact opposite of what a restore is for. A tab that never commits within the cap is simply left loaded, not an error. Discarding may hand back a new tab id, so the plan keeps the returned one.
+- `clampToScreen(bounds, screen)` fits saved bounds to the screen the dashboard is on. Bounds are virtual-desktop coordinates, so a window from a second monitor legitimately has `left >= availWidth` or `left < 0`. Rule: bounds overlapping this screen by at least 200×200 are clamped into it; bounds that overlap less than that — including not at all — are passed through unchanged, because dropping them default-places the window on the primary screen and a window straddling the seam must never be punished harder than one wholly on the other monitor; while its own monitor is attached Chrome puts it back exactly where it was, and when it is not, Chrome pulls an entirely off-screen window onto the nearest display itself. Only bounds whose _own_ size is under 200×200 are dropped (Chrome then places the window).
 
 ---
 
@@ -235,7 +250,7 @@ executeRestore(plan):
 - Two tiers. Tier 1 (instant, index only): session names. Tier 2 (bodies): tabs of saved sessions + open tabs (+ history when "Include history" is checked).
 - Body cache: `Map<SessionId, SearchEntry[]>` in a `useSearchCorpus` hook; saved bodies are pre-warmed via `requestIdleCallback` after mount (bounded: stop after 5 MB, rest lazily on first query), invalidated per key by `storage.onChanged`; open tabs from `useOpenWindows`. Hostname precomputed once (`try { new URL() }`).
 - `matchTab(entry, tokens)`: lowercase, whitespace tokens, every token substring of title | url | hostname (AND). Rank: hostname prefix > title match > url match, then source order open > saved > history, then recency. Debounce 100 ms; 200 results per source with "show more".
-- Results render as the same tree with matching windows/sessions auto-expanded and per-source counts; Enter opens the first result; `/` focuses search, Esc clears, arrows navigate. Highlighting via `splitOnMatches()`; no `dangerouslySetInnerHTML`.
+- Results render as **flat lists grouped by source** — matching session names, then open tabs, saved sessions, history — each with its count and a "Show more" button, not as the tree with matches auto-expanded. A flat ranked list is the better search UI (the ranking above is the point; the tree would re-impose capture order on it), and it is what makes one flat arrow-key index over all rows possible — a tree would need the index to track expand/collapse state. Enter opens the highlighted result; `/` focuses search, Esc clears, arrows navigate (the list scrolls the highlighted row into view itself, since focus stays in the search box). Highlighting via `splitOnMatches()`; no `dangerouslySetInnerHTML`.
 
 ---
 
@@ -245,7 +260,7 @@ Pure functions, executed in the dashboard (`navigator.clipboard.writeText` and `
 
 - **Export** (session / window / group / everything): `toJson` (`ExportBundle`), `toMarkdown` (`## Session` / `### Window N` / `#### Group` / `- [title](url)`, `(pinned)` marker), `toText` (one URL per line, blank line between windows), `toHtml` (Netscape bookmark format: `<!DOCTYPE NETSCAPE-Bookmark-file-1>`, `<DL><DT><H3>` per window/group, `<A HREF ADD_DATE>`), `toCsv` (`session,window,group,index,pinned,title,url`, RFC 4180 `csvEscape`). Filenames `tab-organizer-<slug>-<yyyyMMdd-HHmm>.<ext>`. Implementation order inside the phase: JSON + text + copy first (the round-trippable core), then Markdown/HTML/CSV.
 - **Copy**: "Copy links" (text) and "Copy as Markdown" on tab/group/window/session rows.
-- **Import** (file picker + paste textarea; `detectFormat(text)`): JSON via hand-written guards `isSession`/`isExportBundle` (no zod, no `any`) → `migrate()` → fresh ids, `origin: 'import'`, name suffix "(imported)"; Netscape HTML via `DOMParser` (H3 nesting → window/group); text/Markdown via URL regex + `[title](url)` pairs, blank-line blocks → windows. Preview tree with counts before commit. `parsers: Array<(text) => Session[] | null>` so a Session Buddy adapter can be added.
+- **Import** (file picker + paste textarea; `detectFormat(text)`): JSON via hand-written guards `isSession`/`isExportBundle` (no zod, no `any`) → `migrate()` → fresh ids, `origin: 'import'`, name suffix "(imported)"; Netscape HTML via a hand-written tokenizer over `<DL>`/`</DL>`/`<H3>`/`<A HREF>` plus an entity decoder (H3 nesting → window/group), **not** `DOMParser`: the parsers stay pure and run under Node with no DOM, so every one of them is unit-tested the same way as the rest of `src/sessions/`; text/Markdown via URL regex + `[title](url)` pairs, blank-line blocks → windows. Preview tree with counts before commit. `parsers: Array<(text) => Session[] | null>` so a Session Buddy adapter can be added.
 
 ---
 
@@ -256,6 +271,8 @@ Pure functions, executed in the dashboard (`navigator.clipboard.writeText` and `
 | 0     | `build.rollupOptions.input = { options: 'options.html', dashboard: 'dashboard.html' }` (crxjs 2.x only auto-builds manifest-referenced HTML); `test: { setupFiles: ['src/test/setup.ts'] }` via `defineConfig` from `vitest/config`. `ci.yml`: add `pnpm test` (today CI runs typecheck/format/build only). |
 | 1     | `permissions: ['tabs','tabGroups','storage','contextMenus','unlimitedStorage','favicon']` ; `commands: { 'save-session': { description: 'Save the current window as a session' }, 'open-dashboard': { description: 'Open the Sessions dashboard' } }` (no `suggested_key`).                                 |
 | 3     | add `'alarms'`.                                                                                                                                                                                                                                                                                             |
+
+The shipped manifest also declares `minimum_chrome_version: '123'` — the floor for the APIs used without a runtime guard: promise-form `contextMenus.removeAll()` (123) and the `favicon` permission / `_favicon/` endpoint (104). `storage.local.getKeys()` (130) sits behind a `typeof` guard, so it does not raise the floor. The build sets `build.modulePreload: { polyfill: false }`: Chrome has supported `<link rel="modulepreload">` natively since long before that floor, so the polyfill is dead code — and it ships a bare `fetch()` that a store reviewer auditing the zero-network claim would otherwise have to rule out by hand.
 
 No `host_permissions`, no `default_popup`, no `side_panel`, no `downloads`, no `web_accessible_resources` change. None of the new permissions adds an install-time warning. Because the first store release (v7.0.0) ships after Phase 5, all four new permissions reach users in one update. Favicons render as `<img src={chrome.runtime.getURL('/_favicon/?pageUrl=' + encodeURIComponent(url) + '&size=32')}>` from Chrome's local cache with a lucide `Globe` fallback on error — zero network.
 
@@ -278,33 +295,64 @@ No `host_permissions`, no `default_popup`, no `side_panel`, no `downloads`, no `
 
 ## 11. File layout
 
+As built (v7.0.0):
+
 ```
-dashboard.html
-vite.config.ts                         # manifest, commands, rollup input, vitest setupFiles
-src/types.ts                           # Session* types + DEFAULT_SESSION_SETTINGS (SortSettings untouched)
+dashboard.html  options.html
+vite.config.ts                         # manifest (permissions, commands, minimum_chrome_version), rollup input,
+                                       #   modulePreload.polyfill = false, vitest setupFiles
+src/types.ts                           # Session* types + WindowBounds + DEFAULT_SESSION_SETTINGS (SortSettings untouched)
+src/global.d.ts
 src/sessions/
-  naming.ts (+test)                    # defaultSessionName, slug
-  capture.ts (+test)                   # captureWindows (pure), captureSession (chrome wrapper)
-  storage.ts (+test)                   # sessionRepo: listSummaries/get/put/rename/remove/removeAll/reconcile, settings, withLock
+  naming.ts (+test)                    # defaultSessionName, ensureUniqueName, slug
+  capture.ts (+capture.test.ts, capture-session.test.ts)   # captureWindows (pure), captureSession (chrome wrapper),
+                                       #   THE_MARVELLOUS_SUSPENDER_EXTENSION_ID + loadSuspendedPrefix (§16.B)
+  suspender.ts (+test)                 # unwrapSuspendedUrl — verbatim `uri=` suffix, never URLSearchParams (§5)
+  storage.ts (+test)                   # sessionRepo: listSummaries/get/put/rename/update/remove/removeAll/reconcile,
+                                       #   migrateAll, settings, historyMeta, prune/protect/duplicate, withLock
   migrate.ts (+test)
   hash.ts (+test)                      # contentHash (FNV-1a)
-  restore.ts (+test)                   # sanitizeRestoreUrl, planRestore (pure), executeRestore, clampToScreen, withRetryOnce
-  open-dashboard.ts
+  restore.ts (+restore.test.ts for the pure half, execute-restore.test.ts against the fake)
+                                       # sanitizeRestoreUrl, planRestore, executeRestore, clampToScreen, withRetryOnce
+  open-dashboard.ts (+test)
+  shortcuts.ts (+test)                 # openShortcutSettings() → chrome://extensions/shortcuts (§2)
   history.ts (+test)                   # P3: takeHistorySnapshot, prune, promoteRecoveredSnapshot, ensureHistoryAlarm
   search.ts (+test)                    # P4
   export.ts, import.ts, guards.ts (+tests)   # P5
-src/background/index.ts                # + `import './sessions'` only
-src/background/sessions.ts             # listeners: onInstalled/onStartup/contextMenus/commands/alarms, badge
+src/background/index.ts                # + `import './sessions'` and the shared suspender id (§16.B)
+src/background/sessions.ts (+test)     # listeners: onInstalled/onStartup/contextMenus/commands/alarms/action, badge
+src/background/sort.ts (+test)         # the sorter — untouched but for two bug fixes (§16.A)
 src/dashboard/index.tsx, index.css     # imports ../options/index.css tokens
 src/dashboard/Dashboard.tsx
-src/dashboard/components/ SessionCard.tsx WindowTree.tsx GroupSection.tsx TabRow.tsx Favicon.tsx
-                          OpenWindowsPane.tsx (P2) SearchBar.tsx SearchResults.tsx (P4)
-                          HistorySection.tsx (P3) ExportMenu.tsx ImportDialog.tsx (P5) StorageMeter.tsx (P6) ProgressToast.tsx
-src/dashboard/hooks/ useSessionIndex.ts useSessionBody.ts useSessionSettings.ts useRestore.ts
+src/dashboard/components/ SessionCard.tsx WindowTree.tsx GroupSection.tsx TabRow.tsx Favicon.tsx EmptyState.tsx
+                          OpenWindowsPane.tsx CloseWindowDialog.tsx (P2)
+                          SearchBar.tsx SearchResults.tsx (P4)
+                          HistorySection.tsx HistoryRow.tsx RecoveredBanner.tsx (P3)
+                          ExportMenu.tsx ImportDialog.tsx (P5)
+                          StorageMeter.tsx QuotaNotice.tsx (P6) ProgressToast.tsx RestoreConfirmDialog.tsx
+                          SessionSettingsRow.tsx SessionSettingsFields.tsx
+                          DeleteSessionDialog.tsx DeleteAllHistoryDialog.tsx DeleteAllDataDialog.tsx
+src/dashboard/hooks/ useSessionIndex.ts (+test) useSessionBody.ts (+test) useSessionSettings.ts useRestore.ts
                      useOpenWindows.ts (P2) useSearchCorpus.ts (P4)
-src/components/ui/                     # via shadcn CLI as needed: input, dialog, dropdown-menu, badge, tooltip, separator, switch, scroll-area, collapsible
-src/options/Options.tsx                # Sessions card (P1); history toggle (P3)
-src/test/setup.ts, chrome-fake.ts      # typed in-memory chrome.storage.local (+onChanged, getKeys, getBytesInUse), tabs/windows/tabGroups, alarms, navigator.locks
+src/dashboard/lib/                     # 24 pure modules, each with an adjacent test — the decisions the components
+                                       #   would otherwise take inline, so the React layer stays thin (§13):
+  download errors export-actions format group-colors import-preview open-tab open-windows quota
+  restore-progress restore-summary row-keys sanitize-options search-corpus search-nav segments
+  session-edit session-settings session-utils settings-change storage-meter tab-paging ui-state window-actions
+src/components/ui/                     # via shadcn CLI as needed: badge, button, collapsible, dialog, dropdown-menu,
+                                       #   input, label, radio-group, separator, switch. `tooltip` and `scroll-area`
+                                       #   were never needed — SessionCard records why Radix's ScrollArea lost to a
+                                       #   plain `max-h-96 overflow-y-auto` container.
+src/lib/theme.ts (+test), utils.ts     # follow the OS dark mode; withDarkClass is the pure, tested half
+src/options/Options.tsx, index.tsx, index.css, lib/sort-settings.ts (+test)   # Sessions card (P1); history toggle (P3)
+src/test/setup.ts, chrome-fake.ts (+chrome-fake.test.ts)
+                                       # typed in-memory chrome.storage.local (+onChanged, getKeys, getBytesInUse),
+                                       #   tabs/windows/tabGroups (real strip model), alarms, navigator.locks. Its own
+                                       #   test pins the Chrome behaviours the restore path depends on: the
+                                       #   windows.create state rejections (§6) and discard-before-commit losing the url.
+scripts/qa/ browser.ts server.ts fixtures.ts smoke.ts
+                                       # real-Chrome QA harness: local static site (the QA browser has no network),
+                                       #   fixture windows, and a save → restore → rename → delete smoke run
 docs/README.md (listing + privacy answers; description.txt is generated) PRIVACY_POLICY.md AGENTS.md README.md
 ```
 
@@ -369,7 +417,7 @@ Acceptance: a 1,000-tab restore completes without freezing, cancel works; a dash
 
 - Identity drift (popup, click opening dashboard) — refused by plan; QA step "click only sorts" every phase.
 - Stale privacy copy — doc edits are tasks in the same PR as each manifest change; the CWS "Web history" row needs the local-only justification.
-- Restore fidelity: unopenable URLs skipped with report; discarded tabs show the URL as title until loaded; bounds may be clamped; minimized/fullscreen applied post-hoc.
+- Restore fidelity: unopenable URLs skipped with report; discarded tabs show the URL as title until loaded; bounds may be clamped; minimized/maximized/fullscreen applied post-hoc.
 - Large restores: chunk 25 + yield, lazy above 50, confirm above 100, cancel; the user closing the dashboard mid-restore leaves partial windows (beforeunload warning; already-created tabs are kept).
 - Storage growth with history on: hash dedupe + ring buffer + meter; `unlimitedStorage` from Phase 1.
 - Web Locks unavailable on some Chromium forks → `withLock` falls back to a page-local promise chain; reconcile repairs any drift.
@@ -388,3 +436,22 @@ Acceptance: a 1,000-tab restore completes without freezing, cancel works; a dash
 2. **Favicon permission — included** (Phase 1; zero network).
 3. **Versioning/branding — v7.0.0 relaunch** with new screenshots/promo and a rewritten listing; first release only after Phases 0–5.
 4. **Restore-lazy default — `'auto'`** (discard non-active, non-pinned tabs when a restore exceeds 50 tabs).
+
+---
+
+## 16. Amendments (2026-09, as built)
+
+Two constraints stated above were broken while building v7.0.0. Everything else in this document has been corrected in place to match the shipped code.
+
+### A. §1 "the sort code is not edited in any phase" — `sort.ts` was edited twice
+
+Both edits are bug fixes forced by exposing sort settings the engine already read; neither touches `sortTabGroups`, `sortTabs` or the duplicate handlers, and the icon click is still byte-for-byte `sortTabGroups()`.
+
+1. **`tabToUrl` must never throw** (commit `75701f2`, +29/−3). It gained a total `toUrlOrUnknown()` helper and now prefers `pendingUrl` in the `groupSuspendedTabs` branch too, as the other branch already did. Chrome reports a still-loading tab as `url: ''` with its destination in `pendingUrl`, and the old `new URL(tab.url ?? '')` **threw** on such a tab, aborting the whole sort mid-window with nothing surfaced to the user — reachable from the default url mode, and newly reachable from the custom mode once v7 exposed the `groupSuspendedTabs` switch on the Options page. One behaviour change: a tab with no usable url no longer throws, it collates to a sentinel host (`https://zzzzzzzzzzzzzzzz.invalid/`) that sorts after every real key, so unknown tabs land together at the end of the window.
+2. **`preserveOrderWithinGroups` is now honoured while `groupSuspendedTabs` is on.** Its comparator branch in `sortByCustom` was gated on `!gsSuspended`, so the setting silently did nothing for that combination — invisible until v7 put both switches on the Options page. By that point in the comparator the pair is always same-partition (the suspended/normal split returns −1/1 for every cross-partition pair), so honouring the setting there cannot compare a suspended tab against a normal one; the suspended block's order from that pass is discarded anyway and re-sorted with `gsSuspended = false`.
+
+### B. §5 "`src/background/index.ts` gains exactly one line" — it gained two, plus a comment
+
+Besides `import './sessions';`, `index.ts` now imports `THE_MARVELLOUS_SUSPENDER_EXTENSION_ID` from `src/sessions/capture.ts`, where the constant moved.
+
+Reason: the sorter and the sessions feature read the very same `tabSuspenderExtensionId` setting and both need the default. Declaring the literal twice invites the two halves to drift apart on a suspender rename; one exported constant cannot. Behaviour-neutral — same id, same default, no new call at startup.

@@ -35,7 +35,7 @@ To turn snapshots off, open Options (right-click the icon → Options) or the se
 ## Data Retention
 
 - Saved sessions are kept until you delete them in the Sessions dashboard.
-- Automatic snapshots are kept in a rolling set: only the most recent unprotected snapshots are retained (20 by default — you choose how many in Options or in the Sessions dashboard), and older ones are removed automatically. A snapshot you mark as protected, and the "Previous session (recovered)" snapshot created after a browser restart, are kept until you delete them. Snapshots can be deleted one at a time or all at once.
+- Automatic snapshots are kept in a rolling set: only the most recent unprotected snapshots are retained (20 by default — you choose how many in Options or in the Sessions dashboard), and older ones are removed automatically. A snapshot you mark as protected is kept until you delete it. The "Previous session (recovered)" snapshot created after a browser restart is protected automatically, as is the one before it; older recovered snapshots return to the rolling set and age out of it like any other. Marking one as protected yourself makes it yours to keep. Snapshots can be deleted one at a time or all at once.
 - "Delete all session data" in the Sessions dashboard removes every saved session and snapshot immediately; your settings are kept.
 - Uninstalling the extension makes Chrome delete all of its stored data.
 
