@@ -42,13 +42,39 @@ export function isSuspended(tab: chrome.tabs.Tab, suspendedPrefix: string): bool
   return !!tab.url?.startsWith(suspendedPrefix);
 }
 
+/**
+ * Where a tab with no usable url sorts. Chrome hands us `url: ''` with no `pendingUrl` for a tab
+ * that has not committed a navigation yet, and `new URL('')` throws — which would abort the whole
+ * sort. Every real key `compareByUrlComponents` builds is lowercase ASCII (Chrome punycodes
+ * hostnames and percent-encodes the rest), so a host of `z`s collates after all of them: unknown
+ * tabs land together at the end, and `.invalid` (RFC 6761) can never be a real host.
+ */
+const UNKNOWN_TAB_URL = 'https://zzzzzzzzzzzzzzzz.invalid/';
+
+/** `new URL(raw)`, or the sentinel when `raw` is empty/absent — `tabToUrl` must never throw. */
+function toUrlOrUnknown(raw: string | undefined): URL {
+  if (raw === undefined || raw === '') {
+    return new URL(UNKNOWN_TAB_URL);
+  }
+  try {
+    return new URL(raw);
+  } catch {
+    return new URL(UNKNOWN_TAB_URL);
+  }
+}
+
 export function tabToUrl(
   tab: chrome.tabs.Tab,
   groupSuspendedTabs: boolean,
   suspendedPrefixLen: number,
 ): URL {
+  // A still-loading tab reports `url: ''` and its destination in `pendingUrl`, so both exits
+  // resolve the url the same way: without this the same tab sorted two different ways (and threw)
+  // depending on `groupSuspendedTabs`.
+  const tabUrl = tab.pendingUrl === undefined || tab.pendingUrl === '' ? tab.url : tab.pendingUrl;
+
   if (groupSuspendedTabs) {
-    return new URL(tab.url ?? '');
+    return toUrlOrUnknown(tabUrl);
   }
 
   const suspendedSuffix = tab.url?.slice(suspendedPrefixLen);
@@ -56,11 +82,11 @@ export function tabToUrl(
     const params = new URLSearchParams(suspendedSuffix);
     for (const [param, val] of params) {
       if (param === 'uri') {
-        return new URL(val);
+        return toUrlOrUnknown(val);
       }
     }
   }
-  return new URL(tab.pendingUrl ?? tab.url ?? '');
+  return toUrlOrUnknown(tabUrl);
 }
 
 export function updateTabGroupMap(
@@ -249,7 +275,12 @@ export function sortByCustom(
       }
     }
 
-    if (!gsSuspended && !preserveOrderWithinGroups) {
+    // Not gated on `gsSuspended`: by here the pair is always same-partition (the suspended /
+    // normal split above returns -1/1 for every cross-partition pair), so honouring
+    // `preserveOrderWithinGroups` here cannot compare a suspended tab against a normal one. The
+    // suspended block's order from this pass is discarded anyway -- it is re-sorted below with
+    // `gsSuspended = false`, which decodes each tab's real target url.
+    if (!preserveOrderWithinGroups) {
       return compareByUrlComponents(urlA, urlB);
     }
     return 0;

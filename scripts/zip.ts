@@ -1,6 +1,7 @@
 import { createWriteStream, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import archiver from 'archiver';
+// archiver 8 is ESM and exports the archive classes by name; there is no callable default.
+import { ZipArchive } from 'archiver';
 
 /*
  * Entry point
@@ -14,10 +15,13 @@ async function main(): Promise<void> {
   mkdirSync('package', { recursive: true });
 
   const output = createWriteStream(path.join('package', filename));
-  const archive = archiver('zip', { zlib: { level: 9 } });
+  const archive = new ZipArchive({ zlib: { level: 9 } });
 
-  output.on('close', () => {
-    console.log(`Packaged: package/${filename} (${archive.pointer()} bytes)`);
+  // `finalize()` resolves once the archive is written, but the file is only complete when the
+  // write stream closes — wait for that before reporting the size (and before the process exits).
+  const closed = new Promise<void>((resolve, reject) => {
+    output.on('close', resolve);
+    output.on('error', reject);
   });
 
   archive.on('error', (err: Error) => {
@@ -27,6 +31,9 @@ async function main(): Promise<void> {
   archive.pipe(output);
   archive.directory('dist/', false);
   await archive.finalize();
+  await closed;
+
+  console.log(`Packaged: package/${filename} (${archive.pointer()} bytes)`);
 }
 
 /*
