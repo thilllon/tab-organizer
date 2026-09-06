@@ -275,7 +275,12 @@ export function sortByCustom(
       }
     }
 
-    if (!gsSuspended && !preserveOrderWithinGroups) {
+    // Not gated on `gsSuspended`: by here the pair is always same-partition (the suspended /
+    // normal split above returns -1/1 for every cross-partition pair), so honouring
+    // `preserveOrderWithinGroups` here cannot compare a suspended tab against a normal one. The
+    // suspended block's order from this pass is discarded anyway -- it is re-sorted below with
+    // `gsSuspended = false`, which decodes each tab's real target url.
+    if (!preserveOrderWithinGroups) {
       return compareByUrlComponents(urlA, urlB);
     }
     return 0;

@@ -337,6 +337,56 @@ describe('promoteRecoveredSnapshot', () => {
     });
   });
 
+  it('keeps the pins bounded across ten browser starts, demoting the older recovered ones', async () => {
+    const promoted: (string | null)[] = [];
+    for (let start = 1; start <= 10; start += 1) {
+      // Each start: a snapshot arrived since the last one, then Chrome restarts.
+      vi.setSystemTime(NOW + start * MINUTE);
+      await sessionRepo.put(makeSession({ id: `s${start}`, createdAt: NOW + start * MINUTE }));
+      promoted.push(await promoteRecoveredSnapshot());
+      // The snapshot this start promoted is always protected while it is the newest.
+      const pin = (await sessionRepo.listSummaries()).find((s) => s.id === `s${start}`);
+      expect(pin).toMatchObject({ origin: 'recovered', protected: true });
+    }
+
+    expect(promoted).toEqual(['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10']);
+    const summaries = await sessionRepo.listSummaries();
+    // Demoted, never deleted: all ten are still there and still say "recovered".
+    expect(summaries.filter((s) => s.origin === 'recovered')).toHaveLength(10);
+    expect(summaries.filter((s) => s.protected === true).map((s) => s.id)).toEqual(['s10', 's9']);
+    expect(summaries.filter((s) => s.autoProtected === true).map((s) => s.id)).toEqual([
+      's10',
+      's9',
+    ]);
+    // And the demoted ones are back in the ring buffer's reach.
+    await expect(sessionRepo.pruneHistory(3)).resolves.toEqual(['s1', 's2', 's3', 's4', 's5']);
+  });
+
+  it('never demotes a snapshot the user protected', async () => {
+    await sessionRepo.put(makeSession({ id: 'user-pin', createdAt: NOW }));
+    await sessionRepo.setProtected('user-pin', true);
+    vi.setSystemTime(NOW + MINUTE);
+    await sessionRepo.put(makeSession({ id: 'taken-over', createdAt: NOW + MINUTE }));
+    await promoteRecoveredSnapshot();
+    // The user opens the dashboard and pins the recovered snapshot themselves: it stops being
+    // crash recovery's to demote, even though the switch was already on.
+    await sessionRepo.setProtected('taken-over', true);
+
+    for (let start = 2; start <= 11; start += 1) {
+      vi.setSystemTime(NOW + start * MINUTE);
+      await sessionRepo.put(makeSession({ id: `s${start}`, createdAt: NOW + start * MINUTE }));
+      await promoteRecoveredSnapshot();
+    }
+
+    const summaries = await sessionRepo.listSummaries();
+    const stillPinned = summaries.filter((s) => s.protected === true).map((s) => s.id);
+    expect(stillPinned).toContain('user-pin');
+    expect(stillPinned).toContain('taken-over');
+    // Plus the two newest auto-pins, and nothing else.
+    expect(stillPinned.sort()).toEqual(['s10', 's11', 'taken-over', 'user-pin']);
+    await expect(sessionRepo.pruneHistory(0)).resolves.not.toContain('user-pin');
+  });
+
   it('never promotes across untouched restarts when history is off (ring does not fill with protected entries)', async () => {
     await sessionRepo.setSettings({ historyEnabled: false });
     await sessionRepo.put(makeSession({ id: 's1', createdAt: NOW - 3 * MINUTE }));

@@ -220,6 +220,41 @@ describe('executeRestore', () => {
     });
   });
 
+  it('never focuses a restored minimized window (focusing it would un-minimize it)', async () => {
+    const updateSpy = vi.spyOn(chrome.windows, 'update');
+
+    await executeRestore(makePlan([WINDOW_MINIMIZED]));
+
+    // No window of the session is focusable, so the focus call is skipped altogether and the
+    // window the user was on keeps the focus.
+    expect(updateSpy.mock.calls.filter(([, info]) => info.focused === true)).toEqual([]);
+    vi.restoreAllMocks();
+  });
+
+  it('falls back to the last non-minimized window when no snapshot was focused', async () => {
+    const updateSpy = vi.spyOn(chrome.windows, 'update');
+
+    const before = snapshotWindowIds();
+    await executeRestore(makePlan([WINDOW_B, WINDOW_MINIMIZED]));
+    const [winB] = newWindowIds(before);
+
+    const focusCalls = updateSpy.mock.calls.filter(([, info]) => info.focused === true);
+    expect(focusCalls.map(([id]) => id)).toEqual([winB]);
+    vi.restoreAllMocks();
+  });
+
+  it('still focuses the snapshot-focused window when a minimized one is restored after it', async () => {
+    const updateSpy = vi.spyOn(chrome.windows, 'update');
+
+    const before = snapshotWindowIds();
+    await executeRestore(makePlan([WINDOW_A, WINDOW_MINIMIZED]));
+    const [winA] = newWindowIds(before);
+
+    const focusCalls = updateSpy.mock.calls.filter(([, info]) => info.focused === true);
+    expect(focusCalls.map(([id]) => id)).toEqual([winA]);
+    vi.restoreAllMocks();
+  });
+
   it('removes the about:blank placeholder after activating the session tab', async () => {
     const updateSpy = vi.spyOn(chrome.tabs, 'update');
     const removeSpy = vi.spyOn(chrome.tabs, 'remove');

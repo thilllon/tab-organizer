@@ -126,8 +126,13 @@ export function sanitizeRestoreUrl(url: string, options: SanitizeOptions): strin
  *   a window that would land entirely off every display onto the nearest one itself, so the
  *   window comes back on its own monitor while that monitor is attached and is still shown when
  *   it is not;
- * - a sliver (intersection under 200x200) or a window already smaller than 200x200 yields
- *   undefined: the caller omits the bounds and Chrome places the window.
+ * - a sliver (intersection under 200x200) is passed through unchanged for the same reason:
+ *   dropping the bounds would default-place the window on the primary screen, so a window
+ *   straddling the seam between two monitors would be punished harder than one wholly on the
+ *   other monitor -- while its own monitor still places it exactly where it was;
+ * - only a window already smaller than 200x200 yields undefined -- that guard is about the saved
+ *   bounds themselves, not about the intersection: the caller omits them and Chrome places the
+ *   window.
  */
 export function clampToScreen(bounds: WindowBounds, screen: ScreenRect): WindowBounds | undefined {
   if (bounds.width < MIN_WINDOW_SIDE || bounds.height < MIN_WINDOW_SIDE) {
@@ -141,11 +146,9 @@ export function clampToScreen(bounds: WindowBounds, screen: ScreenRect): WindowB
   const bottom = Math.min(screenTop + screen.availHeight, bounds.top + bounds.height);
   const width = right - left;
   const height = bottom - top;
-  if (width <= 0 || height <= 0) {
-    return bounds;
-  }
+  // No overlap, or a sliver of one: leave the saved bounds alone (see the doc comment above).
   if (width < MIN_WINDOW_SIDE || height < MIN_WINDOW_SIDE) {
-    return undefined;
+    return bounds;
   }
   return { left, top, width, height };
 }
@@ -568,7 +571,13 @@ export async function executeRestore(
   let discarded = 0;
   let done = 0;
   let focusWindowId: number | undefined;
-  let lastWindowId: number | undefined;
+  // Fallback for a session where no window was `focused`. Minimized windows are deliberately not
+  // eligible: `chrome.windows.update(id, { focused: true })` activates the window, which un-does
+  // the `{ state: 'minimized' }` finishWindow just applied. (`{ state, focused: true }` together
+  // is rejected by Chromium, so the state cannot simply be re-asserted here.) When every window
+  // of the session was minimized this stays undefined and the call below is skipped entirely,
+  // leaving the user's pre-restore window focused -- which is what the snapshot describes.
+  let lastFocusableWindowId: number | undefined;
 
   for (const [windowIndex, planned] of plan.windows.entries()) {
     if (hooks.signal?.aborted) {
@@ -614,7 +623,9 @@ export async function executeRestore(
     await applyGroups(planned, created, opened.windowId, errors);
     await finishWindow(plan, planned, created, opened, errors);
 
-    lastWindowId = opened.windowId;
+    if (planned.snapshot.state !== 'minimized') {
+      lastFocusableWindowId = opened.windowId;
+    }
     if (planned.snapshot.focused) {
       focusWindowId = opened.windowId;
     }
@@ -623,7 +634,7 @@ export async function executeRestore(
     }
   }
 
-  const toFocus = focusWindowId ?? lastWindowId;
+  const toFocus = focusWindowId ?? lastFocusableWindowId;
   if (plan.target.kind === 'newWindows' && toFocus !== undefined) {
     try {
       await chrome.windows.update(toFocus, { focused: true });

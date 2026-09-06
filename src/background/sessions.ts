@@ -127,14 +127,21 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
   }
 }
 
+/**
+ * Every step that runs before the alarms are armed is caught locally (not left to the listener's
+ * outer .catch): the alarms are what keeps history running, so nothing upstream of them may
+ * abort the handler. `registerContextMenus` touches the menus API, and `migrateAll`/`reconcile`
+ * read the stored index — a `sessionIndex` from a future schema (or plain garbage) makes
+ * `migrateIndex` throw, and without this the alarms would never be armed again. `reconcile()`
+ * itself tolerates such an index and rebuilds it from the bodies (see storage.ts), so the two
+ * halves together mean a damaged index is both survivable and repaired.
+ */
 async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<void> {
-  await registerContextMenus();
+  await registerContextMenus().catch(report);
   if (details.reason === 'update') {
-    // Caught locally (not left to the listener's outer .catch) so a failed migration still
-    // lets reconcile() run below.
     await sessionRepo.migrateAll().catch(report);
   }
-  await sessionRepo.reconcile();
+  await sessionRepo.reconcile().catch(report);
   // Chrome drops every alarm on extension update/reload, so the periodic history alarm is
   // re-asserted for all reasons (a no-op replace when it already exists).
   await ensureHistoryAlarm();
@@ -142,11 +149,15 @@ async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<vo
 
 async function onStartup(): Promise<void> {
   clearBadge();
-  await sessionRepo.reconcile();
+  await sessionRepo.reconcile().catch(report);
   // Crash recovery first, so the last snapshot of the previous browser session is protected
-  // before any new snapshot can push it out of the ring. Caught locally (like migrateAll above)
+  // before any new snapshot can push it out of the ring. Caught locally (like reconcile above)
   // so a failed promotion still lets the alarms below be armed.
   await promoteRecoveredSnapshot().catch(report);
+  // Not caught: unlike the steps above this one is not a repair pass but the alarm arming's own
+  // input, and a rejection here means the storage read itself failed — `ensureHistoryAlarm()`
+  // would fail on its internal read too, so there is nothing to salvage and the listener's outer
+  // .catch reports it.
   const settings = await sessionRepo.getSettings();
   await ensureHistoryAlarm(settings);
   // One-shot 'history-first' 1 min out: Chrome is still restoring tabs while onStartup runs,

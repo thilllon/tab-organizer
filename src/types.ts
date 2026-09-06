@@ -65,6 +65,15 @@ export interface Session {
   createdAt: number; // epoch ms
   updatedAt: number;
   protected?: boolean; // history only: exempt from pruning (recovered / user-pinned)
+  /**
+   * The `protected` flag above was set by `markRecovered()`, not by the user's Protect switch.
+   * Crash recovery pins one snapshot per browser start, so without this marker the pins would
+   * accumulate forever and no cleanup could tell them from a pin the user asked for. Any use of
+   * the Protect switch clears it (`setProtected`), making the pin the user's for good; only
+   * still-marked snapshots beyond the newest few are demoted back to prunable
+   * (`demoteAutoProtected`). Never set on a `kind: 'saved'` session.
+   */
+  autoProtected?: boolean;
   contentHash?: string; // FNV-1a over windows->tabs (url, pinned, groupIndex, group title)
   windows: WindowSnapshot[]; // normal, non-incognito windows only; empty windows dropped
 }
@@ -78,6 +87,7 @@ export interface SessionSummary {
   createdAt: number;
   updatedAt: number;
   protected?: boolean;
+  autoProtected?: boolean; // `protected` came from crash recovery, not the user (see Session)
   contentHash?: string;
   windowCount: number;
   tabCount: number;

@@ -63,6 +63,9 @@ export function toSummary(session: Session, bytes: number): SessionSummary {
   if (session.protected !== undefined) {
     summary.protected = session.protected;
   }
+  if (session.autoProtected !== undefined) {
+    summary.autoProtected = session.autoProtected;
+  }
   if (session.contentHash !== undefined) {
     summary.contentHash = session.contentHash;
   }
@@ -128,6 +131,7 @@ function sameSummary(a: SessionSummary, b: SessionSummary): boolean {
     a.createdAt === b.createdAt &&
     a.updatedAt === b.updatedAt &&
     a.protected === b.protected &&
+    a.autoProtected === b.autoProtected &&
     a.contentHash === b.contentHash &&
     a.windowCount === b.windowCount &&
     a.tabCount === b.tabCount &&
@@ -264,6 +268,13 @@ export const sessionRepo = {
    * orphan bodies (a `put` interrupted between its two writes) and re-derives entries that no
    * longer describe their body (a `rename` interrupted the same way). A body that fails
    * migration or is malformed is skipped, keeping whatever index entry it had.
+   *
+   * This is the one read path that tolerates an unreadable index (future schema version, or
+   * garbage): it is the repair path, so it treats such an index as empty and rebuilds it from
+   * the bodies -- which are validated one at a time below, so a damaged index costs nothing but
+   * the entries of bodies that are themselves damaged. Reading it strictly instead would be
+   * self-perpetuating: every reconcile() would throw on the same index and nothing would ever
+   * repair it. Mutations (`put`/`remove`/`listSummaries`) keep rejecting -- see writeBodyAndIndex.
    */
   reconcile(): Promise<{ reindexed: number; dropped: number }> {
     return withLock(async () => {
@@ -273,7 +284,14 @@ export const sessionRepo = {
         .filter((id): id is SessionId => id !== undefined);
       const bodyIds = new Set(ids);
 
-      const index = await readIndex();
+      let indexUnreadable = false;
+      let index: SessionIndex;
+      try {
+        index = await readIndex();
+      } catch {
+        indexUnreadable = true;
+        index = { schemaVersion: SESSION_SCHEMA_VERSION, sessions: [] };
+      }
       const indexed = new Map(index.sessions.map((summary) => [summary.id, summary]));
       const dropped = index.sessions.filter((summary) => !bodyIds.has(summary.id)).length;
 
@@ -303,7 +321,10 @@ export const sessionRepo = {
         reindexed += 1;
       }
 
-      if (reindexed > 0 || dropped > 0) {
+      // Forced when the stored index could not be read: with no bodies at all (or only
+      // unmigratable ones) both counters stay 0, and skipping the write would leave the damaged
+      // index in place forever.
+      if (reindexed > 0 || dropped > 0 || indexUnreadable) {
         await writeIndex(kept);
       }
       return { reindexed, dropped };
@@ -403,22 +424,85 @@ export const sessionRepo = {
     });
   },
 
-  /** Protected snapshots are exempt from pruning (recovered / user-pinned). `updatedAt` is kept. */
+  /**
+   * Protected snapshots are exempt from pruning (recovered / user-pinned). `updatedAt` is kept.
+   *
+   * Either direction of the switch clears `autoProtected`: the user has now made an explicit
+   * decision about this snapshot, so it stops being crash recovery's to demote (`demoteAutoProtected`).
+   */
   setProtected(id: SessionId, value: boolean): Promise<void> {
-    return updateBody(id, (existing) => ({ ...existing, protected: value }));
+    return updateBody(id, (existing) => {
+      const next: Session = { ...existing, protected: value };
+      delete next.autoProtected;
+      return next;
+    });
   },
 
   /**
    * Turns a history snapshot into the crash-recovery entry: `origin: 'recovered'`, protected,
    * renamed. `updatedAt` is kept so the snapshot stays in its chronological place in the index.
+   * The pin is marked `autoProtected` so `demoteAutoProtected()` can later tell it from one the
+   * user asked for.
    */
   markRecovered(id: SessionId, name: string): Promise<void> {
     return updateBody(id, (existing) => ({
       ...existing,
       origin: 'recovered',
       protected: true,
+      autoProtected: true,
       name,
     }));
+  },
+
+  /**
+   * Caps the pins crash recovery hands out: keeps the `keep` newest `autoProtected` snapshots
+   * and clears `protected`/`autoProtected` on the rest, which puts them back in the ring buffer's
+   * reach (they are demoted, never deleted here -- the ring ages them out like any other
+   * snapshot, and "Delete all unprotected" can reach them). Without it every browser start would
+   * add one permanently exempt snapshot: total history would be `historyMaxSnapshots` + one per
+   * start, growing without bound, and neither remedy the storage meter names could touch them.
+   *
+   * A snapshot the user protected is never touched: `setProtected` clears the marker, and
+   * `isPromotable` never nominates an already-protected snapshot, so `autoProtected` can only
+   * ever be true on a pin nobody asked for. Newest is by capture time, like the ring buffer.
+   * One lock for the whole pass: N body writes, then a single index write. Returns the demoted
+   * ids (newest first).
+   */
+  demoteAutoProtected(keep: number): Promise<SessionId[]> {
+    return withLock(async () => {
+      const index = await readIndex();
+      const pinned = index.sessions
+        .filter((summary) => summary.autoProtected === true)
+        .sort(newestFirst);
+      const stale = pinned.slice(Math.max(0, Math.floor(keep)));
+      if (stale.length === 0) {
+        return [];
+      }
+      const summaries = new Map(index.sessions.map((summary) => [summary.id, summary]));
+      const demoted: SessionId[] = [];
+      for (const summary of stale) {
+        let body: Session | undefined;
+        try {
+          body = await readBody(summary.id);
+        } catch {
+          // A body that no longer migrates keeps its index entry (as in reconcile): skipping it
+          // costs one stale pin, rewriting it blindly would cost the snapshot.
+          continue;
+        }
+        if (body === undefined) {
+          continue;
+        }
+        const next: Session = { ...body, protected: false };
+        delete next.autoProtected;
+        await chrome.storage.local.set({ [sessionKey(next.id)]: next });
+        summaries.set(next.id, toSummary(next, byteLength(JSON.stringify(next))));
+        demoted.push(next.id);
+      }
+      if (demoted.length > 0) {
+        await writeIndex([...summaries.values()]);
+      }
+      return demoted;
+    });
   },
 
   /**
@@ -510,6 +594,10 @@ function isUnprotectedHistory(summary: SessionSummary): boolean {
 /** Capture time decides age (rename/protect keep `updatedAt`, but `createdAt` never moves). */
 function oldestFirst(a: SessionSummary, b: SessionSummary): number {
   return a.createdAt - b.createdAt || a.updatedAt - b.updatedAt || a.id.localeCompare(b.id);
+}
+
+function newestFirst(a: SessionSummary, b: SessionSummary): number {
+  return -oldestFirst(a, b);
 }
 
 /** Read-modify-write of one body and its summary under the lock. Not for use inside withLock. */

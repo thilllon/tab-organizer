@@ -404,6 +404,36 @@ describe('parseTextOrMarkdown', () => {
     ]);
   });
 
+  it('trims only the unbalanced trailing parens', () => {
+    const text = [
+      'https://a.test/x(y)',
+      'https://a.test/x(y).',
+      '(https://b.test/y)',
+      'https://c.test/z)))',
+      'https://d.test/(a(b)c))',
+    ].join('\n');
+    const [session] = parseTextOrMarkdown(text, NOW) ?? [];
+    expect(session?.windows[0]?.tabs.map((t) => t.url)).toEqual([
+      'https://a.test/x(y)',
+      'https://a.test/x(y)',
+      'https://b.test/y',
+      'https://c.test/z',
+      'https://d.test/(a(b)c)',
+    ]);
+  });
+
+  it('parses a pathological run of trailing punctuation in well under a second', () => {
+    // URL_PATTERN's `[^\s<>"']+` is unbounded, and this parse runs synchronously in the
+    // dashboard's render path: the old quadratic trim took ~12 s on 40k of these.
+    const text = `https://x.test/${')'.repeat(50_000)}`;
+    const started = performance.now();
+
+    const [session] = parseTextOrMarkdown(text, NOW) ?? [];
+
+    expect(performance.now() - started).toBeLessThan(500);
+    expect(session?.windows[0]?.tabs.map((t) => t.url)).toEqual(['https://x.test/']);
+  });
+
   it('accepts the other Chrome-openable schemes and returns null without URLs', () => {
     const [session] =
       parseTextOrMarkdown('ftp://f.test/ file:///tmp/a.html chrome://extensions', NOW) ?? [];

@@ -645,6 +645,45 @@ describe('sessionRepo.reconcile', () => {
     expect(setSpy).not.toHaveBeenCalled();
   });
 
+  it('rebuilds an index from an unknown schema version out of the surviving bodies', async () => {
+    const fake = getChromeFake();
+    // Written by a future version of the extension, or corrupted: readIndex() throws on it, and
+    // every mutation that goes through the index (put/remove) is stuck until it is repaired.
+    fake.state.local.set(INDEX_KEY, { schemaVersion: 2, sessions: [] });
+    fake.state.local.set(sessionKey('id-a'), makeSession({ id: 'id-a', name: 'A' }));
+    fake.state.local.set(sessionKey('id-b'), makeSession({ id: 'id-b', name: 'B' }));
+    fake.state.local.set(sessionKey('junk'), 'not an object');
+
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 2, dropped: 0 });
+    expect((await readIndex())?.schemaVersion).toBe(SESSION_SCHEMA_VERSION);
+    expect((await sessionRepo.listSummaries()).map((s) => s.name).sort()).toEqual(['A', 'B']);
+    // The damaged index is gone, so mutations work again (the repair is not self-perpetuating).
+    await expect(sessionRepo.put(makeSession({ id: 'id-c', name: 'C' }))).resolves.toBeUndefined();
+  });
+
+  it('rebuilds a damaged index even when no body survives it', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(INDEX_KEY, { schemaVersion: 2, sessions: [] });
+
+    const result = await sessionRepo.reconcile();
+
+    expect(result).toEqual({ reindexed: 0, dropped: 0 });
+    expect(await readIndex()).toEqual({ schemaVersion: SESSION_SCHEMA_VERSION, sessions: [] });
+    await expect(sessionRepo.listSummaries()).resolves.toEqual([]);
+  });
+
+  it('rebuilds an index that is not an object at all', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(INDEX_KEY, 'garbage');
+    fake.state.local.set(sessionKey('id-a'), makeSession({ id: 'id-a', name: 'A' }));
+
+    await sessionRepo.reconcile();
+
+    expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['id-a']);
+  });
+
   it('falls back to get(null) when getKeys is unavailable', async () => {
     const fake = getChromeFake();
     fake.state.local.set(sessionKey('orphan'), makeSession({ id: 'orphan' }));
@@ -868,6 +907,19 @@ describe('sessionRepo history (Phase 3)', () => {
         'Session not found: ghost',
       );
     });
+
+    it("clears the crash-recovery marker in either direction (the pin becomes the user's)", async () => {
+      await seed(makeHistory({ id: 'h1' }));
+      await sessionRepo.markRecovered('h1', 'Previous session (recovered)');
+      expect((await sessionRepo.get('h1'))?.autoProtected).toBe(true);
+
+      await sessionRepo.setProtected('h1', true);
+
+      expect((await sessionRepo.get('h1'))?.autoProtected).toBeUndefined();
+      expect((await sessionRepo.listSummaries())[0].autoProtected).toBeUndefined();
+      await expect(sessionRepo.demoteAutoProtected(0)).resolves.toEqual([]);
+      expect((await sessionRepo.get('h1'))?.protected).toBe(true);
+    });
   });
 
   describe('markRecovered', () => {
@@ -887,10 +939,96 @@ describe('sessionRepo history (Phase 3)', () => {
       expect((await sessionRepo.listSummaries())[0]).toMatchObject(expected);
     });
 
+    it("marks the pin as crash recovery's, not the user's", async () => {
+      await seed(makeHistory({ id: 'h1' }));
+
+      await sessionRepo.markRecovered('h1', 'Previous session (recovered)');
+
+      expect((await sessionRepo.get('h1'))?.autoProtected).toBe(true);
+      expect((await sessionRepo.listSummaries())[0].autoProtected).toBe(true);
+    });
+
     it('rejects for an unknown id', async () => {
       await expect(sessionRepo.markRecovered('ghost', 'x')).rejects.toThrow(
         'Session not found: ghost',
       );
+    });
+  });
+
+  describe('demoteAutoProtected', () => {
+    /** Three crash-recovery pins, oldest first, as ten browser starts would leave them. */
+    async function seedPins(): Promise<void> {
+      await seed(
+        makeHistory({ id: 'r1', createdAt: 1_000 }),
+        makeHistory({ id: 'r2', createdAt: 2_000 }),
+        makeHistory({ id: 'r3', createdAt: 3_000 }),
+      );
+      for (const id of ['r1', 'r2', 'r3']) {
+        await sessionRepo.markRecovered(id, `Previous session (recovered) ${id}`);
+      }
+    }
+
+    it('keeps the newest N pins and demotes the rest without deleting anything', async () => {
+      await seedPins();
+
+      await expect(sessionRepo.demoteAutoProtected(2)).resolves.toEqual(['r1']);
+
+      expect(bodyIds()).toEqual(['r1', 'r2', 'r3']);
+      const demoted = await sessionRepo.get('r1');
+      expect(demoted).toMatchObject({ origin: 'recovered', protected: false });
+      expect(demoted?.autoProtected).toBeUndefined();
+      expect((await sessionRepo.get('r3'))?.protected).toBe(true);
+      const summaries = await sessionRepo.listSummaries();
+      expect(
+        summaries
+          .filter((s) => s.protected === true)
+          .map((s) => s.id)
+          .sort(),
+      ).toEqual(['r2', 'r3']);
+      // Demoted rows are prunable again, which is the whole point.
+      await expect(sessionRepo.pruneHistory(0)).resolves.toEqual(['r1']);
+    });
+
+    it('never touches a user pin or an ordinary snapshot', async () => {
+      await seedPins();
+      await seed(makeHistory({ id: 'plain', createdAt: 500 }));
+      await sessionRepo.put(makeSession({ id: 'saved', kind: 'saved', origin: 'manual' }));
+      await sessionRepo.setProtected('r2', true);
+
+      await expect(sessionRepo.demoteAutoProtected(1)).resolves.toEqual(['r1']);
+
+      expect((await sessionRepo.get('r2'))?.protected).toBe(true);
+      expect((await sessionRepo.get('r3'))?.protected).toBe(true);
+      expect((await sessionRepo.get('plain'))?.protected).toBeUndefined();
+      expect((await sessionRepo.get('saved'))?.protected).toBeUndefined();
+    });
+
+    it('writes the index once for the whole pass and is a no-op under the cap', async () => {
+      await seedPins();
+      const setSpy = vi.spyOn(chrome.storage.local, 'set');
+
+      await expect(sessionRepo.demoteAutoProtected(0)).resolves.toEqual(['r3', 'r2', 'r1']);
+
+      // Three bodies, then one index write.
+      expect(setSpy).toHaveBeenCalledTimes(4);
+      expect(setSpy.mock.calls.at(-1)?.[0]).toHaveProperty(INDEX_KEY);
+      setSpy.mockClear();
+
+      await expect(sessionRepo.demoteAutoProtected(2)).resolves.toEqual([]);
+      expect(setSpy).not.toHaveBeenCalled();
+    });
+
+    it('skips a pin whose body no longer migrates instead of rewriting it', async () => {
+      const fake = getChromeFake();
+      await seedPins();
+      fake.state.local.set(sessionKey('r1'), {
+        ...(await sessionRepo.get('r1')),
+        schemaVersion: 2,
+      });
+
+      await expect(sessionRepo.demoteAutoProtected(0)).resolves.toEqual(['r3', 'r2']);
+
+      expect(fake.state.local.get(sessionKey('r1'))).toMatchObject({ schemaVersion: 2 });
     });
   });
 

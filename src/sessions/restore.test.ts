@@ -161,9 +161,29 @@ describe('clampToScreen', () => {
     });
   });
 
-  it('returns undefined when the visible part is smaller than 200x200', () => {
-    expect(clampToScreen({ left: 1300, top: 0, width: 800, height: 600 }, screen)).toBeUndefined();
-    expect(clampToScreen({ left: 0, top: 750, width: 800, height: 600 }, screen)).toBeUndefined();
+  it('passes a sliver of overlap through unchanged rather than dropping the bounds', () => {
+    // Only 140px wide / 150px tall of these is on this screen. Dropping the bounds would default-
+    // place the window on the primary screen, i.e. punish a window straddling the seam harder
+    // than one wholly on another monitor (passed through, below) -- and its own monitor, when
+    // attached, still puts it back exactly where it was.
+    const sliverRight = { left: 1300, top: 0, width: 800, height: 600 };
+    const sliverBottom = { left: 0, top: 750, width: 800, height: 600 };
+
+    expect(clampToScreen(sliverRight, screen)).toEqual(sliverRight);
+    expect(clampToScreen(sliverBottom, screen)).toEqual(sliverBottom);
+  });
+
+  it('clamps a half-overlapping window but leaves a non-overlapping one alone', () => {
+    // Half on this screen: worth clamping, the visible part is well over 200x200.
+    expect(clampToScreen({ left: 1040, top: 500, width: 800, height: 600 }, screen)).toEqual({
+      left: 1040,
+      top: 500,
+      width: 400,
+      height: 400,
+    });
+    // No overlap at all: unchanged.
+    const elsewhere = { left: 1600, top: 0, width: 800, height: 600 };
+    expect(clampToScreen(elsewhere, screen)).toEqual(elsewhere);
   });
 
   it('returns undefined for a window that is already tiny', () => {

@@ -33,6 +33,7 @@ function isSessionSummary(value: unknown): value is SessionSummary {
     tabCount,
     bytes,
     protected: isProtected,
+    autoProtected,
     contentHash,
   } = value;
 
@@ -55,6 +56,9 @@ function isSessionSummary(value: unknown): value is SessionSummary {
   }
 
   if (isProtected !== undefined && typeof isProtected !== 'boolean') {
+    return false;
+  }
+  if (autoProtected !== undefined && typeof autoProtected !== 'boolean') {
     return false;
   }
   if (contentHash !== undefined && typeof contentHash !== 'string') {

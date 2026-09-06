@@ -67,7 +67,41 @@ describe('contentHash', () => {
     expect(contentHash(retitled)).not.toBe(contentHash(base));
   });
 
-  it('hashes an empty layout to the FNV offset basis', () => {
-    expect(contentHash([])).toBe('811c9dc5');
+  it('separates windows: the same tabs split differently hash differently', () => {
+    const a = { url: 'https://a.test', title: 'A', pinned: false, active: false };
+    const b = { url: 'https://b.test', title: 'B', pinned: false, active: false };
+    const c = { url: 'https://c.test', title: 'C', pinned: false, active: false };
+
+    // Dragging a tab from the end of window 1 to the front of window 2.
+    expect(contentHash([win([a, b]), win([c])])).not.toBe(contentHash([win([a]), win([b, c])]));
+    // Splitting one window into two.
+    expect(contentHash([win([a, b, c])])).not.toBe(contentHash([win([a, b]), win([c])]));
+    // An empty window is not the same layout as no window at all.
+    expect(contentHash([])).not.toBe(contentHash([win([])]));
+  });
+
+  it('separates the per-tab fields from each other', () => {
+    const split = [
+      win(
+        [
+          { url: 'https://x.test/a', title: '', pinned: false, active: false, groupIndex: 0 },
+          { url: 'https://x.test/b', title: '', pinned: false, active: false, groupIndex: 0 },
+        ],
+        [{ title: '0', color: 'blue', collapsed: false }],
+      ),
+      win([]),
+    ];
+    // A URL that swallows the next field's text must not collide with the field boundary.
+    const shifted = structuredClone(split);
+    const first = shifted[0]?.tabs[0];
+    if (first) {
+      first.url = 'https://x.test/a0';
+    }
+    expect(contentHash(shifted)).not.toBe(contentHash(split));
+  });
+
+  it('is stable for an empty layout', () => {
+    expect(contentHash([])).toMatch(/^[0-9a-f]{8}$/);
+    expect(contentHash([])).toBe(contentHash([]));
   });
 });

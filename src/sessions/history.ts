@@ -125,6 +125,14 @@ function isPromotable(summary: SessionSummary): boolean {
 }
 
 /**
+ * How many crash-recovery pins stay protected: the one this start made, plus the previous
+ * browser session's, so the entry the dashboard points at (and the one before it, for a user who
+ * only notices the loss on the next launch) is always there. Older auto-pins are demoted back to
+ * ordinary snapshots — see `sessionRepo.demoteAutoProtected`.
+ */
+export const RECOVERED_AUTO_PIN_LIMIT = 2;
+
+/**
  * Crash recovery, run from `runtime.onStartup`: the newest unprotected alarm/manual/startup
  * snapshot is the last known layout of the previous browser session, so it becomes
  * `origin: 'recovered'`, `protected: true` (exempt from pruning) and is renamed
@@ -134,6 +142,13 @@ function isPromotable(summary: SessionSummary): boolean {
  * newest existing recovered one are candidates — otherwise every restart with no new snapshots
  * in between (history off, or an unchanged layout) would promote one more stale snapshot and
  * slowly turn the whole ring into protected entries.
+ *
+ * That guard bounds one startup, not the sequence of them: with new snapshots arriving between
+ * restarts, each start still pins one more, and the ring buffer skips every one of them. So the
+ * pins are capped here too — the newest `RECOVERED_AUTO_PIN_LIMIT` stay protected and the rest
+ * are demoted (never deleted) back into the ring. A snapshot the user protected is never
+ * demoted: only pins this function made carry the `autoProtected` marker, and any use of the
+ * Protect switch clears it.
  */
 export async function promoteRecoveredSnapshot(): Promise<SessionId | null> {
   const summaries = await sessionRepo.listSummaries();
@@ -144,15 +159,17 @@ export async function promoteRecoveredSnapshot(): Promise<SessionId | null> {
   const candidate = summaries
     .filter((summary) => isPromotable(summary) && summary.createdAt > newestRecoveredAt)
     .sort((a, b) => b.createdAt - a.createdAt || b.updatedAt - a.updatedAt)[0];
-  if (candidate === undefined) {
-    return null;
-  }
 
-  await sessionRepo.markRecovered(
-    candidate.id,
-    recoveredSnapshotName(new Date(candidate.createdAt)),
-  );
-  return candidate.id;
+  if (candidate !== undefined) {
+    await sessionRepo.markRecovered(
+      candidate.id,
+      recoveredSnapshotName(new Date(candidate.createdAt)),
+    );
+  }
+  // Runs even when nothing was promoted: a start that finds no candidate can still find more
+  // pins than the cap (a lowered cap, or an interrupted trim on the previous start).
+  await sessionRepo.demoteAutoProtected(RECOVERED_AUTO_PIN_LIMIT);
+  return candidate?.id ?? null;
 }
 
 /**

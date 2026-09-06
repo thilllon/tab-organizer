@@ -712,6 +712,63 @@ describe('history wiring (spec §5)', () => {
     expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
   });
 
+  it('onStartup still arms the alarms when reconcile rejects (damaged index)', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(sessionRepo, 'reconcile').mockRejectedValue(new Error('Unknown schema version: 2'));
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([HISTORY_FIRST_ALARM, HISTORY_ALARM]);
+    });
+    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+  });
+
+  it('onInstalled still arms the alarm when reconcile rejects (damaged index)', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(sessionRepo, 'reconcile').mockRejectedValue(new Error('Unknown schema version: 2'));
+
+    fake.fire.installed({ reason: 'install' });
+
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([HISTORY_ALARM]);
+    });
+    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+  });
+
+  it('onInstalled still arms the alarm when the menus cannot be registered', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(chrome.contextMenus, 'removeAll').mockRejectedValue(new Error('menus unavailable'));
+
+    fake.fire.installed({ reason: 'install' });
+
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([HISTORY_ALARM]);
+    });
+    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+  });
+
+  it('a browser start on a damaged index repairs it and still arms the alarms', async () => {
+    const { sessionRepo } = await loadWorker();
+    const fake = getChromeFake();
+    // The real hazard behind the mocks above: an index migrateIndex() refuses to read.
+    fake.state.local.set(INDEX_KEY, { schemaVersion: 2, sessions: [] });
+    fake.state.local.set('session:orphan', historySession('orphan', Date.now() - 60_000));
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(alarmNames()).toEqual([HISTORY_FIRST_ALARM, HISTORY_ALARM]);
+    });
+    expect((await sessionRepo.listSummaries()).map((s) => s.id)).toEqual(['orphan']);
+  });
+
   it('the first alarm after startup captures the restored windows as a snapshot', async () => {
     await loadWorker();
     const fake = getChromeFake();

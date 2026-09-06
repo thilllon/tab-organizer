@@ -544,6 +544,102 @@ describe('sorting tabs that have no committed url', () => {
   });
 });
 
+describe('sortByCustom preserveOrderWithinGroups with groupSuspendedTabs on', () => {
+  const suspenderId = 'testid';
+  const prefix = `chrome-extension://${suspenderId}/suspended.html#`;
+  const prefixLen = prefix.length;
+
+  /** Two normal tabs of one host in reverse url order, plus two suspended tabs of the same. */
+  function fixture(): chrome.tabs.Tab[] {
+    return [
+      makeTab({ id: 1, url: 'https://example.com/zebra' }),
+      makeTab({ id: 2, url: 'https://example.com/apple' }),
+      makeTab({ id: 3, url: `${prefix}ttl=S&pos=0&uri=https://example.com/mango` }),
+      makeTab({ id: 4, url: `${prefix}ttl=S&pos=1&uri=https://example.com/banana` }),
+    ];
+  }
+
+  function sort(tabs: chrome.tabs.Tab[], preserveOrderWithinGroups: boolean): void {
+    sortByCustom(
+      tabs,
+      'leftToRight',
+      true,
+      preserveOrderWithinGroups,
+      false,
+      'subdomain',
+      suspenderId,
+      prefix,
+      prefixLen,
+    );
+  }
+
+  it('url-sorts within a group when preserveOrderWithinGroups is off', () => {
+    const tabs = fixture();
+
+    sort(tabs, false);
+
+    // Suspended block first (banana < mango by the decoded target url), then the normal group
+    // sorted by url: /apple before /zebra. Before the fix the normal group came back as 1, 2 --
+    // `groupSuspendedTabs` made the comparator behave as if 'preserve order' were always on.
+    expect(tabs.map((t) => t.id)).toEqual([4, 3, 2, 1]);
+  });
+
+  it('keeps the original order within a group when preserveOrderWithinGroups is on', () => {
+    const tabs = fixture();
+
+    sort(tabs, true);
+
+    expect(tabs.map((t) => t.id)).toEqual([3, 4, 1, 2]);
+  });
+
+  it('leaves the suspended block ordered exactly as it was before the fix', () => {
+    const off = fixture();
+    const on = fixture();
+
+    sort(off, false);
+    sort(on, true);
+
+    // The suspended sub-sort has always passed `gsSuspended: false`, so it honoured the switch
+    // then and honours it now: url order with it off, capture order with it on.
+    expect(off.slice(0, 2).map((t) => t.id)).toEqual([4, 3]);
+    expect(on.slice(0, 2).map((t) => t.id)).toEqual([3, 4]);
+  });
+
+  it('sorts normal tabs the same whether groupSuspendedTabs is on or off', () => {
+    const withGrouping = [
+      makeTab({ id: 1, url: 'https://example.com/zebra' }),
+      makeTab({ id: 2, url: 'https://example.com/apple' }),
+    ];
+    const withoutGrouping = withGrouping.map((tab) => ({ ...tab }));
+
+    sortByCustom(
+      withGrouping,
+      'leftToRight',
+      true,
+      false,
+      false,
+      'subdomain',
+      suspenderId,
+      prefix,
+      prefixLen,
+    );
+    sortByCustom(
+      withoutGrouping,
+      'leftToRight',
+      false,
+      false,
+      false,
+      'subdomain',
+      suspenderId,
+      prefix,
+      prefixLen,
+    );
+
+    expect(withGrouping.map((t) => t.id)).toEqual([2, 1]);
+    expect(withoutGrouping.map((t) => t.id)).toEqual([2, 1]);
+  });
+});
+
 function makeTab(overrides: Partial<chrome.tabs.Tab> = {}): chrome.tabs.Tab {
   return {
     id: 1,
