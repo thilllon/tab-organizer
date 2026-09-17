@@ -41,3 +41,32 @@ jobs:
         run: pnpm listing && git diff --exit-code -- docs/description.txt
 
       - run: pnpm build
+
+      # Spec §12 Phase 0 acceptance: `pnpm build` emits the extension's HTML entry points. Both
+      # are rollup inputs, so a config edit that drops one is a silent, shippable break.
+      - name: Verify the build emitted the extension pages
+        run: |
+          for page in dist/dashboard.html dist/options.html; do
+            test -f "$page" || { echo "::error::$page missing from the build"; exit 1; }
+            echo "ok: $page"
+          done
+
+      # The real-Chrome smoke test (scripts/qa/smoke.ts). Advisory and off the pull-request path
+      # on purpose:
+      #  - it needs a Chromium that ubuntu-latest does not ship, so every run would pay ~1-2 min
+      #    for `playwright install --with-deps chromium` (a ~170 MB download plus apt packages) on
+      #    top of the ~35 s run itself. That is a poor trade on every PR push for a check the unit
+      #    suite already covers in shape.
+      #  - `continue-on-error` keeps a runner-image or browser-download change from turning CI red
+      #    for a reason unrelated to the diff. The step still shows up as failed in the run, which
+      #    is what stops the script rotting unnoticed — the point of wiring it up at all.
+      # Revisit both decisions once the runner image is pinned and a Chromium is cached.
+      - name: Install Chromium for the QA smoke test
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: QA smoke test (advisory)
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: pnpm qa:smoke

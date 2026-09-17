@@ -1,0 +1,545 @@
+import { Download, Layers, Save, Upload } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { EmptyState } from '@/dashboard/components/EmptyState';
+import { HistorySection } from '@/dashboard/components/HistorySection';
+import { ImportDialog } from '@/dashboard/components/ImportDialog';
+import { OpenWindowsPane } from '@/dashboard/components/OpenWindowsPane';
+import { ProgressToast } from '@/dashboard/components/ProgressToast';
+import { QuotaNotice } from '@/dashboard/components/QuotaNotice';
+import { RecoveredBanner } from '@/dashboard/components/RecoveredBanner';
+import {
+  type PendingRestore,
+  RestoreConfirmDialog,
+} from '@/dashboard/components/RestoreConfirmDialog';
+import { SearchBar } from '@/dashboard/components/SearchBar';
+import { SearchResults } from '@/dashboard/components/SearchResults';
+import { type RestoreScope, SessionCard } from '@/dashboard/components/SessionCard';
+import { SessionSettingsRow } from '@/dashboard/components/SessionSettingsRow';
+import { UnreadableSessionRow } from '@/dashboard/components/UnreadableSessionRow';
+import { useOpenWindows } from '@/dashboard/hooks/useOpenWindows';
+import { useRestore } from '@/dashboard/hooks/useRestore';
+import { useSearchCorpus } from '@/dashboard/hooks/useSearchCorpus';
+import { useSessionIndex } from '@/dashboard/hooks/useSessionIndex';
+import { downloadExport } from '@/dashboard/lib/download';
+import { errorMessage } from '@/dashboard/lib/errors';
+import {
+  type CollectProgress,
+  collectProgressNotice,
+  collectSessionBodies,
+  exportAllNotice,
+  NOTHING_TO_EXPORT_ALL,
+  shouldReportProgress,
+  shouldTickProgress,
+} from '@/dashboard/lib/export-actions';
+import { importedNotice } from '@/dashboard/lib/import-preview';
+import { openTabInBackground } from '@/dashboard/lib/open-tab';
+import { isQuotaError } from '@/dashboard/lib/quota';
+import { needsRestoreConfirm } from '@/dashboard/lib/restore-summary';
+import {
+  buildSearchGroups,
+  flattenSearchItems,
+  NO_HIGHLIGHT,
+  nextIndex,
+  prevIndex,
+  resolveActivation,
+  type SearchItem,
+  sessionNameMatches,
+} from '@/dashboard/lib/search-nav';
+import { pickWindow, shouldShowRecoveredBanner, splitByKind } from '@/dashboard/lib/session-utils';
+import { revealStorageMeter } from '@/dashboard/lib/storage-meter';
+import { RECOVERED_DISMISSED_KEY, readUiState, writeUiState } from '@/dashboard/lib/ui-state';
+import { currentWindowTarget, goToTab } from '@/dashboard/lib/window-actions';
+import { type CaptureScope, captureSession } from '@/sessions/capture';
+import { toJson } from '@/sessions/export';
+import { ensureUniqueName } from '@/sessions/naming';
+import type { RestoreTarget } from '@/sessions/restore';
+import { DEFAULT_LIMIT_PER_SOURCE, search } from '@/sessions/search';
+import { sessionRepo } from '@/sessions/storage';
+import type { Session, SessionSettings, SessionSummary } from '@/types';
+
+const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
+
+const NOTHING_TO_SAVE = {
+  window: 'Nothing to save — this window only contains the Sessions dashboard.',
+  all: 'Nothing to save — no open window contains anything besides the Sessions dashboard.',
+} as const;
+
+function nothingToSave(scope: CaptureScope): string {
+  return scope === 'all' ? NOTHING_TO_SAVE.all : NOTHING_TO_SAVE.window;
+}
+
+export function Dashboard() {
+  const { sessions, loading, error: indexError } = useSessionIndex();
+  const openWindows = useOpenWindows();
+  const { restore, progress, running, cancel, cancelling, lastResult, cancelled, dismiss } =
+    useRestore();
+  const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [notice, setNotice] = useState<string | undefined>(undefined);
+  const [error, setError] = useState<string | undefined>(undefined);
+  // A write that failed on the storage quota: one fixed sentence plus a way to the meter, rather
+  // than Chrome's "Resource::kQuotaBytes quota exceeded" in the error banner (spec §4).
+  const [quotaFull, setQuotaFull] = useState(false);
+  const [pending, setPending] = useState<PendingRestore | undefined>(undefined);
+  // Which recovered snapshot's banner was dismissed in this tab (sessionStorage, read once).
+  const [dismissedRecovered, setDismissedRecovered] = useState(() =>
+    readUiState(RECOVERED_DISMISSED_KEY),
+  );
+  // Focus target after a card deletes itself: the card (and with it the button that had focus)
+  // unmounts, which would otherwise drop keyboard focus to <body>. <main> outlives both the list
+  // and the empty state that replaces it once the last session is gone.
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Unified search (spec §7). `query` is the debounced value SearchBar commits; the typed text
+  // never reaches this component, so a keystroke re-renders nothing but the box itself.
+  const [query, setQuery] = useState('');
+  const [includeHistory, setIncludeHistory] = useState(false);
+  const [limitPerSource, setLimitPerSource] = useState(DEFAULT_LIMIT_PER_SOURCE);
+  const [highlight, setHighlight] = useState(NO_HIGHLIGHT);
+  // The text an Enter press was made against, until the results describe that same text; see the
+  // effect below. `undefined` means "no activation waiting".
+  const [pendingActivation, setPendingActivation] = useState<string | undefined>(undefined);
+  const { corpus, warming, ensureLoaded } = useSearchCorpus({ summaries: sessions, openWindows });
+
+  /**
+   * Every failed *write* goes through here: a full disk is not something the user can debug from
+   * Chrome's wording, so it becomes the one quota notice (with its link to the storage meter)
+   * and everything else stays a plain error.
+   */
+  const reportWriteError = (err: unknown) => {
+    if (isQuotaError(err)) {
+      setError(undefined);
+      setQuotaFull(true);
+      return;
+    }
+    setError(errorMessage(err));
+  };
+
+  const save = async (scope: CaptureScope) => {
+    setSaving(true);
+    setError(undefined);
+    setNotice(undefined);
+    setQuotaFull(false);
+    try {
+      const session = await captureSession(scope);
+      if (session.windows.length === 0) {
+        setNotice(nothingToSave(scope));
+        return;
+      }
+      // Two saves in the same minute would otherwise share the default name.
+      const names = (await sessionRepo.listSummaries()).map((summary) => summary.name);
+      const named: Session = { ...session, name: ensureUniqueName(session.name, names) };
+      await sessionRepo.put(named);
+      setNotice(`Saved “${named.name}”.`);
+    } catch (err) {
+      reportWriteError(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /** One place for the "Exported …" / "Copied …" / "Imported …" confirmations rows send up. */
+  const announce = (message: string) => {
+    setError(undefined);
+    setQuotaFull(false);
+    setNotice(message);
+  };
+
+  /**
+   * The whole store as one `ExportBundle` (spec §8): every saved session and every history
+   * snapshot, read body by body through `sessionRepo`. Bodies that cannot be read are reported
+   * in the confirmation rather than failing the backup.
+   */
+  const exportAll = async () => {
+    setError(undefined);
+    setNotice(undefined);
+    setExporting(true);
+    try {
+      const summaries = await sessionRepo.listSummaries();
+      if (summaries.length === 0) {
+        setNotice(NOTHING_TO_EXPORT_ALL);
+        return;
+      }
+      const onProgress = shouldReportProgress(summaries.length)
+        ? (progress: CollectProgress) => {
+            if (shouldTickProgress(progress)) {
+              setNotice(collectProgressNotice(progress));
+            }
+          }
+        : undefined;
+      const { sessions: bodies, skipped } = await collectSessionBodies(summaries, onProgress);
+      if (bodies.length === 0) {
+        setNotice(NOTHING_TO_EXPORT_ALL);
+        return;
+      }
+      downloadExport('backup', 'json', toJson(bodies, Date.now()));
+      setNotice(exportAllNotice(bodies.length, skipped.length));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const runRestore = async (
+    session: Session,
+    target: RestoreTarget,
+    lazy?: SessionSettings['restoreLazy'],
+  ): Promise<void> => {
+    try {
+      const outcome = await restore(session, target, lazy);
+      if (!outcome.ok) {
+        // The header Save buttons and each SessionCard's Restore button are disabled while a
+        // restore runs (via `running` / the `restoring` prop); this catches the click that lands
+        // before that re-render, straight from the hook rather than from state timing.
+        setNotice('A restore is already running.');
+      }
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  // `windowIndex`, when given, scopes the restore to a single window of `session`. `pickWindow`
+  // and `currentWindowTarget` run in here (inside the try) rather than in the JSX callback, so a
+  // bad index (RangeError) or a window that cannot be identified lands in the error banner
+  // instead of escaping into the click handler.
+  const requestRestore = async (
+    session: Session,
+    scope: RestoreScope,
+    windowIndex?: number,
+  ): Promise<void> => {
+    setError(undefined);
+    setNotice(undefined);
+    try {
+      const target = scope === 'here' ? await currentWindowTarget() : NEW_WINDOWS;
+      const scoped = windowIndex === undefined ? session : pickWindow(session, windowIndex);
+      if (needsRestoreConfirm(scoped)) {
+        const settings = await sessionRepo.getSettings();
+        setPending({ session: scoped, target, restoreLazy: settings.restoreLazy });
+        return;
+      }
+      await runRestore(scoped, target);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  const confirmRestore = (lazy: SessionSettings['restoreLazy']) => {
+    if (pending === undefined) {
+      return;
+    }
+    const { session, target } = pending;
+    setPending(undefined);
+    void runRestore(session, target, lazy);
+  };
+
+  /** Restores a row that only has its index entry (the History rows, the recovered banner). */
+  const restoreSummary = async (summary: SessionSummary): Promise<void> => {
+    setError(undefined);
+    try {
+      const session = await sessionRepo.get(summary.id);
+      if (session === undefined) {
+        setError('This snapshot no longer exists.');
+        return;
+      }
+      await requestRestore(session, 'newWindows');
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  const dismissRecovered = (summary: SessionSummary) => {
+    writeUiState(RECOVERED_DISMISSED_KEY, summary.id);
+    setDismissedRecovered(summary.id);
+  };
+
+  const focusList = () => {
+    mainRef.current?.focus({ preventScroll: true });
+  };
+
+  const busy = saving || running;
+  // History snapshots share the index with saved sessions: the saved list must filter, and the
+  // History section gets the rest (both newest first — see splitByKind).
+  const { saved, history } = useMemo(() => splitByKind(sessions), [sessions]);
+  const recovered = shouldShowRecoveredBanner(history, dismissedRecovered);
+  const searching = query !== '';
+
+  // The only part of search that re-runs per query: the corpus is rebuilt by useSearchCorpus,
+  // and only when the live tabs or the stored bodies actually change.
+  const results = useMemo(
+    () => search(corpus, query, { limitPerSource, includeHistory }),
+    [corpus, query, limitPerSource, includeHistory],
+  );
+  // Tier 1 (spec §7): session names, answered from the index without reading a single body.
+  const sessionMatches = useMemo(
+    () => (searching ? sessionNameMatches(sessions, results.tokens, { includeHistory }) : []),
+    [searching, sessions, results.tokens, includeHistory],
+  );
+  const groups = useMemo(
+    () => (searching ? buildSearchGroups(results, sessionMatches) : []),
+    [searching, results, sessionMatches],
+  );
+  // The flat, ordered row list the arrow keys walk and Enter activates.
+  const items = useMemo(() => flattenSearchItems(groups), [groups]);
+
+  // Tier 2 is lazy (spec §7): bodies the idle pre-warm did not reach are read on the first query
+  // that needs them, and history bodies only once "Include history" is on.
+  useEffect(() => {
+    if (!searching) {
+      return;
+    }
+    void ensureLoaded(
+      sessions
+        .filter(
+          (summary) =>
+            // Nothing can read an unreadable body, so asking for it would only cache an empty
+            // list and log a warning per query.
+            summary.unreadable === undefined && (includeHistory || summary.kind !== 'history'),
+        )
+        .map((summary) => summary.id),
+    );
+  }, [searching, includeHistory, sessions, ensureLoaded]);
+
+  /** A new query re-ranks everything: back to no highlight and to the default per-source cap. */
+  const resetResults = () => {
+    setHighlight(NO_HIGHLIGHT);
+    setLimitPerSource(DEFAULT_LIMIT_PER_SOURCE);
+  };
+
+  const activateItem = async (item: SearchItem | undefined): Promise<void> => {
+    if (item === undefined) {
+      return;
+    }
+    setError(undefined);
+    if (item.kind === 'session') {
+      // Tier-1 rows restore the whole session, through the same useRestore path as every other
+      // restore in the dashboard (confirm dialog, progress toast, cancel).
+      await restoreSummary(item.summary);
+      return;
+    }
+    const { entry } = item;
+    // An open tab is focused where it is; a saved or snapshotted one opens in a background tab
+    // (sanitised in open-tab.ts — a stored url is whatever the page had at capture time).
+    const result =
+      entry.tabId !== undefined && entry.windowId !== undefined
+        ? await goToTab(entry.tabId, entry.windowId)
+        : await openTabInBackground(entry.url);
+    if (!result.ok) {
+      setError(result.reason);
+    }
+  };
+
+  // Enter is resolved one render *after* the key press: SearchBar commits the query and requests
+  // the activation in the same handler, so anything activated inside that handler would come from
+  // the previous render's `items`/`highlight`. Deferring (rather than making the first Enter only
+  // commit the query) keeps "type, then Enter" activating the top match on the first press, which
+  // is what a search box is expected to do — while `resolveActivation` guarantees the rows it acts
+  // on are the ones the typed query produced. No dependency array: every render is exactly when a
+  // waiting activation may have become resolvable, and with nothing pending this costs one check.
+  useEffect(() => {
+    if (pendingActivation === undefined) {
+      return;
+    }
+    const decision = resolveActivation({
+      typedQuery: pendingActivation,
+      committedQuery: query,
+      highlight,
+      itemCount: items.length,
+    });
+    if (decision.action === 'wait') {
+      return;
+    }
+    setPendingActivation(undefined);
+    if (decision.action === 'activate') {
+      void activateItem(items[decision.index]);
+    }
+  });
+
+  const moveHighlight = (direction: 'next' | 'prev') => {
+    setHighlight((current) =>
+      direction === 'next' ? nextIndex(current, items.length) : prevIndex(current, items.length),
+    );
+  };
+
+  return (
+    <div className="mx-auto max-w-6xl p-6">
+      <header className="flex flex-wrap items-center gap-3">
+        <h1 className="text-lg font-semibold tracking-wide text-primary uppercase">Sessions</h1>
+        <SearchBar
+          includeHistory={includeHistory}
+          onQueryChange={(next) => {
+            // Only a *different* query re-ranks. Enter re-commits the text that is already
+            // committed, and that must not clear the highlight the user arrowed to (nor collapse
+            // a "show more") before the activation below reads it.
+            if (next !== query) {
+              setQuery(next);
+              resetResults();
+            }
+          }}
+          onIncludeHistoryChange={(value) => {
+            setIncludeHistory(value);
+            resetResults();
+          }}
+          onMove={moveHighlight}
+          onActivate={setPendingActivation}
+        />
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            <Upload />
+            Import
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void exportAll()} disabled={exporting}>
+            <Download />
+            Export all (JSON backup)
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void save('window')} disabled={busy}>
+            <Save />
+            Save this window
+          </Button>
+          <Button size="sm" onClick={() => void save('all')} disabled={busy}>
+            <Layers />
+            Save all windows
+          </Button>
+        </div>
+      </header>
+
+      <Separator className="my-4" />
+
+      {recovered !== undefined && (
+        <RecoveredBanner
+          summary={recovered}
+          restoring={running}
+          onRestore={(summary) => void restoreSummary(summary)}
+          onDismiss={dismissRecovered}
+        />
+      )}
+
+      <SessionSettingsRow summaries={sessions} onNotice={announce} />
+
+      {notice !== undefined && (
+        <p role="status" aria-live="polite" className="mb-3 rounded-md bg-muted px-3 py-2 text-sm">
+          {notice}
+        </p>
+      )}
+      {quotaFull && <QuotaNotice className="mb-3" onShowStorage={() => revealStorageMeter()} />}
+      {(error ?? indexError) !== undefined && (
+        <p
+          role="alert"
+          className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {error ?? indexError}
+        </p>
+      )}
+
+      {searching ? (
+        <SearchResults
+          groups={groups}
+          query={query}
+          tokens={results.tokens}
+          total={results.total + sessionMatches.length}
+          highlight={highlight}
+          warming={warming}
+          onHighlight={setHighlight}
+          onActivate={(index) => void activateItem(items[index])}
+          onShowMore={() => setLimitPerSource((current) => current + DEFAULT_LIMIT_PER_SOURCE)}
+        />
+      ) : (
+        /* One column below `lg`, then open windows on the left at a third of the width. */
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <OpenWindowsPane
+            windows={openWindows.windows}
+            currentWindowId={openWindows.currentWindowId}
+            loading={openWindows.loading}
+            error={openWindows.error}
+            onSaveWindow={(windowId) => void save({ windowId })}
+            busy={busy}
+          />
+
+          {/* tabIndex -1: programmatic focus target only (see mainRef); never in the tab order. */}
+          <main ref={mainRef} tabIndex={-1} className="min-w-0 outline-none">
+            <h2 id="saved-sessions-heading" className="mb-3 text-sm font-semibold">
+              Saved sessions
+            </h2>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : saved.length === 0 ? (
+              <EmptyState
+                onSaveWindow={() => void save('window')}
+                onSaveAll={() => void save('all')}
+                onImport={() => setImportOpen(true)}
+                saving={saving}
+                running={running}
+              />
+            ) : (
+              <ul
+                // Spec §12 Phase 6: the saved sessions are a real tree (session -> window ->
+                // group -> tab). The list stays a <ul> of <li>s so the rows are still list items
+                // for anything that does not follow the tree roles.
+                // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: see above
+                role="tree"
+                aria-labelledby="saved-sessions-heading"
+                className="space-y-3"
+              >
+                {saved.map((summary) =>
+                  // A body written by a newer Tab Organizer (spec §3): listed, explained and
+                  // deletable, but nothing here can read it, so it gets an inert row instead of
+                  // a card whose every action would fail.
+                  summary.unreadable === undefined ? (
+                    <SessionCard
+                      key={summary.id}
+                      summary={summary}
+                      restoring={running}
+                      onRestore={(session, scope) => requestRestore(session, scope)}
+                      onRestoreWindow={(session, windowIndex, scope) =>
+                        requestRestore(session, scope, windowIndex)
+                      }
+                      onNotice={announce}
+                      onDeleted={focusList}
+                    />
+                  ) : (
+                    <UnreadableSessionRow
+                      key={summary.id}
+                      summary={summary}
+                      unreadable={summary.unreadable}
+                      onDeleted={focusList}
+                    />
+                  ),
+                )}
+              </ul>
+            )}
+
+            <HistorySection
+              summaries={history}
+              restoring={running}
+              onRestore={(session) => requestRestore(session, 'newWindows')}
+              onNotice={announce}
+              onWriteError={reportWriteError}
+            />
+          </main>
+        </div>
+      )}
+
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={(count) => announce(importedNotice(count))}
+      />
+      <RestoreConfirmDialog
+        pending={pending}
+        onConfirm={confirmRestore}
+        onCancel={() => setPending(undefined)}
+      />
+      <ProgressToast
+        progress={progress}
+        result={lastResult}
+        cancelling={cancelling}
+        cancelled={cancelled}
+        onCancel={cancel}
+        onDismiss={dismiss}
+      />
+    </div>
+  );
+}
