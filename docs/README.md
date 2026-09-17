@@ -32,7 +32,7 @@ Need to put a project away for later? Right-click the icon → Save session / Op
 
 Click the Tab Organizer icon in your toolbar. Every tab in your current window is immediately sorted and organized. There's no popup, no extra steps — one click and you're done.
 
-Right-click the icon for everything else: "Save this window as session", "Save all windows as session" and "Open Sessions" (the full-page dashboard where sessions are listed, searched and restored). A ✓ badge on the icon confirms a save.
+Right-click the icon for everything else: "Assemble!" (gather every window's tabs into this one), "Save this window as session", "Save all windows as session" and "Open Sessions" (the full-page dashboard where sessions are listed, searched and restored). A ✓ badge on the icon confirms it worked.
 
 Tab Organizer handles three types of tabs independently:
 
@@ -77,7 +77,7 @@ How many times have you opened the same page in multiple tabs? Tab Organizer can
 
 ##### Gather All Windows Into One
 
-One keyboard shortcut pulls the tabs of every other window into the current one. Tabs are moved, never reopened, so pinned tabs, tab groups, history and anything you typed stay as they were. Incognito and popup windows are left alone.
+Right-click the icon → "Assemble!" (or use a keyboard shortcut) and the tabs of every other window move into the one you are using. Tabs are moved, never reopened, so pinned tabs, tab groups, history and anything you typed stay as they were, and the tab you are looking at stays in front. Incognito and popup windows are left alone.
 
 ##### Pinned Tab Sorting
 
@@ -162,7 +162,7 @@ Tab Organizer is designed with privacy as a core principle:
   - "tabs" — reads tab URLs and titles to sort them and to save sessions; creates tabs when restoring
   - "tabGroups" — creates and manages Chrome tab groups, and recreates them from sessions
   - "storage" — saves your preferences via Chrome sync storage; saved sessions and snapshots (tab URLs, titles, group names, window layout) are kept in local storage on this device only
-  - "contextMenus" — adds the Save / Open Sessions items to the icon's right-click menu
+  - "contextMenus" — adds the Assemble! / Save / Open Sessions items to the icon's right-click menu
   - "unlimitedStorage" — lets large saved sessions exceed Chrome's 10 MB local quota; data stays on the device
   - "favicon" — shows site icons in the dashboard from Chrome's local favicon cache, no network
   - "alarms" — the timer for automatic snapshots (every 5 minutes by default); turn snapshots off and no timer exists

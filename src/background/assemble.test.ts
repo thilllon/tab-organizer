@@ -36,9 +36,11 @@ function win(id: number, extra: Partial<chrome.windows.Window> = {}): chrome.win
 }
 
 describe('planWindowMoves', () => {
-  it('moves pinned tabs first, then ungrouped runs and each group once, in strip order', () => {
+  const look = { title: 'Work', color: 'blue', collapsed: true } as const;
+
+  it('parks the active tab on a pinned tab and moves the pinned block last', () => {
     const tabs = [
-      tab(6, 5, { groupId: 20 }),
+      tab(6, 5, { groupId: 20, active: true }),
       tab(1, 0, { pinned: true }),
       tab(2, 1, { pinned: true }),
       tab(3, 2),
@@ -48,19 +50,80 @@ describe('planWindowMoves', () => {
       tab(8, 7, { groupId: 30 }),
     ];
     expect(planWindowMoves(tabs)).toEqual([
-      { kind: 'pinned', tabIds: [1, 2] },
+      { kind: 'activate', tabId: 1 },
       { kind: 'tabs', tabIds: [3, 4] },
       { kind: 'group', groupId: 20 },
       { kind: 'tabs', tabIds: [7] },
       { kind: 'group', groupId: 30 },
+      { kind: 'pinned', tabIds: [1, 2] },
+    ]);
+  });
+
+  it('keeps an ungrouped active tab as the anchor and moves it last, back into its place', () => {
+    expect(
+      planWindowMoves([
+        tab(1, 0, { pinned: true }),
+        tab(2, 1, { active: true }),
+        tab(3, 2, { groupId: 20 }),
+      ]),
+    ).toEqual([
+      { kind: 'pinned', tabIds: [1] },
+      { kind: 'group', groupId: 20 },
+      { kind: 'anchor', tabId: 2, beforeTabId: 3 },
+    ]);
+    expect(
+      planWindowMoves([tab(1, 0), tab(2, 1, { groupId: 20 }), tab(3, 2, { active: true })]),
+    ).toEqual([
+      { kind: 'tabs', tabIds: [1] },
+      { kind: 'group', groupId: 20 },
+      { kind: 'anchor', tabId: 3, beforeTabId: undefined },
+    ]);
+  });
+
+  it('activates the last ungrouped tab when the active tab is inside a group', () => {
+    const tabs = [tab(1, 0, { groupId: 20, active: true }), tab(2, 1), tab(3, 2, { groupId: 30 })];
+    expect(planWindowMoves(tabs)).toEqual([
+      { kind: 'activate', tabId: 2 },
+      { kind: 'group', groupId: 20 },
+      { kind: 'group', groupId: 30 },
+      { kind: 'anchor', tabId: 2, beforeTabId: 3 },
+    ]);
+  });
+
+  it('takes the active tab out of its group in a window of groups only, and puts it back at its offset', () => {
+    const tabs = [
+      tab(1, 0, { groupId: 20 }),
+      tab(2, 1, { groupId: 20, active: true }),
+      tab(3, 2, { groupId: 20 }),
+      tab(4, 3, { groupId: 30 }),
+    ];
+    expect(planWindowMoves(tabs, new Map([[20, look]]))).toEqual([
+      { kind: 'detach', tabId: 2, groupId: 20, collapsed: true },
+      { kind: 'group', groupId: 20 },
+      { kind: 'group', groupId: 30 },
+      { kind: 'rejoin', tabId: 2, groupId: 20, offset: 1, collapsed: true },
+    ]);
+  });
+
+  it('rebuilds a single-tab group that the detach empties, just before what followed it', () => {
+    const groups = new Map([[30, look]]);
+    expect(
+      planWindowMoves(
+        [tab(1, 0, { groupId: 30, active: true }), tab(2, 1, { groupId: 20 })],
+        groups,
+      ),
+    ).toEqual([
+      { kind: 'detach', tabId: 1, groupId: 30, collapsed: true },
+      { kind: 'group', groupId: 20 },
+      { kind: 'regroup', tabId: 1, beforeTabId: 2, look },
     ]);
   });
 
   it('has nothing to do for an empty window and skips tabs without an id', () => {
     expect(planWindowMoves([])).toEqual([]);
-    expect(planWindowMoves([tab(1, 0), { ...tab(2, 1), id: undefined }])).toEqual([
-      { kind: 'tabs', tabIds: [1] },
-    ]);
+    expect(planWindowMoves([tab(1, 0, { active: true }), { ...tab(2, 1), id: undefined }])).toEqual(
+      [{ kind: 'anchor', tabId: 1, beforeTabId: undefined }],
+    );
   });
 });
 
@@ -153,8 +216,8 @@ describe('assembleTabs against the chrome fake', () => {
   it('moves a group whole: same group id, title, colour and collapsed state', async () => {
     const target = await targetWith(['https://t.test']);
     const source = await sourceWith(['https://g1.test', 'https://g2.test', 'https://after.test']);
-    // g1 is the source window's active tab, so the group move alone would make it the target's
-    // active tab and expand the group (Chrome for Testing 151); assembleTabs puts both back.
+    // g1 is the source window's active tab: moving the group as it is would make g1 the target's
+    // active tab and expand the group (Chrome for Testing 151), so `after` is activated first.
     const [g1 = -1, g2 = -1] = await idsOf(source);
     const groupId = await group(source, [g1, g2], {
       title: 'Work',
@@ -221,6 +284,100 @@ describe('assembleTabs against the chrome fake', () => {
     expect((await strip(privateWin)).map(([url]) => url)).toEqual(['https://private.test']);
     expect((await strip(popup)).map(([url]) => url)).toEqual(['https://popup.test']);
     expect(getChromeFake().state.windows.has(normal)).toBe(false);
+  });
+
+  /** Every tab activation Chrome reports for `windowId` from now on. */
+  function activationsIn(windowId: number): number[] {
+    const seen: number[] = [];
+    chrome.tabs.onActivated.addListener((info) => {
+      if (info.windowId === windowId) {
+        seen.push(info.tabId);
+      }
+    });
+    return seen;
+  }
+
+  it('never activates a tab in the target, even for a group that holds its window’s active tab', async () => {
+    const target = await targetWith(['https://t1.test', 'https://t2.test']);
+    const [, t2 = -1] = await idsOf(target);
+    await chrome.tabs.update(t2, { active: true });
+    const source = await sourceWith(['https://g1.test', 'https://g2.test', 'https://loose.test']);
+    const [g1 = -1, g2 = -1] = await idsOf(source);
+    const groupId = await group(source, [g1, g2], { title: 'G', collapsed: true });
+    const seen = activationsIn(target);
+
+    await assembleTabs();
+
+    expect(seen).toEqual([]);
+    expect((await chrome.tabs.query({ windowId: target, active: true })).map((t) => t.id)).toEqual([
+      t2,
+    ]);
+    const [moved] = (await chrome.tabGroups.query({})).filter((g) => g.id === groupId);
+    expect(moved?.collapsed).toBe(true);
+    expect((await strip(target)).map(([url]) => url)).toEqual([
+      'https://t1.test',
+      'https://t2.test',
+      'https://g1.test',
+      'https://g2.test',
+      'https://loose.test',
+    ]);
+  });
+
+  it('moves a window of groups only without touching the target’s active tab or the groups', async () => {
+    const target = await targetWith(['https://t.test']);
+    const source = await sourceWith([
+      'https://a.test',
+      'https://b.test',
+      'https://c.test',
+      'https://d.test',
+    ]);
+    const [a = -1, b = -1, c = -1, d = -1] = await idsOf(source);
+    const first = await group(source, [a, b, c], {
+      title: 'Three',
+      color: 'green',
+      collapsed: true,
+    });
+    const second = await group(source, [d], { title: 'One', color: 'red' });
+    await chrome.tabs.update(b, { active: true });
+    await chrome.tabGroups.update(first, { collapsed: true });
+    const seen = activationsIn(target);
+    const before = allTabIds();
+
+    const result = await assembleTabs();
+
+    expect(result).toEqual({ status: 'done', mergedWindows: 1, failures: [] });
+    expect(seen).toEqual([]);
+    expect(allTabIds()).toEqual(before);
+    expect(await strip(target)).toEqual([
+      ['https://t.test', false, -1],
+      ['https://a.test', false, first],
+      ['https://b.test', false, first],
+      ['https://c.test', false, first],
+      ['https://d.test', false, second],
+    ]);
+    const [moved] = (await chrome.tabGroups.query({})).filter((g) => g.id === first);
+    expect(moved).toMatchObject({ title: 'Three', color: 'green', collapsed: true });
+  });
+
+  it('rebuilds a single-tab group that held its window’s active tab, with the same look', async () => {
+    const target = await targetWith(['https://t.test']);
+    const source = await sourceWith(['https://only.test']);
+    const [only = -1] = await idsOf(source);
+    await group(source, [only], { title: 'Solo', color: 'purple', collapsed: true });
+    const seen = activationsIn(target);
+
+    await assembleTabs();
+
+    expect(seen).toEqual([]);
+    const moved = await chrome.tabs.get(only);
+    expect(moved.windowId).toBe(target);
+    const [rebuilt] = (await chrome.tabGroups.query({})).filter((g) => g.id === moved.groupId);
+    expect(rebuilt).toMatchObject({
+      title: 'Solo',
+      color: 'purple',
+      collapsed: true,
+      windowId: target,
+    });
   });
 
   it('keeps going when one window fails, and loses no tab', async () => {

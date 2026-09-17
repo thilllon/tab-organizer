@@ -21,6 +21,7 @@ import { assembleTabs } from './assemble';
  */
 
 export const MENU_IDS = {
+  assembleTabs: 'assemble-tabs',
   saveWindow: 'save-window',
   saveAll: 'save-all',
   openDashboard: 'open-dashboard',
@@ -30,7 +31,7 @@ export const MENU_IDS = {
  * Keyboard-command ids. These must stay in lockstep with the `commands` block of
  * `defineManifest()` in `vite.config.ts` — Chrome delivers exactly those strings to
  * `commands.onCommand`, and a rename on one side silently stops the shortcut working.
- * `openDashboard` deliberately shares its id with `MENU_IDS.openDashboard`.
+ * `openDashboard` and `assembleTabs` deliberately share their ids with the matching `MENU_IDS`.
  */
 export const COMMAND_IDS = {
   saveSession: 'save-session',
@@ -39,6 +40,7 @@ export const COMMAND_IDS = {
 } as const;
 
 const SEPARATOR_ID = 'sessions-separator';
+const ASSEMBLE_SEPARATOR_ID = 'assemble-separator';
 const SAVED_BADGE_COLOR = '#16a34a';
 const ERROR_BADGE_COLOR = '#d93025';
 const BADGE_CLEAR_MS = 2000;
@@ -90,6 +92,16 @@ export function clearBadge(): void {
 
 export async function registerContextMenus(): Promise<void> {
   await chrome.contextMenus.removeAll();
+  chrome.contextMenus.create({
+    id: MENU_IDS.assembleTabs,
+    title: 'Assemble!',
+    contexts: ['action'],
+  });
+  chrome.contextMenus.create({
+    id: ASSEMBLE_SEPARATOR_ID,
+    type: 'separator',
+    contexts: ['action'],
+  });
   chrome.contextMenus.create({
     id: MENU_IDS.saveWindow,
     title: 'Save this window as session',
@@ -165,7 +177,8 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
     case MENU_IDS.openDashboard:
       await openDashboard();
       return;
-    case COMMAND_IDS.assembleTabs:
+    // Also `COMMAND_IDS.assembleTabs`, the same id.
+    case MENU_IDS.assembleTabs:
       await runAssembleTabs();
       return;
     default:

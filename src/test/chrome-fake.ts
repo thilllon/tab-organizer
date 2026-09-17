@@ -392,6 +392,14 @@ export function createChromeFake(): ChromeFake {
     dropEmptyGroups();
   }
 
+  function expandIfCollapsed(groupId: number): void {
+    const group = state.groups.get(groupId);
+    if (group?.collapsed) {
+      group.collapsed = false;
+      onGroupUpdated.emit(toChromeGroup(group));
+    }
+  }
+
   /** Chrome's choice after the active tab leaves a window: whatever now sits at its old index. */
   function activateNeighbour(windowId: number, formerIndex: number): void {
     const strip = stripOf(windowId);
@@ -624,6 +632,8 @@ export function createChromeFake(): ChromeFake {
       }
       if (props.active) {
         activate(tab);
+        // Verified in Chrome for Testing 151: activating a tab inside a collapsed group expands it.
+        expandIfCollapsed(tab.groupId);
       }
       return toChromeTab(tab);
     },
@@ -730,11 +740,30 @@ export function createChromeFake(): ChromeFake {
       dropEmptyGroups();
       return group.id;
     },
+    /**
+     * Verified in Chrome for Testing 151: a group's first or last tab leaves in place; a tab from
+     * the middle is moved to just after the group, and when it is the active tab of a collapsed
+     * group that group is expanded.
+     */
     async ungroup(tabIds: number | number[]): Promise<void> {
       const ids = Array.isArray(tabIds) ? tabIds : [tabIds];
       for (const id of ids) {
         const tab = requireTab(id);
+        const groupId = tab.groupId;
+        const members = stripOf(tab.windowId).filter((entry) => entry.groupId === groupId);
+        const position = members.indexOf(tab);
         tab.groupId = NO_GROUP;
+        if (groupId !== NO_GROUP && position > 0 && position < members.length - 1) {
+          const strip = stripOf(tab.windowId).filter((entry) => entry.id !== tab.id);
+          const lastMember = members[members.length - 1];
+          strip.splice(strip.indexOf(lastMember ?? tab) + 1, 0, tab);
+          strip.forEach((entry, index) => {
+            entry.index = index;
+          });
+          if (tab.active) {
+            expandIfCollapsed(groupId);
+          }
+        }
         onTabUpdated.emit(tab.id, { groupId: NO_GROUP }, toChromeTab(tab));
       }
       dropEmptyGroups();

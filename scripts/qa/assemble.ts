@@ -8,12 +8,16 @@
  *
  *     pnpm qa:assemble        # vite build --mode qa --outDir dist-qa && tsx scripts/qa/assemble.ts
  *
- * Builds three windows — a source with two pinned tabs and a tab with back/forward history, a
- * source with a collapsed titled group and a tab carrying page state (a JS value, scroll position
- * and typed input), and the focused target whose active tab is not its first — runs the command,
- * then checks: one normal window left, every tab id kept, the exact tab order, pinned and group
- * state kept, `Page.getNavigationHistory` unchanged, page state unchanged (no reload), the target's
- * active tab unchanged, and the ✓ badge. It also reports what this Chromium exposes for split view.
+ * Builds five windows — a source with two pinned tabs and a tab with back/forward history; a
+ * source whose active tab sits in a collapsed titled group next to a tab carrying page state (a JS
+ * value, scroll position and typed input); a source that is nothing but a collapsed three-tab
+ * group with its middle tab active; a source that is a single-tab group; and the focused target
+ * whose active tab is not its first — runs the command through the right-click menu's id, then
+ * checks: one normal window left, every tab id kept, the exact tab order, pinned tabs re-pinned,
+ * every group kept (id, title, colour, collapsed, members) or rebuilt with the same look,
+ * `Page.getNavigationHistory` unchanged, page state unchanged (no reload), **no tab activation in
+ * the target at any moment**, and the ✓ badge. It also reports what this Chromium exposes for
+ * split view.
  *
  * Environment: `QA_DIST` (default `dist-qa/`), plus `PW_CHROMIUM` / `HEADLESS` (see ./browser.ts).
  * On macOS point `PW_CHROMIUM` at a Chromium or Chrome for Testing binary: branded Chrome 137+
@@ -30,6 +34,7 @@ import { startDemoServer } from './server';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', '..');
 const DIST = process.env.QA_DIST ?? path.join(ROOT, 'dist-qa');
+/** The command id, shared by the right-click menu item. */
 const COMMAND = 'assemble-tabs';
 
 interface Check {
@@ -150,6 +155,14 @@ async function main(): Promise<void> {
       [url(4, 'group-1'), url(5, 'group-2'), url(6, 'plain-2'), url(7, 'state')],
       false,
     );
+    // Source 3: nothing but a collapsed three-tab group, its middle tab active.
+    const [w3 = -1, c1 = -1, c2 = -1, c3 = -1] = await createWindow(
+      worker,
+      [url(0, 'groups-only-1'), url(1, 'groups-only-2'), url(2, 'groups-only-3')],
+      false,
+    );
+    // Source 4: a single-tab group.
+    const [w4 = -1, solo = -1] = await createWindow(worker, [url(3, 'solo')], false);
     // Target, created last and focused; its active tab is deliberately its second one.
     const [target = -1, ta = -1, tb = -1] = await createWindow(
       worker,
@@ -157,7 +170,7 @@ async function main(): Promise<void> {
       true,
     );
 
-    const groupId = await worker.evaluate(
+    const { gid: groupId, onlyGroups } = await worker.evaluate(
       async (ids) => {
         await chrome.tabs.update(ids.p1, { pinned: true });
         await chrome.tabs.update(ids.p2, { pinned: true });
@@ -168,14 +181,29 @@ async function main(): Promise<void> {
           createProperties: { windowId: ids.w2 },
         });
         await chrome.tabGroups.update(gid, { title: 'QA group', color: 'blue', collapsed: true });
+        const onlyGroups = await chrome.tabs.group({
+          tabIds: [ids.c1, ids.c2, ids.c3],
+          createProperties: { windowId: ids.w3 },
+        });
+        await chrome.tabs.update(ids.c2, { active: true });
+        await chrome.tabGroups.update(onlyGroups, {
+          title: 'Groups only',
+          color: 'green',
+          collapsed: true,
+        });
+        const soloGroup = await chrome.tabs.group({
+          tabIds: [ids.solo],
+          createProperties: { windowId: ids.w4 },
+        });
+        await chrome.tabGroups.update(soloGroup, { title: 'Solo', color: 'red', collapsed: true });
         await chrome.tabs.update(ids.tb, { active: true });
         for (const id of ids.initial) {
           await chrome.windows.remove(id);
         }
         await chrome.windows.update(ids.target, { focused: true });
-        return gid;
+        return { gid, onlyGroups };
       },
-      { p1, p2, g1, g2, w2, tb, target, initial: initialWindows },
+      { p1, p2, g1, g2, w2, c1, c2, c3, w3, solo, w4, tb, target, initial: initialWindows },
     );
 
     // History made by real navigations in the page (extension-made history can refuse goBack).
@@ -202,23 +230,40 @@ async function main(): Promise<void> {
       async () => (await chrome.windows.getLastFocused({ windowTypes: ['normal'] })).id ?? -1,
     );
     console.log(
-      `fixture: ${tabsBefore.length} tabs in windows ${[w1, w2, target].join(', ')} ` +
+      `fixture: ${tabsBefore.length} tabs in windows ${[w1, w2, w3, w4, target].join(', ')} ` +
         `(target ${target}, last focused ${lastFocused}); history ${JSON.stringify(historyBefore)}; ` +
         `state ${JSON.stringify(stateBefore)}\n`,
     );
 
     const started = Date.now();
-    await worker.evaluate(async (command) => {
-      const hook = (
-        globalThis as unknown as {
-          __tabOrganizerQa?: { handleMenuOrCommand(id: string): Promise<void> };
+    const activations = await worker.evaluate(
+      async ({ command, targetId }) => {
+        const hook = (
+          globalThis as unknown as {
+            __tabOrganizerQa?: { handleMenuOrCommand(id: string): Promise<void> };
+          }
+        ).__tabOrganizerQa;
+        if (hook === undefined) {
+          throw new Error('not a QA build: globalThis.__tabOrganizerQa is missing');
         }
-      ).__tabOrganizerQa;
-      if (hook === undefined) {
-        throw new Error('not a QA build: globalThis.__tabOrganizerQa is missing');
-      }
-      await hook.handleMenuOrCommand(command);
-    }, COMMAND);
+        // Every activation Chrome reports in the target while the command runs, however brief.
+        const seen: number[] = [];
+        const record = (info: chrome.tabs.OnActivatedInfo): void => {
+          if (info.windowId === targetId) {
+            seen.push(info.tabId);
+          }
+        };
+        chrome.tabs.onActivated.addListener(record);
+        try {
+          await hook.handleMenuOrCommand(command);
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        } finally {
+          chrome.tabs.onActivated.removeListener(record);
+        }
+        return seen;
+      },
+      { command: COMMAND, targetId: target },
+    );
     const elapsed = Date.now() - started;
 
     const after = await worker.evaluate(
@@ -227,10 +272,14 @@ async function main(): Promise<void> {
           id: win.id ?? -1,
           focused: win.focused,
         })),
-        group: await chrome.tabGroups.get(gid),
+        group: await chrome.tabGroups.get(gid.groupId),
+        onlyGroups: await chrome.tabGroups.get(gid.onlyGroups),
+        solo: await chrome.tabs
+          .get(gid.solo)
+          .then((tab) => (tab.groupId === -1 ? undefined : chrome.tabGroups.get(tab.groupId))),
         badge: await chrome.action.getBadgeText({}),
       }),
-      groupId,
+      { groupId, onlyGroups, solo },
     );
     const tabsAfter = await allTabs(worker);
     const strip = tabsAfter.filter((tab) => tab.windowId === target);
@@ -250,7 +299,7 @@ async function main(): Promise<void> {
       same(idsBefore, idsAfter),
       `${idsBefore.length} before, ${idsAfter.length} after`,
     );
-    const expectedOrder = [p1, p2, ta, tb, hist, u1, g1, g2, u2, stateful];
+    const expectedOrder = [p1, p2, ta, tb, hist, u1, g1, g2, u2, stateful, c1, c2, c3, solo];
     check(
       'tab order',
       same(
@@ -280,6 +329,28 @@ async function main(): Promise<void> {
         ),
       `group ${JSON.stringify(after.group)}`,
     );
+    check(
+      'groups-only window: same group, same members in order, still collapsed',
+      after.onlyGroups.id === onlyGroups &&
+        after.onlyGroups.windowId === target &&
+        after.onlyGroups.title === 'Groups only' &&
+        after.onlyGroups.color === 'green' &&
+        after.onlyGroups.collapsed &&
+        same(
+          strip.filter((tab) => tab.groupId === onlyGroups).map((tab) => tab.id),
+          [c1, c2, c3],
+        ),
+      `group ${JSON.stringify(after.onlyGroups)}`,
+    );
+    check(
+      'single-tab group rebuilt with the same look',
+      after.solo !== undefined &&
+        after.solo.windowId === target &&
+        after.solo.title === 'Solo' &&
+        after.solo.color === 'red' &&
+        after.solo.collapsed,
+      `group ${JSON.stringify(after.solo)}`,
+    );
     const historyAfter = await navigationHistory(context, historyPage);
     check(
       'navigation history kept',
@@ -290,9 +361,9 @@ async function main(): Promise<void> {
     check('page state kept (no reload)', same(stateBefore, stateAfter), JSON.stringify(stateAfter));
     const activeInTarget = strip.filter((tab) => tab.active).map((tab) => tab.id);
     check(
-      'target active tab unchanged',
-      same(activeInTarget, [tb]),
-      `active ${JSON.stringify(activeInTarget)}`,
+      'target active tab unchanged, never switched even briefly',
+      same(activeInTarget, [tb]) && activations.length === 0,
+      `active ${JSON.stringify(activeInTarget)}, activations during the run ${JSON.stringify(activations)}`,
     );
     check(
       'target focused, ✓ badge',

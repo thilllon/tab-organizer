@@ -337,6 +337,55 @@ describe('chrome fake: moving tabs between windows (verified in Chrome 152)', ()
     expect(moved?.collapsed).toBe(true);
   });
 
+  it('activating a tab inside a collapsed group expands it (Chrome for Testing 151)', async () => {
+    const win = await windowWith(['https://a.test', 'https://g.test']);
+    const [, g] = await strip(win);
+    const groupId = await chrome.tabs.group({
+      tabIds: [g?.id ?? -1],
+      createProperties: { windowId: win },
+    });
+    await chrome.tabGroups.update(groupId, { collapsed: true });
+
+    await chrome.tabs.update(g?.id ?? -1, { active: true });
+
+    const [group] = (await chrome.tabGroups.query({})).filter((entry) => entry.id === groupId);
+    expect(group?.collapsed).toBe(false);
+  });
+
+  it('tabs.ungroup keeps a first or last member in place but moves a middle one after the group, expanding it when active', async () => {
+    const win = await windowWith([
+      'https://1.test',
+      'https://2.test',
+      'https://3.test',
+      'https://after.test',
+    ]);
+    const [one, two, three] = await strip(win);
+    const groupId = await chrome.tabs.group({
+      tabIds: [one?.id ?? -1, two?.id ?? -1, three?.id ?? -1],
+      createProperties: { windowId: win },
+    });
+    await chrome.tabs.update(two?.id ?? -1, { active: true });
+    await chrome.tabGroups.update(groupId, { collapsed: true });
+
+    await chrome.tabs.ungroup(two?.id ?? -1);
+    expect((await strip(win)).map((tab) => [tab.url, tab.groupId === groupId])).toEqual([
+      ['https://1.test', true],
+      ['https://3.test', true],
+      ['https://2.test', false],
+      ['https://after.test', false],
+    ]);
+    const [group] = (await chrome.tabGroups.query({})).filter((entry) => entry.id === groupId);
+    expect(group?.collapsed).toBe(false);
+
+    await chrome.tabs.ungroup(one?.id ?? -1);
+    expect((await strip(win)).map((tab) => tab.url)).toEqual([
+      'https://1.test',
+      'https://3.test',
+      'https://2.test',
+      'https://after.test',
+    ]);
+  });
+
   it('tabGroups.move refuses an index inside the pinned area', async () => {
     const win = await windowWith(['https://p.test', 'https://g.test']);
     const [p, g] = await strip(win);

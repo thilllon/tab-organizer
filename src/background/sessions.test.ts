@@ -89,19 +89,22 @@ afterEach(() => {
 });
 
 describe('registerContextMenus', () => {
-  it('is idempotent: removeAll then exactly 3 items + 1 separator', async () => {
+  it('is idempotent: removeAll then exactly 4 items + 2 separators', async () => {
     await registerContextMenus();
     await registerContextMenus();
 
     const menus = getChromeFake().state.menus;
-    expect(menus).toHaveLength(4);
+    expect(menus).toHaveLength(6);
     expect(menus.map((m) => m.id)).toEqual([
+      MENU_IDS.assembleTabs,
+      'assemble-separator',
       MENU_IDS.saveWindow,
       MENU_IDS.saveAll,
       'sessions-separator',
       MENU_IDS.openDashboard,
     ]);
     expect(menus.filter((m) => m.type !== 'separator').map((m) => m.title)).toEqual([
+      'Assemble!',
       'Save this window as session',
       'Save all windows as session',
       'Open Sessions',
@@ -235,6 +238,7 @@ describe('COMMAND_IDS', () => {
     expect(COMMAND_IDS.openDashboard).toBe('open-dashboard');
     expect(COMMAND_IDS.openDashboard).toBe(MENU_IDS.openDashboard);
     expect(COMMAND_IDS.assembleTabs).toBe('assemble-tabs');
+    expect(COMMAND_IDS.assembleTabs).toBe(MENU_IDS.assembleTabs);
   });
 });
 
@@ -367,7 +371,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'install' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(4);
+      expect(fake.state.menus).toHaveLength(6);
     });
   });
 
@@ -382,7 +386,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'update', previousVersion: '6.0.0' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(4);
+      expect(fake.state.menus).toHaveLength(6);
       expect(migrateSpy).toHaveBeenCalledTimes(1);
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
     });
@@ -732,7 +736,7 @@ describe('history wiring (spec §5)', () => {
       expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 5 });
     });
     expect(alarmNames()).toEqual([HISTORY_ALARM]);
-    expect(fake.state.menus).toHaveLength(4);
+    expect(fake.state.menus).toHaveLength(6);
     expect(reconcileSpy).toHaveBeenCalledTimes(1);
     expect(reconcileSpy.mock.invocationCallOrder[0]).toBeLessThan(
       createSpy.mock.invocationCallOrder[0],
@@ -766,7 +770,7 @@ describe('history wiring (spec §5)', () => {
 
     await vi.waitFor(() => {
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
-      expect(fake.state.menus).toHaveLength(4);
+      expect(fake.state.menus).toHaveLength(6);
     });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(alarmNames()).toEqual([]);
