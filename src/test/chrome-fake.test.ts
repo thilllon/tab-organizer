@@ -204,6 +204,186 @@ describe('chrome fake: groups', () => {
   });
 });
 
+describe('chrome fake: moving tabs between windows (verified in Chrome 152)', () => {
+  async function windowWith(urls: string[], focused = false): Promise<number> {
+    const win = await chrome.windows.create({ url: urls, focused });
+    if (win?.id === undefined) {
+      throw new Error('expected a window id');
+    }
+    return win.id;
+  }
+
+  async function strip(windowId: number): Promise<chrome.tabs.Tab[]> {
+    return chrome.tabs.query({ windowId });
+  }
+
+  it('tabs.move keeps the tab id but drops pinned, and re-pinning appends to the pinned area in order', async () => {
+    const target = await windowWith(['https://t-pin.test', 'https://t.test']);
+    const [targetPin] = await strip(target);
+    await chrome.tabs.update(targetPin?.id ?? -1, { pinned: true });
+    const source = await windowWith(['https://p1.test', 'https://p2.test', 'https://s.test']);
+    const [p1, p2] = await strip(source);
+    const ids = [p1?.id ?? -1, p2?.id ?? -1];
+    for (const id of ids) {
+      await chrome.tabs.update(id, { pinned: true });
+    }
+
+    await chrome.tabs.move(ids, { windowId: target, index: -1 });
+    const afterMove = await strip(target);
+    expect(afterMove.map((tab) => [tab.url, tab.pinned])).toEqual([
+      ['https://t-pin.test', true],
+      ['https://t.test', false],
+      ['https://p1.test', false],
+      ['https://p2.test', false],
+    ]);
+    expect(afterMove.map((tab) => tab.id).slice(2)).toEqual(ids);
+
+    for (const id of ids) {
+      await chrome.tabs.update(id, { pinned: true });
+    }
+    expect((await strip(target)).map((tab) => [tab.url, tab.pinned])).toEqual([
+      ['https://t-pin.test', true],
+      ['https://p1.test', true],
+      ['https://p2.test', true],
+      ['https://t.test', false],
+    ]);
+  });
+
+  it('a moved tab arrives inactive, the source activates a neighbour, and an emptied source window closes', async () => {
+    const target = await windowWith(['https://t.test']);
+    const source = await windowWith(['https://a.test', 'https://b.test']);
+    const [a, b] = await strip(source);
+    await chrome.tabs.update(a?.id ?? -1, { active: true });
+
+    await chrome.tabs.move(a?.id ?? -1, { windowId: target, index: -1 });
+    expect((await strip(target)).map((tab) => [tab.url, tab.active])).toEqual([
+      ['https://t.test', true],
+      ['https://a.test', false],
+    ]);
+    expect((await strip(source)).map((tab) => [tab.id, tab.active])).toEqual([[b?.id, true]]);
+
+    await chrome.tabs.move(b?.id ?? -1, { windowId: target, index: -1 });
+    expect(getChromeFake().state.windows.has(source)).toBe(false);
+  });
+
+  it('tabGroups.move carries the whole group: same group id, title, colour, collapsed and tab ids', async () => {
+    const target = await windowWith(['https://t.test']);
+    const source = await windowWith(['https://g1.test', 'https://g2.test', 'https://loose.test']);
+    const [g1, g2, loose] = await strip(source);
+    // The source's active tab sits outside the group (see the next test for the other case).
+    await chrome.tabs.update(loose?.id ?? -1, { active: true });
+    const memberIds: [number, number] = [g1?.id ?? -1, g2?.id ?? -1];
+    const groupId = await chrome.tabs.group({
+      tabIds: memberIds,
+      createProperties: { windowId: source },
+    });
+    await chrome.tabGroups.update(groupId, { title: 'Work', color: 'blue', collapsed: true });
+
+    await chrome.tabGroups.move(groupId, { windowId: target, index: -1 });
+
+    const [moved] = (await chrome.tabGroups.query({})).filter((group) => group.id === groupId);
+    expect([moved?.id, moved?.windowId, moved?.title, moved?.color, moved?.collapsed]).toEqual([
+      groupId,
+      target,
+      'Work',
+      'blue',
+      true,
+    ]);
+    expect((await strip(target)).map((tab) => [tab.id, tab.groupId, tab.index])).toEqual([
+      [expect.any(Number), -1, 0],
+      [memberIds[0], groupId, 1],
+      [memberIds[1], groupId, 2],
+    ]);
+    expect((await strip(source)).map((tab) => tab.url)).toEqual(['https://loose.test']);
+  });
+
+  it('tabGroups.move carries the source’s active tab along and expands the group (Chrome for Testing 151)', async () => {
+    const target = await windowWith(['https://t1.test', 'https://t2.test']);
+    const [, t2] = await strip(target);
+    await chrome.tabs.update(t2?.id ?? -1, { active: true });
+    const source = await windowWith(['https://g1.test', 'https://g2.test']);
+    const [g1, g2] = await strip(source);
+    await chrome.tabs.update(g1?.id ?? -1, { active: true });
+    const groupId = await chrome.tabs.group({
+      tabIds: [g1?.id ?? -1, g2?.id ?? -1],
+      createProperties: { windowId: source },
+    });
+    await chrome.tabGroups.update(groupId, { collapsed: true });
+
+    await chrome.tabGroups.move(groupId, { windowId: target, index: -1 });
+
+    const active = await chrome.tabs.query({ windowId: target, active: true });
+    expect(active.map((tab) => tab.id)).toEqual([g1?.id]);
+    const [moved] = (await chrome.tabGroups.query({})).filter((group) => group.id === groupId);
+    expect(moved?.collapsed).toBe(false);
+  });
+
+  it('tabGroups.move without the source’s active tab leaves the target’s active tab and collapse alone', async () => {
+    const target = await windowWith(['https://t1.test']);
+    const source = await windowWith(['https://s.test', 'https://g.test']);
+    const [s1, g] = await strip(source);
+    await chrome.tabs.update(s1?.id ?? -1, { active: true });
+    const groupId = await chrome.tabs.group({
+      tabIds: [g?.id ?? -1],
+      createProperties: { windowId: source },
+    });
+    await chrome.tabGroups.update(groupId, { collapsed: true });
+
+    await chrome.tabGroups.move(groupId, { windowId: target, index: -1 });
+
+    const active = await chrome.tabs.query({ windowId: target, active: true });
+    expect(active.map((tab) => tab.url)).toEqual(['https://t1.test']);
+    const [moved] = (await chrome.tabGroups.query({})).filter((group) => group.id === groupId);
+    expect(moved?.collapsed).toBe(true);
+  });
+
+  it('tabGroups.move refuses an index inside the pinned area', async () => {
+    const win = await windowWith(['https://p.test', 'https://g.test']);
+    const [p, g] = await strip(win);
+    await chrome.tabs.update(p?.id ?? -1, { pinned: true });
+    const groupId = await chrome.tabs.group({
+      tabIds: [g?.id ?? -1],
+      createProperties: { windowId: win },
+    });
+    await expect(chrome.tabGroups.move(groupId, { index: 0 })).rejects.toThrow(/pinned/);
+  });
+
+  it('failNext covers tabs.move and tabGroups.move, and nothing moves on a rejected call', async () => {
+    const fake = getChromeFake();
+    const target = await windowWith(['https://t.test']);
+    const source = await windowWith(['https://a.test', 'https://g.test']);
+    const [a, g] = await strip(source);
+    const groupId = await chrome.tabs.group({
+      tabIds: [g?.id ?? -1],
+      createProperties: { windowId: source },
+    });
+    const message = 'Tabs cannot be edited right now (user may be dragging a tab).';
+    fake.failNext('tabs.move', 1, message);
+    fake.failNext('tabGroups.move', 1, message);
+
+    await expect(chrome.tabs.move(a?.id ?? -1, { windowId: target, index: -1 })).rejects.toThrow(
+      message,
+    );
+    await expect(chrome.tabGroups.move(groupId, { windowId: target, index: -1 })).rejects.toThrow(
+      message,
+    );
+    expect((await strip(source)).map((tab) => tab.url)).toEqual([
+      'https://a.test',
+      'https://g.test',
+    ]);
+  });
+
+  it('windows.create honours type and incognito, and incognito windows hold incognito tabs', async () => {
+    const popup = await chrome.windows.create({ url: 'https://p.test', type: 'popup' });
+    const privateWin = await chrome.windows.create({ url: 'https://i.test', incognito: true });
+    expect(popup?.type).toBe('popup');
+    expect(privateWin?.incognito).toBe(true);
+    expect((await strip(privateWin?.id ?? -1)).map((tab) => tab.incognito)).toEqual([true]);
+    const normals = await chrome.windows.getAll({ windowTypes: ['normal'] });
+    expect(normals.some((win) => win.id === popup?.id)).toBe(false);
+  });
+});
+
 describe('chrome fake: storage', () => {
   it('storage.onChanged fires with old and new values for the local area', async () => {
     const seen: Array<[Record<string, chrome.storage.StorageChange>, string]> = [];
@@ -490,6 +670,8 @@ describe('chrome fake: tab / window / group events', () => {
       `tabs.onMoved:${b.id}:1->0`,
       `tabs.onDetached:${a.id}:1`,
       `tabs.onAttached:${a.id}:${other.id}`,
+      // `a` was window 1's active tab, so the window it left activates what took its place.
+      `tabs.onActivated:${b.id}:1`,
     ]);
   });
 

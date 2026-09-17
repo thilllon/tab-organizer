@@ -181,6 +181,52 @@ describe('badge', () => {
   });
 });
 
+describe("'assemble-tabs' command", () => {
+  async function otherWindow(urls: string[]): Promise<number> {
+    const win = await chrome.windows.create({ url: urls, focused: false });
+    if (win?.id === undefined) {
+      throw new Error('expected a window id');
+    }
+    return win.id;
+  }
+
+  it('gathers the other windows into the focused one and shows ✓', async () => {
+    await chrome.tabs.create({ windowId: 1, url: 'https://t.test' });
+    await otherWindow(['https://a.test', 'https://b.test']);
+
+    await handleMenuOrCommand(COMMAND_IDS.assembleTabs);
+
+    const fake = getChromeFake();
+    expect([...fake.state.windows.keys()]).toEqual([1]);
+    expect((await chrome.tabs.query({ windowId: 1 })).map((tab) => tab.url)).toEqual([
+      'https://t.test',
+      'https://a.test',
+      'https://b.test',
+    ]);
+    expect(fake.state.badge.text).toBe('✓');
+  });
+
+  it('shows ! and logs when a window could not be merged', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await chrome.tabs.create({ windowId: 1, url: 'https://t.test' });
+    await otherWindow(['https://a.test']);
+    getChromeFake().failNext('tabs.move', 1, 'No tab with id: 42.');
+
+    await handleMenuOrCommand(COMMAND_IDS.assembleTabs);
+
+    expect(getChromeFake().state.badge.text).toBe('!');
+    expect(error).toHaveBeenCalled();
+  });
+
+  it('leaves the badge empty when there is only one window', async () => {
+    await chrome.tabs.create({ windowId: 1, url: 'https://t.test' });
+
+    await handleMenuOrCommand(COMMAND_IDS.assembleTabs);
+
+    expect(getChromeFake().state.badge.text).toBe('');
+  });
+});
+
 describe('COMMAND_IDS', () => {
   it('matches the ids declared in the manifest', () => {
     // Source of truth: the `commands` block of `defineManifest()` in `vite.config.ts`.
@@ -188,6 +234,7 @@ describe('COMMAND_IDS', () => {
     expect(COMMAND_IDS.saveSession).toBe('save-session');
     expect(COMMAND_IDS.openDashboard).toBe('open-dashboard');
     expect(COMMAND_IDS.openDashboard).toBe(MENU_IDS.openDashboard);
+    expect(COMMAND_IDS.assembleTabs).toBe('assemble-tabs');
   });
 });
 

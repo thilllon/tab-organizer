@@ -10,6 +10,7 @@ import {
 import { ensureUniqueName } from '@/sessions/naming';
 import { openDashboard } from '@/sessions/open-dashboard';
 import { SETTINGS_KEY, sessionRepo } from '@/sessions/storage';
+import { assembleTabs } from './assemble';
 
 /**
  * Session-related service-worker listeners. Imported once from ./index.ts. Every listener is
@@ -34,6 +35,7 @@ export const MENU_IDS = {
 export const COMMAND_IDS = {
   saveSession: 'save-session',
   openDashboard: 'open-dashboard',
+  assembleTabs: 'assemble-tabs',
 } as const;
 
 const SEPARATOR_ID = 'sessions-separator';
@@ -124,6 +126,31 @@ async function saveSession(scope: 'window' | 'all'): Promise<void> {
   }
 }
 
+/**
+ * Gathers every other window's tabs into the current one (./assemble.ts). A run that merged
+ * everything shows ✓, one where any window failed shows ! and logs why; a single window, or a
+ * second trigger while the first is still moving tabs, shows nothing.
+ */
+async function runAssembleTabs(): Promise<void> {
+  try {
+    const result = await assembleTabs();
+    if (result.status !== 'done') {
+      return;
+    }
+    for (const failure of result.failures) {
+      report(failure.error);
+    }
+    if (result.failures.length > 0) {
+      showErrorBadge();
+    } else {
+      showSavedBadge();
+    }
+  } catch (err) {
+    report(err);
+    showErrorBadge();
+  }
+}
+
 export async function handleMenuOrCommand(id: string): Promise<void> {
   clearBadge();
   switch (id) {
@@ -137,6 +164,9 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
     // Also `COMMAND_IDS.openDashboard`, which is the same id (one case, not two).
     case MENU_IDS.openDashboard:
       await openDashboard();
+      return;
+    case COMMAND_IDS.assembleTabs:
+      await runAssembleTabs();
       return;
     default:
       return;
@@ -255,6 +285,12 @@ chrome.contextMenus.onClicked.addListener((info) => {
 chrome.commands.onCommand.addListener((command) => {
   handleMenuOrCommand(command).catch(report);
 });
+
+// `vite build --mode qa` only: scripts/qa/assemble.ts drives commands from the real-Chrome QA run
+// without a keyboard. Vite inlines `MODE`, so every other build drops this branch entirely.
+if (import.meta.env.MODE === 'qa') {
+  Object.assign(globalThis, { __tabOrganizerQa: { handleMenuOrCommand } });
+}
 
 chrome.alarms.onAlarm.addListener(onAlarm);
 

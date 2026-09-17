@@ -21,6 +21,7 @@
     "listing": "tsx ./scripts/build-listing.ts",
     "test": "vitest run",
     "qa:smoke": "tsx scripts/qa/smoke.ts",
+    "qa:assemble": "vite build --mode qa --outDir dist-qa && tsx scripts/qa/assemble.ts",
     "release": "release-it"
   },
   "dependencies": {

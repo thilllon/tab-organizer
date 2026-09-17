@@ -63,6 +63,7 @@ const manifest = defineManifest((env) => {
     commands: {
       'save-session': { description: 'Save the current window as a session' },
       'open-dashboard': { description: 'Open the Sessions dashboard' },
+      'assemble-tabs': { description: 'Move the tabs of all other windows into this window' },
     },
   };
 });

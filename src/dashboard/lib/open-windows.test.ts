@@ -212,7 +212,12 @@ describe('subscribeOpenWindows', () => {
           await chrome.tabGroups.move(group.id, { index: -1 });
         },
       ],
-      ['windows.onCreated', () => chrome.windows.create({ url: 'https://w.test' })],
+      // Two tabs, so moving one out below does not empty (and auto-close) the window before the
+      // `windows.onRemoved` step gets to remove it.
+      [
+        'windows.onCreated',
+        () => chrome.windows.create({ url: ['https://w.test', 'https://w2.test'] }),
+      ],
       ['windows.onFocusChanged', () => chrome.windows.update(1, { focused: true })],
       ['tabs.onReplaced', () => fake.fire.tabReplaced(1, 2)],
       [

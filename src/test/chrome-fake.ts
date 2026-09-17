@@ -57,7 +57,7 @@ export interface FakeWindow {
   focused: boolean;
   state: FakeWindowState;
   incognito: boolean;
-  type: 'normal';
+  type: `${chrome.windows.WindowType}`;
   left: number;
   top: number;
   width: number;
@@ -109,7 +109,9 @@ export type FailableApi =
   | 'tabs.create'
   | 'tabs.group'
   | 'tabs.discard'
+  | 'tabs.move'
   | 'tabGroups.update'
+  | 'tabGroups.move'
   | 'windows.create'
   | 'storage.local.set';
 
@@ -295,9 +297,8 @@ export function createChromeFake(): ChromeFake {
   }
 
   /**
-   * Last-focused window, honouring `QueryOptions.windowTypes` like Chrome does. Every fake
-   * window is `type: 'normal'`, so the filter is a no-op today; it exists so
-   * `getLastFocused({ windowTypes: ['normal'] })` (capture, Task 9) is exercised as written.
+   * Last-focused window, honouring `QueryOptions.windowTypes` like Chrome does, so
+   * `getLastFocused({ windowTypes: ['normal'] })` skips a focused popup the way the real call does.
    */
   function focusedWindow(windowTypes?: chrome.windows.QueryOptions['windowTypes']): FakeWindow {
     const candidates = [...state.windows.values()].filter(
@@ -352,7 +353,7 @@ export function createChromeFake(): ChromeFake {
       active: false,
       groupId: NO_GROUP,
       discarded: false,
-      incognito: false,
+      incognito: requireWindow(windowId).incognito,
       status: 'complete',
     };
     state.nextId.tab += 1;
@@ -386,12 +387,44 @@ export function createChromeFake(): ChromeFake {
     if (strip.length === 0) {
       onWindowRemoved.emit(tab.windowId);
     } else if (tab.active) {
-      const next = strip[Math.min(tab.index, strip.length - 1)];
-      if (next) {
-        activate(next);
-      }
+      activateNeighbour(tab.windowId, tab.index);
     }
     dropEmptyGroups();
+  }
+
+  /** Chrome's choice after the active tab leaves a window: whatever now sits at its old index. */
+  function activateNeighbour(windowId: number, formerIndex: number): void {
+    const strip = stripOf(windowId);
+    const next = strip[Math.min(formerIndex, strip.length - 1)];
+    if (next) {
+      activate(next);
+    }
+  }
+
+  /**
+   * Takes `tab` out of its window for a cross-window move, the way Chrome does: the tab arrives
+   * inactive, a still-populated source window activates a neighbour, and a window the move
+   * empties is closed. Verified in Chrome 152: a cross-window `tabs.move` also drops `pinned`
+   * (the caller decides — `tabGroups.move` never carries pinned tabs).
+   */
+  function detachForMove(tab: FakeTab, targetWindowId: number): () => void {
+    const sourceWindowId = tab.windowId;
+    const fromIndex = tab.index;
+    const wasActive = tab.active;
+    tab.active = false;
+    tab.windowId = targetWindowId;
+    return () => {
+      if (stripOf(sourceWindowId).length === 0) {
+        if (state.windows.delete(sourceWindowId)) {
+          onWindowRemoved.emit(sourceWindowId);
+        }
+        return;
+      }
+      reindex(sourceWindowId);
+      if (wasActive) {
+        activateNeighbour(sourceWindowId, fromIndex);
+      }
+    };
   }
 
   function dropEmptyGroups(): void {
@@ -611,6 +644,7 @@ export function createChromeFake(): ChromeFake {
       tabIds: number | number[],
       props: chrome.tabs.MoveProperties,
     ): Promise<chrome.tabs.Tab | chrome.tabs.Tab[]> {
+      maybeFail('tabs.move');
       const ids = Array.isArray(tabIds) ? tabIds : [tabIds];
       const moved: FakeTab[] = [];
       // Where the next tab of the block goes, per target window; seeded from `props.index`.
@@ -621,6 +655,14 @@ export function createChromeFake(): ChromeFake {
         requireWindow(targetWindowId);
         const sourceWindowId = tab.windowId;
         const fromIndex = tab.index;
+        let settleSource: (() => void) | undefined;
+        if (sourceWindowId !== targetWindowId) {
+          // Verified in Chrome 152: the tab keeps its id and history but loses `pinned`. A group
+          // cannot span windows, so a lone grouped tab leaves its group too.
+          tab.pinned = false;
+          tab.groupId = NO_GROUP;
+          settleSource = detachForMove(tab, targetWindowId);
+        }
         tab.windowId = targetWindowId;
         const strip = stripOf(targetWindowId).filter((entry) => entry.id !== tab.id);
         const requested = nextPosition.get(targetWindowId) ?? props.index;
@@ -632,9 +674,9 @@ export function createChromeFake(): ChromeFake {
         });
         reindex(targetWindowId);
         if (sourceWindowId !== targetWindowId) {
-          reindex(sourceWindowId);
           onTabDetached.emit(tab.id, { oldWindowId: sourceWindowId, oldPosition: fromIndex });
           onTabAttached.emit(tab.id, { newWindowId: targetWindowId, newPosition: tab.index });
+          settleSource?.();
         } else if (tab.index !== fromIndex) {
           onTabMoved.emit(tab.id, {
             windowId: targetWindowId,
@@ -644,6 +686,7 @@ export function createChromeFake(): ChromeFake {
         }
         moved.push(tab);
       }
+      dropEmptyGroups();
       const converted = moved.map(toChromeTab);
       const single = converted[0];
       return Array.isArray(tabIds) || single === undefined ? converted : single;
@@ -775,7 +818,7 @@ export function createChromeFake(): ChromeFake {
         focused: data?.focused ?? true,
         state: data?.state ?? 'normal',
         incognito: data?.incognito ?? false,
-        type: 'normal',
+        type: data?.type ?? 'normal',
         left: data?.left ?? 0,
         top: data?.top ?? 0,
         width: data?.width ?? 1280,
@@ -877,14 +920,61 @@ export function createChromeFake(): ChromeFake {
       onGroupUpdated.emit(toChromeGroup(group));
       return toChromeGroup(group);
     },
+    /**
+     * Moves the whole group as one block. Verified in Chrome 152: across windows the group keeps
+     * its id, title, colour and collapsed state, and its tabs keep their ids. `index` counts
+     * positions in the target strip without the group's own tabs; `-1` appends.
+     *
+     * Verified in Chrome for Testing 151, unlike a cross-window `tabs.move`: when the group holds
+     * the source window's active tab, that tab becomes the target window's active tab, and a
+     * collapsed group is expanded because it now holds the active tab.
+     */
     async move(
       groupId: number,
       props: chrome.tabGroups.MoveProperties,
     ): Promise<chrome.tabGroups.TabGroup> {
+      maybeFail('tabGroups.move');
       const group = requireGroup(groupId);
-      if (props.windowId !== undefined) {
-        requireWindow(props.windowId);
-        group.windowId = props.windowId;
+      const sourceWindowId = group.windowId;
+      const targetWindowId = props.windowId ?? sourceWindowId;
+      requireWindow(targetWindowId);
+      const members = stripOf(sourceWindowId).filter((tab) => tab.groupId === group.id);
+      const remaining = stripOf(targetWindowId).filter((tab) => tab.groupId !== group.id);
+      const pinnedCount = remaining.filter((tab) => tab.pinned).length;
+      const position = props.index < 0 ? remaining.length : Math.min(props.index, remaining.length);
+      if (position < pinnedCount) {
+        throw new Error('Cannot move the group to an index that is in the middle of pinned tabs.');
+      }
+      const crossWindow = sourceWindowId !== targetWindowId;
+      const carriedActive = crossWindow ? members.find((tab) => tab.active) : undefined;
+      const fromIndices = new Map(members.map((tab) => [tab.id, tab.index]));
+      const settleSource = crossWindow
+        ? members.map((tab) => detachForMove(tab, targetWindowId))
+        : [];
+      remaining.splice(position, 0, ...members);
+      remaining.forEach((tab, index) => {
+        tab.index = index;
+      });
+      group.windowId = targetWindowId;
+      reindex(targetWindowId);
+      for (const tab of members) {
+        const fromIndex = fromIndices.get(tab.id) ?? tab.index;
+        if (crossWindow) {
+          onTabDetached.emit(tab.id, { oldWindowId: sourceWindowId, oldPosition: fromIndex });
+          onTabAttached.emit(tab.id, { newWindowId: targetWindowId, newPosition: tab.index });
+        } else if (tab.index !== fromIndex) {
+          onTabMoved.emit(tab.id, { windowId: targetWindowId, fromIndex, toIndex: tab.index });
+        }
+      }
+      for (const settle of settleSource) {
+        settle();
+      }
+      if (carriedActive !== undefined) {
+        activate(carriedActive);
+        if (group.collapsed) {
+          group.collapsed = false;
+          onGroupUpdated.emit(toChromeGroup(group));
+        }
       }
       onGroupMoved.emit(toChromeGroup(group));
       return toChromeGroup(group);

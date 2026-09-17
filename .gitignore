@@ -8,6 +8,7 @@
 
 # production
 /dist
+/dist-qa
 /package
 
 # misc

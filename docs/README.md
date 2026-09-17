@@ -75,6 +75,10 @@ How many times have you opened the same page in multiple tabs? Tab Organizer can
 - Close duplicates — Automatically close all duplicate tabs, keeping only the active one (or the first one).
 - Group duplicates — Move duplicate tabs into a labeled Chrome tab group so you can review them before closing.
 
+##### Gather All Windows Into One
+
+One keyboard shortcut pulls the tabs of every other window into the current one. Tabs are moved, never reopened, so pinned tabs, tab groups, history and anything you typed stay as they were. Incognito and popup windows are left alone.
+
 ##### Pinned Tab Sorting
 
 By default, pinned tabs are left in their original order. If you prefer, you can enable pinned tab sorting in the settings to include them in the sort.
@@ -127,7 +131,7 @@ Export a tab group, a window or a session as JSON (which imports back exactly), 
 
 ##### Keyboard Shortcuts
 
-Two commands — save the current window as a session, and open the Sessions dashboard — are ready to bind in Chrome's shortcut settings (chrome://extensions/shortcuts). No keys are pre-assigned, so nothing conflicts with the shortcuts you already use; a "Set keyboard shortcuts" button in Options and in the dashboard takes you straight there.
+Three commands — save the current window as a session, open the Sessions dashboard, and gather every window's tabs into the current one — are ready to bind in Chrome's shortcut settings (chrome://extensions/shortcuts). No keys are pre-assigned, so nothing conflicts with the shortcuts you already use; the "Set keyboard shortcuts" button in Options takes you straight there.
 
 ##### Local-First, Always
 
@@ -199,9 +203,6 @@ A: Right-click the icon → Open Sessions, then click Restore on a session (or o
 Q: Can I move sessions to another computer or another tool?\
 A: Yes. Export everything as JSON and import that file on the other machine, or export as Netscape HTML and import it into Chrome's bookmark manager. Markdown, plain text and CSV exports are for sharing and spreadsheets; plain URL lists and Markdown link lists can be pasted back in as new sessions.
 
-Q: Can I use a keyboard shortcut to save or open sessions?\
-A: Yes. Tab Organizer registers "Save the current window as a session" and "Open the Sessions dashboard" as Chrome commands, without a preset key so nothing conflicts with your other shortcuts. Assign keys at chrome://extensions/shortcuts (there is a button for it in Options and in the dashboard).
-
 Q: How much space do sessions take, and what happens when it runs out?\
 A: A tab takes a few hundred bytes, so even a thousand-tab session stays well under a megabyte; the dashboard's storage meter shows the total. Old snapshots are dropped automatically, and you can delete any session, or all session data, at any time.
 
@@ -209,14 +210,13 @@ Q: Does saving a session change my open tabs?\
 A: No. Saving only reads your tabs. Sorting still happens only when you left-click the icon.
 
 Q: What happens if I don't like the result?\
-A: Use Ctrl+Z (Cmd+Z on Mac) immediately after sorting to undo tab moves in Chrome. Closed duplicate tabs cannot be recovered this way — use Chrome's "Recently closed" menu (Ctrl+Shift+T), or restore the snapshot Tab Organizer took when you clicked the icon.
+A: Sorting only reorders tabs, so nothing is lost. Closed duplicates come back with Ctrl+Shift+T (Cmd+Shift+T on Mac).
 
 Q: Does it support other Chromium browsers?\
 A: Tab Organizer needs Chrome 123 or newer and should work on any Chromium-based browser of that generation that supports Manifest V3 and the Tab Groups API, including Microsoft Edge and Brave.
 
 #### Tips
 
-- Pin the extension icon to your toolbar for quick access.
 - Prefix your Chrome tab group names with numbers (e.g., "1-Priority", "2-Reference") to control their sort order.
 - Use Domain grouping mode if you use many Google or Microsoft services — it keeps all their subdomains together.
 - Try the "Group duplicates" option first before "Close duplicates" — it lets you review which tabs will be affected before you close them.
