@@ -6,7 +6,9 @@ import { SESSION_SCHEMA_VERSION, type Session, type SessionIndex } from '@/types
 import {
   COMMAND_IDS,
   clearBadge,
+  DEV_BADGE,
   handleMenuOrCommand,
+  idleBadge,
   MENU_IDS,
   registerContextMenus,
   showErrorBadge,
@@ -82,6 +84,7 @@ async function loadWorker(): Promise<typeof import('@/sessions/storage')> {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
@@ -141,6 +144,26 @@ describe('badge', () => {
 
     vi.advanceTimersByTime(2000);
     expect(fake.state.badge.text).toBe('');
+  });
+
+  it('idleBadge is DEV only for the development mode that `pnpm dev` builds in', () => {
+    expect(idleBadge('development')).toEqual({ text: 'DEV', color: '#d9640a' });
+    expect(idleBadge('production')).toEqual({ text: '' });
+    expect(idleBadge('test')).toEqual({ text: '' });
+  });
+
+  it('in a dev build, clearBadge and the 2 s clear restore DEV instead of emptying the badge', () => {
+    vi.stubEnv('MODE', 'development');
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const fake = getChromeFake();
+
+    clearBadge();
+    expect(fake.state.badge).toEqual({ text: DEV_BADGE.text, color: DEV_BADGE.color });
+
+    showSavedBadge();
+    expect(fake.state.badge).toEqual({ text: '✓', color: '#16a34a' });
+    vi.advanceTimersByTime(2000);
+    expect(fake.state.badge).toEqual({ text: DEV_BADGE.text, color: DEV_BADGE.color });
   });
 
   it('a second save 1.5 s later re-arms the clear timer instead of stacking it', () => {

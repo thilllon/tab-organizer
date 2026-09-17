@@ -41,6 +41,18 @@ const SAVED_BADGE_COLOR = '#16a34a';
 const ERROR_BADGE_COLOR = '#d93025';
 const BADGE_CLEAR_MS = 2000;
 
+/**
+ * A `pnpm dev` build sits in the toolbar next to the store build with the very same icon, so it
+ * keeps a permanent DEV badge and the transient ✓ / ! badges return to it instead of to an empty one.
+ * Keyed on the same Vite mode as the manifest's " Dev" name suffix (vite.config.ts), so the two
+ * can never disagree; `vite build` is 'production' and vitest runs in 'test'.
+ */
+export const DEV_BADGE = { text: 'DEV', color: '#d9640a' } as const;
+
+export function idleBadge(mode: string): { text: string; color?: string } {
+  return mode === 'development' ? DEV_BADGE : { text: '' };
+}
+
 // The only timer in this module; re-armed (never stacked) so two saves in quick succession
 // don't have the first save's clear cut off the second save's badge early.
 let badgeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -67,7 +79,11 @@ export function clearBadge(): void {
     clearTimeout(badgeTimer);
     badgeTimer = undefined;
   }
-  chrome.action.setBadgeText({ text: '' }).catch(report);
+  const idle = idleBadge(import.meta.env.MODE);
+  if (idle.color !== undefined) {
+    chrome.action.setBadgeBackgroundColor({ color: idle.color }).catch(report);
+  }
+  chrome.action.setBadgeText({ text: idle.text }).catch(report);
 }
 
 export async function registerContextMenus(): Promise<void> {
