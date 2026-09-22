@@ -1,7 +1,9 @@
 import { Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SidebarNav } from '@/app/components/SidebarNav';
+import { SidebarResizer } from '@/app/components/SidebarResizer';
 import { formatRoute, HOME, parseRoute, type Route, sameRoute } from '@/app/lib/route';
+import { readSidebarWidth, writeSidebarWidth } from '@/app/lib/sidebar-width';
 import { OpenTabsView } from '@/app/views/OpenTabsView';
 import { type OpenScope, SessionDetail } from '@/app/views/SessionDetail';
 import { SettingsView } from '@/app/views/SettingsView';
@@ -104,6 +106,8 @@ function useRoute(): [Route, (route: Route, replace?: boolean) => void] {
  */
 export function App() {
   const [route, navigate] = useRoute();
+  // Dragged by the handle between the columns, kept in localStorage (see sidebar-width.ts).
+  const [sidebarWidth, setSidebarWidth] = useState(readSidebarWidth);
   const { sessions, loading, error: indexError } = useSessionIndex();
   const openWindows = useOpenWindows();
   const sessionSettings = useSessionSettings();
@@ -511,8 +515,11 @@ export function App() {
         </Button>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-6 p-4 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-16 lg:self-start">
+      <div
+        className="mx-auto grid max-w-7xl gap-4 p-4 lg:grid-cols-[var(--sidebar-width)_10px_minmax(0,1fr)]"
+        style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
+      >
+        <aside className="min-w-0 lg:sticky lg:top-16 lg:self-start">
           <SidebarNav
             route={route}
             saved={saved}
@@ -524,6 +531,12 @@ export function App() {
             onNavigate={go}
           />
         </aside>
+
+        <SidebarResizer
+          width={sidebarWidth}
+          onResize={setSidebarWidth}
+          onCommit={writeSidebarWidth}
+        />
 
         <main className="min-w-0 space-y-3">
           {notice !== undefined && (

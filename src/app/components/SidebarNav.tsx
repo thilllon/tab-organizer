@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { Route } from '@/app/lib/route';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDateTime, formatSessionMeta, pluralize } from '@/dashboard/lib/format';
+import { formatDateTime, pluralize } from '@/dashboard/lib/format';
 import { HISTORY_OPEN_KEY, readUiState, writeUiState } from '@/dashboard/lib/ui-state';
 import { cn } from '@/lib/utils';
 import type { SessionSummary } from '@/types';
@@ -26,12 +26,14 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   sub?: string;
+  /** A second, quieter line: when this record was saved or taken. */
+  time?: string;
   meta?: React.ReactNode;
   current: boolean;
   onClick(): void;
 }
 
-function NavItem({ icon, label, sub, meta, current, onClick }: NavItemProps) {
+function NavItem({ icon, label, sub, time, meta, current, onClick }: NavItemProps) {
   return (
     <li>
       <button
@@ -48,9 +50,16 @@ function NavItem({ icon, label, sub, meta, current, onClick }: NavItemProps) {
           {icon}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate">{label}</span>
+          {/* Two lines rather than one truncated one: a default name carries the date and time,
+              and cutting it off is exactly what makes the list unreadable at narrow widths. */}
+          <span className="line-clamp-2 break-words">{label}</span>
           {sub !== undefined && (
             <span className="block truncate text-xs font-normal text-muted-foreground">{sub}</span>
+          )}
+          {time !== undefined && (
+            <span className="block truncate text-[11px] font-normal text-muted-foreground/80">
+              {time}
+            </span>
           )}
         </span>
         {meta}
@@ -95,7 +104,7 @@ export function SidebarNav({
   };
 
   return (
-    <nav aria-label="Sessions" className="flex flex-col gap-0.5">
+    <nav aria-label="Sessions" className="flex min-w-0 flex-col gap-0.5">
       <ul className="contents">
         <NavItem
           icon={<LayoutGrid />}
@@ -119,7 +128,8 @@ export function SidebarNav({
               key={summary.id}
               icon={<FolderOpen />}
               label={summary.name}
-              sub={formatSessionMeta(summary)}
+              sub={`${pluralize(summary.windowCount, 'window')} · ${pluralize(summary.tabCount, 'tab')}`}
+              time={`Saved ${formatDateTime(summary.updatedAt)}`}
               meta={
                 summary.unreadable === undefined ? undefined : (
                   <Badge variant="secondary">newer</Badge>
@@ -153,7 +163,7 @@ export function SidebarNav({
               key={summary.id}
               icon={summary.id === recoveredId ? <Undo2 /> : <Clock />}
               label={formatDateTime(summary.createdAt)}
-              sub={formatSessionMeta(summary)}
+              sub={`${pluralize(summary.windowCount, 'window')} · ${pluralize(summary.tabCount, 'tab')}`}
               meta={
                 summary.id === recoveredId ? (
                   <Badge variant="secondary">recovered</Badge>

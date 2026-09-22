@@ -10,6 +10,8 @@
 export const HISTORY_OPEN_KEY = 'tab-organizer:history-open';
 /** Id of the recovered snapshot whose banner was dismissed in this tab (spec §12 Phase 3). */
 export const RECOVERED_DISMISSED_KEY = 'tab-organizer:recovered-dismissed';
+/** Width of the app's sidebar, in pixels — a preference, so it outlives the tab. */
+export const SIDEBAR_WIDTH_KEY = 'tab-organizer:sidebar-width';
 
 /**
  * `sessionStorage` is absent under vitest (Node, no DOM) and its accessors throw outright when
@@ -35,5 +37,31 @@ export function writeUiState(key: string, value: string): void {
     sessionStorage.setItem(key, value);
   } catch {
     // ignored — see readUiState
+  }
+}
+
+/**
+ * The same guarded pair against `localStorage`, for the handful of preferences that should
+ * outlive the tab (the sidebar width). Still not user data, still never `chrome.storage`.
+ */
+export function readLocalUiState(key: string): string | undefined {
+  if (typeof localStorage === 'undefined') {
+    return undefined;
+  }
+  try {
+    return localStorage.getItem(key) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function writeLocalUiState(key: string, value: string): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // ignored — see readLocalUiState
   }
 }
