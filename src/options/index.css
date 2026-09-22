@@ -65,6 +65,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /*
+   * Keep the scrollbar's space reserved at all times. Without this, moving between a short view
+   * (Open tabs) and a long one (a saved session) adds or removes the scrollbar, the viewport
+   * changes width, and the centred page visibly jumps sideways on every click. A no-op where the
+   * platform draws overlay scrollbars.
+   */
+  html {
+    scrollbar-gutter: stable;
+  }
   body {
     @apply bg-background text-foreground;
   }
