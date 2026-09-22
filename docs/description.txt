@@ -4,13 +4,13 @@ Tired of dozens of messy, unorganized tabs cluttering your browser? Tab Organize
 
 Just pin the extension icon to your toolbar and click it. That's it. Your tabs are instantly organized.
 
-Need to put a project away for later? Right-click the icon → Save session / Open Tab Organizer. Tab Organizer saves every window, tab, pinned tab and tab group exactly as it is and restores it later with one click. A full-page dashboard shows your open windows, saved sessions and history side by side, searches across all of them, and imports and exports in JSON, Markdown, text, HTML bookmarks or CSV. Automatic snapshots of your open windows are taken every 5 minutes so you can recover after a crash — they are stored only on this device, never uploaded, and can be turned off at any time.
+Need to put a project away for later? Right-click the icon → Save session, or → Options to open Tab Organizer itself. Tab Organizer saves every window, tab, pinned tab and tab group exactly as it is and restores it later with one click. A full-page dashboard shows your open windows, saved sessions and history side by side, searches across all of them, and imports and exports in JSON, Markdown, text, HTML bookmarks or CSV. Automatic snapshots of your open windows are taken every 5 minutes so you can recover after a crash — they are stored only on this device, never uploaded, and can be turned off at any time.
 
 HOW IT WORKS
 
 Click the Tab Organizer icon in your toolbar. Every tab in your current window is immediately sorted and organized. There's no popup, no extra steps — one click and you're done.
 
-Right-click the icon for everything else: "Assemble!" (gather every window's tabs into this one), "Save all windows as session" and "Open Tab Organizer" (the full page where your tabs, sessions, snapshots and settings live). A ✓ badge on the icon confirms it worked.
+Right-click the icon for everything else: "Assemble!" (gather every window's tabs into this one) and "Save all windows as session"; a ✓ badge on the icon confirms a save. Chrome's own "Options" item in the same menu opens Tab Organizer — the full page where your tabs, sessions, snapshots and settings live.
 
 Tab Organizer handles three types of tabs independently:
 • Pinned tabs (optionally sorted)
@@ -115,7 +115,7 @@ Tab Organizer is designed with privacy as a core principle:
   - "tabs" — reads tab URLs and titles to sort them and to save sessions; creates tabs when restoring
   - "tabGroups" — creates and manages Chrome tab groups, and recreates them from sessions
   - "storage" — saves your preferences via Chrome sync storage; saved sessions and snapshots (tab URLs, titles, group names, window layout) are kept in local storage on this device only
-  - "contextMenus" — adds the Assemble! / Save / Open Tab Organizer items to the icon's right-click menu
+  - "contextMenus" — adds the Assemble! and Save items to the icon's right-click menu
   - "unlimitedStorage" — lets large saved sessions exceed Chrome's 10 MB local quota; data stays on the device
   - "favicon" — shows site icons from Chrome's local favicon cache, no network
   - "alarms" — the timer for automatic snapshots (every 5 minutes by default); turn snapshots off and no timer exists
@@ -130,7 +130,7 @@ USE CASES
 • Research sessions — 30+ tabs across Google Scholar, Wikipedia and journals: one click groups them by source, one more saves the set for tomorrow.
 • Work vs. personal — Save your work windows as a session on Friday, close them, restore them on Monday exactly as they were.
 • Duplicate cleanup — The same Stack Overflow answer open five times? Let Tab Organizer find and close the duplicates.
-• Crash recovery — Chrome died with 200 tabs open. Open Tab Organizer; the recovered snapshot is marked in the list, open it, carry on.
+• Crash recovery — Chrome died with 200 tabs open. Open Tab Organizer; the recovered snapshot is marked in the list, open it, and carry on.
 
 FAQ
 
@@ -150,7 +150,7 @@ Q: What do automatic snapshots record, and can I turn them off?
 A: A snapshot is the same data as a saved session — tab URLs, titles, pinned state, tab groups and window layout — taken on the interval you choose (5 minutes by default) when something changed, and each time you click the icon to sort. The most recent unprotected snapshots are kept on this device (20 by default). Turn snapshots off in Options or in the dashboard settings; with snapshots off, no timer exists.
 
 Q: How do I restore a session?
-A: Right-click the icon → Open Tab Organizer, pick the session in the left column and press Open (or Open window for a single window). Windows are recreated in new windows with the original order, pinned tabs, groups and active tab; "Restore into this window" adds a saved window's tabs to the window you are in instead. Restoring never deletes the saved session.
+A: Right-click the icon → Options (or use the shortcut you assigned), pick the session in the left column and press Open — or Open window for a single window. Windows are recreated in new windows with the original order, pinned tabs, groups and active tab; "Restore into this window" adds a saved window's tabs to the window you are in instead. Restoring never deletes the saved session.
 
 Q: Can I move sessions to another computer or another tool?
 A: Yes. Export everything as JSON and import that file on the other machine, or export as Netscape HTML and import it into Chrome's bookmark manager. Markdown, plain text and CSV exports are for sharing and spreadsheets; plain URL lists and Markdown link lists can be pasted back in as new sessions.

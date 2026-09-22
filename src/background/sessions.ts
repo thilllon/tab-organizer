@@ -23,14 +23,15 @@ import { assembleTabs } from './assemble';
 export const MENU_IDS = {
   assembleTabs: 'assemble-tabs',
   saveAll: 'save-all',
-  openDashboard: 'open-dashboard',
 } as const;
 
 /**
  * Keyboard-command ids. These must stay in lockstep with the `commands` block of
  * `defineManifest()` in `vite.config.ts` — Chrome delivers exactly those strings to
  * `commands.onCommand`, and a rename on one side silently stops the shortcut working.
- * `openDashboard` and `assembleTabs` deliberately share their ids with the matching `MENU_IDS`.
+ * `assembleTabs` deliberately shares its id with `MENU_IDS.assembleTabs`. `openDashboard` has no
+ * menu item: Chrome adds its own "Options" entry (it opens `app.html#settings`), and a second
+ * entry onto the same page would only make the menu longer.
  */
 export const COMMAND_IDS = {
   saveSession: 'save-session',
@@ -38,7 +39,6 @@ export const COMMAND_IDS = {
   assembleTabs: 'assemble-tabs',
 } as const;
 
-const SEPARATOR_ID = 'sessions-separator';
 const ASSEMBLE_SEPARATOR_ID = 'assemble-separator';
 const SAVED_BADGE_COLOR = '#16a34a';
 const ERROR_BADGE_COLOR = '#d93025';
@@ -106,12 +106,6 @@ export async function registerContextMenus(): Promise<void> {
     title: 'Save all windows as session',
     contexts: ['action'],
   });
-  chrome.contextMenus.create({ id: SEPARATOR_ID, type: 'separator', contexts: ['action'] });
-  chrome.contextMenus.create({
-    id: MENU_IDS.openDashboard,
-    title: 'Open Tab Organizer',
-    contexts: ['action'],
-  });
 }
 
 async function saveSession(scope: 'window' | 'all'): Promise<void> {
@@ -166,8 +160,7 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
     case MENU_IDS.saveAll:
       await saveSession('all');
       return;
-    // Also `COMMAND_IDS.openDashboard`, which is the same id (one case, not two).
-    case MENU_IDS.openDashboard:
+    case COMMAND_IDS.openDashboard:
       await openDashboard();
       return;
     // Also `COMMAND_IDS.assembleTabs`, the same id.

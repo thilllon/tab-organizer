@@ -89,23 +89,22 @@ afterEach(() => {
 });
 
 describe('registerContextMenus', () => {
-  it('is idempotent: removeAll then exactly 3 items + 2 separators', async () => {
+  it('is idempotent: removeAll then exactly 2 items + 1 separator', async () => {
     await registerContextMenus();
     await registerContextMenus();
 
     const menus = getChromeFake().state.menus;
-    expect(menus).toHaveLength(5);
+    expect(menus).toHaveLength(3);
     expect(menus.map((m) => m.id)).toEqual([
       MENU_IDS.assembleTabs,
       'assemble-separator',
       MENU_IDS.saveAll,
-      'sessions-separator',
-      MENU_IDS.openDashboard,
     ]);
+    // Opening the app is Chrome's own "Options" item (options_page = app.html#settings) plus the
+    // `open-dashboard` command; this menu does not repeat it.
     expect(menus.filter((m) => m.type !== 'separator').map((m) => m.title)).toEqual([
       'Assemble!',
       'Save all windows as session',
-      'Open Tab Organizer',
     ]);
     for (const menu of menus) {
       expect(menu.contexts).toEqual(['action']);
@@ -234,7 +233,6 @@ describe('COMMAND_IDS', () => {
     // Chrome delivers exactly these strings to `commands.onCommand`; keep both sides equal.
     expect(COMMAND_IDS.saveSession).toBe('save-session');
     expect(COMMAND_IDS.openDashboard).toBe('open-dashboard');
-    expect(COMMAND_IDS.openDashboard).toBe(MENU_IDS.openDashboard);
     expect(COMMAND_IDS.assembleTabs).toBe('assemble-tabs');
     expect(COMMAND_IDS.assembleTabs).toBe(MENU_IDS.assembleTabs);
   });
@@ -369,7 +367,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'install' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(5);
+      expect(fake.state.menus).toHaveLength(3);
     });
   });
 
@@ -384,7 +382,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'update', previousVersion: '6.0.0' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(5);
+      expect(fake.state.menus).toHaveLength(3);
       expect(migrateSpy).toHaveBeenCalledTimes(1);
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
     });
@@ -734,7 +732,7 @@ describe('history wiring (spec §5)', () => {
       expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 5 });
     });
     expect(alarmNames()).toEqual([HISTORY_ALARM]);
-    expect(fake.state.menus).toHaveLength(5);
+    expect(fake.state.menus).toHaveLength(3);
     expect(reconcileSpy).toHaveBeenCalledTimes(1);
     expect(reconcileSpy.mock.invocationCallOrder[0]).toBeLessThan(
       createSpy.mock.invocationCallOrder[0],
@@ -768,7 +766,7 @@ describe('history wiring (spec §5)', () => {
 
     await vi.waitFor(() => {
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
-      expect(fake.state.menus).toHaveLength(5);
+      expect(fake.state.menus).toHaveLength(3);
     });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(alarmNames()).toEqual([]);
