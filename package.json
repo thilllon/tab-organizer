@@ -2,7 +2,7 @@
   "name": "tab-organizer",
   "displayName": "Tab Organizer",
   "description": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
-  "version": "7.1.0",
+  "version": "7.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/thilllon/tab-organizer.git"
