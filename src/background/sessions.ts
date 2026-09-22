@@ -39,7 +39,6 @@ export const COMMAND_IDS = {
   assembleTabs: 'assemble-tabs',
 } as const;
 
-const ASSEMBLE_SEPARATOR_ID = 'assemble-separator';
 const SAVED_BADGE_COLOR = '#16a34a';
 const ERROR_BADGE_COLOR = '#d93025';
 const BADGE_CLEAR_MS = 2000;
@@ -94,11 +93,6 @@ export async function registerContextMenus(): Promise<void> {
   chrome.contextMenus.create({
     id: MENU_IDS.assembleTabs,
     title: 'Assemble!',
-    contexts: ['action'],
-  });
-  chrome.contextMenus.create({
-    id: ASSEMBLE_SEPARATOR_ID,
-    type: 'separator',
     contexts: ['action'],
   });
   chrome.contextMenus.create({

@@ -89,17 +89,13 @@ afterEach(() => {
 });
 
 describe('registerContextMenus', () => {
-  it('is idempotent: removeAll then exactly 2 items + 1 separator', async () => {
+  it('is idempotent: removeAll then exactly the 2 items, no separators', async () => {
     await registerContextMenus();
     await registerContextMenus();
 
     const menus = getChromeFake().state.menus;
-    expect(menus).toHaveLength(3);
-    expect(menus.map((m) => m.id)).toEqual([
-      MENU_IDS.assembleTabs,
-      'assemble-separator',
-      MENU_IDS.saveAll,
-    ]);
+    expect(menus).toHaveLength(2);
+    expect(menus.map((m) => m.id)).toEqual([MENU_IDS.assembleTabs, MENU_IDS.saveAll]);
     // Opening the app is Chrome's own "Options" item (options_page = app.html#settings) plus the
     // `open-dashboard` command; this menu does not repeat it.
     expect(menus.filter((m) => m.type !== 'separator').map((m) => m.title)).toEqual([
@@ -367,7 +363,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'install' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(3);
+      expect(fake.state.menus).toHaveLength(2);
     });
   });
 
@@ -382,7 +378,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'update', previousVersion: '6.0.0' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(3);
+      expect(fake.state.menus).toHaveLength(2);
       expect(migrateSpy).toHaveBeenCalledTimes(1);
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
     });
@@ -732,7 +728,7 @@ describe('history wiring (spec §5)', () => {
       expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 5 });
     });
     expect(alarmNames()).toEqual([HISTORY_ALARM]);
-    expect(fake.state.menus).toHaveLength(3);
+    expect(fake.state.menus).toHaveLength(2);
     expect(reconcileSpy).toHaveBeenCalledTimes(1);
     expect(reconcileSpy.mock.invocationCallOrder[0]).toBeLessThan(
       createSpy.mock.invocationCallOrder[0],
@@ -766,7 +762,7 @@ describe('history wiring (spec §5)', () => {
 
     await vi.waitFor(() => {
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
-      expect(fake.state.menus).toHaveLength(3);
+      expect(fake.state.menus).toHaveLength(2);
     });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(alarmNames()).toEqual([]);
