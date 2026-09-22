@@ -22,7 +22,6 @@ import { assembleTabs } from './assemble';
 
 export const MENU_IDS = {
   assembleTabs: 'assemble-tabs',
-  saveWindow: 'save-window',
   saveAll: 'save-all',
   openDashboard: 'open-dashboard',
 } as const;
@@ -103,11 +102,6 @@ export async function registerContextMenus(): Promise<void> {
     contexts: ['action'],
   });
   chrome.contextMenus.create({
-    id: MENU_IDS.saveWindow,
-    title: 'Save this window as session',
-    contexts: ['action'],
-  });
-  chrome.contextMenus.create({
     id: MENU_IDS.saveAll,
     title: 'Save all windows as session',
     contexts: ['action'],
@@ -115,7 +109,7 @@ export async function registerContextMenus(): Promise<void> {
   chrome.contextMenus.create({ id: SEPARATOR_ID, type: 'separator', contexts: ['action'] });
   chrome.contextMenus.create({
     id: MENU_IDS.openDashboard,
-    title: 'Open Sessions',
+    title: 'Open Tab Organizer',
     contexts: ['action'],
   });
 }
@@ -166,7 +160,6 @@ async function runAssembleTabs(): Promise<void> {
 export async function handleMenuOrCommand(id: string): Promise<void> {
   clearBadge();
   switch (id) {
-    case MENU_IDS.saveWindow:
     case COMMAND_IDS.saveSession:
       await saveSession('window');
       return;

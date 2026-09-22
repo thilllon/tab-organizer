@@ -17,6 +17,8 @@ export interface OpenWindowsPaneProps {
   onSaveWindow(windowId: number): void;
   /** Disables the save buttons while a save or a restore is running. */
   busy?: boolean;
+  /** False when the surrounding view already says "Open tabs" above it. */
+  showHeading?: boolean;
 }
 
 interface PendingClose {
@@ -38,6 +40,7 @@ export function OpenWindowsPane({
   error,
   onSaveWindow,
   busy,
+  showHeading = true,
 }: OpenWindowsPaneProps) {
   const [pendingClose, setPendingClose] = useState<PendingClose | undefined>(undefined);
   // Radix keeps the dialog mounted through its close animation; the last pending value keeps its
@@ -78,7 +81,7 @@ export function OpenWindowsPane({
 
   return (
     <section aria-labelledby="open-windows-heading" className="min-w-0">
-      <div className="flex items-center gap-2">
+      <div className={showHeading ? 'flex items-center gap-2' : 'sr-only'}>
         <h2 id="open-windows-heading" className="text-sm font-semibold">
           Open windows
         </h2>
@@ -125,7 +128,7 @@ export function OpenWindowsPane({
                     disabled={busy}
                   >
                     <Save />
-                    Save this window
+                    Save window
                   </Button>
                   <Button
                     size="xs"

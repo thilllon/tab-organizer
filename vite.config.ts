@@ -35,8 +35,13 @@ const manifest = defineManifest((env) => {
     },
     action: {
       default_icon: 'img/logo-48.png',
+      // Hovering the icon is the cheapest way to learn the two gestures; the name alone taught
+      // nobody that the right-click menu exists.
+      default_title: 'Tab Organizer — click to sort tabs, right-click for sessions',
     },
-    options_page: 'options.html',
+    // Chrome's own "Options" item opens the app's Settings view — one page, one place for
+    // everything (a fragment is allowed here; verified in Chrome for Testing 151).
+    options_page: 'app.html#settings',
     background: {
       service_worker: 'src/background/index.ts',
       type: 'module',
@@ -80,6 +85,8 @@ export default defineConfig(() => {
       modulePreload: { polyfill: false },
       rollupOptions: {
         input: {
+          app: 'app.html',
+          // Kept so old pinned tabs and bookmarks still land somewhere: both redirect to app.html.
           options: 'options.html',
           dashboard: 'dashboard.html',
         },

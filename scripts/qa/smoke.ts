@@ -123,15 +123,14 @@ function assertSame(actual: unknown, expected: unknown, what: string): void {
 
 /* ------------------------------------------------------------------ helpers */
 
-/** The dashboard's session cards (`<main><ul><li>`), one per saved session. */
-function cards(page: Page): Locator {
-  return page.locator('main > ul > li');
+/** The app's sidebar entries for saved sessions. */
+function savedEntries(page: Page): Locator {
+  return page.getByRole('navigation', { name: 'Sessions' }).locator('li button');
 }
 
-/** `<header>` at the top of the dashboard: role `banner`. Scoped, because the empty state
- *  renders buttons with the same labels. */
-function header(page: Page): Locator {
-  return page.getByRole('banner');
+/** The main pane: the view the sidebar selection points at. */
+function main_(page: Page): Locator {
+  return page.locator('main');
 }
 
 function delay(ms: number): Promise<void> {
@@ -323,14 +322,14 @@ const STEPS: Step[] = [
   },
 
   {
-    name: 'open the dashboard',
+    name: 'open the app page',
     async run(ctx): Promise<string> {
       const ext = required(ctx.ext, 'extension');
       const page = required(ctx.page, 'page');
-      const dashboardUrl = ext.pageUrl('dashboard.html');
+      const dashboardUrl = ext.pageUrl('app.html');
       await page.goto(dashboardUrl);
-      await header(page)
-        .getByRole('heading', { name: 'Sessions' })
+      await main_(page)
+        .getByRole('heading', { name: 'Open tabs' })
         .waitFor({ timeout: UI_TIMEOUT });
 
       // Anything else Chrome opened at startup would be captured too and throw the counts off.
@@ -353,35 +352,39 @@ const STEPS: Step[] = [
         { keepWindowId: required(ctx.fixtureWindowId, 'fixture window'), dashboardUrl },
       );
       ctx.dashboardWindowId = cleaned.dashboardWindowId;
-      return `dashboard in window ${cleaned.dashboardWindowId}; closed ${cleaned.closed} stray tab(s)`;
+      return `app page in window ${cleaned.dashboardWindowId}; closed ${cleaned.closed} stray tab(s)`;
     },
   },
 
   {
-    name: 'save all windows',
+    name: 'save the open windows',
     async run(ctx): Promise<string> {
       const page = required(ctx.page, 'page');
-      await header(page)
-        .getByRole('button', { name: 'Save all windows' })
+      // The one primary button of the Open tabs view; its label names what it will take.
+      await main_(page)
+        .getByRole('button', { name: /^Save (all windows|this window)$/ })
         .click({ timeout: UI_TIMEOUT });
 
-      const list = cards(page);
-      await list.first().waitFor({ timeout: UI_TIMEOUT });
-      assertSame(await list.count(), 1, 'session card count after saving');
-      ctx.card = list.first();
+      // Saving goes straight to the new session's own view (app.html#saved/<id>).
+      const card = main_(page);
+      await card.getByRole('button', { name: 'Rename session' }).waitFor({ timeout: UI_TIMEOUT });
+      ctx.card = card;
+      assertSame(await savedEntries(page).count(), 2, 'sidebar entries (Open tabs + 1 session)');
 
-      const meta = (await ctx.card.locator('p').first().innerText()).replace(/\s+/g, ' ');
-      assert(meta.includes('1 window'), `card meta should report 1 window, got "${meta}"`);
-      assert(meta.includes('6 tabs'), `card meta should report 6 tabs, got "${meta}"`);
-      return `card meta "${meta}"`;
+      const meta = (await card.locator('section header p').first().innerText()).replace(
+        /\s+/g,
+        ' ',
+      );
+      assert(meta.includes('1 window'), `session meta should report 1 window, got "${meta}"`);
+      assert(meta.includes('6 tabs'), `session meta should report 6 tabs, got "${meta}"`);
+      return `session meta "${meta}"`;
     },
   },
 
   {
-    name: 'expand the session card',
+    name: 'the session view shows its windows and groups',
     async run(ctx): Promise<string> {
-      const card = required(ctx.card, 'session card');
-      await card.getByRole('button', { name: 'Expand' }).click({ timeout: UI_TIMEOUT });
+      const card = required(ctx.card, 'session view');
       await card.getByRole('heading', { name: 'Window 1' }).waitFor({ timeout: UI_TIMEOUT });
       for (const group of FIXTURE_GROUPS) {
         await card
@@ -406,9 +409,7 @@ const STEPS: Step[] = [
         return windows.map((win) => win.id ?? -1);
       });
 
-      await card
-        .getByRole('button', { name: 'Restore', exact: true })
-        .click({ timeout: UI_TIMEOUT });
+      await card.getByRole('button', { name: 'Open', exact: true }).click({ timeout: UI_TIMEOUT });
       const toast = page.getByText(/Restored \d+ of \d+ tabs?/);
       await toast.waitFor({ timeout: 30_000 });
       const summary = (await toast.innerText()).replace(/\s+/g, ' ');
@@ -485,7 +486,7 @@ const STEPS: Step[] = [
       await input.fill(RENAMED);
       await input.press('Enter');
       await card.getByRole('button', { name: RENAMED }).waitFor({ timeout: UI_TIMEOUT });
-      return `card now reads “${RENAMED}”`;
+      return `the session now reads “${RENAMED}”`;
     },
   },
 
@@ -506,11 +507,12 @@ const STEPS: Step[] = [
         .getByRole('button', { name: 'Delete', exact: true })
         .click({ timeout: UI_TIMEOUT });
 
-      await page
-        .getByRole('heading', { name: 'No saved sessions yet' })
+      // Deleting leaves the address it was on, back to the open tabs view.
+      await main_(page)
+        .getByRole('heading', { name: 'Open tabs' })
         .waitFor({ timeout: UI_TIMEOUT });
-      assertSame(await cards(page).count(), 0, 'session card count after deleting');
-      return 'list is empty and the empty state is shown';
+      assertSame(await savedEntries(page).count(), 1, 'sidebar entries after deleting');
+      return 'the session is gone and the app is back on Open tabs';
     },
   },
 ];

@@ -68,9 +68,19 @@ export function shouldShowRecoveredBanner(
   historySummaries: readonly SessionSummary[],
   dismissedId: string | undefined,
 ): SessionSummary | undefined {
+  const newest = recoveredSnapshot(historySummaries);
+  return newest === undefined || newest.id === dismissedId ? undefined : newest;
+}
+
+/**
+ * The snapshot the worker promoted after a restart, while it is still the newest one — the app's
+ * sidebar marks it "recovered" instead of putting a banner over the page. An ordinary snapshot
+ * taken after it means the user has been browsing since the restart, so the marker goes away on
+ * its own.
+ */
+export function recoveredSnapshot(
+  historySummaries: readonly SessionSummary[],
+): SessionSummary | undefined {
   const newest = [...historySummaries].sort(newestFirst)[0];
-  if (newest === undefined || newest.origin !== 'recovered' || newest.id === dismissedId) {
-    return undefined;
-  }
-  return newest;
+  return newest !== undefined && newest.origin === 'recovered' ? newest : undefined;
 }

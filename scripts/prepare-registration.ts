@@ -436,14 +436,14 @@ class Preparation {
     const worker = await this.ext.worker();
     await seedSessions(worker, fixtures);
 
-    const dashboardUrl = `chrome-extension://${this.extensionId}/dashboard.html`;
+    const dashboardUrl = `chrome-extension://${this.extensionId}/app.html`;
     const page = await this.context.newPage();
     await page.setViewportSize({ width: 1280, height: 800 });
 
     const reload = async (): Promise<void> => {
       await page.goto(dashboardUrl);
       await page.waitForLoadState('networkidle');
-      await page.getByRole('banner').getByRole('heading', { name: 'Sessions' }).waitFor({
+      await page.locator('main').getByRole('heading', { name: 'Open tabs' }).waitFor({
         timeout: CONTROL_TIMEOUT,
       });
       await page.waitForTimeout(300);
@@ -466,38 +466,41 @@ class Preparation {
       }
     };
 
-    const cardFor = (name: string): Locator =>
-      page.locator('main > ul > li').filter({ hasText: name });
-
-    await shot('sessions', async () => {
-      const card = cardFor(fixtures[0].name);
-      if (!(await Preparation.isVisible(card))) {
-        return `no session card for “${fixtures[0].name}”`;
-      }
-      const expand = card.getByRole('button', { name: 'Expand' });
-      if (!(await Preparation.isVisible(expand))) {
-        return 'no Expand control on the session card';
-      }
-      await expand.first().click();
-      await card.getByRole('heading', { name: 'Window 1' }).first().waitFor({
-        timeout: CONTROL_TIMEOUT,
+    /** The sidebar entry for a session; clicking it puts that session in the main pane. */
+    const sidebarEntry = (name: string): Locator =>
+      page.getByRole('navigation', { name: 'Sessions' }).locator('li button').filter({
+        hasText: name,
       });
+
+    const openSession = async (name: string): Promise<string | null> => {
+      const entry = sidebarEntry(name);
+      if (!(await Preparation.isVisible(entry))) {
+        return `no sidebar entry for “${name}”`;
+      }
+      await entry.first().click();
+      await page
+        .locator('main')
+        .getByRole('heading', { name: 'Window 1' })
+        .first()
+        .waitFor({ timeout: CONTROL_TIMEOUT });
       return null;
-    });
+    };
+
+    await shot('sessions', () => openSession(fixtures[0].name));
 
     await shot('restore', async () => {
       // The confirm dialog only appears above the large-restore threshold, which the second
       // fixture session is built to cross. If the click starts a restore instead, cancel it at
       // once rather than letting a screenshot run open a hundred tabs.
-      const card = cardFor(fixtures[1].name);
-      if (!(await Preparation.isVisible(card))) {
-        return `no session card for “${fixtures[1].name}”`;
+      const missing = await openSession(fixtures[1].name);
+      if (missing !== null) {
+        return missing;
       }
-      const restore = card.getByRole('button', { name: 'Restore', exact: true });
-      if (!(await Preparation.isVisible(restore))) {
-        return 'no Restore control on the session card';
+      const open = page.locator('main').getByRole('button', { name: 'Open', exact: true });
+      if (!(await Preparation.isVisible(open))) {
+        return 'no Open control on the session view';
       }
-      await restore.first().click();
+      await open.first().click();
 
       const dialog = page.getByRole('dialog');
       const cancelRunning = page
@@ -508,7 +511,7 @@ class Preparation {
           .first()
           .click()
           .catch(() => undefined);
-        return 'clicking Restore started the restore directly (no confirm dialog)';
+        return 'clicking Open started the restore directly (no confirm dialog)';
       }
       if (!(await Preparation.isVisible(dialog))) {
         return 'the restore confirm dialog did not open';
@@ -530,6 +533,11 @@ class Preparation {
     });
 
     await shot('import', async () => {
+      // Import moved into Settings with the one-page redesign (v7.2.0).
+      await page.goto(`${dashboardUrl}#settings`);
+      await page.locator('main').getByRole('heading', { name: 'Settings' }).waitFor({
+        timeout: CONTROL_TIMEOUT,
+      });
       const importButton = page.getByRole('button', { name: /^import/i });
       if (!(await Preparation.isVisible(importButton))) {
         return 'no Import control on the dashboard yet';
@@ -560,20 +568,26 @@ class Preparation {
     });
 
     await shot('history', async () => {
-      const control = page
-        .getByRole('button', { name: /history/i })
-        .or(page.getByRole('tab', { name: /history/i }));
-      if (!(await Preparation.isVisible(control))) {
-        return 'no history section control on the dashboard yet';
+      // The snapshots live folded in the sidebar; open them and show the newest one.
+      const toggle = page
+        .getByRole('navigation', { name: 'Sessions' })
+        .getByRole('button', { name: /snapshot/i });
+      if (!(await Preparation.isVisible(toggle))) {
+        return 'no snapshots control in the sidebar yet';
       }
-      const target = control.first();
-      if ((await target.getAttribute('aria-expanded')) === 'false') {
-        await target.click();
-        await page.waitForTimeout(400);
-      } else {
-        await target.click().catch(() => undefined);
-        await page.waitForTimeout(400);
+      if ((await toggle.first().getAttribute('aria-expanded')) === 'false') {
+        await toggle.first().click();
+        await page.waitForTimeout(300);
       }
+      const snapshot = page
+        .getByRole('navigation', { name: 'Sessions' })
+        .locator('li button')
+        .last();
+      if (!(await Preparation.isVisible(snapshot))) {
+        return 'no snapshot to show';
+      }
+      await snapshot.click();
+      await page.waitForTimeout(400);
       return null;
     });
 

@@ -15,7 +15,7 @@ import {
   showSavedBadge,
 } from './sessions';
 
-const DASHBOARD_URL = 'chrome-extension://fakeextid/dashboard.html';
+const APP_URL = 'chrome-extension://fakeextid/app.html';
 
 async function seedWindow(urls: string[], focused: boolean): Promise<number> {
   const win = await chrome.windows.create({ url: urls[0] });
@@ -89,25 +89,23 @@ afterEach(() => {
 });
 
 describe('registerContextMenus', () => {
-  it('is idempotent: removeAll then exactly 4 items + 2 separators', async () => {
+  it('is idempotent: removeAll then exactly 3 items + 2 separators', async () => {
     await registerContextMenus();
     await registerContextMenus();
 
     const menus = getChromeFake().state.menus;
-    expect(menus).toHaveLength(6);
+    expect(menus).toHaveLength(5);
     expect(menus.map((m) => m.id)).toEqual([
       MENU_IDS.assembleTabs,
       'assemble-separator',
-      MENU_IDS.saveWindow,
       MENU_IDS.saveAll,
       'sessions-separator',
       MENU_IDS.openDashboard,
     ]);
     expect(menus.filter((m) => m.type !== 'separator').map((m) => m.title)).toEqual([
       'Assemble!',
-      'Save this window as session',
       'Save all windows as session',
-      'Open Sessions',
+      'Open Tab Organizer',
     ]);
     for (const menu of menus) {
       expect(menu.contexts).toEqual(['action']);
@@ -243,11 +241,11 @@ describe('COMMAND_IDS', () => {
 });
 
 describe('handleMenuOrCommand', () => {
-  it("'save-window' writes one session:* key plus the index and sets the badge", async () => {
+  it("'save-session' writes one session:* key plus the index and sets the badge", async () => {
     await seedWindow(['https://a.example/', 'https://a.example/2'], false);
     await seedWindow(['https://b.example/', 'https://b.example/2', 'https://b.example/3'], true);
 
-    await handleMenuOrCommand('save-window');
+    await handleMenuOrCommand('save-session');
 
     const keys = sessionKeys();
     expect(keys).toHaveLength(1);
@@ -263,9 +261,9 @@ describe('handleMenuOrCommand', () => {
     vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 7, 29, 14, 3).getTime() });
     await seedWindow(['https://a.example/'], true);
 
-    await handleMenuOrCommand('save-window');
-    await handleMenuOrCommand('save-window');
-    await handleMenuOrCommand('save-window');
+    await handleMenuOrCommand('save-session');
+    await handleMenuOrCommand('save-session');
+    await handleMenuOrCommand('save-session');
 
     const names = readIndex()?.sessions.map((s) => s.name) ?? [];
     expect(names.sort()).toEqual([
@@ -275,7 +273,7 @@ describe('handleMenuOrCommand', () => {
     ]);
   });
 
-  it("'save-session' (keyboard command) behaves like 'save-window'", async () => {
+  it("'save-session' (keyboard command) saves the current window", async () => {
     await seedWindow(['https://a.example/'], true);
     await handleMenuOrCommand('save-session');
     expect(sessionKeys()).toHaveLength(1);
@@ -295,14 +293,14 @@ describe('handleMenuOrCommand', () => {
 
   it("'open-dashboard' focuses an existing dashboard tab instead of creating a second", async () => {
     const fake = getChromeFake();
-    const winA = await seedWindow(['https://a.example/', DASHBOARD_URL], false);
+    const winA = await seedWindow(['https://a.example/', APP_URL], false);
     await seedWindow(['https://b.example/'], true);
     const tabsBefore = fake.state.tabs.size;
 
     await handleMenuOrCommand('open-dashboard');
 
     expect(fake.state.tabs.size).toBe(tabsBefore);
-    const dashboard = [...fake.state.tabs.values()].find((t) => t.url === DASHBOARD_URL);
+    const dashboard = [...fake.state.tabs.values()].find((t) => t.url === APP_URL);
     expect(dashboard?.active).toBe(true);
     expect(fake.state.windows.get(winA)?.focused).toBe(true);
     expect(fake.state.badge.text).toBe('');
@@ -314,10 +312,10 @@ describe('handleMenuOrCommand', () => {
     expect(getChromeFake().state.tabs.size).toBe(0);
   });
 
-  it('save-window with only an extension page open shows the error badge and writes nothing', async () => {
-    await seedWindow([DASHBOARD_URL], true);
+  it('save-session with only an extension page open shows the error badge and writes nothing', async () => {
+    await seedWindow([APP_URL], true);
 
-    await handleMenuOrCommand('save-window');
+    await handleMenuOrCommand('save-session');
 
     expect(sessionKeys()).toHaveLength(0);
     expect(getChromeFake().state.badge.text).toBe('!');
@@ -328,7 +326,7 @@ describe('handleMenuOrCommand', () => {
     await seedWindow(['https://a.example/'], true);
     getChromeFake().failNext('storage.local.set', 1, 'QUOTA_BYTES exceeded');
 
-    await expect(handleMenuOrCommand('save-window')).resolves.toBeUndefined();
+    await expect(handleMenuOrCommand('save-session')).resolves.toBeUndefined();
 
     expect(getChromeFake().state.badge.text).toBe('!');
     expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
@@ -337,13 +335,13 @@ describe('handleMenuOrCommand', () => {
 });
 
 describe('listener wiring', () => {
-  it('a context-menu click on save-window saves a session', async () => {
+  it('a context-menu click on save-all saves a session', async () => {
     vi.resetModules();
     await import('./sessions');
     const fake = getChromeFake();
     await seedWindow(['https://a.example/'], true);
 
-    fake.fire.menuClicked(MENU_IDS.saveWindow);
+    fake.fire.command(COMMAND_IDS.saveSession);
 
     await vi.waitFor(() => {
       expect(sessionKeys()).toHaveLength(1);
@@ -371,7 +369,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'install' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(6);
+      expect(fake.state.menus).toHaveLength(5);
     });
   });
 
@@ -386,7 +384,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'update', previousVersion: '6.0.0' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(6);
+      expect(fake.state.menus).toHaveLength(5);
       expect(migrateSpy).toHaveBeenCalledTimes(1);
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
     });
@@ -736,7 +734,7 @@ describe('history wiring (spec §5)', () => {
       expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 5 });
     });
     expect(alarmNames()).toEqual([HISTORY_ALARM]);
-    expect(fake.state.menus).toHaveLength(6);
+    expect(fake.state.menus).toHaveLength(5);
     expect(reconcileSpy).toHaveBeenCalledTimes(1);
     expect(reconcileSpy.mock.invocationCallOrder[0]).toBeLessThan(
       createSpy.mock.invocationCallOrder[0],
@@ -770,7 +768,7 @@ describe('history wiring (spec §5)', () => {
 
     await vi.waitFor(() => {
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
-      expect(fake.state.menus).toHaveLength(6);
+      expect(fake.state.menus).toHaveLength(5);
     });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(alarmNames()).toEqual([]);

@@ -13,6 +13,12 @@ export interface SearchBarProps {
   onQueryChange(query: string): void;
   includeHistory: boolean;
   onIncludeHistoryChange(value: boolean): void;
+  /**
+   * Whether to offer the "Include history" checkbox here. The app leaves it off and asks only
+   * when a search found nothing: snapshots hold near-copies of the same tabs, so searching them
+   * by default buries a real hit under twenty versions of itself.
+   */
+  showIncludeHistory?: boolean;
   /** ArrowDown / ArrowUp: move the highlighted result. */
   onMove(direction: 'next' | 'prev'): void;
   /**
@@ -35,6 +41,7 @@ export function SearchBar({
   onQueryChange,
   includeHistory,
   onIncludeHistoryChange,
+  showIncludeHistory = true,
   onMove,
   onActivate,
 }: SearchBarProps) {
@@ -165,15 +172,17 @@ export function SearchBar({
         )}
       </div>
       {/* Wrapping label: the checkbox needs no id to be named by the text next to it. */}
-      <Label className="gap-1.5 text-xs font-normal text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={includeHistory}
-          onChange={(event) => onIncludeHistoryChange(event.target.checked)}
-          className="size-3.5 accent-primary"
-        />
-        Include history
-      </Label>
+      {showIncludeHistory && (
+        <Label className="gap-1.5 text-xs font-normal text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={includeHistory}
+            onChange={(event) => onIncludeHistoryChange(event.target.checked)}
+            className="size-3.5 accent-primary"
+          />
+          Include history
+        </Label>
+      )}
     </search>
   );
 }
