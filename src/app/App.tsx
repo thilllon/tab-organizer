@@ -2,7 +2,7 @@ import { Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SidebarNav } from '@/app/components/SidebarNav';
 import { SidebarResizer } from '@/app/components/SidebarResizer';
-import { formatRoute, HOME, parseRoute, type Route, sameRoute } from '@/app/lib/route';
+import { formatRoute, HOME, parseRoute, type Route, routeSessionId } from '@/app/lib/route';
 import { readSidebarWidth, writeSidebarWidth } from '@/app/lib/sidebar-width';
 import { OpenTabsView } from '@/app/views/OpenTabsView';
 import { type OpenScope, SessionDetail } from '@/app/views/SessionDetail';
@@ -57,7 +57,7 @@ import { ensureUniqueName } from '@/sessions/naming';
 import type { RestoreTarget } from '@/sessions/restore';
 import { DEFAULT_LIMIT_PER_SOURCE, search } from '@/sessions/search';
 import { sessionRepo } from '@/sessions/storage';
-import type { Session, SessionSettings, SessionSummary } from '@/types';
+import type { Session, SessionSettings } from '@/types';
 
 const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
 
@@ -256,21 +256,6 @@ export function App() {
     }
   };
 
-  /** Opens a record we only have the index entry for (a search hit). */
-  const openSummary = async (summary: SessionSummary): Promise<void> => {
-    setError(undefined);
-    try {
-      const session = await sessionRepo.get(summary.id);
-      if (session === undefined) {
-        setError('That session no longer exists.');
-        return;
-      }
-      await requestOpen(session, 'newWindows');
-    } catch (err) {
-      setError(errorMessage(err));
-    }
-  };
-
   const confirmRestore = (lazy: SessionSettings['restoreLazy']) => {
     if (pending === undefined) {
       return;
@@ -359,7 +344,7 @@ export function App() {
   });
 
   const selected = useMemo(() => {
-    const id = route.view === 'saved' || route.view === 'auto' ? route.id : undefined;
+    const id = routeSessionId(route);
     return id === undefined ? undefined : sessions.find((summary) => summary.id === id);
   }, [route, sessions]);
 

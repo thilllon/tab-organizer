@@ -73,7 +73,3 @@ export function formatRoute(route: Route): string {
 export function routeSessionId(route: Route): string | undefined {
   return route.view === 'saved' || route.view === 'auto' ? route.id : undefined;
 }
-
-export function sameRoute(a: Route, b: Route): boolean {
-  return formatRoute(a) === formatRoute(b);
-}

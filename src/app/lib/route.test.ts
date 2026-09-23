@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatRoute, HOME, parseRoute, routeSessionId, sameRoute } from './route';
+import { formatRoute, HOME, parseRoute, routeSessionId } from './route';
 
 describe('parseRoute', () => {
   it('reads every view from its hash, with or without the leading #', () => {
@@ -39,17 +39,11 @@ describe('parseRoute', () => {
   });
 });
 
-describe('routeSessionId and sameRoute', () => {
+describe('routeSessionId', () => {
   it('names the record a route points at', () => {
     expect(routeSessionId({ view: 'saved', id: 'x' })).toBe('x');
     expect(routeSessionId({ view: 'auto', id: 'y' })).toBe('y');
     expect(routeSessionId(HOME)).toBeUndefined();
     expect(routeSessionId({ view: 'search', query: 'x' })).toBeUndefined();
-  });
-
-  it('compares routes by their address', () => {
-    expect(sameRoute(HOME, { view: 'open' })).toBe(true);
-    expect(sameRoute({ view: 'saved', id: 'x' }, { view: 'saved', id: 'x' })).toBe(true);
-    expect(sameRoute({ view: 'saved', id: 'x' }, { view: 'auto', id: 'x' })).toBe(false);
   });
 });

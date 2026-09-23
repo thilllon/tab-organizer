@@ -335,7 +335,7 @@ export function SessionDetail({
         )}
         {body.error !== undefined && <p className="text-sm text-destructive">{body.error}</p>}
         {body.session !== undefined && (
-          // biome-ignore lint/a11y/useSemanticElements: the ARIA group holding this session's window nodes.
+          // The ARIA group holding this session's window nodes; no HTML element carries it.
           <div role="tree" aria-label={`Windows in ${summary.name}`} className="space-y-2">
             {body.session.windows.map((window, index) => (
               <WindowTree
