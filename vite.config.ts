@@ -99,6 +99,18 @@ export default defineConfig(() => {
       port: 5173,
       strictPort: true,
       cors: true,
+      // The HMR websocket rides on the dev server above, but the *client* still has to be told
+      // which port to dial, and it infers one from `location` when nothing says otherwise. On a
+      // `chrome-extension://` page `location.port` is the empty string, so the first attempt went
+      // to `ws://localhost:/` and always failed. Vite then retried its "direct" target and HMR did
+      // come up, so this is not the difference between working and broken — it is the difference
+      // between connecting and connecting after a websocket error on every single page load.
+      // `clientPort` rewrites only the client's URL; `ws.port` would instead move the socket onto
+      // a second listener, which nothing here wants (crxjs builds its own service-worker client
+      // against `server.port`). crxjs sets `server.hmr.host` and no port at all, and Vite 8 folds
+      // `server.hmr.*` into `server.ws.*` with an explicit `ws` value winning, so this is the one
+      // place the port can be pinned.
+      ws: { clientPort: 5173 },
     },
     resolve: {
       alias: {
