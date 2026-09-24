@@ -4,7 +4,42 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Inter, bundled — never fetched.
+ *
+ * The extension promises "zero network requests" (PRIVACY_POLICY.md, README.md, docs/README.md),
+ * so the usual `@import url('https://fonts.googleapis.com/...')` is not available to us: it would
+ * hit Google every time app.html opens and make that claim false. The font therefore ships inside
+ * the extension. Vite rewrites the `url()` below to a hashed asset in `dist/assets/` at build
+ * time, and the page loads it from its own `chrome-extension://` origin.
+ *
+ * Only the latin subset is declared. `@fontsource-variable/inter/wght.css` would pull all seven
+ * subsets (cyrillic, greek, vietnamese, …) for ~340 KB; this one file is ~48 KB and covers every
+ * label the UI itself draws. It is also a *variable* font, so one file serves every weight from
+ * 100 to 900 instead of one request per weight.
+ *
+ * Hangul is deliberately not covered — Inter has no Korean glyphs in any subset — so a session
+ * named in Korean falls through to the system stack in `--font-sans`. That is the intended
+ * behaviour, not a gap to fill: a Korean webfont would cost megabytes.
+ */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
 @theme inline {
+  --font-sans:
+    "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -12,6 +47,17 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /*
+   * `card` and `popover` were missing here until v7.3.2, while `dropdown-menu.tsx` styles itself
+   * `bg-popover text-popover-foreground`. Tailwind only emits a utility for a token it knows, so
+   * `.bg-popover` was never generated at all and every "⋯" menu in the app rendered with a
+   * transparent background. Adding the mapping is the whole fix — the component is stock shadcn
+   * and stays untouched.
+   */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -26,39 +72,60 @@
   --color-ring: var(--ring);
 }
 
+/*
+ * The palette. Every colour in the app resolves through these two blocks — no component under
+ * `src/components/ui/` or `src/app/` names a colour of its own, so swapping the design system
+ * later means editing this file and nothing else. (The one deliberate exception is
+ * `src/dashboard/lib/group-colors.ts`, which mirrors Chrome's own tab-group colours: those are
+ * Chrome's values, not ours, and must not follow our theme.)
+ *
+ * Values are OKLCH, as shadcn's theming guide requires, with the source hex kept alongside for
+ * anyone eyedropping a design. Every foreground/background pair below was measured against WCAG
+ * 1.4.3: the weakest text pair is 4.87:1 (white on the primary blue) and everything else clears
+ * 5:1, in both light and dark.
+ */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+
+  --background: oklch(0.9876 0.0017 247.84); /* #FAFBFC */
+  --foreground: oklch(0.2091 0.0104 268.19); /* #16181D */
+  --card: oklch(1 0 0); /* #FFFFFF */
+  --card-foreground: oklch(0.2091 0.0104 268.19); /* #16181D */
+  --popover: oklch(1 0 0); /* #FFFFFF */
+  --popover-foreground: oklch(0.2091 0.0104 268.19); /* #16181D */
+  --primary: oklch(0.5552 0.1914 258.46); /* #1A6DE0 */
+  --primary-foreground: oklch(1 0 0); /* #FFFFFF */
+  --secondary: oklch(0.966 0.0062 255.48); /* #F1F4F8 */
+  --secondary-foreground: oklch(0.2636 0.0225 262.45); /* #1F2530 */
+  --muted: oklch(0.966 0.0062 255.48); /* #F1F4F8 */
+  --muted-foreground: oklch(0.5064 0.0275 256.18); /* #5B6675 */
+  --accent: oklch(0.9522 0.02 257.47); /* #E7F0FD */
+  --accent-foreground: oklch(0.4244 0.1441 258.77); /* #124A9B */
+  --destructive: oklch(0.5318 0.1976 27.91); /* #C5221F */
+  --border: oklch(0.9148 0.0104 261.79); /* #DFE3EA */
+  --input: oklch(0.8654 0.0177 260.2); /* #C9D1DE */
+  --ring: oklch(0.5552 0.1914 258.46); /* #1A6DE0 */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: oklch(0.1763 0.014 258.36); /* #0D1117 */
+  --foreground: oklch(0.94 0.0071 268.55); /* #E9EBF0 */
+  --card: oklch(0.2033 0.0178 259.72); /* #12171F */
+  --card-foreground: oklch(0.94 0.0071 268.55); /* #E9EBF0 */
+  --popover: oklch(0.2289 0.0197 258.35); /* #171D26 */
+  --popover-foreground: oklch(0.94 0.0071 268.55); /* #E9EBF0 */
+  --primary: oklch(0.7162 0.1325 256.69); /* #6BA5F5 */
+  --primary-foreground: oklch(0.1831 0.0309 263.38); /* #0B1220 */
+  --secondary: oklch(0.2506 0.021 260.57); /* #1C222C */
+  --secondary-foreground: oklch(0.94 0.0071 268.55); /* #E9EBF0 */
+  --muted: oklch(0.2298 0.0149 261.64); /* #191D24 */
+  --muted-foreground: oklch(0.7098 0.0273 261.12); /* #98A2B3 */
+  --accent: oklch(0.2864 0.0416 257.31); /* #1D2B3F */
+  --accent-foreground: oklch(0.8417 0.0711 258.35); /* #AFCDFA */
+  --destructive: oklch(0.743 0.124 24.09); /* #F08B85 */
+  --border: oklch(0.3081 0.0177 262.24); /* #2B3039 */
+  --input: oklch(0.3464 0.0215 259.39); /* #333A45 */
+  --ring: oklch(0.7162 0.1325 256.69); /* #6BA5F5 */
 }
 
 @layer base {
@@ -74,7 +141,39 @@
   html {
     scrollbar-gutter: stable;
   }
+  /*
+   * The font has to be forced onto `body`, and this is the one `!important` in the file.
+   *
+   * Tailwind's preflight sets `font-family` only on `html` and lets `body` inherit. On the open
+   * web that is enough. On a `chrome-extension://` page it is not: Chrome pushes its own
+   * stylesheet into extension pages carrying `body { font-family: system-ui, sans-serif }`, and
+   * Blink cascades that *injected* origin above ordinary author rules — confirmed with
+   * `CSS.getMatchedStylesForNode`, which reports both our `origin=regular` rule and Chrome's
+   * `origin=injected` one matching `body`, with theirs winning. Raising specificity (`html body`)
+   * does not help, because origin is decided before specificity. Until this line existed the app
+   * silently used the browser's font and the bundled `@font-face` above stayed at status
+   * "unloaded" — registered, matched by nothing, downloaded never.
+   *
+   * `--default-font-family` rather than `--font-sans`: the `@theme inline` block above inlines its
+   * values into utilities instead of emitting them as custom properties, so `var(--font-sans)`
+   * would resolve to nothing. `--default-font-family` is what Tailwind itself emits from it, so
+   * this still has exactly one source of truth.
+   */
   body {
     @apply bg-background text-foreground;
+    /* biome-ignore lint/complexity/noImportantStyles: the rule this has to beat is Chrome's own
+       injected stylesheet, which outranks every author declaration that is not important. */
+    font-family: var(--default-font-family) !important;
+    /*
+     * Inter's shapes are already tightly spaced, so the browser's default tracking reads loose at
+     * the sizes this UI uses. A hair negative brings a dense list back together.
+     *
+     * The digits are asked to be tabular for a related reason: counts, dates and sizes sit in
+     * columns that change as you click around (87 tabs → 9 tabs), and proportional figures make
+     * those columns jitter on every navigation.
+     */
+    letter-spacing: -0.006em;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
   }
 }
