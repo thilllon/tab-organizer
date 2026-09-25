@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Favicon } from '@/dashboard/components/Favicon';
 import { formatSessionMeta, hostnameOf, pluralize } from '@/dashboard/lib/format';
 import type { SearchGroup, SearchItem } from '@/dashboard/lib/search-nav';
+import { browserHandlesClick, hrefFor } from '@/lib/link';
 import { splitOnMatches } from '@/sessions/search';
 
 export interface SearchResultsProps {
@@ -70,29 +71,52 @@ function TabResultRow({
   onActivate(index: number): void;
 }) {
   const { entry } = item;
+  // Same deal as TabRow: the href is there for the status bar, ⌘-click and "Copy link address".
+  // Enter on the highlighted row still goes through onActivate, so the keyboard path is unchanged.
+  const href = hrefFor(entry.url);
+  const shared = {
+    id: rowId(index),
+    title: entry.url,
+    'aria-current': highlighted ? ('true' as const) : undefined,
+    onMouseEnter: () => onHighlight(index),
+    onFocus: () => onHighlight(index),
+    className: `${ROW} w-full min-w-0 ${highlighted ? 'bg-accent' : 'hover:bg-accent'}`,
+  };
+  const inner = (
+    <>
+      <Favicon url={entry.url} />
+      <span className="min-w-0 flex-1 truncate">
+        <Highlighted text={entry.title.length > 0 ? entry.title : entry.url} tokens={tokens} />
+      </span>
+      <span className="max-w-40 shrink-0 truncate text-xs text-muted-foreground">
+        {hostnameOf(entry.url)}
+      </span>
+      <span className="max-w-48 shrink-0 truncate text-xs text-muted-foreground">
+        {entry.sessionName} · Window {entry.windowIndex + 1}
+      </span>
+    </>
+  );
   return (
     <li>
-      <button
-        type="button"
-        id={rowId(index)}
-        title={entry.url}
-        aria-current={highlighted ? 'true' : undefined}
-        onClick={() => onActivate(index)}
-        onMouseEnter={() => onHighlight(index)}
-        onFocus={() => onHighlight(index)}
-        className={`${ROW} w-full min-w-0 ${highlighted ? 'bg-accent' : 'hover:bg-accent'}`}
-      >
-        <Favicon url={entry.url} />
-        <span className="min-w-0 flex-1 truncate">
-          <Highlighted text={entry.title.length > 0 ? entry.title : entry.url} tokens={tokens} />
-        </span>
-        <span className="max-w-40 shrink-0 truncate text-xs text-muted-foreground">
-          {hostnameOf(entry.url)}
-        </span>
-        <span className="max-w-48 shrink-0 truncate text-xs text-muted-foreground">
-          {entry.sessionName} · Window {entry.windowIndex + 1}
-        </span>
-      </button>
+      {href === undefined ? (
+        <button type="button" onClick={() => onActivate(index)} {...shared}>
+          {inner}
+        </button>
+      ) : (
+        <a
+          href={href}
+          onClick={(event) => {
+            if (browserHandlesClick(event)) {
+              return;
+            }
+            event.preventDefault();
+            onActivate(index);
+          }}
+          {...shared}
+        >
+          {inner}
+        </a>
+      )}
     </li>
   );
 }
