@@ -177,3 +177,26 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/*
+ * Give clickable things a pointer again.
+ *
+ * Tailwind v3's preflight carried `button { cursor: pointer }`; v4 dropped it to match the bare
+ * browser default, which is `cursor: default`. Nothing in this project ever put it back, so every
+ * button in the app — sidebar rows, Save, Open, the "⋯" menus, every tab row — showed an arrow.
+ * The whole stylesheet contained exactly one `cursor: pointer`, and that was the `.cursor-pointer`
+ * utility class.
+ *
+ * Deliberately *not* inside `@layer base`: `dropdown-menu.tsx` is stock shadcn and sets
+ * `cursor-default` on its items, and that utility lives in Tailwind's `utilities` layer, which
+ * outranks `base`. Unlayered author rules sit above every layer, so this reaches the menu items
+ * too without editing the component. `:not(:disabled)` leaves `cursor-not-allowed` alone, which
+ * the disabled states in switch/radio/input/label rely on.
+ */
+button:not(:disabled),
+summary,
+select:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+[role="menuitem"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}

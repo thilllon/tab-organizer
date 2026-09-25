@@ -1,5 +1,7 @@
 import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
+import { SavedToasts } from '@/app/components/SavedToasts';
+import { useSavedToasts } from '@/app/lib/use-saved-toasts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +23,14 @@ import {
   toStoredSortSettings,
 } from '@/options/lib/sort-settings';
 import { openShortcutSettings } from '@/sessions/shortcuts';
-import type { SessionSummary, SortSettings } from '@/types';
+import type { SessionSettings, SessionSummary, SortSettings } from '@/types';
+
+/**
+ * What every save says. One wording for both halves of this page: the sort settings live in
+ * `chrome.storage.sync` and the session settings in `chrome.storage.local`, but that split is our
+ * problem, not something to explain in a toast.
+ */
+const SAVED_MESSAGE = 'Setting saved';
 
 export interface SettingsViewProps {
   summaries: SessionSummary[];
@@ -107,9 +116,9 @@ export function SettingsView({
   const [suspenderDraft, setSuspenderDraft] = useState(
     DEFAULT_SORT_SETTINGS.tabSuspenderExtensionId,
   );
-  const [savedTick, setSavedTick] = useState(false);
   const [commands, setCommands] = useState<CommandRow[]>([]);
   const sessionSettings = useSessionSettings();
+  const { toasts, show } = useSavedToasts();
 
   useEffect(() => {
     chrome.storage.sync.get<Partial<SortSettings>>([...SORT_SETTING_KEYS], (result) => {
@@ -132,13 +141,29 @@ export function SettingsView({
     });
   }, []);
 
-  /** Writes one changed key straight through, and flashes "Saved" next to the heading. */
+  /**
+   * Writes one changed key straight through and confirms it. The confirmation is raised in the
+   * storage callback, not beside the `setSort` above it: the control moves optimistically so it
+   * never feels laggy, but "Saved" must mean the write actually landed.
+   */
   const write = (patch: Partial<SortSettings>) => {
     const next = { ...sort, ...patch };
     setSort(next);
     chrome.storage.sync.set(toStoredSortSettings(next), () => {
-      setSavedTick(true);
-      setTimeout(() => setSavedTick(false), 1500);
+      if (chrome.runtime.lastError !== undefined) {
+        onNotice(`Could not save that setting — ${chrome.runtime.lastError.message ?? 'unknown'}`);
+        return;
+      }
+      show(SAVED_MESSAGE);
+    });
+  };
+
+  /** The session half. `update()` reports failure through its result; it never throws. */
+  const writeSession = (patch: Partial<SessionSettings>) => {
+    void sessionSettings.update(patch).then((ok) => {
+      if (ok) {
+        show(SAVED_MESSAGE);
+      }
     });
   };
 
@@ -150,11 +175,6 @@ export function SettingsView({
       <header className="flex items-center gap-3">
         <h1 className="text-lg font-semibold">Settings</h1>
         <span className="text-xs text-muted-foreground">Changes save as you make them.</span>
-        {savedTick && (
-          <span role="status" className="text-xs font-medium text-primary">
-            Saved
-          </span>
-        )}
       </header>
 
       <Group title="Sorting" description="What clicking the toolbar icon does.">
@@ -314,7 +334,7 @@ export function SettingsView({
         <SessionSettingsFields
           settings={sessionSettings.settings}
           disabled={sessionSettings.loading}
-          onChange={(patch) => void sessionSettings.update(patch)}
+          onChange={writeSession}
           subset="basic"
           idPrefix="settings-sessions"
         />
@@ -322,7 +342,7 @@ export function SettingsView({
           <SessionSettingsFields
             settings={sessionSettings.settings}
             disabled={sessionSettings.loading}
-            onChange={(patch) => void sessionSettings.update(patch)}
+            onChange={writeSession}
             subset="advanced"
             idPrefix="settings-sessions-advanced"
             className="gap-x-6 gap-y-4"
@@ -369,6 +389,8 @@ export function SettingsView({
           Change in Chrome
         </Button>
       </Group>
+
+      <SavedToasts toasts={toasts} />
     </section>
   );
 }
