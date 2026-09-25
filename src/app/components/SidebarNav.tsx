@@ -42,8 +42,14 @@ function NavItem({ icon, label, sub, time, meta, current, onClick }: NavItemProp
         onClick={onClick}
         className={cn(
           'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-none',
-          'hover:bg-background focus-visible:ring-[3px] focus-visible:ring-ring/50',
-          current ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground',
+          'focus-visible:ring-[3px] focus-visible:ring-ring/50',
+          // The hover tint belongs to the *unselected* branch. Written as a sibling of the
+          // conditional it lost to it: a `hover:` variant outranks a plain utility, so hovering the
+          // selected row painted over its own `bg-accent` and the highlight vanished under the
+          // pointer. Keeping the two in one ternary makes that impossible to reintroduce.
+          current
+            ? 'bg-accent font-medium text-accent-foreground'
+            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
         )}
       >
         <span aria-hidden="true" className="shrink-0 [&>svg]:size-4">

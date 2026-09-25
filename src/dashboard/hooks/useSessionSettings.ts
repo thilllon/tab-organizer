@@ -9,8 +9,12 @@ export interface SessionSettingsState {
   settings: SessionSettings;
   loading: boolean;
   error?: string;
-  /** Writes a partial update through `sessionRepo.setSettings()` (which normalises it). */
-  update(patch: Partial<SessionSettings>): Promise<void>;
+  /**
+   * Writes a partial update through `sessionRepo.setSettings()` (which normalises it). Resolves
+   * `true` when the write landed — a failure is reported through `error` rather than thrown, so
+   * callers that confirm a save to the user need this to tell the two apart.
+   */
+  update(patch: Partial<SessionSettings>): Promise<boolean>;
 }
 
 /**
@@ -75,12 +79,13 @@ export function useSessionSettings(): SessionSettingsState {
         await sessionRepo.setSettings(patch);
       } catch (err) {
         setError(errorMessage(err));
-        return;
+        return false;
       }
       // Re-read rather than merging the patch locally: setSettings() normalises what it stores
       // (an out-of-range interval falls back to the default), so the controls must show what was
       // actually written. storage.onChanged fires for this write too; genRef settles the race.
       await refresh();
+      return true;
     },
     [refresh],
   );
