@@ -123,9 +123,13 @@ function assertSame(actual: unknown, expected: unknown, what: string): void {
 
 /* ------------------------------------------------------------------ helpers */
 
-/** The app's sidebar entries for saved sessions. */
+/**
+ * The app's sidebar entries for saved sessions. They are anchors, not buttons: each row has an
+ * address (`#saved/<id>`), so it is navigation and the browser gets to treat it as such.
+ * The "Auto-saved" disclosure is a real button but sits outside the `li`s, so it is not counted.
+ */
 function savedEntries(page: Page): Locator {
-  return page.getByRole('navigation', { name: 'Sessions' }).locator('li button');
+  return page.getByRole('navigation', { name: 'Sessions' }).locator('li a');
 }
 
 /** The main pane: the view the sidebar selection points at. */

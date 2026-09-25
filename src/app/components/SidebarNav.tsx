@@ -1,10 +1,11 @@
 import { ChevronRight, Clock, FolderOpen, LayoutGrid, Undo2 } from 'lucide-react';
 import { useState } from 'react';
-import type { Route } from '@/app/lib/route';
+import { formatRoute, type Route } from '@/app/lib/route';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDateTime, pluralize } from '@/dashboard/lib/format';
 import { HISTORY_OPEN_KEY, readUiState, writeUiState } from '@/dashboard/lib/ui-state';
+import { browserHandlesClick } from '@/lib/link';
 import { cn } from '@/lib/utils';
 import type { SessionSummary } from '@/types';
 
@@ -30,16 +31,36 @@ interface NavItemProps {
   time?: string;
   meta?: React.ReactNode;
   current: boolean;
+  /** The route this row leads to. Rendered as a real `href` — see the comment on NavItem. */
+  route: Route;
   onClick(): void;
 }
 
-function NavItem({ icon, label, sub, time, meta, current, onClick }: NavItemProps) {
+/**
+ * One row of the sidebar, as an anchor rather than a button.
+ *
+ * These rows are navigation — each one has an address (`#saved/<id>`, `#settings`) — so the
+ * browser should treat them as such: ⌘-click opens a session in its own tab, the context menu
+ * offers "Copy link address", and the status bar previews the destination. A button can offer
+ * none of that.
+ *
+ * A plain click is still handled in JS. Letting the hash change on its own would reach `useRoute`
+ * through `hashchange` and look right, but it would skip everything else `go()` does — clearing a
+ * stale notice, retiring the current search — so the two paths would drift apart.
+ */
+function NavItem({ icon, label, sub, time, meta, current, route, onClick }: NavItemProps) {
   return (
     <li>
-      <button
-        type="button"
+      <a
+        href={formatRoute(route)}
         aria-current={current ? 'page' : undefined}
-        onClick={onClick}
+        onClick={(event) => {
+          if (browserHandlesClick(event)) {
+            return;
+          }
+          event.preventDefault();
+          onClick();
+        }}
         className={cn(
           'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-none',
           'focus-visible:ring-[3px] focus-visible:ring-ring/50',
@@ -69,7 +90,7 @@ function NavItem({ icon, label, sub, time, meta, current, onClick }: NavItemProp
           )}
         </span>
         {meta}
-      </button>
+      </a>
     </li>
   );
 }
@@ -118,6 +139,7 @@ export function SidebarNav({
           sub={`${pluralize(windowCount, 'window')}`}
           meta={<span className="font-mono text-xs text-muted-foreground">{tabCount}</span>}
           current={route.view === 'open'}
+          route={{ view: 'open' }}
           onClick={() => onNavigate({ view: 'open' })}
         />
       </ul>
@@ -142,6 +164,7 @@ export function SidebarNav({
                 )
               }
               current={route.view === 'saved' && route.id === summary.id}
+              route={{ view: 'saved', id: summary.id }}
               onClick={() => onNavigate({ view: 'saved', id: summary.id })}
             />
           ))}
@@ -178,6 +201,7 @@ export function SidebarNav({
                 ) : undefined
               }
               current={route.view === 'auto' && route.id === summary.id}
+              route={{ view: 'auto', id: summary.id }}
               onClick={() => onNavigate({ view: 'auto', id: summary.id })}
             />
           ))}

@@ -51,6 +51,7 @@ import {
 } from '@/dashboard/lib/search-nav';
 import { pickWindow, recoveredSnapshot, splitByKind } from '@/dashboard/lib/session-utils';
 import { currentWindowTarget, goToTab } from '@/dashboard/lib/window-actions';
+import { browserHandlesClick } from '@/lib/link';
 import { type CaptureScope, captureSession } from '@/sessions/capture';
 import { toJson } from '@/sessions/export';
 import { ensureUniqueName } from '@/sessions/naming';
@@ -154,6 +155,9 @@ export function App() {
     }
     setError(errorMessage(err));
   };
+
+  /** Where the Settings control leads: into settings, or back out of them. */
+  const settingsTarget: Route = route.view === 'settings' ? HOME : { view: 'settings' };
 
   const go = (next: Route) => {
     setNotice(undefined);
@@ -455,14 +459,22 @@ export function App() {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-2">
-        <button
-          type="button"
-          onClick={() => go(HOME)}
+        {/* The wordmark is the way back to the open tabs, so it is a link to that route rather
+            than a button that happens to navigate. */}
+        <a
+          href={formatRoute(HOME)}
+          onClick={(event) => {
+            if (browserHandlesClick(event)) {
+              return;
+            }
+            event.preventDefault();
+            go(HOME);
+          }}
           className="flex items-center gap-2 rounded-md px-1 py-0.5 text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <img src="/img/logo-32.png" alt="" aria-hidden="true" className="size-5 rounded" />
           Tab Organizer
-        </button>
+        </a>
         <div className="mx-auto flex max-w-xl flex-1 justify-center">
           <SearchBar
             key={searchEpoch}
@@ -489,14 +501,26 @@ export function App() {
             onActivate={setPendingActivation}
           />
         </div>
-        <Button
-          variant={route.view === 'settings' ? 'secondary' : 'outline'}
-          size="sm"
-          aria-pressed={route.view === 'settings'}
-          onClick={() => go(route.view === 'settings' ? HOME : { view: 'settings' })}
-        >
-          <Settings />
-          Settings
+        {/* `asChild` renders the Button's styling onto the anchor, so this gains an address without
+            src/components/ui/button.tsx being touched. The href names where the click actually
+            goes, which is back to the open tabs when Settings is already showing.
+            `aria-current` rather than the `aria-pressed` a toggle button would carry: a link has
+            no pressed state, and this is how the sidebar already marks the row you are on. */}
+        <Button asChild variant={route.view === 'settings' ? 'secondary' : 'outline'} size="sm">
+          <a
+            href={formatRoute(settingsTarget)}
+            aria-current={route.view === 'settings' ? 'page' : undefined}
+            onClick={(event) => {
+              if (browserHandlesClick(event)) {
+                return;
+              }
+              event.preventDefault();
+              go(settingsTarget);
+            }}
+          >
+            <Settings />
+            Settings
+          </a>
         </Button>
       </header>
 
