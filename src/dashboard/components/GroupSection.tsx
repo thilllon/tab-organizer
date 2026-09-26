@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { TabRow } from '@/dashboard/components/TabRow';
 import { pluralize } from '@/dashboard/lib/format';
-import { groupColorClass } from '@/dashboard/lib/group-colors';
+import { groupChipClass, groupRailClass } from '@/dashboard/lib/group-colors';
 import type { GroupSnapshot, TabSnapshot } from '@/types';
 
 export interface GroupSectionProps {
@@ -43,8 +43,14 @@ export function GroupSection({
               className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <ChevronRight className={`size-4 transition-transform ${open ? 'rotate-90' : ''}`} />
-              <span className={`size-2.5 shrink-0 rounded-full ${groupColorClass(group.color)}`} />
-              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {/* The group's name lives inside its colour rather than beside a dot, so the colour
+                  labels something instead of floating on its own. */}
+              <span
+                className={`min-w-0 truncate rounded-full px-2 py-0.5 text-xs font-semibold ${groupChipClass(group.color)}`}
+              >
+                {label}
+              </span>
+              <span className="min-w-0 flex-1" />
               <span className="text-xs text-muted-foreground">{pluralize(tabs.length, 'tab')}</span>
             </button>
           </CollapsibleTrigger>
@@ -52,7 +58,7 @@ export function GroupSection({
         </div>
         <CollapsibleContent>
           {/* biome-ignore lint/a11y/useSemanticElements: <fieldset> is for form controls; this is the ARIA group of tab rows inside a tab group. */}
-          <ul role="group" className="ml-5 border-l pl-2">
+          <ul role="group" className={`ml-5 border-l-2 pl-2 ${groupRailClass(group.color)}`}>
             {tabs.map((tab, index) => (
               <TabRow
                 // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.

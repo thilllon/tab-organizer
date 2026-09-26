@@ -70,7 +70,7 @@ export function TabRow({ tab, onOpen, actions }: TabRowProps) {
     // thing that keeps a 10,000-tab session scrolling smoothly.
     <li role="treeitem" tabIndex={-1} className="cv-tab-row">
       {/* The actions sit beside the row button, never inside it: a button may not nest buttons. */}
-      <div className="flex items-center gap-1 rounded-md pr-1 hover:bg-accent">
+      <div className="group/row flex items-center gap-1 rounded-md pr-1 hover:bg-accent">
         {href === undefined ? (
           <button type="button" onClick={open} title={error ?? tab.url} className={rowClass}>
             {inner}
@@ -80,7 +80,19 @@ export function TabRow({ tab, onOpen, actions }: TabRowProps) {
             {inner}
           </a>
         )}
-        {actions}
+        {/*
+         * Two or three icon buttons on every row, times a few hundred rows, is most of what makes
+         * a long session look like noise — so they wait until the pointer is on the row.
+         *
+         * Hidden with opacity, not `display`, for three reasons: the row does not reflow when
+         * they appear, they stay in the tab order, and `group-focus-within` brings them back the
+         * moment one is focused, so a keyboard never chases an invisible control. The
+         * `hover: none` query covers touch screens, where there is no hover to reveal them with
+         * and hiding them would simply remove the feature.
+         */}
+        <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100 [@media(hover:none)]:opacity-100">
+          {actions}
+        </span>
       </div>
       {error !== undefined && (
         <p role="alert" className="px-2 pb-1 text-xs text-destructive">
