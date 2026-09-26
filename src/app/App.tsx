@@ -528,7 +528,9 @@ export function App() {
         className="mx-auto grid max-w-7xl gap-4 p-4 lg:grid-cols-[var(--sidebar-width)_10px_minmax(0,1fr)]"
         style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
       >
-        <aside className="min-w-0 lg:sticky lg:top-16 lg:self-start">
+        {/* A panel, not a bare column: the sidebar and the main pane hold different kinds of
+            thing, and a surface of its own says so without a word of explanation. */}
+        <aside className="min-w-0 rounded-lg border bg-card p-2 lg:sticky lg:top-16 lg:self-start">
           <SidebarNav
             route={route}
             saved={saved}
