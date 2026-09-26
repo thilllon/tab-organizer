@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit",
     "format": "biome check --write . && prettier --write '**/*.{md,mdx,yml,yaml}' && mise format",
     "listing": "tsx ./scripts/build-listing.ts",
+    "store:bundle": "tsx ./scripts/store-bundle.ts",
     "test": "vitest run",
     "qa:smoke": "tsx scripts/qa/smoke.ts",
     "qa:assemble": "vite build --mode qa --outDir dist-qa && tsx scripts/qa/assemble.ts",
