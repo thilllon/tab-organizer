@@ -13,6 +13,6 @@
   },
   "hooks": {
     "before:bump": "tsx ./scripts/prepare-registration.ts",
-    "after:bump": "pnpm build && tsx ./scripts/zip.ts"
+    "after:bump": "pnpm build && tsx ./scripts/zip.ts && tsx ./scripts/store-bundle.ts"
   }
 }
