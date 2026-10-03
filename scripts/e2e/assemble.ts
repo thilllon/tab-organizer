@@ -2,11 +2,11 @@
  * Real-Chrome QA for the `assemble-tabs` command: every other normal window's tabs move into the
  * last-focused one with `chrome.tabs.move` / `chrome.tabGroups.move`.
  *
- * It needs a QA build, the only build that exposes the worker's command handler (as
- * `globalThis.__tabOrganizerQa`, see src/background/sessions.ts) — the command is otherwise only
+ * It needs a e2e build, the only build that exposes the worker's command handler (as
+ * `globalThis.__tabOrganizerE2e`, see src/background/sessions.ts) — the command is otherwise only
  * reachable through a keyboard shortcut:
  *
- *     pnpm qa:assemble        # vite build --mode qa --outDir dist-qa && tsx scripts/qa/assemble.ts
+ *     pnpm e2e:assemble        # vite build --mode e2e --outDir dist-e2e && tsx scripts/e2e/assemble.ts
  *
  * Builds five windows — a source with two pinned tabs and a tab with back/forward history; a
  * source whose active tab sits in a collapsed titled group next to a tab carrying page state (a JS
@@ -19,7 +19,7 @@
  * the target at any moment**, and the ✓ badge. It also reports what this Chromium exposes for
  * split view.
  *
- * Environment: `QA_DIST` (default `dist-qa/`), plus `PW_CHROMIUM` / `HEADLESS` (see ./browser.ts).
+ * Environment: `E2E_DIST` (default `dist-e2e/`), plus `PW_CHROMIUM` / `HEADLESS` (see ./browser.ts).
  * On macOS point `PW_CHROMIUM` at a Chromium or Chrome for Testing binary: branded Chrome 137+
  * ignores `--load-extension`, and Playwright's headless shell cannot load extensions at all.
  */
@@ -33,7 +33,7 @@ import { startDemoServer } from './server';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', '..');
-const DIST = process.env.QA_DIST ?? path.join(ROOT, 'dist-qa');
+const DIST = process.env.E2E_DIST ?? path.join(ROOT, 'dist-e2e');
 /** The command id, shared by the right-click menu item. */
 const COMMAND = 'assemble-tabs';
 
@@ -126,7 +126,7 @@ async function createWindow(worker: Worker, urls: string[], focused: boolean): P
 
 async function main(): Promise<void> {
   if (!existsSync(path.join(DIST, 'manifest.json'))) {
-    throw new Error(`${DIST} has no manifest.json — run: pnpm qa:assemble`);
+    throw new Error(`${DIST} has no manifest.json — run: pnpm e2e:assemble`);
   }
   const server = await startDemoServer();
   const ext = await launchExtension({
@@ -240,11 +240,11 @@ async function main(): Promise<void> {
       async ({ command, targetId }) => {
         const hook = (
           globalThis as unknown as {
-            __tabOrganizerQa?: { handleMenuOrCommand(id: string): Promise<void> };
+            __tabOrganizerE2e?: { handleMenuOrCommand(id: string): Promise<void> };
           }
-        ).__tabOrganizerQa;
+        ).__tabOrganizerE2e;
         if (hook === undefined) {
-          throw new Error('not a QA build: globalThis.__tabOrganizerQa is missing');
+          throw new Error('not a e2e build: globalThis.__tabOrganizerE2e is missing');
         }
         // Every activation Chrome reports in the target while the command runs, however brief.
         const seen: number[] = [];
@@ -383,7 +383,7 @@ async function main(): Promise<void> {
     const version = await worker.evaluate(() => navigator.userAgent);
     console.log(`\nsplit view surface in ${version}:\n  ${JSON.stringify(splitView)}`);
   } finally {
-    if (process.env.QA_KEEP_OPEN !== '1') {
+    if (process.env.E2E_KEEP_OPEN !== '1') {
       await ext.close().catch(() => undefined);
     }
     await server.close().catch(() => undefined);

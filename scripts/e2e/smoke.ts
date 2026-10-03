@@ -8,7 +8,7 @@
  *
  * Run it (a `pnpm build` must have produced `dist/` first):
  *
- *     pnpm build && pnpm exec tsx scripts/qa/smoke.ts
+ *     pnpm build && pnpm exec tsx scripts/e2e/smoke.ts
  *
  * Environment flags:
  *   PW_CHROMIUM=/path/to/chrome   Chromium binary to drive. Defaults to `/opt/pw-browsers/chromium`

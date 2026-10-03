@@ -29,7 +29,7 @@
  *   SKIP_GIF        skip demo.gif (auto-skipped without ffmpeg)
  *   SKIP_LISTING    skip regenerating docs/description.txt
  *   HEADLESS=1      force a headless browser (the default where there is no display)
- *   PW_CHROMIUM     Chromium binary to drive (see scripts/qa/browser.ts)
+ *   PW_CHROMIUM     Chromium binary to drive (see scripts/e2e/browser.ts)
  */
 
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
@@ -40,8 +40,8 @@ import { fileURLToPath } from 'node:url';
 import type { Locator, Page } from '@playwright/test';
 import type { ExportBundle } from '../src/types';
 import { buildListing } from './build-listing';
-import { type ExtensionSession, launchExtension } from './qa/browser';
-import { buildDashboardFixtures, seedSessions } from './qa/fixtures';
+import { type ExtensionSession, launchExtension } from './e2e/browser';
+import { buildDashboardFixtures, seedSessions } from './e2e/fixtures';
 
 /*
  * Types
@@ -414,7 +414,7 @@ class Preparation {
   }
 
   /**
-   * Sessions dashboard screenshots. The data comes from `scripts/qa/fixtures.ts`, written
+   * Sessions dashboard screenshots. The data comes from `scripts/e2e/fixtures.ts`, written
    * straight into `chrome.storage.local` through the extension service worker -- no Chrome
    * runtime ids are ever stored, so the records are exactly what a real save would leave behind.
    *

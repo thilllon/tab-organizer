@@ -21,8 +21,8 @@
     "listing": "tsx ./scripts/build-listing.ts",
     "store:bundle": "tsx ./scripts/store-bundle.ts",
     "test": "vitest run",
-    "qa:smoke": "tsx scripts/qa/smoke.ts",
-    "qa:assemble": "vite build --mode qa --outDir dist-qa && tsx scripts/qa/assemble.ts",
+    "e2e:smoke": "tsx scripts/e2e/smoke.ts",
+    "e2e:assemble": "vite build --mode e2e --outDir dist-e2e && tsx scripts/e2e/assemble.ts",
     "release": "release-it"
   },
   "dependencies": {
