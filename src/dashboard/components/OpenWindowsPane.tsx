@@ -13,7 +13,7 @@ export interface OpenWindowsPaneProps {
   currentWindowId?: number;
   loading: boolean;
   error?: string;
-  /** Saves that live window as a session; the Dashboard owns the notice/error banners. */
+  /** Saves that live window as a session; the app owns the notice toasts and the error lines. */
   onSaveWindow(windowId: number): void;
   /** Disables the save buttons while a save or a restore is running. */
   busy?: boolean;

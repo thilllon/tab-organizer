@@ -77,7 +77,7 @@ export function copyFailureMessage(err: unknown): string {
 /**
  * `navigator.clipboard.writeText`, which an extension page may call while it has focus. Never
  * throws: a browser without the API and a rejected write both come back as a readable
- * `{ ok: false, error }` for the caller to show in the dashboard's notice banner.
+ * `{ ok: false, error }` for the caller to show in the app's error line.
  */
 export async function copyText(text: string): Promise<CopyResult> {
   const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;

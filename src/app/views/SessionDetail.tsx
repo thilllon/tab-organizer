@@ -30,7 +30,7 @@ export interface SessionDetailProps {
   restoring: boolean;
   onOpen(session: Session, scope: OpenScope): Promise<void>;
   onOpenWindow(session: Session, windowIndex: number, scope: OpenScope): Promise<void>;
-  /** "Exported …" / "Copied …" confirmations, shown in the app's notice line. */
+  /** "Exported …" / "Copied …" confirmations, shown as a toast by the app. */
   onNotice(message: string): void;
   /** The session is gone; the view must navigate away from its address. */
   onDeleted(): void;

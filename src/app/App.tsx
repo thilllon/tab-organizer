@@ -1,5 +1,6 @@
 import { Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SavedToasts } from '@/app/components/SavedToasts';
 import { SidebarNav } from '@/app/components/SidebarNav';
 import { SidebarResizer } from '@/app/components/SidebarResizer';
 import {
@@ -11,6 +12,8 @@ import {
   viewBehind,
 } from '@/app/lib/route';
 import { readSidebarWidth, writeSidebarWidth } from '@/app/lib/sidebar-width';
+import { NOTICE_MS } from '@/app/lib/toast-queue';
+import { useSavedToasts } from '@/app/lib/use-saved-toasts';
 import { OpenTabsView } from '@/app/views/OpenTabsView';
 import { type OpenScope, SessionDetail } from '@/app/views/SessionDetail';
 import { SettingsView } from '@/app/views/SettingsView';
@@ -69,6 +72,9 @@ import { sessionRepo } from '@/sessions/storage';
 import type { Session, SessionSettings } from '@/types';
 
 const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
+
+/** The running count and the final line of "Export everything" are one toast that changes. */
+const EXPORT_ALL_TOAST = 'export-all';
 
 const NOTHING_TO_SAVE = {
   window: 'Nothing to save — this window only holds Tab Organizer.',
@@ -194,7 +200,13 @@ export function App() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [notice, setNotice] = useState<string | undefined>(undefined);
+  // Notices ("Exported …", "Saved …") are toasts, not a line above the content: a line pushes the
+  // whole pane down when it appears and back up when it goes, which reads as the page shaking.
+  const { toasts, show } = useSavedToasts();
+  const setNotice = useCallback(
+    (message: string, key?: string) => show(message, { ms: NOTICE_MS, plain: true, key }),
+    [show],
+  );
   const [error, setError] = useState<string | undefined>(undefined);
   // A write that failed on the storage quota: one fixed sentence plus a way to the meter, rather
   // than Chrome's "Resource::kQuotaBytes quota exceeded" in the error banner (spec §4).
@@ -234,7 +246,6 @@ export function App() {
   };
 
   const go = (next: Route) => {
-    setNotice(undefined);
     setError(undefined);
     // Settings opens over the results, so the box keeps its text; any other view replaces them.
     if (next.view !== 'search' && next.view !== 'settings' && searching) {
@@ -246,7 +257,6 @@ export function App() {
   const save = async (scope: CaptureScope) => {
     setSaving(true);
     setError(undefined);
-    setNotice(undefined);
     setQuotaFull(false);
     try {
       const session = await captureSession(scope);
@@ -270,7 +280,6 @@ export function App() {
   /** The whole store as one `ExportBundle` (spec §8), read body by body through `sessionRepo`. */
   const exportAll = async () => {
     setError(undefined);
-    setNotice(undefined);
     setExporting(true);
     try {
       const summaries = await sessionRepo.listSummaries();
@@ -281,7 +290,7 @@ export function App() {
       const onProgress = shouldReportProgress(summaries.length)
         ? (collected: CollectProgress) => {
             if (shouldTickProgress(collected)) {
-              setNotice(collectProgressNotice(collected));
+              setNotice(collectProgressNotice(collected), EXPORT_ALL_TOAST);
             }
           }
         : undefined;
@@ -291,7 +300,14 @@ export function App() {
         return;
       }
       downloadExport('backup', 'json', toJson(bodies, Date.now()));
-      setNotice(exportAllNotice(bodies.length, skipped.length));
+      const summary = exportAllNotice(bodies.length, skipped.length);
+      if (skipped.length > 0) {
+        // An incomplete backup has to stay on screen until it is dealt with; a toast would be
+        // gone by the time the download bubble has been looked at.
+        setError(summary);
+      } else {
+        setNotice(summary, EXPORT_ALL_TOAST);
+      }
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -320,7 +336,6 @@ export function App() {
     windowIndex?: number,
   ): Promise<void> => {
     setError(undefined);
-    setNotice(undefined);
     try {
       const target = scope === 'here' ? await currentWindowTarget() : NEW_WINDOWS;
       const scoped = windowIndex === undefined ? session : pickWindow(session, windowIndex);
@@ -526,15 +541,11 @@ export function App() {
     );
   };
 
-  // The notice and error lines belong to whatever the user is looking at: the main pane, or the
-  // Settings dialog while it covers that pane (where a line behind the overlay would go unread).
+  // The error lines belong to whatever the user is looking at: the main pane, or the Settings
+  // dialog while it covers that pane (where a line behind the overlay would go unread). They stay
+  // in the flow on purpose — an error has to remain until it is dealt with, a toast would not.
   const banners = (
     <>
-      {notice !== undefined && (
-        <p role="status" aria-live="polite" className="rounded-md bg-muted px-3 py-2 text-sm">
-          {notice}
-        </p>
-      )}
       {quotaFull && <QuotaNotice onShowStorage={() => go({ view: 'settings' })} />}
       {(error ?? indexError) !== undefined && (
         <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -543,6 +554,10 @@ export function App() {
       )}
     </>
   );
+
+  // One stack for the whole page, drawn inside the Settings dialog while that is open for the
+  // same reason as the progress toast below.
+  const toastStack = <SavedToasts toasts={toasts} />;
 
   const progressToast = (
     <ProgressToast
@@ -685,6 +700,8 @@ export function App() {
           <SettingsView
             summaries={sessions}
             onNotice={announce}
+            onSaved={show}
+            onError={setError}
             onExportAll={() => void exportAll()}
             onImport={() => setImportOpen(true)}
             exporting={exporting}
@@ -694,6 +711,7 @@ export function App() {
           {/* Inside the dialog while it is open: left in the page it would sit under the overlay,
               dimmed, hidden from screen readers, and its Cancel would count as a click outside. */}
           {progressToast}
+          {toastStack}
         </DialogContent>
       </Dialog>
 
@@ -708,6 +726,7 @@ export function App() {
         onCancel={() => setPending(undefined)}
       />
       {!settingsOpen && progressToast}
+      {!settingsOpen && toastStack}
     </div>
   );
 }
