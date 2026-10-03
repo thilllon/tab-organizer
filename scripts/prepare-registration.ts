@@ -535,7 +535,8 @@ class Preparation {
     await shot('import', async () => {
       // Import moved into Settings with the one-page redesign (v7.2.0).
       await page.goto(`${dashboardUrl}#settings`);
-      await page.locator('main').getByRole('heading', { name: 'Settings' }).waitFor({
+      // Settings is a dialog over the open-tabs view since v7.8.0; its title is the heading.
+      await page.getByRole('dialog').getByRole('heading', { name: 'Settings' }).waitFor({
         timeout: CONTROL_TIMEOUT,
       });
       const importButton = page.getByRole('button', { name: /^import/i });

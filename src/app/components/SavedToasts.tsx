@@ -6,7 +6,9 @@ export interface SavedToastsProps {
 }
 
 /**
- * The stack of "Saved" confirmations, pinned to the bottom centre of the viewport.
+ * The stack of "Saved" confirmations, pinned to the bottom centre of the Settings dialog (the
+ * dialog is translated into place, which makes it the containing block for `fixed` children — so
+ * this is the dialog's bottom edge, not the viewport's).
  *
  * `fixed` rather than placed in the flow: Settings is a long scrolling column, and a confirmation
  * that appears next to the control you just touched is off-screen as soon as you scroll. Newest
