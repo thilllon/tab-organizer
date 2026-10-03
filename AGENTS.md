@@ -109,8 +109,10 @@ tab-organizer/
 │   ├── background/
 │   │   ├── assemble.ts       # Service worker: assemble-tabs — move other windows' tabs into the focused one
 │   │   ├── index.ts          # Service worker: sort orchestration, Chrome API calls, action.onClicked; imports './sessions'
+│   │   ├── index.test.ts     # Icon click against the chrome fake: order, no-op when sorted, single move, double click
 │   │   ├── sessions.ts       # Service worker: context menus, commands, badge, reconcile on install/startup
 │   │   ├── sessions.test.ts  # Tests against the chrome fake
+│   │   ├── move-plan.ts (+test) # Pure: which chrome.tabs.move calls reorder a block, moving only what is out of place
 │   │   ├── sort.ts           # Pure sorting/grouping logic (extracted for testability)
 │   │   └── sort.test.ts      # Unit tests for sort.ts (vitest)
 │   ├── sessions/              # Session domain logic (pure where possible, thin chrome wrappers)
@@ -171,7 +173,8 @@ tab-organizer/
 ├── scripts/
 │   ├── e2e/                   # Committed real-Chrome QA harness (tsx, not vitest)
 │   │   ├── smoke.ts           # 11-step sessions smoke test: pnpm build && pnpm exec tsx scripts/e2e/smoke.ts
-│   │   ├── assemble.ts        # assemble-tabs checks against a e2e build: pnpm e2e:assemble
+│   │   ├── assemble.ts        # assemble-tabs checks against an e2e build: pnpm e2e:assemble
+│   │   ├── sort.ts            # icon-click sort checks (order, groups, how many tabs moved): pnpm build && pnpm e2e:sort
 │   │   ├── browser.ts         # launchExtension() — a real Chromium with dist/ loaded (shared with screenshots)
 │   │   ├── server.ts          # startDemoServer() — 127.0.0.1 fixture pages (the QA browser has no network)
 │   │   └── fixtures.ts        # Session fixtures seeded straight into chrome.storage.local
@@ -218,13 +221,13 @@ tab-organizer/
 
 Handles event listeners, settings loading, Chrome API calls (`tabs.move`, `tabs.group`, `tabGroups.update`), and duplicate tab handling. Imports pure sorting logic from `sort.ts`.
 
-| Function                | Purpose                                                                                                |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| `sortTabGroups()`       | Main orchestrator. Loads settings, queries tabs, delegates to sort functions, handles duplicates.      |
-| `sortTabs()`            | Sorts a set of tabs and moves them via Chrome API. Dispatches to `sortByTitleOrUrl` or `sortByCustom`. |
-| `handleDuplicateTabs()` | Finds duplicate URLs and either closes extras or groups them.                                          |
-| `closeDuplicateTabs()`  | Keeps active/first tab, closes the rest.                                                               |
-| `groupDuplicateTabs()`  | Groups duplicate tabs into a Chrome tab group.                                                         |
+| Function                | Purpose                                                                                                                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sortTabGroups()`       | Main orchestrator. Loads settings, queries tabs, delegates to sort functions, handles duplicates.                                                                                  |
+| `sortTabs()`            | Sorts a set of tabs, then runs the `planMoves()` batches from `move-plan.ts` — no call at all when the order is already right. Dispatches to `sortByTitleOrUrl` or `sortByCustom`. |
+| `handleDuplicateTabs()` | Finds duplicate URLs and either closes extras or groups them.                                                                                                                      |
+| `closeDuplicateTabs()`  | Keeps active/first tab, closes the rest.                                                                                                                                           |
+| `groupDuplicateTabs()`  | Groups duplicate tabs into a Chrome tab group.                                                                                                                                     |
 
 ### `src/background/assemble.ts` — Gather all windows into one
 
@@ -232,19 +235,25 @@ Moves every tab of the other normal windows into the last-focused normal window.
 
 ### `src/background/sort.ts` — Pure Sorting Logic
 
-Contains all pure sorting and grouping functions, extracted for testability. No Chrome API side effects.
+Contains all pure sorting and grouping functions, extracted for testability. No Chrome API side effects. Both sorts build one `TabSortKey` per tab (pinned, suspended, group position, text) through `sortedByKey()` instead of parsing urls inside the comparator, and every text comparison goes through one module-level `Intl.Collator` — the same result as argument-less `localeCompare`. They still reorder the array they are given.
 
-| Function                   | Purpose                                                                                             |
-| -------------------------- | --------------------------------------------------------------------------------------------------- |
-| `sortByTitleOrUrl()`       | Sorts tabs alphabetically by title or URL. Handles suspended tab grouping and pinned tab exclusion. |
-| `sortByCustom()`           | Groups tabs by hostname/domain, preserving first-seen order. Supports LTR/RTL grouping direction.   |
-| `findDuplicateTabs()`      | Returns a `Map<url, Tab[]>` of URLs with more than one tab.                                         |
-| `extractGroupingKey()`     | Parses hostname into grouping key. In `domain` mode, handles two-part TLDs (e.g., `co.uk`).         |
-| `isSuspended()`            | Checks if a tab is suspended by The Marvellous Suspender.                                           |
-| `tabToUrl()`               | Extracts real URL from suspended tabs by parsing the `uri` query parameter.                         |
-| `compareByUrlComponents()` | Compares URLs by hostname (without `www.`) + path + search + hash.                                  |
-| `hashStringToColor()`      | Deterministically maps a string to a Chrome tab group color.                                        |
-| `updateTabGroupMap()`      | Tracks first-seen ordering of tab groups by hostname or title.                                      |
+### `src/background/move-plan.ts` — Which tabs to move
+
+Pure. `planMoves(current, desired)` returns the `chrome.tabs.move` calls (`MoveBatch[]`, indices relative to the block's first tab) that turn one order of a contiguous block into another, and `[]` when nothing is out of place. It prices two candidates as _tabs displaced + calls_ and takes the cheaper: `fewestDisplaced` keeps the longest already-ordered run (`longestIncreasingRun`, patience sorting) and moves only the rest, joining moves onto consecutive indices into one call; `wholeBlock` is the single call the sorter always made, which wins when the order is thoroughly shuffled. The weights are measured, not guessed (Chrome for Testing 153, 300 tabs): a tab that really changes place costs about 1.2 ms, a tab asked to move to where it already is costs almost nothing, and a call that moves something adds about one more tab's worth. `applyMoves()` models Chrome's block move for the tests; `isContiguous()` is the guard `sortTabs()` uses before trusting relative indices (otherwise it falls back to the whole-block call). A plan is only right for the order it was made from, so the `action.onClicked` listener in `index.ts` chains runs on a module-level promise (`sortQueue`): a double click sorts twice in sequence, never side by side (`src/background/index.test.ts`).
+
+| Function                   | Purpose                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `sortByTitleOrUrl()`       | Sorts tabs alphabetically by title or URL. Handles suspended tab grouping and pinned tab exclusion.     |
+| `sortByCustom()`           | Groups tabs by hostname/domain, preserving first-seen order. Supports LTR/RTL grouping direction.       |
+| `findDuplicateTabs()`      | Returns a `Map<url, Tab[]>` of URLs with more than one tab.                                             |
+| `extractGroupingKey()`     | Parses hostname into grouping key. In `domain` mode, handles two-part TLDs (e.g., `co.uk`).             |
+| `isSuspended()`            | Checks if a tab is suspended by The Marvellous Suspender.                                               |
+| `tabToUrl()`               | Extracts real URL from suspended tabs by parsing the `uri` query parameter.                             |
+| `compareByUrlComponents()` | Compares URLs by hostname (without `www.`) + path + search + hash.                                      |
+| `urlSortKey()`             | The string that comparison is made on, so a sort can compute it once per tab.                           |
+| `sortedByKey()`            | Stable decorate-sort-undecorate: derives each item's key once, compares keys only, returns a new array. |
+| `hashStringToColor()`      | Deterministically maps a string to a Chrome tab group color.                                            |
+| `updateTabGroupMap()`      | Tracks first-seen ordering of tab groups by hostname or title.                                          |
 
 ### `src/background/sessions.ts` — Sessions listeners (service worker)
 
@@ -359,6 +368,7 @@ pnpm release          # release-it: regenerate CWS assets, bump version, build, 
 
 pnpm exec tsx scripts/e2e/smoke.ts   # Real-Chrome sessions smoke test (run `pnpm build` first)
 pnpm e2e:assemble                    # e2e build (dist-e2e/) + real-Chrome assemble-tabs checks
+pnpm e2e:sort                        # Real-Chrome sort checks against dist/ (run `pnpm build` first; headed)
 pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<name>-<version>.zip
 ```
 
@@ -525,6 +535,10 @@ Playwright itself is a devDependency, used by this harness and by `scripts/prepa
 ### Real-Chrome assemble-tabs check (committed)
 
 `pnpm e2e:assemble` builds `dist-e2e/` with `vite build --mode e2e` (the only build exposing `globalThis.__tabOrganizerE2e`) and runs `scripts/e2e/assemble.ts`: five windows (two pinned tabs and a tab with back/forward history; a collapsed titled group holding the window's active tab next to a tab with a JS value, scroll position and typed input; a window that is only a collapsed three-tab group with its middle tab active; a single-tab group; and a target whose active tab is not its first), then the command through the menu id, then 11 checks — one window left, every tab id kept, exact order, pinned re-pinned in order, each group kept (id/title/colour/collapsed/members) or rebuilt with the same look, `Page.getNavigationHistory` unchanged, page state unchanged (no reload), **zero `tabs.onActivated` events in the target during the run**, focus and ✓ badge. On macOS set `PW_CHROMIUM` to a Chrome for Testing binary (Playwright's own lives under `~/Library/Caches/ms-playwright/chromium-*/`); the headless shell cannot load extensions. It passes `--use-mock-keychain --password-store=basic` so a fresh profile does not stall on a keychain prompt. Test traps: `chrome.tabs.group` needs `createProperties.windowId` or the group lands in the last-focused window; build history with real page navigations (extension-made `tabs.update(url)` history can refuse `goBack`) and verify it over CDP. Split view (Chrome 140+) is only visible as `Tab.splitViewId` / `chrome.tabs.SPLIT_VIEW_ID_NONE` — no extension API creates one, so moving split tabs is not covered.
+
+### Real-Chrome sort check (committed)
+
+`pnpm build && pnpm e2e:sort` runs `scripts/e2e/sort.ts` against the ordinary `dist/`: the click is delivered with `chrome.action.onClicked.dispatch()` inside the service worker, so no e2e hook is needed, and because `sortTabGroups()` is not awaited by its listener each scenario waits for the strip to stop changing. Eight checks: a scrambled window comes out in url order with every tab id kept; a sorted window produces **zero** `tabs.onMoved` events; the last tab dragged to the front is **one** move (the old whole-block call moved every other tab); pinned tabs stay while a titled group and the loose tabs sort within themselves; the group keeps its id, members and title; and the same single-move case inside a group, at the group's edge, leaves the tab in the group. Sorting acts on the last-focused window, so it needs a headed browser (`HEADLESS=0` on this Mac).
 
 ### Real-Chrome QA (manual, beyond what the smoke test covers)
 
