@@ -279,10 +279,10 @@ chrome.commands.onCommand.addListener((command) => {
   handleMenuOrCommand(command).catch(report);
 });
 
-// `vite build --mode qa` only: scripts/qa/assemble.ts drives commands from the real-Chrome QA run
+// `vite build --mode e2e` only: scripts/e2e/assemble.ts drives commands from the real-Chrome QA run
 // without a keyboard. Vite inlines `MODE`, so every other build drops this branch entirely.
-if (import.meta.env.MODE === 'qa') {
-  Object.assign(globalThis, { __tabOrganizerQa: { handleMenuOrCommand } });
+if (import.meta.env.MODE === 'e2e') {
+  Object.assign(globalThis, { __tabOrganizerE2e: { handleMenuOrCommand } });
 }
 
 chrome.alarms.onAlarm.addListener(onAlarm);

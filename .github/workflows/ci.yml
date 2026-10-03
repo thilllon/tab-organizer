@@ -51,7 +51,7 @@ jobs:
             echo "ok: $page"
           done
 
-      # The real-Chrome smoke test (scripts/qa/smoke.ts). Advisory and off the pull-request path
+      # The real-Chrome smoke test (scripts/e2e/smoke.ts). Advisory and off the pull-request path
       # on purpose:
       #  - it needs a Chromium that ubuntu-latest does not ship, so every run would pay ~1-2 min
       #    for `playwright install --with-deps chromium` (a ~170 MB download plus apt packages) on
@@ -69,4 +69,4 @@ jobs:
       - name: QA smoke test (advisory)
         if: github.event_name != 'pull_request'
         continue-on-error: true
-        run: pnpm qa:smoke
+        run: pnpm e2e:smoke

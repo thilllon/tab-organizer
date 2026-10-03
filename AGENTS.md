@@ -169,9 +169,9 @@ tab-organizer/
 ├── public/
 │   └── img/                   # Extension logos (SVG, ICO, 16/32/48/128px PNG)
 ├── scripts/
-│   ├── qa/                    # Committed real-Chrome QA harness (tsx, not vitest)
-│   │   ├── smoke.ts           # 11-step sessions smoke test: pnpm build && pnpm exec tsx scripts/qa/smoke.ts
-│   │   ├── assemble.ts        # assemble-tabs checks against a QA build: pnpm qa:assemble
+│   ├── e2e/                   # Committed real-Chrome QA harness (tsx, not vitest)
+│   │   ├── smoke.ts           # 11-step sessions smoke test: pnpm build && pnpm exec tsx scripts/e2e/smoke.ts
+│   │   ├── assemble.ts        # assemble-tabs checks against a e2e build: pnpm e2e:assemble
 │   │   ├── browser.ts         # launchExtension() — a real Chromium with dist/ loaded (shared with screenshots)
 │   │   ├── server.ts          # startDemoServer() — 127.0.0.1 fixture pages (the QA browser has no network)
 │   │   └── fixtures.ts        # Session fixtures seeded straight into chrome.storage.local
@@ -248,7 +248,7 @@ Contains all pure sorting and grouping functions, extracted for testability. No 
 
 ### `src/background/sessions.ts` — Sessions listeners (service worker)
 
-Registers listeners synchronously at module top level; imported by `index.ts`. Exports for tests: `MENU_IDS = { assembleTabs: 'assemble-tabs', saveAll: 'save-all' }`, `COMMAND_IDS = { saveSession: 'save-session', openDashboard: 'open-dashboard', assembleTabs: 'assemble-tabs' }` (must equal the `commands` block in `vite.config.ts`), `registerContextMenus()`, `handleMenuOrCommand(id)`, `showSavedBadge()`, `showErrorBadge()`, `clearBadge()`. A `vite build --mode qa` build (and only that build — Vite inlines `MODE`, so every other build drops the branch) also sets `globalThis.__tabOrganizerQa = { handleMenuOrCommand }` so `scripts/qa/assemble.ts` can trigger a command without a keyboard. Alarm names come from `src/sessions/history.ts` (`HISTORY_ALARM = 'history-snapshot'`, `HISTORY_FIRST_ALARM = 'history-first'`).
+Registers listeners synchronously at module top level; imported by `index.ts`. Exports for tests: `MENU_IDS = { assembleTabs: 'assemble-tabs', saveAll: 'save-all' }`, `COMMAND_IDS = { saveSession: 'save-session', openDashboard: 'open-dashboard', assembleTabs: 'assemble-tabs' }` (must equal the `commands` block in `vite.config.ts`), `registerContextMenus()`, `handleMenuOrCommand(id)`, `showSavedBadge()`, `showErrorBadge()`, `clearBadge()`. A `vite build --mode e2e` build (and only that build — Vite inlines `MODE`, so every other build drops the branch) also sets `globalThis.__tabOrganizerE2e = { handleMenuOrCommand }` so `scripts/e2e/assemble.ts` can trigger a command without a keyboard. Alarm names come from `src/sessions/history.ts` (`HISTORY_ALARM = 'history-snapshot'`, `HISTORY_FIRST_ALARM = 'history-first'`).
 
 | Listener                                        | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -330,19 +330,19 @@ Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`,
 
 ## Tech Stack
 
-| Category         | Tool                                                                |
-| ---------------- | ------------------------------------------------------------------- |
-| Language         | TypeScript (strict mode, ESNext target)                             |
-| UI Framework     | React 19                                                            |
-| CSS              | Tailwind CSS 4                                                      |
-| UI Components    | shadcn/ui (Radix UI + CVA)                                          |
-| Build            | Vite 8 + @crxjs/vite-plugin                                         |
-| Linter/Formatter | Biome (JS/TS/CSS) + Prettier (Markdown/YAML) + ruff (Python)        |
-| Git Hooks        | Lefthook                                                            |
-| Testing          | Vitest (unit) + `scripts/qa/smoke.ts` (real Chrome, via Playwright) |
-| Release          | release-it (GitHub release + ZIP via `scripts/zip.ts`)              |
-| CI               | GitHub Actions (tool versions from `mise.toml`) + Dependabot        |
-| Tool Versions    | mise                                                                |
+| Category         | Tool                                                                 |
+| ---------------- | -------------------------------------------------------------------- |
+| Language         | TypeScript (strict mode, ESNext target)                              |
+| UI Framework     | React 19                                                             |
+| CSS              | Tailwind CSS 4                                                       |
+| UI Components    | shadcn/ui (Radix UI + CVA)                                           |
+| Build            | Vite 8 + @crxjs/vite-plugin                                          |
+| Linter/Formatter | Biome (JS/TS/CSS) + Prettier (Markdown/YAML) + ruff (Python)         |
+| Git Hooks        | Lefthook                                                             |
+| Testing          | Vitest (unit) + `scripts/e2e/smoke.ts` (real Chrome, via Playwright) |
+| Release          | release-it (GitHub release + ZIP via `scripts/zip.ts`)               |
+| CI               | GitHub Actions (tool versions from `mise.toml`) + Dependabot         |
+| Tool Versions    | mise                                                                 |
 
 ---
 
@@ -357,8 +357,8 @@ pnpm test             # Run tests (vitest)
 pnpm listing          # Regenerate docs/description.txt from docs/README.md (also runs on commit and in release)
 pnpm release          # release-it: regenerate CWS assets, bump version, build, ZIP, GitHub release
 
-pnpm exec tsx scripts/qa/smoke.ts   # Real-Chrome sessions smoke test (run `pnpm build` first)
-pnpm qa:assemble                    # QA build (dist-qa/) + real-Chrome assemble-tabs checks
+pnpm exec tsx scripts/e2e/smoke.ts   # Real-Chrome sessions smoke test (run `pnpm build` first)
+pnpm e2e:assemble                    # e2e build (dist-e2e/) + real-Chrome assemble-tabs checks
 pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<name>-<version>.zip
 ```
 
@@ -512,25 +512,25 @@ Unit tests use **Vitest** and live adjacent to their source files. Pure sorting 
 
 ### Real-Chrome smoke test (committed)
 
-`scripts/qa/smoke.ts` is a committed end-to-end harness that loads the built extension into a real Chromium and drives the app page: build a fixture window (pinned tabs, a titled coloured group, a collapsed group) → Save → the session's own view → Open → rename → delete, verifying each result through `chrome.tabs`/`chrome.tabGroups` inside the extension's own service worker rather than through the UI it just clicked. 11 steps, about 3 s.
+`scripts/e2e/smoke.ts` is a committed end-to-end harness that loads the built extension into a real Chromium and drives the app page: build a fixture window (pinned tabs, a titled coloured group, a collapsed group) → Save → the session's own view → Open → rename → delete, verifying each result through `chrome.tabs`/`chrome.tabGroups` inside the extension's own service worker rather than through the UI it just clicked. 11 steps, about 3 s.
 
 ```bash
-pnpm build && pnpm exec tsx scripts/qa/smoke.ts
+pnpm build && pnpm exec tsx scripts/e2e/smoke.ts
 ```
 
-It runs under `tsx`, not vitest, so `pnpm test` does not include it — run it by hand after touching restore, capture or the worker's listeners. Steps run in order and a failure stops the run (the rest report `SKIP`); the process exits 1 if any step failed. Flags: `PW_CHROMIUM` (binary, default `/opt/pw-browsers/chromium`), `HEADLESS=0`, `SMOKE_TIMEOUT_MS`, `SMOKE_KEEP_OPEN=1`. `scripts/qa/browser.ts` (`launchExtension()`), `server.ts` (127.0.0.1 fixture pages — the QA browser has no outbound network) and `fixtures.ts` (sessions seeded straight into `chrome.storage.local`) are shared with `scripts/prepare-registration.ts`. Extend it by appending a `Step` to `STEPS`; history, search, export and import are not covered yet.
+It runs under `tsx`, not vitest, so `pnpm test` does not include it — run it by hand after touching restore, capture or the worker's listeners. Steps run in order and a failure stops the run (the rest report `SKIP`); the process exits 1 if any step failed. Flags: `PW_CHROMIUM` (binary, default `/opt/pw-browsers/chromium`), `HEADLESS=0`, `SMOKE_TIMEOUT_MS`, `SMOKE_KEEP_OPEN=1`. `scripts/e2e/browser.ts` (`launchExtension()`), `server.ts` (127.0.0.1 fixture pages — the QA browser has no outbound network) and `fixtures.ts` (sessions seeded straight into `chrome.storage.local`) are shared with `scripts/prepare-registration.ts`. Extend it by appending a `Step` to `STEPS`; history, search, export and import are not covered yet.
 
 Playwright itself is a devDependency, used by this harness and by `scripts/prepare-registration.ts` for the release screenshots and demo video. The manual CDP passes described below are what produced the `waitForCommit` and window-state fixes in `src/sessions/restore.ts`.
 
 ### Real-Chrome assemble-tabs check (committed)
 
-`pnpm qa:assemble` builds `dist-qa/` with `vite build --mode qa` (the only build exposing `globalThis.__tabOrganizerQa`) and runs `scripts/qa/assemble.ts`: five windows (two pinned tabs and a tab with back/forward history; a collapsed titled group holding the window's active tab next to a tab with a JS value, scroll position and typed input; a window that is only a collapsed three-tab group with its middle tab active; a single-tab group; and a target whose active tab is not its first), then the command through the menu id, then 11 checks — one window left, every tab id kept, exact order, pinned re-pinned in order, each group kept (id/title/colour/collapsed/members) or rebuilt with the same look, `Page.getNavigationHistory` unchanged, page state unchanged (no reload), **zero `tabs.onActivated` events in the target during the run**, focus and ✓ badge. On macOS set `PW_CHROMIUM` to a Chrome for Testing binary (Playwright's own lives under `~/Library/Caches/ms-playwright/chromium-*/`); the headless shell cannot load extensions. It passes `--use-mock-keychain --password-store=basic` so a fresh profile does not stall on a keychain prompt. Test traps: `chrome.tabs.group` needs `createProperties.windowId` or the group lands in the last-focused window; build history with real page navigations (extension-made `tabs.update(url)` history can refuse `goBack`) and verify it over CDP. Split view (Chrome 140+) is only visible as `Tab.splitViewId` / `chrome.tabs.SPLIT_VIEW_ID_NONE` — no extension API creates one, so moving split tabs is not covered.
+`pnpm e2e:assemble` builds `dist-e2e/` with `vite build --mode e2e` (the only build exposing `globalThis.__tabOrganizerE2e`) and runs `scripts/e2e/assemble.ts`: five windows (two pinned tabs and a tab with back/forward history; a collapsed titled group holding the window's active tab next to a tab with a JS value, scroll position and typed input; a window that is only a collapsed three-tab group with its middle tab active; a single-tab group; and a target whose active tab is not its first), then the command through the menu id, then 11 checks — one window left, every tab id kept, exact order, pinned re-pinned in order, each group kept (id/title/colour/collapsed/members) or rebuilt with the same look, `Page.getNavigationHistory` unchanged, page state unchanged (no reload), **zero `tabs.onActivated` events in the target during the run**, focus and ✓ badge. On macOS set `PW_CHROMIUM` to a Chrome for Testing binary (Playwright's own lives under `~/Library/Caches/ms-playwright/chromium-*/`); the headless shell cannot load extensions. It passes `--use-mock-keychain --password-store=basic` so a fresh profile does not stall on a keychain prompt. Test traps: `chrome.tabs.group` needs `createProperties.windowId` or the group lands in the last-focused window; build history with real page navigations (extension-made `tabs.update(url)` history can refuse `goBack`) and verify it over CDP. Split view (Chrome 140+) is only visible as `Tab.splitViewId` / `chrome.tabs.SPLIT_VIEW_ID_NONE` — no extension API creates one, so moving split tabs is not covered.
 
 ### Real-Chrome QA (manual, beyond what the smoke test covers)
 
 Vitest + the chrome fake cannot catch Chrome's own argument validation or its navigation timing, and the smoke test only covers the save/restore/rename/delete path. For anything else — history, search, export, import, window states — drive a real Chrome for Testing build once. What was learned doing it:
 
-- **Do not let Playwright launch the browser when the run can reach `chrome.tabs.discard`.** Its default Chromium launch flags make Chrome for Testing 151 **SIGSEGV on `chrome.tabs.discard`** (i.e. exactly the lazy-restore path). For that path, launch Chrome for Testing yourself with `--load-extension=<dist>` plus `--remote-debugging-port=<port>` (and a scratch `--user-data-dir`), then attach with `chromium.connectOverCDP('http://127.0.0.1:<port>')`. `scripts/qa/browser.ts` does use `chromium.launchPersistentContext`, which is safe only because its fixture is far below `LAZY_AUTO_THRESHOLD` and so never discards a tab — keep it that way, or move that harness to CDP first.
+- **Do not let Playwright launch the browser when the run can reach `chrome.tabs.discard`.** Its default Chromium launch flags make Chrome for Testing 151 **SIGSEGV on `chrome.tabs.discard`** (i.e. exactly the lazy-restore path). For that path, launch Chrome for Testing yourself with `--load-extension=<dist>` plus `--remote-debugging-port=<port>` (and a scratch `--user-data-dir`), then attach with `chromium.connectOverCDP('http://127.0.0.1:<port>')`. `scripts/e2e/browser.ts` does use `chromium.launchPersistentContext`, which is safe only because its fixture is far below `LAZY_AUTO_THRESHOLD` and so never discards a tab — keep it that way, or move that harness to CDP first.
 - **Pick the right service worker.** Component extensions register service workers too, so `context.serviceWorkers()` has several entries. Select ours by its URL ending in `/service-worker-loader.js` — never by index — and `evaluate` the `chrome.*` calls inside it.
 - **`--load-extension` is ignored by branded Chrome ≥ 137.** Use a Chrome for Testing binary (`npx @puppeteer/browsers install chrome@<version>`), not the installed Chrome.
 - **Verified this way (do not "simplify" these back):** `chrome.windows.create` rejects `{ state: 'minimized', focused: true }`, `{ state: 'maximized' | 'fullscreen', focused: false }`, and any non-`'normal'` state combined with `left/top/width/height`, all with `Invalid value for state` — so restore always creates a `'normal'`, unfocused window and applies the real state afterwards with `windows.update`. And `chrome.tabs.discard` on a tab whose navigation has not committed silently unloads it with `url: ''`, losing the URL — hence `waitForCommit`. `src/test/chrome-fake.ts` models both behaviours so the unit tests hold the line.
