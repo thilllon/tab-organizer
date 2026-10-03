@@ -1,5 +1,6 @@
 import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/sessions/capture';
 import type { DuplicateTabHandling, SortSettings } from '@/types';
+import { isContiguous, type MoveBatch, planMoves } from './move-plan';
 import { findDuplicateTabs, hashStringToColor, sortByCustom, sortByTitleOrUrl } from './sort';
 import './sessions';
 
@@ -25,8 +26,15 @@ const DEFAULT_SETTINGS: SortSettings = {
  * Event listeners
  */
 
+// One sort at a time. A move plan (move-plan.ts) is only right for the order it was made from, so
+// a second click waits for the first and then sorts whatever the strip looks like by then — which
+// is usually nothing left to do.
+let sortQueue: Promise<void> = Promise.resolve();
+
 chrome.action.onClicked.addListener(() => {
-  sortTabGroups();
+  sortQueue = sortQueue.then(sortTabGroups).catch((err: unknown) => {
+    console.error('[tab-organizer] sort failed', err);
+  });
 });
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -111,6 +119,8 @@ async function sortTabs(
   suspendedPrefixLen = suspendedPrefix.length;
 
   const firstTabIndex = tabs[0].index;
+  // The order on the strip right now; the sort functions below reorder `tabs` in place.
+  const before = tabs.map((tab) => ({ id: tab.id, index: tab.index }));
 
   switch (settings.sortBy) {
     case 'url':
@@ -144,8 +154,22 @@ async function sortTabs(
     return;
   }
   const tabIds: [number, ...number[]] = [filteredIds[0], ...filteredIds.slice(1)];
-  await chrome.tabs.move(tabIds, { index: firstTabIndex });
-  if (groupId > -1) {
+
+  // Only the tabs that are out of place move (see move-plan.ts). The plan counts positions from
+  // the block's first tab, so it needs the block to be one unbroken run of known ids; anything
+  // else gets the single whole-block call this always used to make.
+  const beforeIds = before.map((tab) => tab.id).filter((id): id is number => id !== undefined);
+  const plannable =
+    beforeIds.length === before.length && isContiguous(before.map((tab) => tab.index));
+  const batches: MoveBatch[] = plannable
+    ? planMoves(beforeIds, filteredIds)
+    : [{ tabIds, index: 0 }];
+
+  for (const batch of batches) {
+    await chrome.tabs.move(batch.tabIds, { index: firstTabIndex + batch.index });
+  }
+  // A tab moved to the edge of its group can drop out of it; one that did not move cannot.
+  if (groupId > -1 && batches.length > 0) {
     await chrome.tabs.group({ groupId, tabIds });
   }
 }

@@ -6,7 +6,9 @@ import {
   isSuspended,
   sortByCustom,
   sortByTitleOrUrl,
+  sortedByKey,
   tabToUrl,
+  urlSortKey,
 } from './sort';
 
 describe('compareByUrlComponents', () => {
@@ -660,3 +662,52 @@ function makeTab(overrides: Partial<chrome.tabs.Tab> = {}): chrome.tabs.Tab {
     ...overrides,
   };
 }
+
+describe('urlSortKey', () => {
+  it('drops a leading www. and keeps path, query and fragment', () => {
+    expect(urlSortKey(new URL('https://www.example.com/a?b=1#c'))).toBe('example.com/a?b=1#c');
+    expect(urlSortKey(new URL('https://WWW.Example.com/'))).toBe('example.com/');
+  });
+
+  it('orders urls exactly as compareByUrlComponents does', () => {
+    const a = new URL('https://www.b.com/x');
+    const b = new URL('https://a.com/y');
+    expect(Math.sign(compareByUrlComponents(a, b))).toBe(
+      Math.sign(urlSortKey(a).localeCompare(urlSortKey(b))),
+    );
+  });
+});
+
+describe('sortedByKey', () => {
+  it('derives each key once, however many comparisons the sort makes', () => {
+    const items = Array.from({ length: 200 }, (_, i) => (i * 7919) % 200);
+    let derived = 0;
+    const sorted = sortedByKey(
+      items,
+      (item) => {
+        derived += 1;
+        return item;
+      },
+      (a, b) => a - b,
+    );
+    expect(derived).toBe(items.length);
+    expect(sorted).toEqual([...items].sort((a, b) => a - b));
+  });
+
+  it('is stable and leaves its input alone', () => {
+    const items = [
+      { id: 1, rank: 1 },
+      { id: 2, rank: 0 },
+      { id: 3, rank: 1 },
+      { id: 4, rank: 0 },
+    ];
+    const copy = [...items];
+    const sorted = sortedByKey(
+      items,
+      (item) => item.rank,
+      (a, b) => a - b,
+    );
+    expect(sorted.map((item) => item.id)).toEqual([2, 4, 1, 3]);
+    expect(items).toEqual(copy);
+  });
+});

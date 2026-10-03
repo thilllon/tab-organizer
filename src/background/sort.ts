@@ -20,10 +20,69 @@ export function hashStringToColor(str: string): `${chrome.tabGroups.Color}` {
   return TAB_GROUP_COLORS[Math.abs(hash) % TAB_GROUP_COLORS.length];
 }
 
+/**
+ * One collator for every text comparison in a sort. `collator.compare(a, b)` is by definition what
+ * `a.localeCompare(b)` returns with no arguments — the same default locale and options — without
+ * resolving them again on each of the n·log n comparisons.
+ */
+const collator = new Intl.Collator();
+
+/** The text a url sorts by: hostname without `www.`, then path, query and fragment. */
+export function urlSortKey(url: URL): string {
+  return url.hostname.replace(/^www\./i, '') + url.pathname + url.search + url.hash;
+}
+
 export function compareByUrlComponents(urlA: URL, urlB: URL): number {
-  const keyA = urlA.hostname.replace(/^www\./i, '') + urlA.pathname + urlA.search + urlA.hash;
-  const keyB = urlB.hostname.replace(/^www\./i, '') + urlB.pathname + urlB.search + urlB.hash;
-  return keyA.localeCompare(keyB);
+  return collator.compare(urlSortKey(urlA), urlSortKey(urlB));
+}
+
+/**
+ * A stable sort that derives each item's key exactly once, then compares keys only. The sorts
+ * below used to parse both urls inside the comparator, so a tab's url was parsed once per
+ * comparison it took part in rather than once. Returns a new array; `items` is left alone.
+ */
+export function sortedByKey<T, K>(
+  items: readonly T[],
+  keyOf: (item: T) => K,
+  compare: (a: K, b: K) => number,
+): T[] {
+  return items
+    .map((item) => ({ item, key: keyOf(item) }))
+    .sort((a, b) => compare(a.key, b.key))
+    .map((entry) => entry.item);
+}
+
+/** What one tab contributes to a comparison, worked out once per tab. */
+interface TabSortKey {
+  pinned: boolean;
+  /** Only ever `true` while suspended tabs are being kept together. */
+  suspended: boolean;
+  /** Position of the tab's host group (custom sorting only). */
+  groupPos?: number;
+  text: string;
+}
+
+/**
+ * The part every sort mode shares: pinned tabs hold their place unless they are being sorted, and
+ * suspended tabs come first while they are kept together. `undefined` means "not decided here".
+ */
+function compareHeldAndSuspended(
+  a: TabSortKey,
+  b: TabSortKey,
+  sortPinnedTabs: boolean,
+): number | undefined {
+  if (!sortPinnedTabs && (a.pinned || b.pinned)) {
+    return 0;
+  }
+  if (a.suspended !== b.suspended) {
+    return a.suspended ? -1 : 1;
+  }
+  return undefined;
+}
+
+/** The sorts' contract is to reorder the array they were given. */
+function replaceContents<T>(target: T[], next: readonly T[]): void {
+  target.splice(0, target.length, ...next);
 }
 
 export function extractGroupingKey(hostname: string, mode: GroupingMode): string {
@@ -146,39 +205,18 @@ export function sortByTitleOrUrl(
   suspendedPrefix: string,
   suspendedPrefixLen: number,
 ): void {
-  const titleComparator = (a: chrome.tabs.Tab, b: chrome.tabs.Tab): number => {
-    if (!sortPinnedTabs && (a.pinned || b.pinned)) {
-      return 0;
-    }
-    if (groupSuspendedTabs) {
-      if (isSuspended(a, suspendedPrefix) && !isSuspended(b, suspendedPrefix)) {
-        return -1;
-      }
-      if (!isSuspended(a, suspendedPrefix) && isSuspended(b, suspendedPrefix)) {
-        return 1;
-      }
-    }
-    return (a.title ?? '').localeCompare(b.title ?? '');
-  };
+  const keyOf = (tab: chrome.tabs.Tab): TabSortKey => ({
+    pinned: tab.pinned,
+    suspended: groupSuspendedTabs && isSuspended(tab, suspendedPrefix),
+    text:
+      sortBy === 'title'
+        ? (tab.title ?? '')
+        : urlSortKey(tabToUrl(tab, groupSuspendedTabs, suspendedPrefixLen)),
+  });
+  const compare = (a: TabSortKey, b: TabSortKey): number =>
+    compareHeldAndSuspended(a, b, sortPinnedTabs) ?? collator.compare(a.text, b.text);
 
-  const urlComparator = (a: chrome.tabs.Tab, b: chrome.tabs.Tab): number => {
-    if (!sortPinnedTabs && (a.pinned || b.pinned)) {
-      return 0;
-    }
-    if (groupSuspendedTabs) {
-      if (isSuspended(a, suspendedPrefix) && !isSuspended(b, suspendedPrefix)) {
-        return -1;
-      }
-      if (!isSuspended(a, suspendedPrefix) && isSuspended(b, suspendedPrefix)) {
-        return 1;
-      }
-    }
-    const urlA = tabToUrl(a, groupSuspendedTabs, suspendedPrefixLen);
-    const urlB = tabToUrl(b, groupSuspendedTabs, suspendedPrefixLen);
-    return compareByUrlComponents(urlA, urlB);
-  };
-
-  tabs.sort(sortBy === 'title' ? titleComparator : urlComparator);
+  replaceContents(tabs, sortedByKey(tabs, keyOf, compare));
 }
 
 export function sortByCustom(
@@ -235,58 +273,38 @@ export function sortByCustom(
     }
   }
 
-  const customSortComparator = (
-    a: chrome.tabs.Tab,
-    b: chrome.tabs.Tab,
-    gsSuspended: boolean,
-    gsSortPinned?: boolean,
-  ): number => {
-    if (!gsSortPinned && (a.pinned || b.pinned)) {
-      return 0;
-    }
-    if (gsSuspended) {
-      if (isSuspended(a, suspendedPrefix) && !isSuspended(b, suspendedPrefix)) {
-        return -1;
-      }
-      if (!isSuspended(a, suspendedPrefix) && isSuspended(b, suspendedPrefix)) {
-        return 1;
-      }
-    }
-    const urlA = tabToUrl(a, gsSuspended, suspendedPrefixLen);
-    const urlB = tabToUrl(b, gsSuspended, suspendedPrefixLen);
-    const groupPosA = tabGroupMap.get(extractGroupingKey(urlA.hostname, groupingMode));
-    const groupPosB = tabGroupMap.get(extractGroupingKey(urlB.hostname, groupingMode));
+  // `tabGroupMap` is read when a key is built, so each pass below sees the map as it is then.
+  const keyOf =
+    (gsSuspended: boolean) =>
+    (tab: chrome.tabs.Tab): TabSortKey => {
+      const url = tabToUrl(tab, gsSuspended, suspendedPrefixLen);
+      return {
+        pinned: tab.pinned,
+        suspended: gsSuspended && isSuspended(tab, suspendedPrefix),
+        groupPos: tabGroupMap.get(extractGroupingKey(url.hostname, groupingMode)),
+        text: preserveOrderWithinGroups ? '' : urlSortKey(url),
+      };
+    };
 
-    if (groupPosA !== undefined && groupPosB !== undefined) {
-      if (groupFrom === 'leftToRight') {
-        if (groupPosA < groupPosB) {
-          return -1;
-        }
-        if (groupPosA > groupPosB) {
-          return 1;
-        }
-      } else {
-        if (groupPosA < groupPosB) {
-          return 1;
-        }
-        if (groupPosA > groupPosB) {
-          return -1;
-        }
+  const compare =
+    (gsSortPinned: boolean) =>
+    (a: TabSortKey, b: TabSortKey): number => {
+      const decided = compareHeldAndSuspended(a, b, gsSortPinned);
+      if (decided !== undefined) {
+        return decided;
       }
-    }
+      if (a.groupPos !== undefined && b.groupPos !== undefined && a.groupPos !== b.groupPos) {
+        return a.groupPos < b.groupPos === (groupFrom === 'leftToRight') ? -1 : 1;
+      }
+      // By here the pair is always same-partition (the suspended / normal split above decides
+      // every cross-partition pair), so honouring `preserveOrderWithinGroups` cannot compare a
+      // suspended tab against a normal one. The suspended block's order from the first pass is
+      // discarded anyway -- it is re-sorted below with `gsSuspended = false`, which decodes each
+      // tab's real target url.
+      return preserveOrderWithinGroups ? 0 : collator.compare(a.text, b.text);
+    };
 
-    // Not gated on `gsSuspended`: by here the pair is always same-partition (the suspended /
-    // normal split above returns -1/1 for every cross-partition pair), so honouring
-    // `preserveOrderWithinGroups` here cannot compare a suspended tab against a normal one. The
-    // suspended block's order from this pass is discarded anyway -- it is re-sorted below with
-    // `gsSuspended = false`, which decodes each tab's real target url.
-    if (!preserveOrderWithinGroups) {
-      return compareByUrlComponents(urlA, urlB);
-    }
-    return 0;
-  };
-
-  tabs.sort((a, b) => customSortComparator(a, b, groupSuspendedTabs, sortPinnedTabs));
+  replaceContents(tabs, sortedByKey(tabs, keyOf(groupSuspendedTabs), compare(sortPinnedTabs)));
 
   // Sub-sort suspended tabs independently if groupSuspendedTabs is enabled
   if (groupSuspendedTabs) {
@@ -319,11 +337,13 @@ export function sortByCustom(
       }
     }
 
-    const suspendedTabs = tabs
-      .slice(0, suspendedTabCount)
-      .sort((a, b) => customSortComparator(a, b, false));
+    // Pinned tabs always hold their place in this pass, whatever `sortPinnedTabs` says.
+    const suspendedTabs = sortedByKey(
+      tabs.slice(0, suspendedTabCount),
+      keyOf(false),
+      compare(false),
+    );
     const postSorted = tabs.slice(suspendedTabCount);
-    tabs.length = 0;
-    tabs.push(...suspendedTabs, ...postSorted);
+    replaceContents(tabs, [...suspendedTabs, ...postSorted]);
   }
 }
