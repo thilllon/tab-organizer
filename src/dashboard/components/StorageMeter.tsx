@@ -20,7 +20,7 @@ import type { SessionSummary } from '@/types';
 export interface StorageMeterProps {
   /** The index, straight from `useSessionIndex`: the saved/snapshot split and the refresh cue. */
   summaries: SessionSummary[];
-  /** "Deleted all session data." — shown in the dashboard's notice banner. */
+  /** "Deleted all session data." — shown as a toast by the app. */
   onNotice(message: string): void;
 }
 

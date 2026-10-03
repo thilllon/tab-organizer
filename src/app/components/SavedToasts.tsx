@@ -6,12 +6,13 @@ export interface SavedToastsProps {
 }
 
 /**
- * The stack of "Saved" confirmations, pinned to the bottom centre of the Settings dialog (the
- * dialog is translated into place, which makes it the containing block for `fixed` children — so
- * this is the dialog's bottom edge, not the viewport's).
+ * The stack of toasts — "Setting saved" confirmations and the app's notices — pinned to the bottom
+ * centre of the viewport, or of the Settings dialog when `App.tsx` renders it in there (the dialog
+ * is translated into place, which makes it the containing block for `fixed` children).
  *
- * `fixed` rather than placed in the flow: Settings is a long scrolling column, and a confirmation
- * that appears next to the control you just touched is off-screen as soon as you scroll. Newest
+ * `fixed` rather than placed in the flow: a line in the flow pushes everything under it down when
+ * it appears and back up when it goes, and in a long scrolling column a confirmation next to the
+ * control you just touched is off-screen as soon as you scroll. Newest
  * sits at the bottom, nearest the eye.
  *
  * `pointer-events-none` on the stack — it floats over the page and must never swallow a click
@@ -32,9 +33,9 @@ export function SavedToasts({ toasts }: SavedToastsProps) {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="flex items-center gap-2 rounded-full border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-lg motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
+          className="mx-4 flex items-center gap-2 rounded-full border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-lg motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
         >
-          <Check aria-hidden="true" className="size-3.5 text-primary" />
+          {toast.plain !== true && <Check aria-hidden="true" className="size-3.5 text-primary" />}
           {toast.message}
         </div>
       ))}

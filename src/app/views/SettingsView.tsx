@@ -1,7 +1,5 @@
 import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
-import { SavedToasts } from '@/app/components/SavedToasts';
-import { useSavedToasts } from '@/app/lib/use-saved-toasts';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -36,10 +34,14 @@ const SAVED_MESSAGE = 'Setting saved';
 export interface SettingsViewProps {
   summaries: SessionSummary[];
   onNotice(message: string): void;
+  /** A setting was written; the app shows the confirmation toast. */
+  onSaved(message: string): void;
+  /** A setting could not be written — shown in the app's error line, which stays up. */
+  onError(message: string): void;
   onExportAll(): void;
   onImport(): void;
   exporting: boolean;
-  /** The page's notice and error lines, shown at the top of the scrolling body. */
+  /** The page's error lines, shown at the top of the scrolling body. */
   children?: ReactNode;
 }
 
@@ -112,6 +114,8 @@ interface CommandRow {
 export function SettingsView({
   summaries,
   onNotice,
+  onSaved,
+  onError,
   onExportAll,
   onImport,
   exporting,
@@ -123,7 +127,6 @@ export function SettingsView({
   );
   const [commands, setCommands] = useState<CommandRow[]>([]);
   const sessionSettings = useSessionSettings();
-  const { toasts, show } = useSavedToasts();
 
   useEffect(() => {
     chrome.storage.sync.get<Partial<SortSettings>>([...SORT_SETTING_KEYS], (result) => {
@@ -156,10 +159,10 @@ export function SettingsView({
     setSort(next);
     chrome.storage.sync.set(toStoredSortSettings(next), () => {
       if (chrome.runtime.lastError !== undefined) {
-        onNotice(`Could not save that setting — ${chrome.runtime.lastError.message ?? 'unknown'}`);
+        onError(`Could not save that setting — ${chrome.runtime.lastError.message ?? 'unknown'}`);
         return;
       }
-      show(SAVED_MESSAGE);
+      onSaved(SAVED_MESSAGE);
     });
   };
 
@@ -167,7 +170,7 @@ export function SettingsView({
   const writeSession = (patch: Partial<SessionSettings>) => {
     void sessionSettings.update(patch).then((ok) => {
       if (ok) {
-        show(SAVED_MESSAGE);
+        onSaved(SAVED_MESSAGE);
       }
     });
   };
@@ -397,7 +400,6 @@ export function SettingsView({
           </Button>
         </Group>
       </div>
-      <SavedToasts toasts={toasts} />
     </>
   );
 }

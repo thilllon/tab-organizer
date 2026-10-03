@@ -54,7 +54,7 @@ export interface ExportMenuProps {
   /** Narrows it further to one group of that window; needs `windowIndex`. */
   groupIndex?: number;
   size?: 'icon-xs' | 'icon-sm';
-  /** "Exported …" / "Copied …" — the dashboard's notice banner. */
+  /** "Exported …" / "Copied …" — shown as a toast by the app. */
   onNotice(message: string): void;
   /** A failed read, a refused clipboard write — shown wherever the host puts its errors. */
   onError(message: string): void;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dropToast, MAX_TOASTS, pushToast, type Toast } from './toast-queue';
+import { dropToast, MAX_TOASTS, pushToast, type Toast, upsertToast } from './toast-queue';
 
 const t = (id: number, message = 'Saved'): Toast => ({ id, message });
 
@@ -35,5 +35,21 @@ describe('dropToast', () => {
     // The timer for a toast pushed out by the cap still fires; it must not disturb the rest.
     const list = [t(2), t(3), t(4)];
     expect(dropToast(list, 1)).toEqual(list);
+  });
+});
+
+describe('upsertToast', () => {
+  it('rewrites a toast that is still up, in place and without growing the stack', () => {
+    const list = [t(1, 'Saved'), t(2, 'Collecting… 10 of 200'), t(3, 'Saved')];
+    expect(upsertToast(list, t(2, 'Collecting… 20 of 200'))).toEqual([
+      t(1, 'Saved'),
+      t(2, 'Collecting… 20 of 200'),
+      t(3, 'Saved'),
+    ]);
+  });
+
+  it('appends, under the same cap, when that toast is not on screen', () => {
+    expect(upsertToast([t(1)], t(2))).toEqual([t(1), t(2)]);
+    expect(upsertToast([t(1), t(2), t(3)], t(4))).toEqual([t(2), t(3), t(4)]);
   });
 });
