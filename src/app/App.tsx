@@ -1,14 +1,22 @@
 import { Settings } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SidebarNav } from '@/app/components/SidebarNav';
 import { SidebarResizer } from '@/app/components/SidebarResizer';
-import { formatRoute, HOME, parseRoute, type Route, routeSessionId } from '@/app/lib/route';
+import {
+  formatRoute,
+  HOME,
+  parseRoute,
+  type Route,
+  routeSessionId,
+  viewBehind,
+} from '@/app/lib/route';
 import { readSidebarWidth, writeSidebarWidth } from '@/app/lib/sidebar-width';
 import { OpenTabsView } from '@/app/views/OpenTabsView';
 import { type OpenScope, SessionDetail } from '@/app/views/SessionDetail';
 import { SettingsView } from '@/app/views/SettingsView';
 import { SnapshotDetail } from '@/app/views/SnapshotDetail';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ImportDialog } from '@/dashboard/components/ImportDialog';
 import { ProgressToast } from '@/dashboard/components/ProgressToast';
 import { QuotaNotice } from '@/dashboard/components/QuotaNotice';
@@ -71,12 +79,57 @@ function nothingToSave(scope: CaptureScope): string {
   return scope === 'all' ? NOTHING_TO_SAVE.all : NOTHING_TO_SAVE.window;
 }
 
+/**
+ * The view on the history entry right below this one, when that entry is this page showing
+ * something other than Settings — which is the view the dialog was opened over, whether the click
+ * came from inside the page or `#settings` was typed into the address bar. Read from the
+ * Navigation API (Chrome 102+) rather than remembered, so it is still right after a reload, a
+ * duplicated tab or a restored browser session. `undefined` when Settings is the first thing this
+ * tab showed (Chrome's "Options", a bookmark).
+ */
+function viewBelow(): Route | undefined {
+  const index = window.navigation.currentEntry?.index;
+  const below = index === undefined ? undefined : window.navigation.entries()[index - 1];
+  if (below?.url === undefined || below.url === null) {
+    return undefined;
+  }
+  const url = new URL(below.url);
+  if (url.pathname !== window.location.pathname) {
+    return undefined;
+  }
+  const route = parseRoute(url.hash);
+  return route.view === 'settings' ? undefined : route;
+}
+
+interface RouteState {
+  route: Route;
+  /** The view the page itself shows — `route`, or what was showing before Settings opened. */
+  page: Route;
+}
+
+function advance(previous: RouteState, route: Route): RouteState {
+  return { route, page: viewBehind(route, previous.page) };
+}
+
+interface RouteControls extends RouteState {
+  navigate(route: Route, replace?: boolean): void;
+  /** Leaves `#settings` for `page`, the view behind it, without growing the Back stack. */
+  closeSettings(page: Route): void;
+  /** Swaps the view behind Settings while it stays open (the session it showed is gone). */
+  resetPage(page: Route): void;
+}
+
 /** The hash route, kept in step with the address bar and the Back button. */
-function useRoute(): [Route, (route: Route, replace?: boolean) => void] {
-  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.hash));
+function useRoute(): RouteControls {
+  const [state, setState] = useState<RouteState>(() => {
+    // Loaded with Settings already open: the pane behind it is the entry it was opened over.
+    const behind = viewBelow() ?? HOME;
+    return advance({ route: behind, page: behind }, parseRoute(window.location.hash));
+  });
 
   useEffect(() => {
-    const onHashChange = () => setRoute(parseRoute(window.location.hash));
+    const onHashChange = () =>
+      setState((previous) => advance(previous, parseRoute(window.location.hash)));
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
@@ -86,27 +139,51 @@ function useRoute(): [Route, (route: Route, replace?: boolean) => void] {
     if (replace) {
       // Typing in the search box must not stack one history entry per keystroke.
       window.history.replaceState(null, '', hash);
-      setRoute(next);
+      setState((previous) => advance(previous, next));
       return;
     }
     if (window.location.hash === hash) {
-      setRoute(next);
+      setState((previous) => advance(previous, next));
       return;
     }
     window.location.hash = hash;
   }, []);
 
-  return [route, navigate];
+  const closeSettings = useCallback((page: Route) => {
+    if (viewBelow() !== undefined) {
+      // Opened over an entry of ours: step back onto it, so closing leaves no dead "Back" press
+      // behind. `hashchange` then updates the route.
+      window.history.back();
+      return;
+    }
+    // Arrived at #settings directly (Chrome's "Options", a bookmark): nothing of ours to go back
+    // to, so this entry becomes the view that was showing behind the dialog.
+    window.history.replaceState(null, '', formatRoute(page));
+    setState({ route: page, page });
+  }, []);
+
+  const resetPage = useCallback((page: Route) => {
+    setState((previous) => ({ ...previous, page }));
+  }, []);
+
+  return { ...state, navigate, closeSettings, resetPage };
 }
 
 /**
  * Tab Organizer's one page: the sidebar lists what you have, the main pane shows what you picked,
- * and Settings is a view in here rather than a second page (Chrome's "Options" opens
- * `app.html#settings`). Everything below is wiring — the session logic lives in `src/sessions/`
+ * and Settings is a dialog over it rather than a second page — still an address of its own
+ * (Chrome's "Options" opens `app.html#settings`), drawn on top of the view you were in.
+ * Everything below is wiring — the session logic lives in `src/sessions/`
  * and the reusable pieces in `src/dashboard/`.
  */
 export function App() {
-  const [route, navigate] = useRoute();
+  // `route` is the address; `page` is what the panes show, which differs only while Settings is
+  // open over them.
+  const { route, page, navigate, closeSettings, resetPage } = useRoute();
+  const settingsOpen = route.view === 'settings';
+  // What had focus when Settings opened. The dialog is opened by the route, not by a
+  // `DialogTrigger`, so Radix has nothing to hand focus back to on close.
+  const settingsOpener = useRef<Element | null>(null);
   // Dragged by the handle between the columns, kept in localStorage (see sidebar-width.ts).
   const [sidebarWidth, setSidebarWidth] = useState(readSidebarWidth);
   const { sessions, loading, error: indexError } = useSessionIndex();
@@ -127,7 +204,7 @@ export function App() {
   // Search (spec §7). `query` is the debounced value SearchBar commits; the typed text never
   // reaches this component, so a keystroke re-renders nothing but the box itself. `searchEpoch`
   // remounts (and so clears) the box when a sidebar click leaves the search view.
-  const query = route.view === 'search' ? route.query : '';
+  const query = page.view === 'search' ? page.query : '';
   const searching = query !== '';
   const [searchEpoch, setSearchEpoch] = useState(0);
   const [includeHistory, setIncludeHistory] = useState(false);
@@ -156,13 +233,11 @@ export function App() {
     setError(errorMessage(err));
   };
 
-  /** Where the Settings control leads: into settings, or back out of them. */
-  const settingsTarget: Route = route.view === 'settings' ? HOME : { view: 'settings' };
-
   const go = (next: Route) => {
     setNotice(undefined);
     setError(undefined);
-    if (next.view !== 'search' && searching) {
+    // Settings opens over the results, so the box keeps its text; any other view replaces them.
+    if (next.view !== 'search' && next.view !== 'settings' && searching) {
       setSearchEpoch((epoch) => epoch + 1);
     }
     navigate(next);
@@ -348,17 +423,23 @@ export function App() {
   });
 
   const selected = useMemo(() => {
-    const id = routeSessionId(route);
+    const id = routeSessionId(page);
     return id === undefined ? undefined : sessions.find((summary) => summary.id === id);
-  }, [route, sessions]);
+  }, [page, sessions]);
 
   // A session deleted in another tab (or by the snapshot ring) leaves its address pointing at
   // nothing; fall back to the list rather than showing an empty pane.
   useEffect(() => {
-    if (!loading && selected === undefined && (route.view === 'saved' || route.view === 'auto')) {
+    if (!loading && selected === undefined && (page.view === 'saved' || page.view === 'auto')) {
+      if (settingsOpen) {
+        // Deleted from inside Settings ("Delete all data"): the dialog stays, the pane behind it
+        // changes. Navigating would close the dialog under the user's hands.
+        resetPage(HOME);
+        return;
+      }
       navigate(HOME, true);
     }
-  }, [loading, selected, route, navigate]);
+  }, [loading, selected, page, settingsOpen, navigate, resetPage]);
 
   const main = () => {
     if (searching) {
@@ -395,17 +476,6 @@ export function App() {
         </>
       );
     }
-    if (route.view === 'settings') {
-      return (
-        <SettingsView
-          summaries={sessions}
-          onNotice={announce}
-          onExportAll={() => void exportAll()}
-          onImport={() => setImportOpen(true)}
-          exporting={exporting}
-        />
-      );
-    }
     if (selected !== undefined && selected.unreadable !== undefined) {
       return (
         <ul className="space-y-2">
@@ -417,7 +487,7 @@ export function App() {
         </ul>
       );
     }
-    if (route.view === 'saved' && selected !== undefined) {
+    if (page.view === 'saved' && selected !== undefined) {
       return (
         <SessionDetail
           key={selected.id}
@@ -430,7 +500,7 @@ export function App() {
         />
       );
     }
-    if (route.view === 'auto' && selected !== undefined) {
+    if (page.view === 'auto' && selected !== undefined) {
       return (
         <SnapshotDetail
           key={selected.id}
@@ -455,6 +525,35 @@ export function App() {
       />
     );
   };
+
+  // The notice and error lines belong to whatever the user is looking at: the main pane, or the
+  // Settings dialog while it covers that pane (where a line behind the overlay would go unread).
+  const banners = (
+    <>
+      {notice !== undefined && (
+        <p role="status" aria-live="polite" className="rounded-md bg-muted px-3 py-2 text-sm">
+          {notice}
+        </p>
+      )}
+      {quotaFull && <QuotaNotice onShowStorage={() => go({ view: 'settings' })} />}
+      {(error ?? indexError) !== undefined && (
+        <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error ?? indexError}
+        </p>
+      )}
+    </>
+  );
+
+  const progressToast = (
+    <ProgressToast
+      progress={progress}
+      result={lastResult}
+      cancelling={cancelling}
+      cancelled={cancelled}
+      onCancel={cancel}
+      onDismiss={dismiss}
+    />
+  );
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -502,20 +601,17 @@ export function App() {
           />
         </div>
         {/* `asChild` renders the Button's styling onto the anchor, so this gains an address without
-            src/components/ui/button.tsx being touched. The href names where the click actually
-            goes, which is back to the open tabs when Settings is already showing.
-            `aria-current` rather than the `aria-pressed` a toggle button would carry: a link has
-            no pressed state, and this is how the sidebar already marks the row you are on. */}
-        <Button asChild variant={route.view === 'settings' ? 'secondary' : 'outline'} size="sm">
+            src/components/ui/button.tsx being touched: Settings opens as a dialog, yet it is still
+            a link to `#settings` that a middle-click opens in a tab of its own. */}
+        <Button asChild variant="outline" size="sm">
           <a
-            href={formatRoute(settingsTarget)}
-            aria-current={route.view === 'settings' ? 'page' : undefined}
+            href={formatRoute({ view: 'settings' })}
             onClick={(event) => {
               if (browserHandlesClick(event)) {
                 return;
               }
               event.preventDefault();
-              go(settingsTarget);
+              go({ view: 'settings' });
             }}
           >
             <Settings />
@@ -532,7 +628,7 @@ export function App() {
             thing, and a surface of its own says so without a word of explanation. */}
         <aside className="min-w-0 rounded-lg border bg-card p-2 lg:sticky lg:top-16 lg:self-start">
           <SidebarNav
-            route={route}
+            route={page}
             saved={saved}
             history={history}
             windowCount={openWindows.windows.length}
@@ -550,23 +646,56 @@ export function App() {
         />
 
         <main className="min-w-0 space-y-3">
-          {notice !== undefined && (
-            <p role="status" aria-live="polite" className="rounded-md bg-muted px-3 py-2 text-sm">
-              {notice}
-            </p>
-          )}
-          {quotaFull && <QuotaNotice onShowStorage={() => go({ view: 'settings' })} />}
-          {(error ?? indexError) !== undefined && (
-            <p
-              role="alert"
-              className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {error ?? indexError}
-            </p>
-          )}
+          {!settingsOpen && banners}
           {main()}
         </main>
       </div>
+
+      {/* Settings: an address (`#settings`) drawn as a dialog over the view behind it. Closing it
+          — Escape, the ×, a click outside — leaves that address. The width and the scrolling body
+          are set here by class, not in src/components/ui/dialog.tsx. */}
+      <Dialog
+        open={settingsOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            return;
+          }
+          // A field that writes on blur (the suspender ID) would otherwise be unmounted with its
+          // text unsaved: Escape closes the dialog without moving focus first.
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+          }
+          closeSettings(page);
+        }}
+      >
+        {/* The max-width keeps the stock 1rem side margins on a narrow window, which a bare
+            `sm:max-w-3xl` would drop between 640 and 800px. */}
+        <DialogContent
+          className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 p-0 sm:max-w-[min(48rem,calc(100%-2rem))]"
+          onOpenAutoFocus={() => {
+            settingsOpener.current = document.activeElement;
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (settingsOpener.current instanceof HTMLElement) {
+              settingsOpener.current.focus();
+            }
+          }}
+        >
+          <SettingsView
+            summaries={sessions}
+            onNotice={announce}
+            onExportAll={() => void exportAll()}
+            onImport={() => setImportOpen(true)}
+            exporting={exporting}
+          >
+            {banners}
+          </SettingsView>
+          {/* Inside the dialog while it is open: left in the page it would sit under the overlay,
+              dimmed, hidden from screen readers, and its Cancel would count as a click outside. */}
+          {progressToast}
+        </DialogContent>
+      </Dialog>
 
       <ImportDialog
         open={importOpen}
@@ -578,14 +707,7 @@ export function App() {
         onConfirm={confirmRestore}
         onCancel={() => setPending(undefined)}
       />
-      <ProgressToast
-        progress={progress}
-        result={lastResult}
-        cancelling={cancelling}
-        cancelled={cancelled}
-        onCancel={cancel}
-        onDismiss={dismiss}
-      />
+      {!settingsOpen && progressToast}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatRoute, HOME, parseRoute, routeSessionId } from './route';
+import { formatRoute, HOME, parseRoute, routeSessionId, viewBehind } from './route';
 
 describe('parseRoute', () => {
   it('reads every view from its hash, with or without the leading #', () => {
@@ -45,5 +45,19 @@ describe('routeSessionId', () => {
     expect(routeSessionId({ view: 'auto', id: 'y' })).toBe('y');
     expect(routeSessionId(HOME)).toBeUndefined();
     expect(routeSessionId({ view: 'search', query: 'x' })).toBeUndefined();
+  });
+});
+
+describe('viewBehind', () => {
+  it('keeps the previous view on screen while Settings is open over it', () => {
+    const saved = { view: 'saved', id: 'abc' } as const;
+    expect(viewBehind({ view: 'settings' }, saved)).toEqual(saved);
+    expect(viewBehind({ view: 'settings' }, HOME)).toEqual(HOME);
+  });
+
+  it('shows every other route as itself, whatever came before', () => {
+    const search = { view: 'search', query: 'github' } as const;
+    expect(viewBehind(search, HOME)).toEqual(search);
+    expect(viewBehind(HOME, search)).toEqual(HOME);
   });
 });

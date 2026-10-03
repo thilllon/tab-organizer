@@ -1,6 +1,6 @@
 /**
- * The app page is one page with hash routes, so every view has an address: the Settings view can
- * be opened from Chrome's own "Options" item, a session can be bookmarked, and the browser's Back
+ * The app page is one page with hash routes, so every view has an address: Settings (a dialog over
+ * the view behind it, see `viewBehind`) can be opened from Chrome's own "Options" item, a session can be bookmarked, and the browser's Back
  * button walks the views. Hash routing (not the History API) because `hashchange` is the only
  * navigation signal an extension page gets for free, and `chrome-extension://` has no server to
  * resolve a path against.
@@ -72,4 +72,12 @@ export function formatRoute(route: Route): string {
 /** The id a session/snapshot route points at, or `undefined` for the other views. */
 export function routeSessionId(route: Route): string | undefined {
   return route.view === 'saved' || route.view === 'auto' ? route.id : undefined;
+}
+
+/**
+ * What the page shows underneath: Settings is a dialog over the view you were in, so its route
+ * keeps the previous view on screen, and every other route simply is the view.
+ */
+export function viewBehind(route: Route, previous: Route): Route {
+  return route.view === 'settings' ? previous : route;
 }

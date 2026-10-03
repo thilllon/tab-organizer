@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { SavedToasts } from '@/app/components/SavedToasts';
 import { useSavedToasts } from '@/app/lib/use-saved-toasts';
 import { Button } from '@/components/ui/button';
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -38,6 +39,8 @@ export interface SettingsViewProps {
   onExportAll(): void;
   onImport(): void;
   exporting: boolean;
+  /** The page's notice and error lines, shown at the top of the scrolling body. */
+  children?: ReactNode;
 }
 
 /** One boxed section with a heading and an optional explanation. */
@@ -101,7 +104,8 @@ interface CommandRow {
 
 /**
  * Everything configurable, in one place inside the app: Chrome's own "Options" entry opens this
- * very view (`app.html#settings`). Three sorting choices are visible because they change what a
+ * very view (`app.html#settings`). It is the content of the Settings dialog in `App.tsx` — a
+ * fixed title row over a scrolling body — so it must be rendered inside a `DialogContent`. Three sorting choices are visible because they change what a
  * click on the icon visibly does; the other five sit under "Advanced". Nothing has a Save button
  * — a setting is written the moment it changes, as it already was for the session settings.
  */
@@ -111,6 +115,7 @@ export function SettingsView({
   onExportAll,
   onImport,
   exporting,
+  children,
 }: SettingsViewProps) {
   const [sort, setSort] = useState<SortSettings>(DEFAULT_SORT_SETTINGS);
   const [suspenderDraft, setSuspenderDraft] = useState(
@@ -171,226 +176,228 @@ export function SettingsView({
   const suspenderStatus = suspenderIdStatus(suspenderDraft);
 
   return (
-    <section aria-label="Settings" className="min-w-0 space-y-4">
-      <header className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold">Settings</h1>
-        <span className="text-xs text-muted-foreground">Changes save as you make them.</span>
-      </header>
+    <>
+      <DialogHeader className="border-b px-6 py-4">
+        <DialogTitle>Settings</DialogTitle>
+        <DialogDescription className="text-xs">Changes save as you make them.</DialogDescription>
+      </DialogHeader>
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/30 px-6 py-4">
+        {children}
 
-      <Group title="Sorting" description="What clicking the toolbar icon does.">
-        <Field label="Sort by">
-          <RadioGroup
-            value={sort.sortBy}
-            onValueChange={(value) => isSortBy(value) && write({ sortBy: value })}
-            className="flex gap-4"
-          >
-            <span className="flex items-center gap-2">
-              <RadioGroupItem value="url" id="sort-url" />
-              <Label htmlFor="sort-url">By URL</Label>
-            </span>
-            <span className="flex items-center gap-2">
-              <RadioGroupItem value="title" id="sort-title" />
-              <Label htmlFor="sort-title">By title</Label>
-            </span>
-            <span className="flex items-center gap-2">
-              <RadioGroupItem value="custom" id="sort-custom" />
-              <Label htmlFor="sort-custom">Custom</Label>
-            </span>
-          </RadioGroup>
-        </Field>
-
-        <Field label="Duplicate tabs" hint="When the same address is open more than once.">
-          <RadioGroup
-            value={sort.duplicateTabHandling}
-            onValueChange={(value) =>
-              isDuplicateTabHandling(value) && write({ duplicateTabHandling: value })
-            }
-            className="flex gap-4"
-          >
-            <span className="flex items-center gap-2">
-              <RadioGroupItem value="none" id="dupe-none" />
-              <Label htmlFor="dupe-none">Keep all</Label>
-            </span>
-            <span className="flex items-center gap-2">
-              <RadioGroupItem value="closeAllButOne" id="dupe-close" />
-              <Label htmlFor="dupe-close">Keep one</Label>
-            </span>
-            <span className="flex items-center gap-2">
-              <RadioGroupItem value="group" id="dupe-group" />
-              <Label htmlFor="dupe-group">Group them</Label>
-            </span>
-          </RadioGroup>
-        </Field>
-
-        <Field label="Tab groups" hint="Collect tabs from the same site into a Chrome tab group.">
-          <RadioGroup
-            value={sort.groupingMode}
-            onValueChange={(value) => isGroupingMode(value) && write({ groupingMode: value })}
-            className="flex gap-4"
-          >
-            <span className="flex items-center gap-2">
-              <RadioGroupItem value="subdomain" id="group-subdomain" />
-              <Label htmlFor="group-subdomain">By full hostname</Label>
-            </span>
-            <span className="flex items-center gap-2">
-              <RadioGroupItem value="domain" id="group-domain" />
-              <Label htmlFor="group-domain">By domain</Label>
-            </span>
-          </RadioGroup>
-        </Field>
-
-        <Advanced label="Advanced — order, pinned tabs, suspended tabs">
-          <Field
-            label="Grouping direction"
-            hint={customOnly.groupFrom ? 'Custom sorting only.' : undefined}
-          >
+        <Group title="Sorting" description="What clicking the toolbar icon does.">
+          <Field label="Sort by">
             <RadioGroup
-              value={sort.groupFrom}
-              disabled={customOnly.groupFrom}
-              onValueChange={(value) => isGroupFrom(value) && write({ groupFrom: value })}
+              value={sort.sortBy}
+              onValueChange={(value) => isSortBy(value) && write({ sortBy: value })}
               className="flex gap-4"
             >
               <span className="flex items-center gap-2">
-                <RadioGroupItem value="leftToRight" id="group-ltr" />
-                <Label htmlFor="group-ltr">Left to right</Label>
+                <RadioGroupItem value="url" id="sort-url" />
+                <Label htmlFor="sort-url">By URL</Label>
               </span>
               <span className="flex items-center gap-2">
-                <RadioGroupItem value="rightToLeft" id="group-rtl" />
-                <Label htmlFor="group-rtl">Right to left</Label>
+                <RadioGroupItem value="title" id="sort-title" />
+                <Label htmlFor="sort-title">By title</Label>
+              </span>
+              <span className="flex items-center gap-2">
+                <RadioGroupItem value="custom" id="sort-custom" />
+                <Label htmlFor="sort-custom">Custom</Label>
               </span>
             </RadioGroup>
           </Field>
 
-          <Field
-            label="Preserve order within groups"
-            hint={
-              customOnly.preserveOrderWithinGroups
-                ? 'Custom sorting only.'
-                : 'Keep each group’s tabs in the order you opened them.'
-            }
-          >
-            <Switch
-              id="preserve-order"
-              checked={sort.preserveOrderWithinGroups}
-              disabled={customOnly.preserveOrderWithinGroups}
-              onCheckedChange={(checked) => write({ preserveOrderWithinGroups: checked })}
-            />
+          <Field label="Duplicate tabs" hint="When the same address is open more than once.">
+            <RadioGroup
+              value={sort.duplicateTabHandling}
+              onValueChange={(value) =>
+                isDuplicateTabHandling(value) && write({ duplicateTabHandling: value })
+              }
+              className="flex gap-4"
+            >
+              <span className="flex items-center gap-2">
+                <RadioGroupItem value="none" id="dupe-none" />
+                <Label htmlFor="dupe-none">Keep all</Label>
+              </span>
+              <span className="flex items-center gap-2">
+                <RadioGroupItem value="closeAllButOne" id="dupe-close" />
+                <Label htmlFor="dupe-close">Keep one</Label>
+              </span>
+              <span className="flex items-center gap-2">
+                <RadioGroupItem value="group" id="dupe-group" />
+                <Label htmlFor="dupe-group">Group them</Label>
+              </span>
+            </RadioGroup>
           </Field>
 
-          <Field label="Sort pinned tabs" hint="Off: pinned tabs stay exactly where they are.">
-            <Switch
-              id="sort-pinned"
-              checked={sort.sortPinnedTabs}
-              onCheckedChange={(checked) => write({ sortPinnedTabs: checked })}
-            />
+          <Field label="Tab groups" hint="Collect tabs from the same site into a Chrome tab group.">
+            <RadioGroup
+              value={sort.groupingMode}
+              onValueChange={(value) => isGroupingMode(value) && write({ groupingMode: value })}
+              className="flex gap-4"
+            >
+              <span className="flex items-center gap-2">
+                <RadioGroupItem value="subdomain" id="group-subdomain" />
+                <Label htmlFor="group-subdomain">By full hostname</Label>
+              </span>
+              <span className="flex items-center gap-2">
+                <RadioGroupItem value="domain" id="group-domain" />
+                <Label htmlFor="group-domain">By domain</Label>
+              </span>
+            </RadioGroup>
           </Field>
 
-          <Field
-            label="Group suspended tabs together"
-            hint="On: suspended tabs move to the front as one block."
-          >
-            <Switch
-              id="group-suspended"
-              checked={sort.groupSuspendedTabs}
-              onCheckedChange={(checked) => write({ groupSuspendedTabs: checked })}
-            />
-          </Field>
+          <Advanced label="Advanced — order, pinned tabs, suspended tabs">
+            <Field
+              label="Grouping direction"
+              hint={customOnly.groupFrom ? 'Custom sorting only.' : undefined}
+            >
+              <RadioGroup
+                value={sort.groupFrom}
+                disabled={customOnly.groupFrom}
+                onValueChange={(value) => isGroupFrom(value) && write({ groupFrom: value })}
+                className="flex gap-4"
+              >
+                <span className="flex items-center gap-2">
+                  <RadioGroupItem value="leftToRight" id="group-ltr" />
+                  <Label htmlFor="group-ltr">Left to right</Label>
+                </span>
+                <span className="flex items-center gap-2">
+                  <RadioGroupItem value="rightToLeft" id="group-rtl" />
+                  <Label htmlFor="group-rtl">Right to left</Label>
+                </span>
+              </RadioGroup>
+            </Field>
 
-          <Field
-            label="Tab suspender extension ID"
-            hint="Which extension’s suspended pages to recognise. Empty uses The Marvellous Suspender."
-          >
-            <div className="flex items-center gap-2">
-              <Input
-                id="suspender-id"
-                value={suspenderDraft}
-                aria-invalid={suspenderStatus === 'invalid'}
-                className="h-8 w-72 font-mono text-xs"
-                onChange={(event) => setSuspenderDraft(event.target.value)}
-                onBlur={() => {
-                  if (suspenderStatus === 'invalid') {
-                    return;
-                  }
-                  const stored = toStoredSortSettings({
-                    ...sort,
-                    tabSuspenderExtensionId: suspenderDraft,
-                  });
-                  setSuspenderDraft(stored.tabSuspenderExtensionId);
-                  write({ tabSuspenderExtensionId: stored.tabSuspenderExtensionId });
-                }}
+            <Field
+              label="Preserve order within groups"
+              hint={
+                customOnly.preserveOrderWithinGroups
+                  ? 'Custom sorting only.'
+                  : 'Keep each group’s tabs in the order you opened them.'
+              }
+            >
+              <Switch
+                id="preserve-order"
+                checked={sort.preserveOrderWithinGroups}
+                disabled={customOnly.preserveOrderWithinGroups}
+                onCheckedChange={(checked) => write({ preserveOrderWithinGroups: checked })}
               />
-              {suspenderStatus === 'invalid' && (
-                <span className="text-xs text-destructive">32 letters a–p</span>
-              )}
-            </div>
-          </Field>
-        </Advanced>
-      </Group>
+            </Field>
 
-      <Group
-        title="Sessions"
-        description="Automatic snapshots are the safety net behind a crash or a closed window. They stay on this device."
-      >
-        <SessionSettingsFields
-          settings={sessionSettings.settings}
-          disabled={sessionSettings.loading}
-          onChange={writeSession}
-          subset="basic"
-          idPrefix="settings-sessions"
-        />
-        <Advanced label="Advanced — interval, how many to keep, loading">
+            <Field label="Sort pinned tabs" hint="Off: pinned tabs stay exactly where they are.">
+              <Switch
+                id="sort-pinned"
+                checked={sort.sortPinnedTabs}
+                onCheckedChange={(checked) => write({ sortPinnedTabs: checked })}
+              />
+            </Field>
+
+            <Field
+              label="Group suspended tabs together"
+              hint="On: suspended tabs move to the front as one block."
+            >
+              <Switch
+                id="group-suspended"
+                checked={sort.groupSuspendedTabs}
+                onCheckedChange={(checked) => write({ groupSuspendedTabs: checked })}
+              />
+            </Field>
+
+            <Field
+              label="Tab suspender extension ID"
+              hint="Which extension’s suspended pages to recognise. Empty uses The Marvellous Suspender."
+            >
+              <div className="flex items-center gap-2">
+                <Input
+                  id="suspender-id"
+                  value={suspenderDraft}
+                  aria-invalid={suspenderStatus === 'invalid'}
+                  className="h-8 w-72 font-mono text-xs"
+                  onChange={(event) => setSuspenderDraft(event.target.value)}
+                  onBlur={() => {
+                    if (suspenderStatus === 'invalid') {
+                      return;
+                    }
+                    const stored = toStoredSortSettings({
+                      ...sort,
+                      tabSuspenderExtensionId: suspenderDraft,
+                    });
+                    setSuspenderDraft(stored.tabSuspenderExtensionId);
+                    write({ tabSuspenderExtensionId: stored.tabSuspenderExtensionId });
+                  }}
+                />
+                {suspenderStatus === 'invalid' && (
+                  <span className="text-xs text-destructive">32 letters a–p</span>
+                )}
+              </div>
+            </Field>
+          </Advanced>
+        </Group>
+
+        <Group
+          title="Sessions"
+          description="Automatic snapshots are the safety net behind a crash or a closed window. They stay on this device."
+        >
           <SessionSettingsFields
             settings={sessionSettings.settings}
             disabled={sessionSettings.loading}
             onChange={writeSession}
-            subset="advanced"
-            idPrefix="settings-sessions-advanced"
-            className="gap-x-6 gap-y-4"
+            subset="basic"
+            idPrefix="settings-sessions"
           />
-        </Advanced>
-        {sessionSettings.error !== undefined && (
-          <p role="alert" className="text-xs text-destructive">
-            {sessionSettings.error}
-          </p>
-        )}
-      </Group>
+          <Advanced label="Advanced — interval, how many to keep, loading">
+            <SessionSettingsFields
+              settings={sessionSettings.settings}
+              disabled={sessionSettings.loading}
+              onChange={writeSession}
+              subset="advanced"
+              idPrefix="settings-sessions-advanced"
+              className="gap-x-6 gap-y-4"
+            />
+          </Advanced>
+          {sessionSettings.error !== undefined && (
+            <p role="alert" className="text-xs text-destructive">
+              {sessionSettings.error}
+            </p>
+          )}
+        </Group>
 
-      <Group
-        title="Backup"
-        description="Sessions live on this device only. Export a file to move them somewhere else."
-      >
-        <Field label="Export everything" hint="Saved sessions and snapshots, as one JSON file.">
-          <Button variant="outline" size="sm" onClick={onExportAll} disabled={exporting}>
-            <Download />
-            Export…
-          </Button>
-        </Field>
-        <Field label="Import" hint="JSON, bookmark HTML, a Markdown list or plain URLs.">
-          <Button variant="outline" size="sm" onClick={onImport}>
-            <Upload />
-            Import…
-          </Button>
-        </Field>
-        <Advanced label="Advanced — storage used, delete everything">
-          <StorageMeter summaries={summaries} onNotice={onNotice} />
-        </Advanced>
-      </Group>
-
-      <Group title="Keyboard shortcuts" description="Chrome owns these; none is set by default.">
-        {commands.map((command) => (
-          <Field key={command.name} label={command.name}>
-            <span className="rounded border px-2 py-0.5 font-mono text-xs text-muted-foreground">
-              {command.shortcut}
-            </span>
+        <Group
+          title="Backup"
+          description="Sessions live on this device only. Export a file to move them somewhere else."
+        >
+          <Field label="Export everything" hint="Saved sessions and snapshots, as one JSON file.">
+            <Button variant="outline" size="sm" onClick={onExportAll} disabled={exporting}>
+              <Download />
+              Export…
+            </Button>
           </Field>
-        ))}
-        <Button variant="outline" size="sm" onClick={() => void openShortcutSettings()}>
-          <Keyboard />
-          Change in Chrome
-        </Button>
-      </Group>
+          <Field label="Import" hint="JSON, bookmark HTML, a Markdown list or plain URLs.">
+            <Button variant="outline" size="sm" onClick={onImport}>
+              <Upload />
+              Import…
+            </Button>
+          </Field>
+          <Advanced label="Advanced — storage used, delete everything">
+            <StorageMeter summaries={summaries} onNotice={onNotice} />
+          </Advanced>
+        </Group>
 
+        <Group title="Keyboard shortcuts" description="Chrome owns these; none is set by default.">
+          {commands.map((command) => (
+            <Field key={command.name} label={command.name}>
+              <span className="rounded border px-2 py-0.5 font-mono text-xs text-muted-foreground">
+                {command.shortcut}
+              </span>
+            </Field>
+          ))}
+          <Button variant="outline" size="sm" onClick={() => void openShortcutSettings()}>
+            <Keyboard />
+            Change in Chrome
+          </Button>
+        </Group>
+      </div>
       <SavedToasts toasts={toasts} />
-    </section>
+    </>
   );
 }
