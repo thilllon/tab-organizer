@@ -200,7 +200,8 @@ tab-organizer/
 ├── app.html                   # The extension page (the only real HTML entry)
 ├── options.html               # Redirect to app.html#settings (old links)
 ├── dashboard.html             # Redirect to app.html (old links)
-├── docs/superpowers/specs/    # Design specs (2026-08-29-sessions-design.md is the sessions spec)
+├── docs/superpowers/          # Design specs and plans — local only, git-ignored ("spec §N" in comments refers to
+│                              #   specs/2026-08-29-sessions-design.md there)
 ├── vite.config.ts             # Vite + CRX plugin config (manifest defined here)
 ├── tsconfig.json              # TypeScript config (strict mode)
 ├── tsconfig.node.json         # TypeScript config for vite.config.ts

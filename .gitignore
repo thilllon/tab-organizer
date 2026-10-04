@@ -24,4 +24,5 @@
 # Claude Code worktrees
 .claude/worktrees/
 
-docs/superpower
+# Design specs and plans: kept on disk, not in the repository
+docs/superpowers/
