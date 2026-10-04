@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SavedToasts } from '@/app/components/SavedToasts';
 import { SidebarNav } from '@/app/components/SidebarNav';
 import { SidebarResizer } from '@/app/components/SidebarResizer';
+import { assembleOutcome } from '@/app/lib/assemble-notice';
 import {
   formatRoute,
   HOME,
@@ -18,6 +19,7 @@ import { OpenTabsView } from '@/app/views/OpenTabsView';
 import { type OpenScope, SessionDetail } from '@/app/views/SessionDetail';
 import { SettingsView } from '@/app/views/SettingsView';
 import { SnapshotDetail } from '@/app/views/SnapshotDetail';
+import { assembleTabs } from '@/background/assemble';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ImportDialog } from '@/dashboard/components/ImportDialog';
@@ -199,6 +201,7 @@ export function App() {
     useRestore();
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [assembling, setAssembling] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   // Notices ("Exported …", "Saved …") are toasts, not a line above the content: a line pushes the
   // whole pane down when it appears and back up when it goes, which reads as the page shaking.
@@ -274,6 +277,28 @@ export function App() {
       reportWriteError(err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  /**
+   * The icon menu's "Assemble!", run from the page. `assembleTabs()` is nothing but `chrome.*`
+   * calls, so it runs here as it does in the worker; the window it gathers into is the
+   * last-focused one, which is this one, since the click just happened in it.
+   */
+  const assemble = async () => {
+    setAssembling(true);
+    setError(undefined);
+    try {
+      const outcome = assembleOutcome(await assembleTabs());
+      if (outcome.kind === 'error') {
+        setError(outcome.message);
+      } else {
+        setNotice(outcome.message);
+      }
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setAssembling(false);
     }
   };
 
@@ -535,6 +560,8 @@ export function App() {
         busy={busy}
         savedCount={saved.length}
         onSaveAll={() => void save('all')}
+        onAssemble={() => void assemble()}
+        assembling={assembling}
         onSaveWindow={(windowId) => void save({ windowId })}
         onOpenSettings={() => go({ view: 'settings' })}
       />

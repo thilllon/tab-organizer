@@ -1,4 +1,4 @@
-import { Keyboard, Save } from 'lucide-react';
+import { Combine, Keyboard, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OpenWindowsPane } from '@/dashboard/components/OpenWindowsPane';
 import type { OpenWindowsState } from '@/dashboard/hooks/useOpenWindows';
@@ -10,6 +10,10 @@ export interface OpenTabsViewProps {
   /** How many sessions are already saved: the first-run hint only shows while there are none. */
   savedCount: number;
   onSaveAll(): void;
+  /** Moves every other window's tabs into this one — the icon menu's "Assemble!". */
+  onAssemble(): void;
+  /** An assemble run is under way. */
+  assembling: boolean;
   onSaveWindow(windowId: number): void;
   onOpenSettings(): void;
 }
@@ -18,13 +22,16 @@ export interface OpenTabsViewProps {
  * The default view: what is open right now, and one button that saves it. The button says what it
  * will take — "Save all windows" is a different promise from "Save this window", and the user
  * should not have to count their windows to know which one they are pressing. Saving a single
- * window stays on that window's row, where it belongs.
+ * window stays on that window's row, where it belongs. With more than one window open, a second
+ * button gathers them all into this one.
  */
 export function OpenTabsView({
   openWindows,
   busy,
   savedCount,
   onSaveAll,
+  onAssemble,
+  assembling,
   onSaveWindow,
   onOpenSettings,
 }: OpenTabsViewProps) {
@@ -41,6 +48,19 @@ export function OpenTabsView({
             {pluralize(windowCount, 'window')} · {pluralize(tabCount, 'tab')}
           </p>
         </div>
+        {/* Only where there is something to gather. Same name as the icon's right-click item, so
+            the two are recognisably one action. */}
+        {windowCount > 1 && (
+          <Button
+            variant="outline"
+            onClick={onAssemble}
+            disabled={busy || assembling}
+            title="Move every other window's tabs into this window"
+          >
+            <Combine />
+            Assemble!
+          </Button>
+        )}
         <Button onClick={onSaveAll} disabled={busy || windowCount === 0}>
           <Save />
           {saveLabel}
