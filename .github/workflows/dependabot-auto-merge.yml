@@ -15,8 +15,12 @@ permissions:
 
 jobs:
   auto-merge:
-    # The PR author, not `github.actor`: a human pushing to a Dependabot branch must not ride along.
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    # Both the PR's author and whoever caused this run: a commit a person pushes onto a
+    # Dependabot branch must not ride along on the bot's auto-merge.
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["ubuntu-latest"]
     steps:
       - name: Read what the PR updates
@@ -24,7 +28,10 @@ jobs:
         uses: dependabot/fetch-metadata@v3
 
       - name: Enable auto-merge for minor and patch updates
-        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        # An allow-list, so an update the metadata step cannot classify is left for a person.
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-patch'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}

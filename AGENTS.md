@@ -492,7 +492,7 @@ Runs on push to `main`, PRs to `main`, and manual dispatch:
 7. `pnpm listing` + `git diff --exit-code -- docs/description.txt` (fails if the generated store text is stale)
 8. `pnpm build`
 
-Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates, grouping minor/patch bumps. Auto-merge is opt-in per pull request and Dependabot never opts its own in, so `dependabot-auto-merge.yml` runs `gh pr merge --auto --squash` on every Dependabot PR that is not a major update (`dependabot/fetch-metadata` supplies `update-type`); GitHub then merges it once the required `ci` check passes. Major updates stay open for a person. A merge made with the workflow's `GITHUB_TOKEN` does not start the `push` run of `ci.yml` on `main` — the PR's own run is the evidence.
+Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates, grouping minor/patch bumps. Auto-merge is opt-in per pull request and Dependabot never opts its own in, so `dependabot-auto-merge.yml` runs `gh pr merge --auto --squash` on a Dependabot PR whose `update-type` (from `dependabot/fetch-metadata`) is minor or patch — and only when Dependabot itself caused the run, so a commit a person pushes onto its branch is not auto-merged; GitHub then merges it once the required `ci` check passes. Major updates stay open for a person. A merge made with the workflow's `GITHUB_TOKEN` does not start the `push` run of `ci.yml` on `main` — the PR's own run is the evidence.
 
 ### CodeQL (`codeql.yml`)
 
