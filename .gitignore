@@ -17,12 +17,11 @@
 .history
 *.log
 
-# Python
-.venv
-
 # IDE
 .cursor
 .omc
 
 # Claude Code worktrees
 .claude/worktrees/
+
+docs/superpower

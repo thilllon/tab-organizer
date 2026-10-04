@@ -1,8 +1,17 @@
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#   "pyobjc-framework-Quartz>=12.0",
+# ]
+# ///
 """Get Chrome/Chromium window info (macOS only).
 
+The block above is the whole Python setup for this repo: `uv run --script` reads it, builds a
+cached environment with that dependency and runs the file. There is no pyproject.toml.
+
 Usage:
-  python get-window-id.py          # prints window ID
-  python get-window-id.py --bounds # prints JSON: {"id", "x", "y", "width", "height"}
+  uv run --script get-window-id.py          # prints window ID
+  uv run --script get-window-id.py --bounds # prints JSON: {"id", "x", "y", "width", "height"}
 """
 
 import json
