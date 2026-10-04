@@ -1,5 +1,6 @@
 import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
+import { type CommandRow, commandRows } from '@/app/lib/command-rows';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -99,11 +100,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-interface CommandRow {
-  name: string;
-  shortcut: string;
-}
-
 /**
  * Everything configurable, in one place inside the app: Chrome's own "Options" entry opens this
  * very view (`app.html#settings`). It is the content of the Settings dialog in `App.tsx` — a
@@ -137,15 +133,7 @@ export function SettingsView({
     // The real keys, read from Chrome rather than promised by this page: they are unbound until
     // the user assigns them at chrome://extensions/shortcuts.
     void chrome.commands.getAll().then((all) => {
-      setCommands(
-        all.map((command) => ({
-          name: command.description ?? command.name ?? '',
-          shortcut:
-            command.shortcut !== undefined && command.shortcut !== ''
-              ? command.shortcut
-              : 'Not set',
-        })),
-      );
+      setCommands(commandRows(all));
     });
   }, []);
 
