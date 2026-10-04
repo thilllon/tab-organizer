@@ -22,7 +22,8 @@
  *   SKIP_OPTIONS    skip the options-page screenshots
  *   SKIP_DASHBOARD  skip the Sessions dashboard screenshots
  *   SKIP_DEMO       skip the before/after demo tabs (auto-skipped without an external network)
- *   SKIP_VIDEO      skip the screen recording (auto-skipped without ffmpeg or off macOS)
+ *   RECORD_VIDEO    record demo.mp4 -- OFF by default: it films the screen region, not the window,
+ *                   so whatever else is in front ends up in a committed file
  *   SKIP_NATIVE     skip native macOS window captures (auto-skipped off macOS)
  *   SKIP_MOCKUPS    skip the tab-bar mockup renders
  *   SKIP_PROMO      skip the promotional images
@@ -655,11 +656,17 @@ class Preparation {
    * Screen recording is macOS-only (ffmpeg's `avfoundation` input) and needs ffmpeg on PATH.
    * Missing either -- or a skipped demo step, which leaves nothing worth filming -- means no
    * video, and later `demo.gif` sees no `demo.mp4` and skips too.
+   *
+   * It is off unless RECORD_VIDEO=1. avfoundation films the *screen*, cropped to where the Chrome
+   * window is, not the window itself: anything that comes to the front during those 15 seconds --
+   * a terminal, a messenger -- is recorded in its place, and this file is committed to a public
+   * repository. Releases of v7.3.1, v7.4.0 and v7.6.0 published exactly that. Only run it with
+   * nothing else on that screen, and watch demo.mp4 through before committing it.
    */
   private async startVideoRecording(demoRan: boolean): Promise<ChildProcess | null> {
     Preparation.step('6/9  Video recording & tab sorting');
-    if (envFlag('SKIP_VIDEO')) {
-      this.skip('6/9  Video recording', 'SKIP_VIDEO=1');
+    if (!envFlag('RECORD_VIDEO')) {
+      this.skip('6/9  Video recording', 'off unless RECORD_VIDEO=1 (it films the screen)');
       return null;
     }
     if (!demoRan) {
