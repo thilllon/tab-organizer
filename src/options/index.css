@@ -7,7 +7,7 @@
 /*
  * Inter, bundled — never fetched.
  *
- * The extension promises "zero network requests" (PRIVACY_POLICY.md, README.md, docs/README.md),
+ * The extension promises "zero network requests" (PRIVACY_POLICY.md, README.md, docs/store_listing.md),
  * so the usual `@import url('https://fonts.googleapis.com/...')` is not available to us: it would
  * hit Google every time app.html opens and make that claim false. The font therefore ships inside
  * the extension. Vite rewrites the `url()` below to a hashed asset in `dist/assets/` at build

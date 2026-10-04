@@ -9,8 +9,7 @@
  *   5. Generate before/after demo screenshots            (needs an external network)
  *   6. Record demo video + sort the demo tabs            (needs ffmpeg, macOS capture)
  *   7. Render tab-bar mockups and CWS promotional images
- *   8. Convert the demo video to demo.gif                (needs ffmpeg)
- *   9. Regenerate docs/description.txt from docs/README.md (see build-listing.ts)
+ *   8. Convert the demo video to demo.gif                (needs ffmpeg; only after a recording)
  *
  * Every step that depends on ffmpeg, an external network or a macOS-only tool is optional: it is
  * skipped -- loudly, but without failing the run -- when the dependency is missing or when its
@@ -28,7 +27,6 @@
  *   SKIP_MOCKUPS    skip the tab-bar mockup renders
  *   SKIP_PROMO      skip the promotional images
  *   SKIP_GIF        skip demo.gif (auto-skipped without ffmpeg)
- *   SKIP_LISTING    skip regenerating docs/description.txt
  *   HEADLESS=1      force a headless browser (the default where there is no display)
  *   PW_CHROMIUM     Chromium binary to drive (see scripts/e2e/browser.ts)
  */
@@ -40,21 +38,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Locator, Page } from '@playwright/test';
 import type { ExportBundle } from '../src/types';
-import { buildListing } from './build-listing';
 import { type ExtensionSession, launchExtension } from './e2e/browser';
 import { buildDashboardFixtures, seedSessions } from './e2e/fixtures';
+import { getChromeWindowBounds } from './window-bounds';
 
 /*
  * Types
  */
-
-interface WindowBounds {
-  id: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 interface TabInfo {
   url: string;
@@ -79,7 +69,6 @@ const DIST = path.join(ROOT, 'dist');
 const SCREENSHOTS_DIR = path.join(ROOT, 'screenshots');
 const PROMO_TEMPLATE = path.join(__dirname, 'promo-template.html');
 const TAB_BAR_TEMPLATE = path.join(__dirname, 'tab-bar-template.html');
-const GET_WINDOW_ID_SCRIPT = path.join(__dirname, 'get-window-id.py');
 const ICON_PATH = path.join(ROOT, 'public', 'img', 'logo-128.png');
 
 /** How long a dashboard control is waited for before its screenshot is skipped. */
@@ -190,17 +179,8 @@ class Preparation {
     await this.generatePromoImages();
     await this.context?.close();
 
-    // Step 8: demo.gif for docs/README.md
-    this.generateDemoGif();
-
-    // Step 9: store listing text
-    Preparation.step('9/9  Store listing text');
-    if (envFlag('SKIP_LISTING')) {
-      this.skip('9/9  Store listing text', 'SKIP_LISTING=1');
-    } else {
-      const listingPath = buildListing();
-      console.log(`  Saved: ${path.relative(ROOT, listingPath)}`);
-    }
+    // Step 8: demo.gif for README.md and docs/store_listing.md
+    this.generateDemoGif(ffmpeg !== null);
 
     this.report();
   }
@@ -235,7 +215,7 @@ class Preparation {
       return;
     }
     console.log('='.repeat(50));
-    console.log('\nDone! Screenshots, promo images and description.txt regenerated.');
+    console.log('\nDone! Screenshots and promo images regenerated.');
     process.exitCode = 0;
   }
 
@@ -286,26 +266,6 @@ class Preparation {
     }
   }
 
-  private getWindowBounds(): WindowBounds | null {
-    // The script names its own dependency (inline metadata); uv builds a cached environment for
-    // it. Bare python3 only works where Quartz happens to be installed already.
-    const cmds = [
-      `uv run --script "${GET_WINDOW_ID_SCRIPT}" --bounds`,
-      `python3 "${GET_WINDOW_ID_SCRIPT}" --bounds`,
-    ];
-
-    for (const cmd of cmds) {
-      try {
-        const json = execSync(cmd, { encoding: 'utf-8', cwd: ROOT }).trim();
-        return JSON.parse(json);
-      } catch {
-        /* try next */
-      }
-    }
-
-    return null;
-  }
-
   /**
    * `screencapture` is macOS-only and needs a real window server; off macOS (or with
    * SKIP_NATIVE=1) the capture is skipped rather than silently swallowed, so the run log says
@@ -324,9 +284,9 @@ class Preparation {
       return false;
     }
     try {
-      const bounds = this.getWindowBounds();
+      const bounds = getChromeWindowBounds();
       if (!bounds) {
-        this.skip(`native capture (${label})`, 'could not resolve the Chrome window id');
+        this.skip(`native capture (${label})`, 'the demo browser has no window on screen');
         return false;
       }
       execSync(`screencapture -l${bounds.id} -x "${filename}"`, { timeout: 5000 });
@@ -355,11 +315,11 @@ class Preparation {
   /* Pipeline steps */
 
   private buildExtension(): void {
-    Preparation.step('1/9  Building extension');
+    Preparation.step('1/8  Building extension');
     if (envFlag('SKIP_BUILD')) {
-      this.skip('1/9  Building extension', 'SKIP_BUILD=1');
+      this.skip('1/8  Building extension', 'SKIP_BUILD=1');
       if (!existsSync(path.join(DIST, 'manifest.json'))) {
-        this.fail('1/9  Building extension', `SKIP_BUILD=1 but there is no build in ${DIST}`);
+        this.fail('1/8  Building extension', `SKIP_BUILD=1 but there is no build in ${DIST}`);
       }
       return;
     }
@@ -368,7 +328,7 @@ class Preparation {
   }
 
   private async launchBrowser(): Promise<void> {
-    Preparation.step('2/9  Launching browser for screenshots & demo');
+    Preparation.step('2/8  Launching browser for screenshots & demo');
     const session = await launchExtension({
       dist: DIST,
       preferHeaded: true,
@@ -389,9 +349,9 @@ class Preparation {
     if (!this.context) {
       return;
     }
-    Preparation.step('3/9  Options page screenshots');
+    Preparation.step('3/8  Options page screenshots');
     if (envFlag('SKIP_OPTIONS')) {
-      this.skip('3/9  Options page screenshots', 'SKIP_OPTIONS=1');
+      this.skip('3/8  Options page screenshots', 'SKIP_OPTIONS=1');
       return;
     }
     const optionsUrl = `chrome-extension://${this.extensionId}/options.html`;
@@ -427,9 +387,9 @@ class Preparation {
     if (!this.context || !this.ext) {
       return;
     }
-    Preparation.step('4/9  Sessions dashboard screenshots');
+    Preparation.step('4/8  Sessions dashboard screenshots');
     if (envFlag('SKIP_DASHBOARD')) {
-      this.skip('4/9  Sessions dashboard screenshots', 'SKIP_DASHBOARD=1');
+      this.skip('4/8  Sessions dashboard screenshots', 'SKIP_DASHBOARD=1');
       return;
     }
 
@@ -600,15 +560,15 @@ class Preparation {
     if (!this.context || !this.serviceWorker) {
       return { beforeTabs: [], nativeBefore: false };
     }
-    Preparation.step('5/9  Demo screenshots (before/after tab sorting)');
+    Preparation.step('5/8  Demo screenshots (before/after tab sorting)');
 
     if (envFlag('SKIP_DEMO')) {
-      this.skip('5/9  Demo screenshots', 'SKIP_DEMO=1');
+      this.skip('5/8  Demo screenshots', 'SKIP_DEMO=1');
       return { beforeTabs: [], nativeBefore: false };
     }
     const reachable = await this.browserCanReach(DEMO_SITES[0]);
     if (reachable !== null) {
-      this.skip('5/9  Demo screenshots', `the browser cannot reach ${DEMO_SITES[0]}: ${reachable}`);
+      this.skip('5/8  Demo screenshots', `the browser cannot reach ${DEMO_SITES[0]}: ${reachable}`);
       return { beforeTabs: [], nativeBefore: false };
     }
 
@@ -664,22 +624,22 @@ class Preparation {
    * nothing else on that screen, and watch demo.mp4 through before committing it.
    */
   private async startVideoRecording(demoRan: boolean): Promise<ChildProcess | null> {
-    Preparation.step('6/9  Video recording & tab sorting');
+    Preparation.step('6/8  Video recording & tab sorting');
     if (!envFlag('RECORD_VIDEO')) {
-      this.skip('6/9  Video recording', 'off unless RECORD_VIDEO=1 (it films the screen)');
+      this.skip('6/8  Video recording', 'off unless RECORD_VIDEO=1 (it films the screen)');
       return null;
     }
     if (!demoRan) {
-      this.skip('6/9  Video recording', 'the demo step was skipped, so there is nothing to record');
+      this.skip('6/8  Video recording', 'the demo step was skipped, so there is nothing to record');
       return null;
     }
     if (!commandExists('ffmpeg')) {
-      this.skip('6/9  Video recording', 'ffmpeg is not installed');
+      this.skip('6/8  Video recording', 'ffmpeg is not installed');
       return null;
     }
     if (process.platform !== 'darwin') {
       this.skip(
-        '6/9  Video recording',
+        '6/8  Video recording',
         `ffmpeg avfoundation capture is macOS-only; platform is ${process.platform}`,
       );
       return null;
@@ -692,7 +652,7 @@ class Preparation {
       const screenMatch = deviceInfo.match(/\[(\d+)] Capture screen/);
       const screenIndex = screenMatch ? screenMatch[1] : '1';
 
-      const bounds = this.getWindowBounds();
+      const bounds = getChromeWindowBounds();
       const isRetina = execSync('system_profiler SPDisplaysDataType 2>/dev/null || true', {
         encoding: 'utf-8',
       }).includes('Retina');
@@ -734,7 +694,7 @@ class Preparation {
       await Preparation.delay(2000);
       return proc;
     } catch (err) {
-      this.skip('6/9  Video recording', Preparation.errorMessage(err));
+      this.skip('6/8  Video recording', Preparation.errorMessage(err));
       return null;
     }
   }
@@ -851,13 +811,13 @@ class Preparation {
     if (!this.context) {
       return;
     }
-    Preparation.step('7/9  Tab-bar mockups & promotional images');
+    Preparation.step('7/8  Tab-bar mockups & promotional images');
     if (envFlag('SKIP_MOCKUPS')) {
-      this.skip('7/9  Tab-bar mockups', 'SKIP_MOCKUPS=1');
+      this.skip('7/8  Tab-bar mockups', 'SKIP_MOCKUPS=1');
       return;
     }
     if (beforeTabs.length === 0 && afterTabs.length === 0) {
-      this.skip('7/9  Tab-bar mockups', 'the demo step produced no tabs to draw');
+      this.skip('7/8  Tab-bar mockups', 'the demo step produced no tabs to draw');
       return;
     }
     console.log('  Rendering tab bar mockups...');
@@ -901,20 +861,25 @@ class Preparation {
     console.log('  Saved: screenshots/after-sort.png');
   }
 
-  private generateDemoGif(): void {
-    Preparation.step('8/9  Demo GIF');
+  private generateDemoGif(recorded: boolean): void {
+    Preparation.step('8/8  Demo GIF');
     if (envFlag('SKIP_GIF')) {
-      this.skip('8/9  Demo GIF', 'SKIP_GIF=1');
+      this.skip('8/8  Demo GIF', 'SKIP_GIF=1');
+      return;
+    }
+    // Without a new recording the committed demo.gif already matches the committed demo.mp4.
+    if (!recorded) {
+      this.skip('8/8  Demo GIF', 'no new recording (RECORD_VIDEO=1 to make one)');
       return;
     }
     const video = path.join(SCREENSHOTS_DIR, 'demo.mp4');
     const gif = path.join(SCREENSHOTS_DIR, 'demo.gif');
     if (!commandExists('ffmpeg')) {
-      this.skip('8/9  Demo GIF', 'ffmpeg is not installed');
+      this.skip('8/8  Demo GIF', 'ffmpeg is not installed');
       return;
     }
     if (!existsSync(video)) {
-      this.skip('8/9  Demo GIF', 'screenshots/demo.mp4 does not exist');
+      this.skip('8/8  Demo GIF', 'screenshots/demo.mp4 does not exist');
       return;
     }
     try {
@@ -924,13 +889,13 @@ class Preparation {
       execSync(`ffmpeg -y -v error -i "${video}" -vf "${filter}" "${gif}"`, { timeout: 60000 });
       console.log('  Saved: screenshots/demo.gif');
     } catch (err) {
-      this.skip('8/9  Demo GIF', `ffmpeg failed: ${Preparation.errorMessage(err)}`);
+      this.skip('8/8  Demo GIF', `ffmpeg failed: ${Preparation.errorMessage(err)}`);
     }
   }
 
   private async generatePromoImages(): Promise<void> {
     if (envFlag('SKIP_PROMO')) {
-      this.skip('7/9  Promotional images', 'SKIP_PROMO=1');
+      this.skip('7/8  Promotional images', 'SKIP_PROMO=1');
       return;
     }
     const page = await this.ensureScreenshotPage();

@@ -97,7 +97,7 @@ jobs:
             Never edit files under .github/workflows/. Never force-push. Minor findings never
             block and must not be "fixed" in this run — list them for humans.
           claude_args: |
-            --allowedTools "Read,Glob,Grep,Edit,Write,mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),Bash(gh workflow run:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git branch --show-current),Bash(git push origin HEAD),Bash(pnpm typecheck),Bash(pnpm test),Bash(pnpm exec biome check:*),Bash(pnpm listing)"
+            --allowedTools "Read,Glob,Grep,Edit,Write,mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),Bash(gh workflow run:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git branch --show-current),Bash(git push origin HEAD),Bash(pnpm typecheck),Bash(pnpm test),Bash(pnpm exec biome check:*)"
 
       - name: Enforce verdict
         run: |

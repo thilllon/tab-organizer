@@ -37,9 +37,6 @@ jobs:
 
       - run: pnpm format
 
-      - name: Verify docs/description.txt is up to date
-        run: pnpm listing && git diff --exit-code -- docs/description.txt
-
       - run: pnpm build
 
       # Spec §12 Phase 0 acceptance: `pnpm build` emits the extension's HTML entry points. Both

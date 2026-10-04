@@ -89,7 +89,7 @@ Everything lives in `chrome.storage.local` on the device — never synced, never
 - **No content scripts** — nothing is ever injected into a web page.
 - Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
 
-Everything shown on the store page — the complete description, every asset, the privacy answers — is kept in [`docs/README.md`](docs/README.md); `docs/description.txt` is generated from it.
+Everything shown on the store page — the complete description, every asset, the privacy answers — is kept in [`docs/store_listing.md`](docs/store_listing.md), with the description already in the plain text the store takes.
 
 ## Development
 
@@ -112,9 +112,8 @@ pnpm dev
 pnpm dev                    # Start Vite dev server (port 5173)
 pnpm build                  # Vite build -> dist/ (no type check; run typecheck separately)
 pnpm typecheck              # Type check only (tsc --noEmit)
-pnpm format                 # Biome check --write + Prettier (md/mdx/yml/yaml) + mise format (ruff)
+pnpm format                 # Biome check --write + Prettier (md/mdx/yml/yaml)
 pnpm test                   # Run tests (vitest)
-pnpm listing                # Regenerate docs/description.txt (Chrome Web Store text) from docs/README.md
 pnpm release                # release-it: regenerate CWS assets, bump version, build, ZIP, GitHub release
 ```
 

@@ -2,8 +2,8 @@
  * Collects everything needed to submit a release to the Chrome Web Store into one folder.
  *
  * Nothing here *produces* an asset. `prepare-registration.ts` shoots the screenshots and promo
- * images, `build-listing.ts` writes `docs/description.txt`, and `zip.ts` packages `dist/`; this
- * step gathers those, puts the screenshots in the order they should be uploaded, and writes a
+ * images and `zip.ts` packages `dist/`; this step gathers those, takes the description out of
+ * `docs/store_listing.md`, puts the screenshots in the order they should be uploaded, and writes a
  * SUBMIT.md whose every field is read from the built manifest rather than retyped — a listing that
  * disagrees with the manifest it ships beside is the sort of thing a reviewer bounces.
  *
@@ -18,6 +18,12 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  extractDescription,
+  LISTING_SOURCE,
+  validateDescription,
+  validateSummary,
+} from './store-listing';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -76,8 +82,8 @@ const PROMOS: { from: string; as: string; slot: string; size: string }[] = [
 
 /**
  * Why each permission is requested, keyed by the manifest name. Kept here rather than parsed out
- * of `docs/README.md`: the store wants one sentence per permission, the README explains them in
- * prose, and a missing justification is the most common reason a submission is rejected — so this
+ * of `docs/store_listing.md`: the store wants one sentence per permission, the listing explains
+ * them in prose, and a missing justification is the most common reason a submission is rejected — so this
  * script fails loudly on a permission it has no wording for instead of emitting a blank row.
  */
 const JUSTIFICATIONS: Record<string, string> = {
@@ -112,7 +118,7 @@ function copyInto(from: string, to: string, missing: string[]): void {
   copyFileSync(from, to);
 }
 
-function submitDoc(manifest: Manifest, chars: number, missing: string[]): string {
+function submitDoc(manifest: Manifest, description: string, missing: string[]): string {
   const permissions = manifest.permissions ?? [];
   const unknown = permissions.filter((name) => JUSTIFICATIONS[name] === undefined);
   if (unknown.length > 0) {
@@ -171,8 +177,12 @@ ${manifest.name}
 ${manifest.description}
 \`\`\`
 
-**Description** — paste the whole of \`description.txt\` (${chars.toLocaleString('en-US')} / 16,000 characters).
-It is generated from \`docs/README.md\` by \`pnpm listing\`; edit the README, never this file.
+**Description** (${description.length.toLocaleString('en-US')} / 16,000 characters) — the block under "Description" in
+\`docs/store_listing.md\`, copied here; edit it there, never in this file.
+
+\`\`\`text
+${description}
+\`\`\`
 
 **Category**: Workflow & Planning
 **Language**: English
@@ -278,11 +288,11 @@ function main(): void {
   const zipName = `${manifest.name.replaceAll(' ', '-')}-${manifest.version}.zip`;
   copyInto(path.join(ROOT, 'package', zipName), path.join(out, zipName), missing);
 
-  const listing = path.join(ROOT, 'docs', 'description.txt');
-  copyInto(listing, path.join(out, 'description.txt'), missing);
-  // `.length` and not the byte count: the store's 16,000 is a character limit, and this file is
-  // full of em dashes and curly quotes that read ~200 over when measured with `wc -c`.
-  const chars = existsSync(listing) ? readFileSync(listing, 'utf-8').length : 0;
+  // Both limits count characters (`.length`), not bytes: the text is full of em dashes and curly
+  // quotes that read ~200 over when measured with `wc -c`.
+  const description = extractDescription(readFileSync(LISTING_SOURCE, 'utf-8'));
+  validateDescription(description);
+  validateSummary(manifest.description);
 
   for (const shot of SCREENSHOTS) {
     copyInto(
@@ -295,7 +305,7 @@ function main(): void {
     copyInto(path.join(ROOT, promo.from), path.join(out, 'promo', promo.as), missing);
   }
 
-  writeFileSync(path.join(out, 'SUBMIT.md'), submitDoc(manifest, chars, missing));
+  writeFileSync(path.join(out, 'SUBMIT.md'), submitDoc(manifest, description, missing));
 
   const where = path.relative(ROOT, out);
   console.log(`Store bundle: ${where}/  (start at ${where}/SUBMIT.md)`);
