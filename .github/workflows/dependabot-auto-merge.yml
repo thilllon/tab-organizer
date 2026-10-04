@@ -1,0 +1,31 @@
+name: Dependabot auto-merge
+
+# Auto-merge is opt-in per pull request, and Dependabot never opts its own in. This turns it on
+# for minor and patch updates; GitHub then merges the PR once the required `ci` check passes
+# (branch protection on main). Major updates are left for a person to read and merge.
+
+on:
+  pull_request:
+    branches: ["main"]
+
+# Dependabot-triggered runs get a read-only token unless the workflow asks for more.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    # The PR author, not `github.actor`: a human pushing to a Dependabot branch must not ride along.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ["ubuntu-latest"]
+    steps:
+      - name: Read what the PR updates
+        id: metadata
+        uses: dependabot/fetch-metadata@v3
+
+      - name: Enable auto-merge for minor and patch updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
