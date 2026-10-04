@@ -286,10 +286,10 @@ class Preparation {
   }
 
   private getWindowBounds(): WindowBounds | null {
-    const venvPython = path.join(ROOT, '.venv', 'bin', 'python');
+    // The script names its own dependency (inline metadata); uv builds a cached environment for
+    // it. Bare python3 only works where Quartz happens to be installed already.
     const cmds = [
-      `"${venvPython}" "${GET_WINDOW_ID_SCRIPT}" --bounds`,
-      `uv run "${GET_WINDOW_ID_SCRIPT}" --bounds`,
+      `uv run --script "${GET_WINDOW_ID_SCRIPT}" --bounds`,
       `python3 "${GET_WINDOW_ID_SCRIPT}" --bounds`,
     ];
 

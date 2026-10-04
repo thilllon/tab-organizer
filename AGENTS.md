@@ -185,7 +185,8 @@ tab-organizer/
 │   ├── build-listing.ts       # docs/README.md `### Description` -> docs/description.txt (CWS plain text); + build-listing.test.ts
 │   ├── promo-template.html    # HTML template for CWS promotional images
 │   ├── tab-bar-template.html  # HTML template for tab bar mockup screenshots
-│   └── get-window-id.py       # macOS window-bounds helper for screenshot cropping
+│   └── get-window-id.py       # macOS window-bounds helper for screenshot cropping; declares its own Python version and
+│                              #   dependency inline (PEP 723) and runs with `uv run --script` — there is no pyproject.toml
 ├── screenshots/               # Generated CWS assets (sort + dashboard-*.png screenshots, promo images, demo video)
 ├── docs/
 │   ├── README.md              # Chrome Web Store listing — single source of truth (text, assets, privacy answers)
@@ -207,8 +208,7 @@ tab-organizer/
 ├── .prettierrc.json           # Prettier config (Markdown/YAML; pnpm-lock.yaml ignored via .prettierignore)
 ├── .release-it.json           # release-it config (hooks run prepare-registration, build, zip)
 ├── lefthook.yml               # Git hooks (pre-commit: format + listing; pre-push: typecheck/test/build/docs)
-├── mise.toml                  # Tool versions (Node, pnpm, Python, uv, ruff, lefthook) + `format` task (ruff)
-├── pyproject.toml             # Python deps for scripts/ (pyobjc Quartz) + ruff config
+├── mise.toml                  # Tool versions (Node, pnpm, Python, uv, ruff, lefthook) + `format` task (ruff, line length 100)
 ├── components.json            # shadcn/ui configuration
 ├── PRIVACY_POLICY.md          # Privacy policy (update when permissions change)
 └── package.json

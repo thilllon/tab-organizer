@@ -7,4 +7,5 @@ ruff = "latest"
 lefthook = "latest"
 
 [tasks]
-format = "ruff format ."
+# The script's inline `requires-python` gives ruff its target version; the width matches Biome's.
+format = "ruff format --line-length 100 ."
