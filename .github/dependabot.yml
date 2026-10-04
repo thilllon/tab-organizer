@@ -9,6 +9,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # pnpm refuses versions younger than 7 days (minimumReleaseAge in pnpm-workspace.yaml), so a
+    # PR for a fresher version would fail `pnpm install --frozen-lockfile` in CI.
+    cooldown:
+      default-days: 7
     groups:
       npm-minor-patch:
         applies-to: version-updates
