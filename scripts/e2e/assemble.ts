@@ -6,7 +6,7 @@
  * `globalThis.__tabOrganizerE2e`, see src/background/sessions.ts) — the command is otherwise only
  * reachable through a keyboard shortcut:
  *
- *     pnpm e2e:assemble        # vite build --mode e2e --outDir dist-e2e && tsx scripts/e2e/assemble.ts
+ *     pnpm e2e:assemble        # vite build --mode e2e --outDir node_modules/.cache/tab-organizer/e2e && tsx scripts/e2e/assemble.ts
  *
  * Builds five windows — a source with two pinned tabs and a tab with back/forward history; a
  * source whose active tab sits in a collapsed titled group next to a tab carrying page state (a JS
@@ -19,7 +19,9 @@
  * the target at any moment**, and the ✓ badge. It also reports what this Chromium exposes for
  * split view.
  *
- * Environment: `E2E_DIST` (default `dist-e2e/`), plus `PW_CHROMIUM` / `HEADLESS` (see ./browser.ts).
+ * Environment: `E2E_DIST` (default `node_modules/.cache/tab-organizer/e2e/` — under node_modules,
+ * so the build never shows up in the project root; it is rebuilt on every run, so losing it costs
+ * nothing), plus `PW_CHROMIUM` / `HEADLESS` (see ./browser.ts).
  * On macOS point `PW_CHROMIUM` at a Chromium or Chrome for Testing binary: branded Chrome 137+
  * ignores `--load-extension`, and Playwright's headless shell cannot load extensions at all.
  */
@@ -33,7 +35,8 @@ import { startDemoServer } from './server';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', '..');
-const DIST = process.env.E2E_DIST ?? path.join(ROOT, 'dist-e2e');
+const DIST =
+  process.env.E2E_DIST ?? path.join(ROOT, 'node_modules', '.cache', 'tab-organizer', 'e2e');
 /** The command id, shared by the right-click menu item. */
 const COMMAND = 'assemble-tabs';
 

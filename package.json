@@ -23,7 +23,7 @@
     "test": "vitest run",
     "e2e:smoke": "tsx scripts/e2e/smoke.ts",
     "e2e:sort": "tsx scripts/e2e/sort.ts",
-    "e2e:assemble": "vite build --mode e2e --outDir dist-e2e && tsx scripts/e2e/assemble.ts",
+    "e2e:assemble": "vite build --mode e2e --outDir node_modules/.cache/tab-organizer/e2e && tsx scripts/e2e/assemble.ts",
     "release": "release-it"
   },
   "dependencies": {
