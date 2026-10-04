@@ -186,7 +186,8 @@ tab-organizer/
 │   ├── promo-template.html    # HTML template for CWS promotional images
 │   ├── tab-bar-template.html  # HTML template for tab bar mockup screenshots
 │   └── get-window-id.py       # macOS window-bounds helper for screenshot cropping; declares its own Python version and
-│                              #   dependency inline (PEP 723) and runs with `uv run --script` — there is no pyproject.toml
+│                              #   dependency inline (PEP 723) and runs with `uv run --script` — there is no pyproject.toml;
+│                              #   get-window-id.py.lock beside it pins the versions (`uv lock --script` to refresh)
 ├── screenshots/               # Generated CWS assets (sort + dashboard-*.png screenshots, promo images, demo video)
 ├── docs/
 │   ├── README.md              # Chrome Web Store listing — single source of truth (text, assets, privacy answers)
