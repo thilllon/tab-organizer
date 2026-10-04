@@ -63,14 +63,16 @@ const manifest = defineManifest((env) => {
       'favicon',
       'alarms',
     ],
-    // Shipped unbound on purpose: Chrome silently drops conflicting suggested_key values and the
-    // UI must not promise a key. Users bind them at chrome://extensions/shortcuts.
+    // Shipped unbound on purpose, sorting excepted: Chrome silently drops a suggested_key that
+    // conflicts with another extension, so the UI must not promise a key — Settings shows what
+    // Chrome actually assigned. Users bind and rebind them at chrome://extensions/shortcuts.
     commands: {
       // Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked`
       // exactly as a click does, so the shortcut sorts (and snapshots) through the very same
       // listeners — there is no second code path to keep in step. Chrome ignores a description
       // here; Settings supplies the name (src/app/lib/command-rows.ts).
-      _execute_action: {},
+      // The one suggested key: Alt+Shift+S, which Chrome reads as Option+Shift+S on a Mac.
+      _execute_action: { suggested_key: { default: 'Alt+Shift+S' } },
       'save-session': { description: 'Save the current window as a session' },
       'open-dashboard': { description: 'Open the Sessions dashboard' },
       'assemble-tabs': { description: 'Move the tabs of all other windows into this window' },

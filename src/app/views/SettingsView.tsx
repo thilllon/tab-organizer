@@ -374,7 +374,10 @@ export function SettingsView({
           </Advanced>
         </Group>
 
-        <Group title="Keyboard shortcuts" description="Chrome owns these; none is set by default.">
+        <Group
+          title="Keyboard shortcuts"
+          description="Chrome owns these. Sorting starts as Alt+Shift+S (⌥⇧S on a Mac) when that key is free; the rest start unset."
+        >
           {commands.map((command) => (
             <Field key={command.name} label={command.name}>
               <span className="rounded border px-2 py-0.5 font-mono text-xs text-muted-foreground">

@@ -131,7 +131,7 @@ Export a tab group, a window or a session as JSON (which imports back exactly), 
 
 ##### Keyboard Shortcuts
 
-Four commands — sort the current window (the same thing a click on the icon does), save the current window as a session, open Tab Organizer, and gather every window's tabs into the current one — are ready to bind in Chrome's shortcut settings (chrome://extensions/shortcuts). No keys are pre-assigned, so nothing conflicts with the shortcuts you already use; Settings lists the keys you have assigned and takes you straight there.
+Four commands — sort the current window (what a click on the icon does), save the current window as a session, open Tab Organizer, and gather every window's tabs into the current one — can be bound in Chrome's shortcut settings (chrome://extensions/shortcuts). Sorting starts as Alt+Shift+S (Option+Shift+S on a Mac) where that key is free; the others start unset. Settings lists the keys you have assigned and takes you straight there.
 
 ##### Local-First, Always
 

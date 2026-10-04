@@ -61,7 +61,7 @@ Pin the icon, click it, done — every tab in the window is sorted and grouped b
 Everything that is not the icon click lives on one page (`app.html`), opened once and re-focused thereafter. Three ways in, none of them on the icon click (a left-click only ever sorts):
 
 1. **Right-click the icon → _Options_** — Chrome's own item, pointed at `app.html#settings`. The same menu carries _Assemble!_ and _Save all windows as session_ (a ✓ badge confirms a save); opening the page is left to Chrome's entry rather than repeated there.
-2. **Keyboard shortcuts** — sorting (listed by Chrome as _Activate the extension_: a key bound to it does what a click on the icon does), _Save the current window as a session_, _Open Tab Organizer_ and _Move the tabs of all other windows into this window_ are Chrome commands with no preset keys; bind them at `chrome://extensions/shortcuts` (Settings lists the keys you have assigned).
+2. **Keyboard shortcuts** — sorting (listed by Chrome as _Activate the extension_: a key bound to it does what a click on the icon does), _Save the current window as a session_, _Open Tab Organizer_ and _Move the tabs of all other windows into this window_ are Chrome commands. Sorting is suggested as `Alt+Shift+S` (`⌥⇧S` on a Mac); the others have no preset key; bind them at `chrome://extensions/shortcuts` (Settings lists the keys you have assigned).
 3. **`chrome://extensions` → Details → Extension options**.
 
 <p align="center">
