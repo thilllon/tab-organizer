@@ -376,7 +376,7 @@ export function SettingsView({
 
         <Group
           title="Keyboard shortcuts"
-          description="Chrome owns these. Sorting starts as Alt+Shift+S (⌥⇧S on a Mac) when that key is free; the rest start unset."
+          description="Chrome owns these. Sorting starts as Alt+Shift+S and Assemble! as Alt+Shift+A (⌥⇧S and ⌥⇧A on a Mac) when those keys are free; the rest start unset."
         >
           {commands.map((command) => (
             <Field key={command.name} label={command.name}>
