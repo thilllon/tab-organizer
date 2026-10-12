@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { GroupSection } from '@/dashboard/components/GroupSection';
-import { TabRow } from '@/dashboard/components/TabRow';
+import { TabRow, type TabRowSelection } from '@/dashboard/components/TabRow';
 import { pluralize } from '@/dashboard/lib/format';
 import { segmentTabs } from '@/dashboard/lib/segments';
 import {
@@ -34,6 +34,8 @@ export interface WindowTreeProps {
   renderTabActions?(tabIndex: number): ReactNode;
   /** Trailing buttons on a group header, by that group's index in `window.groups`. */
   renderGroupActions?(groupIndex: number): ReactNode;
+  /** The tick box of the tab at that absolute index; left out, rows have none. */
+  tabSelection?(tabIndex: number): TabRowSelection | undefined;
 }
 
 /**
@@ -54,6 +56,7 @@ export function WindowTree({
   onOpenTab,
   renderTabActions,
   renderGroupActions,
+  tabSelection,
 }: WindowTreeProps) {
   const total = window.tabs.length;
   const [visible, setVisible] = useState(() => initialTabPage(total));
@@ -110,6 +113,7 @@ export function WindowTree({
                 actions={renderGroupActions?.(groupIndex)}
                 onOpenTab={onOpenTab}
                 renderTabActions={renderTabActions}
+                tabSelection={tabSelection}
               />
             );
           }
@@ -118,6 +122,7 @@ export function WindowTree({
               // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.
               key={`tab-${segmentIndex}-${tabIndex}-${tab.url}`}
               tab={tab}
+              selection={tabSelection?.(segment.startIndex + tabIndex)}
               onOpen={
                 onOpenTab === undefined ? undefined : () => onOpenTab(segment.startIndex + tabIndex)
               }

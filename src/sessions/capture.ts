@@ -261,17 +261,43 @@ async function loadCaptureOptions(): Promise<CaptureOptions> {
 }
 
 /**
- * What to capture: the last-focused window, every window, or one window by its runtime id (the
- * open-windows pane's "Save this window", which must not depend on which window has focus).
+ * What to capture: the last-focused window, every window, one window by its runtime id (the
+ * open-windows pane's "Save this window", which must not depend on which window has focus), or
+ * the tabs with these runtime ids wherever they are (the pane's selection). Selected tabs keep
+ * their windows: two tabs picked from two windows are saved as two windows.
  */
-export type CaptureScope = 'window' | 'all' | { windowId: number };
+export type CaptureScope = 'window' | 'all' | { windowId: number } | { tabIds: readonly number[] };
 
 /**
  * The one window `scope` selects, or undefined when it selects none — which for a single-window
  * scope means "capture nothing", never "capture everything" (`getLastFocused()` without an id).
  */
-function scopeWindowId(scope: CaptureScope, lastFocusedId: number | undefined): number | undefined {
+function scopeWindowId(
+  scope: 'window' | { windowId: number },
+  lastFocusedId: number | undefined,
+): number | undefined {
   return typeof scope === 'object' ? scope.windowId : lastFocusedId;
+}
+
+/** The windows `scope` selects, with a tab scope's windows cut down to the chosen tabs. */
+function scopeWindows(
+  scope: CaptureScope,
+  allWindows: chrome.windows.Window[],
+  lastFocusedId: number | undefined,
+): chrome.windows.Window[] {
+  if (scope === 'all') {
+    return allWindows;
+  }
+  if (typeof scope === 'object' && 'tabIds' in scope) {
+    const wanted = new Set(scope.tabIds);
+    // A window none of whose tabs were chosen is left with no tabs, and `captureWindows` drops it.
+    return allWindows.map((win) => ({
+      ...win,
+      tabs: (win.tabs ?? []).filter((tab) => tab.id !== undefined && wanted.has(tab.id)),
+    }));
+  }
+  const windowId = scopeWindowId(scope, lastFocusedId);
+  return allWindows.filter((win) => win.id !== undefined && win.id === windowId);
 }
 
 export async function captureSession(scope: CaptureScope, name?: string): Promise<Session> {
@@ -282,10 +308,7 @@ export async function captureSession(scope: CaptureScope, name?: string): Promis
     loadCaptureOptions(),
   ]);
 
-  const windows =
-    scope === 'all'
-      ? allWindows
-      : allWindows.filter((w) => w.id !== undefined && w.id === scopeWindowId(scope, focused.id));
+  const windows = scopeWindows(scope, allWindows, focused.id);
 
   const snapshots = captureWindows(windows, groups, options);
   const tabCount = snapshots.reduce((sum, w) => sum + w.tabs.length, 0);

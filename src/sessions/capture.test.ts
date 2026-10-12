@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { type CaptureOptions, captureWindows, captureWindowsWithIds } from './capture';
+import {
+  type CaptureOptions,
+  captureSession,
+  captureWindows,
+  captureWindowsWithIds,
+} from './capture';
 
 const SUSPENDED_PREFIX = 'chrome-extension://suspenderid/suspended.html#';
 
@@ -489,5 +494,43 @@ describe('captureWindowsWithIds', () => {
 
     expect(captureWindowsWithIds([win], [], OPTIONS)).toEqual([]);
     expect(captureWindows([win], [], OPTIONS)).toHaveLength(1);
+  });
+});
+
+describe('captureSession with a tab scope', () => {
+  async function open(url: string, windowId?: number): Promise<number> {
+    const created = await chrome.tabs.create({ url, windowId, active: false });
+    if (created.id === undefined) {
+      throw new Error('expected a tab id');
+    }
+    return created.id;
+  }
+
+  it('captures only the chosen tabs, in strip order, each in its own window', async () => {
+    const other = await chrome.windows.create({ url: 'https://other.example/first' });
+    if (other?.id === undefined) {
+      throw new Error('expected a window id');
+    }
+    // Window 1 is the fake's starting window; the new one took the focus, so say which is meant.
+    const a = await open('https://a.example/', 1);
+    await open('https://skipped.example/', 1);
+    const b = await open('https://b.example/', 1);
+    const c = await open('https://c.example/', other.id);
+
+    const session = await captureSession({ tabIds: [c, b, a] });
+
+    expect(session.windows.map((win) => win.tabs.map((tab) => tab.url))).toEqual([
+      ['https://a.example/', 'https://b.example/'],
+      ['https://c.example/'],
+    ]);
+    expect(session.kind).toBe('saved');
+  });
+
+  it('captures nothing when none of the tabs is open any more', async () => {
+    await open('https://a.example/');
+
+    const session = await captureSession({ tabIds: [4242] });
+
+    expect(session.windows).toEqual([]);
   });
 });

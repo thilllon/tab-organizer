@@ -7,8 +7,19 @@ import { openTabInBackground } from '@/dashboard/lib/open-tab';
 import { browserHandlesClick, hrefFor } from '@/lib/link';
 import type { TabSnapshot } from '@/types';
 
+/** A row's tick box, where the list has a selection (the Open tabs list). */
+export interface TabRowSelection {
+  selected: boolean;
+  /** Something in the list is ticked: every row then shows its box, not only the hovered one. */
+  active: boolean;
+  /** `shiftKey` asks for the whole range from the row ticked last. */
+  onToggle(shiftKey: boolean): void;
+}
+
 export interface TabRowProps {
   tab: TabSnapshot;
+  /** Left out, the row has no tick box at all (saved sessions, snapshots, search results). */
+  selection?: TabRowSelection;
   /**
    * Open mode (open-windows pane): clicking the row goes to the live tab instead of opening the
    * saved url in a new background tab. Report a failure through `error` below.
@@ -18,7 +29,7 @@ export interface TabRowProps {
   actions?: ReactNode;
 }
 
-export function TabRow({ tab, onOpen, actions }: TabRowProps) {
+export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
   const [error, setError] = useState<string | undefined>(undefined);
 
   const open = () => {
@@ -70,7 +81,28 @@ export function TabRow({ tab, onOpen, actions }: TabRowProps) {
     // thing that keeps a 10,000-tab session scrolling smoothly.
     <li role="treeitem" tabIndex={-1} className="cv-tab-row">
       {/* The actions sit beside the row button, never inside it: a button may not nest buttons. */}
-      <div className="group/row flex items-center gap-1 rounded-md pr-1 hover:bg-accent">
+      <div
+        className={`group/row flex items-center gap-1 rounded-md pr-1 hover:bg-accent ${selection?.selected ? 'bg-accent' : ''}`}
+      >
+        {/*
+         * Beside the row link, never inside it, for the same reason as the actions. Clicking the
+         * row still goes to the tab; only the box selects. It waits for the pointer like the
+         * actions do, until something is ticked — from then on every row shows its box, because
+         * a list in which only one row admits to being selectable looks broken.
+         */}
+        {selection !== undefined && (
+          <input
+            type="checkbox"
+            aria-label={`Select ${label}`}
+            checked={selection.selected}
+            onChange={(event) =>
+              selection.onToggle(
+                event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey,
+              )
+            }
+            className={`ml-1.5 size-3.5 shrink-0 cursor-pointer accent-primary transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100 [@media(hover:none)]:opacity-100 ${selection.active ? 'opacity-100' : 'opacity-0'}`}
+          />
+        )}
         {href === undefined ? (
           <button type="button" onClick={open} title={error ?? tab.url} className={rowClass}>
             {inner}

@@ -81,9 +81,13 @@ const EXPORT_ALL_TOAST = 'export-all';
 const NOTHING_TO_SAVE = {
   window: 'Nothing to save — this window only holds Tab Organizer.',
   all: 'Nothing to save — no open window holds anything besides Tab Organizer.',
+  tabs: 'Nothing to save — the selected tabs are no longer open.',
 } as const;
 
 function nothingToSave(scope: CaptureScope): string {
+  if (typeof scope === 'object' && 'tabIds' in scope) {
+    return NOTHING_TO_SAVE.tabs;
+  }
   return scope === 'all' ? NOTHING_TO_SAVE.all : NOTHING_TO_SAVE.window;
 }
 
@@ -192,6 +196,23 @@ export function App() {
   // What had focus when Settings opened. The dialog is opened by the route, not by a
   // `DialogTrigger`, so Radix has nothing to hand focus back to on close.
   const settingsOpener = useRef<Element | null>(null);
+
+  // The page header's height, for whatever sticks right under it (the Open tabs selection bar).
+  // Measured rather than assumed: the header wraps to a second row on a narrow window.
+  const pageHeader = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = pageHeader.current;
+    if (element === null || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const publish = () => {
+      document.documentElement.style.setProperty('--app-header-h', `${element.offsetHeight}px`);
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   // Dragged by the handle between the columns, kept in localStorage (see sidebar-width.ts).
   const [sidebarWidth, setSidebarWidth] = useState(readSidebarWidth);
   const { sessions, loading, error: indexError } = useSessionIndex();
@@ -257,7 +278,8 @@ export function App() {
     navigate(next);
   };
 
-  const save = async (scope: CaptureScope) => {
+  /** Resolves true once the session is stored (the selection's "Save & close" closes only then). */
+  const save = async (scope: CaptureScope): Promise<boolean> => {
     setSaving(true);
     setError(undefined);
     setQuotaFull(false);
@@ -265,7 +287,7 @@ export function App() {
       const session = await captureSession(scope);
       if (session.windows.length === 0) {
         setNotice(nothingToSave(scope));
-        return;
+        return false;
       }
       // Two saves in the same minute would otherwise share the default name.
       const names = (await sessionRepo.listSummaries()).map((summary) => summary.name);
@@ -273,8 +295,10 @@ export function App() {
       await sessionRepo.put(named);
       setNotice(`Saved “${named.name}”. Rename it from its title.`);
       navigate({ view: 'saved', id: named.id });
+      return true;
     } catch (err) {
       reportWriteError(err);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -563,7 +587,10 @@ export function App() {
         onAssemble={() => void assemble()}
         assembling={assembling}
         onSaveWindow={(windowId) => void save({ windowId })}
+        onSaveTabs={(tabIds) => save({ tabIds })}
         onOpenSettings={() => go({ view: 'settings' })}
+        onNotice={announce}
+        onError={setError}
       />
     );
   };
@@ -599,7 +626,10 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-2">
+      <header
+        ref={pageHeader}
+        className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-2"
+      >
         {/* The wordmark is the way back to the open tabs, so it is a link to that route rather
             than a button that happens to navigate. */}
         <a

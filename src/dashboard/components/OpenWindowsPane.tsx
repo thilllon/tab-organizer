@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CloseWindowDialog } from '@/dashboard/components/CloseWindowDialog';
 import { WindowTree } from '@/dashboard/components/WindowTree';
 import type { OpenWindowView } from '@/dashboard/lib/open-windows';
+import type { TabSelection } from '@/dashboard/lib/tab-selection';
 import { closeTab, closeWindow, goToTab } from '@/dashboard/lib/window-actions';
 
 export interface OpenWindowsPaneProps {
@@ -19,6 +20,9 @@ export interface OpenWindowsPaneProps {
   busy?: boolean;
   /** False when the surrounding view already says "Open tabs" above it. */
   showHeading?: boolean;
+  /** The ticked tabs, by tab id. Given together with `onToggleTab`, every row gets a tick box. */
+  selection?: TabSelection;
+  onToggleTab?(tabId: number, shiftKey: boolean): void;
 }
 
 interface PendingClose {
@@ -41,6 +45,8 @@ export function OpenWindowsPane({
   onSaveWindow,
   busy,
   showHeading = true,
+  selection,
+  onToggleTab,
 }: OpenWindowsPaneProps) {
   const [pendingClose, setPendingClose] = useState<PendingClose | undefined>(undefined);
   // Radix keeps the dialog mounted through its close animation; the last pending value keeps its
@@ -155,6 +161,21 @@ export function OpenWindowsPane({
                 const result = await goToTab(tab.tabId, window.windowId);
                 return result.ok ? undefined : result.reason;
               }}
+              tabSelection={
+                selection === undefined || onToggleTab === undefined
+                  ? undefined
+                  : (tabIndex) => {
+                      const tab = window.tabs[tabIndex];
+                      if (tab === undefined) {
+                        return undefined;
+                      }
+                      return {
+                        selected: selection.has(tab.tabId),
+                        active: selection.size > 0,
+                        onToggle: (shiftKey) => onToggleTab(tab.tabId, shiftKey),
+                      };
+                    }
+              }
               renderTabActions={(tabIndex) => {
                 const tab = window.tabs[tabIndex];
                 if (tab === undefined) {

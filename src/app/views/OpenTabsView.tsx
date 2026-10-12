@@ -1,9 +1,27 @@
 import { Combine, Keyboard, Save } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ASSEMBLE_LABEL, ASSEMBLE_NAME } from '@/constants';
+import { CloseTabsDialog } from '@/dashboard/components/CloseTabsDialog';
 import { OpenWindowsPane } from '@/dashboard/components/OpenWindowsPane';
+import { SelectionBar } from '@/dashboard/components/SelectionBar';
 import type { OpenWindowsState } from '@/dashboard/hooks/useOpenWindows';
+import { copyText } from '@/dashboard/lib/download';
 import { pluralize } from '@/dashboard/lib/format';
+import {
+  type CopyFormat,
+  closedTabsNotice,
+  copiedSelectionNotice,
+  EMPTY_SELECTION,
+  pruneSelection,
+  selectBySite,
+  selectedTabs,
+  selectionText,
+  selectRange,
+  type TabSelection,
+  toggleSelected,
+} from '@/dashboard/lib/tab-selection';
+import { closeTabs } from '@/dashboard/lib/window-actions';
 
 export interface OpenTabsViewProps {
   openWindows: OpenWindowsState;
@@ -16,7 +34,12 @@ export interface OpenTabsViewProps {
   /** An assemble run is under way. */
   assembling: boolean;
   onSaveWindow(windowId: number): void;
+  /** Saves exactly these live tabs as a session; resolves true once it is stored. */
+  onSaveTabs(tabIds: number[]): Promise<boolean>;
   onOpenSettings(): void;
+  /** "Copied …" / "Closed …" — a toast, shown by the app. */
+  onNotice(message: string): void;
+  onError(message: string): void;
 }
 
 /**
@@ -25,6 +48,11 @@ export interface OpenTabsViewProps {
  * should not have to count their windows to know which one they are pressing. Saving a single
  * window stays on that window's row, where it belongs. With more than one window open, a second
  * button gathers them all into this one.
+ *
+ * Ticking tabs in the list turns the heading into a bar that acts on just those: save, copy,
+ * close. The bar takes the heading's place rather than a line of its own, so the list underneath
+ * does not jump when the first box is ticked, and it sticks below the page header so it is still
+ * there after scrolling down a long window to tick more.
  */
 export function OpenTabsView({
   openWindows,
@@ -34,40 +62,132 @@ export function OpenTabsView({
   onAssemble,
   assembling,
   onSaveWindow,
+  onSaveTabs,
   onOpenSettings,
+  onNotice,
+  onError,
 }: OpenTabsViewProps) {
+  const [selection, setSelection] = useState<TabSelection>(EMPTY_SELECTION);
+  // The tab ticked last: where a shift-click's range starts.
+  const anchor = useRef<number | undefined>(undefined);
+
+  // A ticked tab that closes (here or in the browser) leaves the selection with it.
+  useEffect(() => {
+    setSelection((current) => pruneSelection(openWindows.windows, current));
+  }, [openWindows.windows]);
+
+  const chosen = selectedTabs(openWindows.windows, selection);
+  const chosenIds = chosen.map((tab) => tab.tabId);
+  const selecting = chosen.length > 0;
+  const [confirmingClose, setConfirmingClose] = useState(false);
+
+  // The bar holds the buttons that empty the selection, and it goes when the selection does.
+  // Focus would fall back to <body>; it is handed to the heading that takes the bar's place.
+  const heading = useRef<HTMLHeadingElement>(null);
+  const wasSelecting = useRef(false);
+  useEffect(() => {
+    if (wasSelecting.current && !selecting) {
+      heading.current?.focus();
+    }
+    wasSelecting.current = selecting;
+  }, [selecting]);
+
+  const toggleTab = (tabId: number, shiftKey: boolean) => {
+    // Read now, not inside the updater: React may run the updater later, during render, and by
+    // then the anchor below has already moved to this very tab — a range of one.
+    const from = anchor.current;
+    anchor.current = tabId;
+    setSelection((current) =>
+      shiftKey
+        ? selectRange(openWindows.windows, current, from, tabId)
+        : toggleSelected(current, tabId),
+    );
+  };
+
+  const clearSelection = () => {
+    setSelection(EMPTY_SELECTION);
+    anchor.current = undefined;
+  };
+
+  const copy = (format: CopyFormat) => {
+    void copyText(selectionText(chosen, format)).then((result) => {
+      if (result.ok) {
+        onNotice(copiedSelectionNotice(chosen.length, format));
+      } else {
+        onError(result.error);
+      }
+    });
+  };
+
+  const close = async () => {
+    const result = await closeTabs(chosenIds);
+    if (result.ok) {
+      onNotice(closedTabsNotice(chosenIds.length));
+    } else {
+      onError(result.reason);
+    }
+  };
+
+  const saveAndClose = async () => {
+    // Close only what was really stored: a failed save must not cost the tabs as well.
+    if (await onSaveTabs(chosenIds)) {
+      await close();
+    }
+  };
+
   const windowCount = openWindows.windows.length;
   const tabCount = openWindows.windows.reduce((count, win) => count + win.tabs.length, 0);
   const saveLabel = windowCount > 1 ? 'Save all windows' : 'Save this window';
 
   return (
     <section aria-label="Open tabs" className="min-w-0">
-      <header className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-semibold">Open tabs</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {pluralize(windowCount, 'window')} · {pluralize(tabCount, 'tab')}
-          </p>
-        </div>
-        {/* Only where there is something to gather. Same name as the icon's right-click item, so
+      {selecting ? (
+        // `--app-header-h` is the page header's measured height (App.tsx), so the bar sits flush
+        // under it whatever that header wraps to.
+        <header className="sticky top-[var(--app-header-h,4rem)] z-[5] -my-2 flex min-h-16 flex-wrap items-center gap-2 bg-background py-2">
+          <SelectionBar
+            count={chosen.length}
+            busy={busy}
+            onClear={clearSelection}
+            onSave={() => void onSaveTabs(chosenIds)}
+            onSaveAndClose={() => void saveAndClose()}
+            onCopy={copy}
+            onClose={() => (chosen.length > 1 ? setConfirmingClose(true) : void close())}
+            onSelectBySite={(mode) =>
+              setSelection((current) => selectBySite(openWindows.windows, current, mode))
+            }
+          />
+        </header>
+      ) : (
+        <header className="-my-2 flex min-h-16 flex-wrap items-center gap-3 py-2">
+          <div className="min-w-0 flex-1">
+            <h1 ref={heading} tabIndex={-1} className="text-lg font-semibold outline-none">
+              Open tabs
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {pluralize(windowCount, 'window')} · {pluralize(tabCount, 'tab')}
+            </p>
+          </div>
+          {/* Only where there is something to gather. Same name as the icon's right-click item, so
             the two are recognisably one action; that item spells the explanation out in brackets,
             here it is the tooltip. */}
-        {windowCount > 1 && (
-          <Button
-            variant="outline"
-            onClick={onAssemble}
-            disabled={busy || assembling}
-            title={ASSEMBLE_LABEL}
-          >
-            <Combine />
-            {ASSEMBLE_NAME}
+          {windowCount > 1 && (
+            <Button
+              variant="outline"
+              onClick={onAssemble}
+              disabled={busy || assembling}
+              title={ASSEMBLE_LABEL}
+            >
+              <Combine />
+              {ASSEMBLE_NAME}
+            </Button>
+          )}
+          <Button onClick={onSaveAll} disabled={busy || windowCount === 0}>
+            <Save />
+            {saveLabel}
           </Button>
-        )}
-        <Button onClick={onSaveAll} disabled={busy || windowCount === 0}>
-          <Save />
-          {saveLabel}
-        </Button>
-      </header>
+        </header>
+      )}
 
       {savedCount === 0 && (
         <p className="mt-4 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
@@ -94,8 +214,20 @@ export function OpenTabsView({
           onSaveWindow={onSaveWindow}
           busy={busy}
           showHeading={false}
+          selection={selection}
+          onToggleTab={toggleTab}
         />
       </div>
+
+      <CloseTabsDialog
+        tabCount={chosen.length}
+        open={confirmingClose && selecting}
+        onOpenChange={setConfirmingClose}
+        onConfirm={() => {
+          setConfirmingClose(false);
+          void close();
+        }}
+      />
     </section>
   );
 }

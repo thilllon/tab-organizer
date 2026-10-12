@@ -151,6 +151,14 @@ function markdownTab(tab: TabSnapshot): string {
   return `- [${escapeMarkdownText(title)}](${markdownUrl(tab.url)})${marker}`;
 }
 
+/**
+ * Tabs as a bare Markdown list, one `- [title](url)` per line — a copied selection, which has no
+ * session or window to put a heading on.
+ */
+export function toMarkdownLinks(tabs: readonly TabSnapshot[]): string {
+  return tabs.map(markdownTab).join('\n');
+}
+
 function markdownWindow({ window, number }: IndexedWindow): string {
   const { ungrouped, groups } = layoutWindow(window);
   const lines = [`### Window ${number}`, ...ungrouped.map(markdownTab)];

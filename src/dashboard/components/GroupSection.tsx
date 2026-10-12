@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { TabRow } from '@/dashboard/components/TabRow';
+import { TabRow, type TabRowSelection } from '@/dashboard/components/TabRow';
 import { pluralize } from '@/dashboard/lib/format';
 import { groupChipClass, groupRailClass } from '@/dashboard/lib/group-colors';
 import type { GroupSnapshot, TabSnapshot } from '@/types';
@@ -16,6 +16,7 @@ export interface GroupSectionProps {
   actions?: ReactNode;
   onOpenTab?(tabIndex: number): Promise<string | undefined> | undefined;
   renderTabActions?(tabIndex: number): ReactNode;
+  tabSelection?(tabIndex: number): TabRowSelection | undefined;
 }
 
 export function GroupSection({
@@ -25,6 +26,7 @@ export function GroupSection({
   actions,
   onOpenTab,
   renderTabActions,
+  tabSelection,
 }: GroupSectionProps) {
   const [open, setOpen] = useState(!group.collapsed);
 
@@ -64,6 +66,7 @@ export function GroupSection({
                 // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.
                 key={`${index}-${tab.url}`}
                 tab={tab}
+                selection={tabSelection?.(startIndex + index)}
                 onOpen={onOpenTab === undefined ? undefined : () => onOpenTab(startIndex + index)}
                 actions={renderTabActions?.(startIndex + index)}
               />

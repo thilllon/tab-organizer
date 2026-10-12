@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getChromeFake } from '@/test/chrome-fake';
-import { closeTab, closeWindow, currentWindowTarget, goToTab } from './window-actions';
+import { closeTab, closeTabs, closeWindow, currentWindowTarget, goToTab } from './window-actions';
 
 describe('goToTab', () => {
   it('activates the tab and focuses its window', async () => {
@@ -24,6 +24,44 @@ describe('goToTab', () => {
 
   it('reports a tab that is already gone instead of throwing', async () => {
     expect(await goToTab(4242, 1)).toEqual({ ok: false, reason: 'No tab with id: 4242.' });
+  });
+});
+
+describe('closeTabs', () => {
+  async function open(url: string): Promise<number> {
+    const created = await chrome.tabs.create({ url, active: false });
+    if (created.id === undefined) {
+      throw new Error('expected id');
+    }
+    return created.id;
+  }
+
+  it('removes every tab given and leaves the others', async () => {
+    const fake = getChromeFake();
+    const keep = await open('https://keep.example/');
+    const first = await open('https://first.example/');
+    const second = await open('https://second.example/');
+
+    expect(await closeTabs([first, second])).toEqual({ ok: true });
+
+    expect(fake.state.tabs.has(first)).toBe(false);
+    expect(fake.state.tabs.has(second)).toBe(false);
+    expect(fake.state.tabs.has(keep)).toBe(true);
+  });
+
+  it('still closes the open ones when one of the tabs has already gone', async () => {
+    const fake = getChromeFake();
+    const first = await open('https://first.example/');
+    const second = await open('https://second.example/');
+
+    expect(await closeTabs([4242, first, second])).toEqual({ ok: true });
+
+    expect(fake.state.tabs.has(first)).toBe(false);
+    expect(fake.state.tabs.has(second)).toBe(false);
+  });
+
+  it('does nothing for an empty list', async () => {
+    expect(await closeTabs([])).toEqual({ ok: true });
   });
 });
 

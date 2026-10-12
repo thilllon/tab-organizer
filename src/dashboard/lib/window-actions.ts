@@ -30,6 +30,36 @@ export function closeTab(tabId: number): Promise<ActionResult> {
   return run(() => chrome.tabs.remove(tabId));
 }
 
+/**
+ * Closes several tabs in one call. Chrome rejects the whole call when any id is unknown, and a
+ * selection can outlive one of its tabs by a moment, so on a failure the ids are retried one by
+ * one and only the tabs that are really still open and would not close are reported.
+ */
+export async function closeTabs(tabIds: readonly number[]): Promise<ActionResult> {
+  if (tabIds.length === 0) {
+    return { ok: true };
+  }
+  const all = await run(() => chrome.tabs.remove([...tabIds]));
+  if (all.ok) {
+    return all;
+  }
+  let failure: ActionResult = { ok: true };
+  for (const tabId of tabIds) {
+    const open = await chrome.tabs.get(tabId).then(
+      () => true,
+      () => false,
+    );
+    if (!open) {
+      continue;
+    }
+    const one = await closeTab(tabId);
+    if (!one.ok) {
+      failure = one;
+    }
+  }
+  return failure;
+}
+
 /** "Close window" — every tab in it goes with it, which is why the UI confirms first. */
 export function closeWindow(windowId: number): Promise<ActionResult> {
   return run(() => chrome.windows.remove(windowId));
