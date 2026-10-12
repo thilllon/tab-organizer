@@ -178,6 +178,7 @@ tab-organizer/
 │   │   ├── smoke.ts           # 11-step sessions smoke test: pnpm build && pnpm exec tsx scripts/e2e/smoke.ts
 │   │   ├── assemble.ts        # assemble-tabs checks against an e2e build: pnpm e2e:assemble
 │   │   ├── sort.ts            # icon-click sort checks (order, groups, how many tabs moved): pnpm build && pnpm e2e:sort
+│   │   ├── selection.ts       # Open tabs selection checks (tick, range, copy, close, save & close): pnpm build && pnpm e2e:selection
 │   │   ├── browser.ts         # launchExtension() — a real Chromium with dist/ loaded (shared with screenshots)
 │   │   ├── server.ts          # startDemoServer() — 127.0.0.1 fixture pages (the QA browser has no network)
 │   │   └── fixtures.ts        # Session fixtures seeded straight into chrome.storage.local
@@ -378,6 +379,7 @@ pnpm release          # release-it: regenerate CWS assets, bump version, build, 
 pnpm exec tsx scripts/e2e/smoke.ts   # Real-Chrome sessions smoke test (run `pnpm build` first)
 pnpm e2e:assemble                    # e2e build (in node_modules/.cache) + real-Chrome assemble-tabs checks
 pnpm e2e:sort                        # Real-Chrome sort checks against dist/ (run `pnpm build` first; headed)
+pnpm e2e:selection                   # Real-Chrome checks of the Open tabs selection (run `pnpm build` first; headed)
 pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<name>-<version>.zip
 ```
 
@@ -547,6 +549,10 @@ Playwright itself is a devDependency, used by this harness and by `scripts/prepa
 ### Real-Chrome sort check (committed)
 
 `pnpm build && pnpm e2e:sort` runs `scripts/e2e/sort.ts` against the ordinary `dist/`: the click is delivered with `chrome.action.onClicked.dispatch()` inside the service worker, so no e2e hook is needed, and because `sortTabGroups()` is not awaited by its listener each scenario waits for the strip to stop changing. Eight checks: a scrambled window comes out in url order with every tab id kept; a sorted window produces **zero** `tabs.onMoved` events; the last tab dragged to the front is **one** move (the old whole-block call moved every other tab); pinned tabs stay while a titled group and the loose tabs sort within themselves; the group keeps its id, members and title; and the same single-move case inside a group, at the group's edge, leaves the tab in the group. Sorting acts on the last-focused window, so it needs a headed browser (`HEADLESS=0` on this Mac).
+
+### Real-Chrome selection check (committed)
+
+`pnpm build && pnpm e2e:selection` runs `scripts/e2e/selection.ts` against `dist/`: six tabs on two sites (the fixture server under `127.0.0.1` and `localhost`), then eight checks on the Open tabs view — ticking a box swaps the heading for the bar **without moving the list** (the tree's y is compared), shift-click takes the range, Copy really fills the clipboard, Clear brings the heading back, "Select all tabs not like this / like this", Close asks first and closes exactly the ticked tabs, Save & close stores a session of exactly those tabs and closes them, and a click on the row itself still activates the tab. Results are read through `chrome.tabs` / `chrome.storage` in the service worker. Headed on this Mac (`HEADLESS=0`); `SELECTION_SHOTS=<dir>` writes page screenshots. It overwrites the system clipboard with the test links.
 
 ### Real-Chrome QA (manual, beyond what the smoke test covers)
 
