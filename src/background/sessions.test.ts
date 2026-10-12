@@ -99,7 +99,7 @@ describe('registerContextMenus', () => {
     // Opening the app is Chrome's own "Options" item (options_page = app.html#settings) plus the
     // `open-dashboard` command; this menu does not repeat it.
     expect(menus.filter((m) => m.type !== 'separator').map((m) => m.title)).toEqual([
-      'Assemble!',
+      "Assemble! (move every window's tabs into this one)",
       'Save all windows as session',
     ]);
     for (const menu of menus) {

@@ -1,3 +1,4 @@
+import { ASSEMBLE_LABEL } from '@/constants';
 import { captureSession } from '@/sessions/capture';
 import {
   ensureHistoryAlarm,
@@ -92,7 +93,7 @@ export async function registerContextMenus(): Promise<void> {
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({
     id: MENU_IDS.assembleTabs,
-    title: 'Assemble!',
+    title: ASSEMBLE_LABEL,
     contexts: ['action'],
   });
   chrome.contextMenus.create({

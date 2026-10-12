@@ -1,5 +1,6 @@
 import { Combine, Keyboard, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ASSEMBLE_LABEL, ASSEMBLE_NAME } from '@/constants';
 import { OpenWindowsPane } from '@/dashboard/components/OpenWindowsPane';
 import type { OpenWindowsState } from '@/dashboard/hooks/useOpenWindows';
 import { pluralize } from '@/dashboard/lib/format';
@@ -49,16 +50,17 @@ export function OpenTabsView({
           </p>
         </div>
         {/* Only where there is something to gather. Same name as the icon's right-click item, so
-            the two are recognisably one action. */}
+            the two are recognisably one action; that item spells the explanation out in brackets,
+            here it is the tooltip. */}
         {windowCount > 1 && (
           <Button
             variant="outline"
             onClick={onAssemble}
             disabled={busy || assembling}
-            title="Move every other window's tabs into this window"
+            title={ASSEMBLE_LABEL}
           >
             <Combine />
-            Assemble!
+            {ASSEMBLE_NAME}
           </Button>
         )}
         <Button onClick={onSaveAll} disabled={busy || windowCount === 0}>

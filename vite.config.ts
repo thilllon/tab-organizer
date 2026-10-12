@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { configDefaults, defineConfig } from 'vitest/config';
 import packageJson from './package.json';
+import { ASSEMBLE_LABEL, DEFAULT_SHORTCUTS } from './src/constants';
 
 interface PackageJson {
   name?: string;
@@ -63,23 +64,21 @@ const manifest = defineManifest((env) => {
       'favicon',
       'alarms',
     ],
-    // Sorting and assembling suggest a key; the other two ship unbound. Chrome silently drops a
-    // suggested_key that conflicts with another extension, so the UI must not promise a key —
-    // Settings shows what Chrome actually assigned. Users bind and rebind them at
-    // chrome://extensions/shortcuts.
+    // Sorting and assembling suggest a key (DEFAULT_SHORTCUTS in src/constants.ts); the other two
+    // ship unbound. Chrome silently drops a suggested_key that conflicts with another extension,
+    // so the UI must not promise a key — Settings shows what Chrome actually assigned. Users bind
+    // and rebind them at chrome://extensions/shortcuts.
     commands: {
       // Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked`
       // exactly as a click does, so the shortcut sorts (and snapshots) through the very same
       // listeners — there is no second code path to keep in step. Chrome ignores a description
       // here; Settings supplies the name (src/app/lib/command-rows.ts).
-      // Alt+Shift+S, which Chrome reads as Option+Shift+S on a Mac.
-      _execute_action: { suggested_key: { default: 'Alt+Shift+S' } },
+      _execute_action: { suggested_key: { default: DEFAULT_SHORTCUTS._execute_action } },
       'save-session': { description: 'Save the current window as a session' },
       'open-dashboard': { description: 'Open the Sessions dashboard' },
       'assemble-tabs': {
-        // Option+Shift+A on a Mac, next to sorting's S.
-        suggested_key: { default: 'Alt+Shift+A' },
-        description: 'Move the tabs of all other windows into this window',
+        suggested_key: { default: DEFAULT_SHORTCUTS['assemble-tabs'] },
+        description: ASSEMBLE_LABEL,
       },
     },
   };

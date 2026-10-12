@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { ASSEMBLE_NAME, DEFAULT_SHORTCUTS } from '@/constants';
 import { SessionSettingsFields } from '@/dashboard/components/SessionSettingsFields';
 import { StorageMeter } from '@/dashboard/components/StorageMeter';
 import { useSessionSettings } from '@/dashboard/hooks/useSessionSettings';
@@ -376,7 +377,7 @@ export function SettingsView({
 
         <Group
           title="Keyboard shortcuts"
-          description="Chrome owns these. Sorting starts as Alt+Shift+S and Assemble! as Alt+Shift+A (⌥⇧S and ⌥⇧A on a Mac) when those keys are free; the rest start unset."
+          description={`Chrome owns these. Sorting starts as ${DEFAULT_SHORTCUTS._execute_action} and ${ASSEMBLE_NAME} as ${DEFAULT_SHORTCUTS['assemble-tabs']} (Option in place of Alt on a Mac) when those keys are free; the rest start unset.`}
         >
           {commands.map((command) => (
             <Field key={command.name} label={command.name}>
