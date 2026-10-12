@@ -301,6 +301,20 @@ function scopeWindows(
 }
 
 export async function captureSession(scope: CaptureScope, name?: string): Promise<Session> {
+  return (await captureSessionWithTabIds(scope, name)).session;
+}
+
+/**
+ * `captureSession`, plus the runtime ids of exactly the tabs that went into the session — from the
+ * same read of the browser, so the two cannot disagree. For "Save & close": the tabs asked for
+ * and the tabs captured can differ (one closed, or became a page that is not captured, between
+ * the tick and the save), and only what was captured may be closed. The ids are returned beside
+ * the session, never inside it.
+ */
+export async function captureSessionWithTabIds(
+  scope: CaptureScope,
+  name?: string,
+): Promise<{ session: Session; tabIds: number[] }> {
   const [allWindows, groups, focused, options] = await Promise.all([
     chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }),
     chrome.tabGroups.query({}),
@@ -312,17 +326,23 @@ export async function captureSession(scope: CaptureScope, name?: string): Promis
 
   const snapshots = captureWindows(windows, groups, options);
   const tabCount = snapshots.reduce((sum, w) => sum + w.tabs.length, 0);
+  const tabIds = captureWindowsWithIds(windows, groups, options).flatMap((win) =>
+    win.tabs.map((tab) => tab.tabId),
+  );
   const now = Date.now();
 
   return {
-    schemaVersion: 1,
-    id: crypto.randomUUID(),
-    kind: 'saved',
-    name: name ?? defaultSessionName(new Date(now), snapshots.length, tabCount),
-    origin: 'manual',
-    createdAt: now,
-    updatedAt: now,
-    contentHash: contentHash(snapshots),
-    windows: snapshots,
+    session: {
+      schemaVersion: 1,
+      id: crypto.randomUUID(),
+      kind: 'saved',
+      name: name ?? defaultSessionName(new Date(now), snapshots.length, tabCount),
+      origin: 'manual',
+      createdAt: now,
+      updatedAt: now,
+      contentHash: contentHash(snapshots),
+      windows: snapshots,
+    },
+    tabIds,
   };
 }

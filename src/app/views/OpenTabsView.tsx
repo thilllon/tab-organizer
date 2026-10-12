@@ -13,6 +13,7 @@ import {
   closedTabsNotice,
   copiedSelectionNotice,
   EMPTY_SELECTION,
+  keptOpenNotice,
   pruneSelection,
   selectBySite,
   selectedTabs,
@@ -34,8 +35,12 @@ export interface OpenTabsViewProps {
   /** An assemble run is under way. */
   assembling: boolean;
   onSaveWindow(windowId: number): void;
-  /** Saves exactly these live tabs as a session; resolves true once it is stored. */
-  onSaveTabs(tabIds: number[]): Promise<boolean>;
+  /**
+   * Saves these live tabs as a session. Resolves with the ids of the tabs that were stored —
+   * fewer than asked for when one closed or stopped being saveable in the meantime — or undefined
+   * when nothing was saved.
+   */
+  onSaveTabs(tabIds: number[]): Promise<number[] | undefined>;
   onOpenSettings(): void;
   /** "Copied …" / "Closed …" — a toast, shown by the app. */
   onNotice(message: string): void;
@@ -119,19 +124,28 @@ export function OpenTabsView({
     });
   };
 
-  const close = async () => {
-    const result = await closeTabs(chosenIds);
+  const close = async (tabIds: number[] = chosenIds) => {
+    const result = await closeTabs(tabIds);
     if (result.ok) {
-      onNotice(closedTabsNotice(chosenIds.length));
+      onNotice(closedTabsNotice(tabIds.length));
     } else {
       onError(result.reason);
     }
   };
 
   const saveAndClose = async () => {
-    // Close only what was really stored: a failed save must not cost the tabs as well.
-    if (await onSaveTabs(chosenIds)) {
-      await close();
+    const asked = chosenIds;
+    // Close only what was really stored. The save reads the browser afresh, so it can hold fewer
+    // tabs than were ticked; a tab that did not make it into the session stays open.
+    const stored = await onSaveTabs(asked);
+    if (stored === undefined) {
+      return;
+    }
+    const wanted = new Set(asked);
+    const safe = stored.filter((tabId) => wanted.has(tabId));
+    await close(safe);
+    if (safe.length < asked.length) {
+      onNotice(keptOpenNotice(asked.length - safe.length));
     }
   };
 

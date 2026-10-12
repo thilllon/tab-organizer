@@ -154,3 +154,8 @@ export function copiedSelectionNotice(count: number, format: CopyFormat): string
 export function closedTabsNotice(count: number): string {
   return `Closed ${pluralize(count, 'tab')}.`;
 }
+
+/** "Save & close", when some ticked tabs could not be saved and were therefore left open. */
+export function keptOpenNotice(count: number): string {
+  return `${pluralize(count, 'tab')} could not be saved and ${count === 1 ? 'was' : 'were'} left open.`;
+}

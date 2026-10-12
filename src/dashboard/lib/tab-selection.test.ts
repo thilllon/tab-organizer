@@ -4,6 +4,7 @@ import {
   closedTabsNotice,
   copiedSelectionNotice,
   EMPTY_SELECTION,
+  keptOpenNotice,
   pruneSelection,
   selectBySite,
   selectedTabs,
@@ -135,5 +136,7 @@ describe('wording', () => {
     expect(copiedSelectionNotice(3, 'titled')).toBe('Copied 3 links with titles.');
     expect(closedTabsNotice(1)).toBe('Closed 1 tab.');
     expect(closedTabsNotice(4)).toBe('Closed 4 tabs.');
+    expect(keptOpenNotice(1)).toBe('1 tab could not be saved and was left open.');
+    expect(keptOpenNotice(2)).toBe('2 tabs could not be saved and were left open.');
   });
 });

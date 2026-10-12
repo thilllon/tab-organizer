@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type CaptureOptions,
   captureSession,
+  captureSessionWithTabIds,
   captureWindows,
   captureWindowsWithIds,
 } from './capture';
@@ -532,5 +533,29 @@ describe('captureSession with a tab scope', () => {
     const session = await captureSession({ tabIds: [4242] });
 
     expect(session.windows).toEqual([]);
+  });
+});
+
+describe('captureSessionWithTabIds', () => {
+  it('returns the ids of exactly the tabs that went into the session', async () => {
+    const kept = await chrome.tabs.create({ url: 'https://kept.example/', active: false });
+    const own = await chrome.tabs.create({
+      url: chrome.runtime.getURL('app.html'),
+      active: false,
+    });
+    if (kept.id === undefined || own.id === undefined) {
+      throw new Error('expected tab ids');
+    }
+
+    // The app's own page is never captured, and a tab that has closed cannot be: neither may be
+    // reported as stored, or "Save & close" would close something that was not saved.
+    const { session, tabIds } = await captureSessionWithTabIds({
+      tabIds: [kept.id, own.id, 4242],
+    });
+
+    expect(session.windows.map((win) => win.tabs.map((tab) => tab.url))).toEqual([
+      ['https://kept.example/'],
+    ]);
+    expect(tabIds).toEqual([kept.id]);
   });
 });

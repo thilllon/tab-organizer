@@ -65,7 +65,7 @@ import {
 import { pickWindow, recoveredSnapshot, splitByKind } from '@/dashboard/lib/session-utils';
 import { currentWindowTarget, goToTab } from '@/dashboard/lib/window-actions';
 import { browserHandlesClick } from '@/lib/link';
-import { type CaptureScope, captureSession } from '@/sessions/capture';
+import { type CaptureScope, captureSessionWithTabIds } from '@/sessions/capture';
 import { toJson } from '@/sessions/export';
 import { ensureUniqueName } from '@/sessions/naming';
 import type { RestoreTarget } from '@/sessions/restore';
@@ -278,16 +278,19 @@ export function App() {
     navigate(next);
   };
 
-  /** Resolves true once the session is stored (the selection's "Save & close" closes only then). */
-  const save = async (scope: CaptureScope): Promise<boolean> => {
+  /**
+   * Resolves with the ids of the tabs that are now stored, or undefined when nothing was saved —
+   * the selection's "Save & close" closes those tabs and no others.
+   */
+  const save = async (scope: CaptureScope): Promise<number[] | undefined> => {
     setSaving(true);
     setError(undefined);
     setQuotaFull(false);
     try {
-      const session = await captureSession(scope);
+      const { session, tabIds } = await captureSessionWithTabIds(scope);
       if (session.windows.length === 0) {
         setNotice(nothingToSave(scope));
-        return false;
+        return undefined;
       }
       // Two saves in the same minute would otherwise share the default name.
       const names = (await sessionRepo.listSummaries()).map((summary) => summary.name);
@@ -295,10 +298,10 @@ export function App() {
       await sessionRepo.put(named);
       setNotice(`Saved “${named.name}”. Rename it from its title.`);
       navigate({ view: 'saved', id: named.id });
-      return true;
+      return tabIds;
     } catch (err) {
       reportWriteError(err);
-      return false;
+      return undefined;
     } finally {
       setSaving(false);
     }
