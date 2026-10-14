@@ -73,7 +73,7 @@ export function RestoreConfirmDialog({ pending, onConfirm, onCancel }: RestoreCo
             onChange={(event) => setLazy(event.target.checked)}
           />
           <Label htmlFor="restore-lazy">
-            Load tabs lazily (recommended — tabs load when clicked)
+            Load tabs lazily (recommended: tabs load when clicked)
           </Label>
         </div>
         <DialogFooter>

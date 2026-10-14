@@ -37,7 +37,7 @@ export function splitByKind(summaries: readonly SessionSummary[]): {
  * entry they can neither open nor get rid of.
  */
 export const UNREADABLE_SESSION_MESSAGE =
-  'Saved by a newer version of Tab Organizer — update to open';
+  'Saved by a newer version of Tab Organizer. Update to open it.';
 
 /** The version that wrote it, for the row's second line: "schema v2". */
 export function unreadableSchemaLabel(unreadable: UnreadableSession): string {

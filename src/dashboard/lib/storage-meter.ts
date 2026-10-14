@@ -105,7 +105,7 @@ export function snapshotHint(breakdown: StorageBreakdown): string | undefined {
   if (breakdown.snapshots <= breakdown.saved + breakdown.other) {
     return undefined;
   }
-  return `Automatic snapshots use ${formatBytes(breakdown.snapshots)} — lower "Keep last N snapshots" or delete unprotected snapshots.`;
+  return `Automatic snapshots use ${formatBytes(breakdown.snapshots)}. Lower "Keep last N snapshots" or delete unprotected snapshots.`;
 }
 
 /**

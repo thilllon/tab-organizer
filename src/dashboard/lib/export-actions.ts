@@ -70,13 +70,13 @@ export function exportScopeName(
     return session.name;
   }
   if (groupIndex === undefined) {
-    return `${session.name} — Window ${windowIndex + 1}`;
+    return `${session.name} (Window ${windowIndex + 1})`;
   }
   const group = session.windows[windowIndex].groups[groupIndex];
   if (group === undefined) {
-    return `${session.name} — Window ${windowIndex + 1}`;
+    return `${session.name} (Window ${windowIndex + 1})`;
   }
-  return `${session.name} — ${group.title === '' ? 'Untitled group' : group.title}`;
+  return `${session.name} (${group.title === '' ? 'Untitled group' : group.title})`;
 }
 
 export function exportedNotice(name: string, format: ExportFormat): string {
@@ -98,7 +98,7 @@ export function copiedMarkdownNotice(count: number): string {
 export const COPIED_LINK = 'Copied link.';
 
 /** Nothing was in scope — an empty group, or a window whose tabs were all removed. */
-export const NOTHING_TO_EXPORT = 'Nothing to export — this selection has no tabs.';
+export const NOTHING_TO_EXPORT = 'Nothing to export: this selection has no tabs.';
 
 // ---------------------------------------------------------------------------
 // Export all (JSON backup)
@@ -141,7 +141,7 @@ export function exportAllNotice(exported: number, skipped: number): string {
     : `${sentence} ${pluralize(skipped, 'session')} could not be read.`;
 }
 
-export const NOTHING_TO_EXPORT_ALL = 'Nothing to export — there are no saved sessions yet.';
+export const NOTHING_TO_EXPORT_ALL = 'Nothing to export: there are no saved sessions yet.';
 
 /**
  * Reads every body in `summaries` through `sessionRepo.get()` — saved sessions and history

@@ -79,9 +79,9 @@ const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
 const EXPORT_ALL_TOAST = 'export-all';
 
 const NOTHING_TO_SAVE = {
-  window: 'Nothing to save — this window only holds Tab Organizer.',
-  all: 'Nothing to save — no open window holds anything besides Tab Organizer.',
-  tabs: 'Nothing to save — the selected tabs are no longer open.',
+  window: 'Nothing to save: this window only holds Tab Organizer.',
+  all: 'Nothing to save: no open window holds anything besides Tab Organizer.',
+  tabs: 'Nothing to save: the selected tabs are no longer open.',
 } as const;
 
 function nothingToSave(scope: CaptureScope): string {

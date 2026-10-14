@@ -39,6 +39,6 @@ describe('isQuotaError', () => {
   });
 
   it('has one message for every quota failure', () => {
-    expect(QUOTA_NOTICE).toBe('Storage is full — delete old snapshots or sessions.');
+    expect(QUOTA_NOTICE).toBe('Storage is full. Delete old snapshots or sessions.');
   });
 });

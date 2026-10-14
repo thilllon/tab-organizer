@@ -102,25 +102,25 @@ describe('exportScopeName', () => {
 
   it('names the session, the window and the group', () => {
     expect(exportScopeName(session)).toBe('Work');
-    expect(exportScopeName(session, 1)).toBe('Work — Window 2');
-    expect(exportScopeName(session, 0, 0)).toBe('Work — Dev');
+    expect(exportScopeName(session, 1)).toBe('Work (Window 2)');
+    expect(exportScopeName(session, 0, 0)).toBe('Work (Dev)');
   });
 
   it('calls an untitled group by its placeholder', () => {
-    expect(exportScopeName(session, 0, 1)).toBe('Work — Untitled group');
+    expect(exportScopeName(session, 0, 1)).toBe('Work (Untitled group)');
   });
 
   it('falls back when an index is out of range', () => {
     expect(exportScopeName(session, 9)).toBe('Work');
-    expect(exportScopeName(session, 0, 9)).toBe('Work — Window 1');
+    expect(exportScopeName(session, 0, 9)).toBe('Work (Window 1)');
   });
 });
 
 describe('notices', () => {
   it('names the format in the confirmation', () => {
     expect(exportedNotice('Work', 'json')).toBe('Exported “Work” as JSON.');
-    expect(exportedNotice('Work — Window 2', 'html')).toBe(
-      'Exported “Work — Window 2” as HTML bookmarks.',
+    expect(exportedNotice('Work (Window 2)', 'html')).toBe(
+      'Exported “Work (Window 2)” as HTML bookmarks.',
     );
     expect(formatName('markdown')).toBe('Markdown');
   });

@@ -159,7 +159,7 @@ export function SnapshotDetail({
                     return result.reason;
                   }
                   if (result.switched) {
-                    onNotice('That tab was already open — switched to it.');
+                    onNotice('Switched to that tab, which was already open.');
                   }
                   return undefined;
                 }}

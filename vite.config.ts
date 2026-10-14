@@ -38,7 +38,7 @@ const manifest = defineManifest((env) => {
       default_icon: 'img/logo-48.png',
       // Hovering the icon is the cheapest way to learn the two gestures; the name alone taught
       // nobody that the right-click menu exists.
-      default_title: 'Tab Organizer — click to sort tabs, right-click for sessions',
+      default_title: 'Tab Organizer: click to sort tabs, right-click for sessions',
     },
     // Chrome's own "Options" item opens the app's Settings view — one page, one place for
     // everything (a fragment is allowed here; verified in Chrome for Testing 151).

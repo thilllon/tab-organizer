@@ -122,7 +122,7 @@ describe('storageTotalLine / storageDetailLine', () => {
 describe('snapshotHint', () => {
   it('fires when snapshots are large and outweigh everything else', () => {
     expect(snapshotHint(breakdown({ total: 6 * MB, snapshots: 4 * MB, saved: 2 * MB }))).toBe(
-      'Automatic snapshots use 4.0 MB — lower "Keep last N snapshots" or delete unprotected snapshots.',
+      'Automatic snapshots use 4.0 MB. Lower "Keep last N snapshots" or delete unprotected snapshots.',
     );
   });
 

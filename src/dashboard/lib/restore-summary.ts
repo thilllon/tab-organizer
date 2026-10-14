@@ -67,7 +67,7 @@ export function formatRestoreSummary(
 ): string {
   const parts =
     options.cancelled === true
-      ? [`Restore cancelled — ${pluralize(result.restored, 'tab')} opened`]
+      ? [`Restore cancelled: ${pluralize(result.restored, 'tab')} opened`]
       : [`Restored ${result.restored} of ${pluralize(total, 'tab')}`];
   if (result.discarded > 0) {
     parts.push(`${pluralize(result.discarded, 'tab')} will load when clicked`);

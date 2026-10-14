@@ -8,10 +8,10 @@ export type AssembleOutcome =
 
 export function assembleOutcome(result: AssembleResult): AssembleOutcome {
   if (result.status === 'busy') {
-    return { kind: 'notice', message: 'Still gathering — one moment.' };
+    return { kind: 'notice', message: 'Still gathering, one moment.' };
   }
   if (result.status === 'nothing-to-do') {
-    return { kind: 'notice', message: 'Nothing to gather — no other window holds tabs.' };
+    return { kind: 'notice', message: 'Nothing to gather: no other window holds tabs.' };
   }
   const failed = result.failures.length;
   if (failed > 0) {

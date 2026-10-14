@@ -216,7 +216,7 @@ export function SettingsView({
     setSort(next);
     chrome.storage.sync.set(toStoredSortSettings(next), () => {
       if (chrome.runtime.lastError !== undefined) {
-        onError(`Could not save that setting — ${chrome.runtime.lastError.message ?? 'unknown'}`);
+        onError(`Could not save that setting: ${chrome.runtime.lastError.message ?? 'unknown'}`);
         return;
       }
       onSaved(SAVED_MESSAGE);

@@ -96,13 +96,13 @@ export function ProgressToast({
                 {tabErrors.map((entry, i) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: static snapshot, never reordered
                   <li key={`error-${i}`} className="truncate" title={entry.message}>
-                    Failed: {entry.url} — {entry.message}
+                    Failed: {entry.url} ({entry.message})
                   </li>
                 ))}
                 {structuralProblems.map((entry, i) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: static snapshot, never reordered
                   <li key={`structural-${i}`} className="truncate" title={entry.message}>
-                    Problem: {entry.url} — {entry.message}
+                    Problem: {entry.url} ({entry.message})
                   </li>
                 ))}
               </ul>

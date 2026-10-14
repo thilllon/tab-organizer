@@ -143,7 +143,7 @@ describe('shouldShowRecoveredBanner', () => {
 describe('unreadable sessions (spec §3)', () => {
   it('explains that the fix is an update, not a repair', () => {
     expect(UNREADABLE_SESSION_MESSAGE).toBe(
-      'Saved by a newer version of Tab Organizer — update to open',
+      'Saved by a newer version of Tab Organizer. Update to open it.',
     );
   });
 

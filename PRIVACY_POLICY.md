@@ -22,9 +22,9 @@ When you save a session, and while automatic snapshots are enabled (see below), 
 
 Incognito windows, empty windows and the extension's own pages are never captured. Site icons shown in the dashboard come from Chrome's own favicon cache and are not stored by the extension.
 
-This data never leaves your device: it is not synced through your Google account, not uploaded to any server, and not accessible to web pages. The only way session data leaves the extension is when you choose to export it — Export writes a file or copies text to your clipboard, on your explicit action only.
+This data never leaves your device: it is not synced through your Google account, not uploaded to any server, and not accessible to web pages. The only way session data leaves the extension is when you choose to export it: Export writes a file or copies text to your clipboard, on your explicit action only.
 
-Your sorting preferences (the grouping mode and how duplicate tabs are handled) are stored with Chrome's sync storage, together with the version number recorded when the extension was installed or updated. If you have Chrome sync enabled, those preferences — and nothing else — may sync across devices signed into the same Chrome account. Session data and session settings are never placed in sync storage.
+Your sorting preferences (the grouping mode and how duplicate tabs are handled) are stored with Chrome's sync storage, together with the version number recorded when the extension was installed or updated. If you have Chrome sync enabled, those preferences, and nothing else, may sync across devices signed into the same Chrome account. Session data and session settings are never placed in sync storage.
 
 ### Automatic snapshots
 
@@ -35,7 +35,7 @@ To turn snapshots off, open Options (right-click the icon → Options) or the se
 ## Data Retention
 
 - Saved sessions are kept until you delete them in the Sessions dashboard.
-- Automatic snapshots are kept in a rolling set: only the most recent unprotected snapshots are retained (20 by default — you choose how many in Options or in the Sessions dashboard), and older ones are removed automatically. A snapshot you mark as protected is kept until you delete it. The "Previous session (recovered)" snapshot created after a browser restart is protected automatically, as is the one before it; older recovered snapshots return to the rolling set and age out of it like any other. Marking one as protected yourself makes it yours to keep. Snapshots can be deleted one at a time or all at once.
+- Automatic snapshots are kept in a rolling set: only the most recent unprotected snapshots are retained (20 by default; you choose how many in Options or in the Sessions dashboard), and older ones are removed automatically. A snapshot you mark as protected is kept until you delete it. The "Previous session (recovered)" snapshot created after a browser restart is protected automatically, as is the one before it; older recovered snapshots return to the rolling set and age out of it like any other. Marking one as protected yourself makes it yours to keep. Snapshots can be deleted one at a time or all at once.
 - "Delete all session data" in the Sessions dashboard removes every saved session and snapshot immediately; your settings are kept.
 - Uninstalling the extension makes Chrome delete all of its stored data.
 
@@ -47,7 +47,7 @@ This extension requires the following permissions:
 - **tabGroups**: Used to sort and organize tab groups within the current window and to recreate tab groups when restoring a session.
 - **storage**: Used to save your sorting preferences using Chrome's sync storage, and to store saved sessions, snapshots and session settings in local storage on this device only.
 - **contextMenus**: Used to add "Save this window as session", "Save all windows as session" and "Open Sessions" to the extension icon's right-click menu. No menu items are added to web pages.
-- **unlimitedStorage**: Allows large saved sessions to exceed Chrome's default local storage quota. It does not change where data is stored — everything stays on your device.
+- **unlimitedStorage**: Allows large saved sessions to exceed Chrome's default local storage quota. It does not change where data is stored: everything stays on your device.
 - **favicon**: Used to display site icons next to tabs in the Sessions dashboard from Chrome's local favicon cache. No icons are fetched from the network and no icon data is stored by the extension.
 - **alarms**: Used as the timer for automatic snapshots on the interval you choose. When automatic snapshots are turned off, no timer exists.
 
