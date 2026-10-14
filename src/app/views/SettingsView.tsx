@@ -1,6 +1,7 @@
 import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import {
+  CHANGE_ONLY_IN_CHROME,
   COMMANDS_FAILED,
   COMMANDS_LOADING,
   type CommandRow,
@@ -446,10 +447,13 @@ export function SettingsView({
                 <ShortcutKeys keys={command.keys} />
               </Field>
             ))}
-          <Button variant="outline" size="sm" onClick={() => void openShortcutSettings()}>
-            <Keyboard />
-            Change in Chrome
-          </Button>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Button variant="outline" size="sm" onClick={() => void openShortcutSettings()}>
+              <Keyboard />
+              Change in Chrome
+            </Button>
+            <p className="text-xs text-muted-foreground">{CHANGE_ONLY_IN_CHROME}</p>
+          </div>
         </Group>
       </div>
     </>

@@ -23,6 +23,10 @@ export const UNNAMED_COMMAND = 'Unnamed command';
 
 export const NOT_SET = 'Not set';
 
+/** Extensions cannot bind keys themselves; only Chrome's own page can. */
+export const CHANGE_ONLY_IN_CHROME =
+  "These shortcuts can only be changed in Chrome's own shortcut settings.";
+
 export const COMMANDS_LOADING = 'Reading the shortcuts from Chrome…';
 
 export const COMMANDS_FAILED =

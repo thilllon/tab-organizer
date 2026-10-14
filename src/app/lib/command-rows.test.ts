@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CHANGE_ONLY_IN_CHROME,
   commandRows,
   SORT_COMMAND_LABEL,
   shortcutsDescription,
@@ -85,5 +86,12 @@ describe('shortcutsDescription', () => {
     const other = shortcutsDescription(false);
     expect(other).toContain('Alt + Shift + S');
     expect(other).not.toContain('Option');
+  });
+});
+
+describe('CHANGE_ONLY_IN_CHROME', () => {
+  it("says the keys are changed in Chrome's settings, without an em dash", () => {
+    expect(CHANGE_ONLY_IN_CHROME).toContain('Chrome');
+    expect(CHANGE_ONLY_IN_CHROME).not.toContain('—');
   });
 });
