@@ -520,6 +520,7 @@ export function App() {
                 variant="outline"
                 size="sm"
                 className="ml-3"
+                title="Search automatic snapshots too"
                 onClick={() => {
                   setIncludeHistory(true);
                   resetResults();
@@ -644,6 +645,7 @@ export function App() {
             event.preventDefault();
             go(HOME);
           }}
+          title="Back to open tabs"
           className="flex items-center gap-2 rounded-md px-1 py-0.5 text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <img src="/img/logo-32.png" alt="" aria-hidden="true" className="size-5 rounded" />
@@ -681,6 +683,7 @@ export function App() {
         <Button asChild variant="outline" size="sm">
           <a
             href={formatRoute({ view: 'settings' })}
+            title="Open Settings"
             onClick={(event) => {
               if (browserHandlesClick(event)) {
                 return;

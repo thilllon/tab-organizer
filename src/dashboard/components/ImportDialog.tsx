@@ -234,7 +234,9 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                     // biome-ignore lint/suspicious/noArrayIndexKey: preview names are not unique
                     key={`session-${sessionIndex}`}
                   >
-                    <p className="truncate text-sm font-medium">{previewSession.name}</p>
+                    <p className="truncate text-sm font-medium" title={previewSession.name}>
+                      {previewSession.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {pluralize(previewSession.windowCount, 'window')} ·{' '}
                       {pluralize(previewSession.tabCount, 'tab')}
@@ -252,6 +254,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                                 // biome-ignore lint/suspicious/noArrayIndexKey: titles repeat
                                 key={`title-${titleIndex}`}
                                 className="truncate"
+                                title={title}
                               >
                                 {title}
                               </li>

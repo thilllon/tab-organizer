@@ -122,7 +122,9 @@ export function OpenWindowsPane({
               index={index}
               badge={
                 window.windowId === currentWindowId ? (
-                  <Badge variant="secondary">This window</Badge>
+                  <Badge variant="secondary" title="The window this page is in">
+                    This window
+                  </Badge>
                 ) : undefined
               }
               actions={
@@ -132,6 +134,7 @@ export function OpenWindowsPane({
                     variant="outline"
                     onClick={() => onSaveWindow(window.windowId)}
                     disabled={busy}
+                    title="Save this window as a session"
                   >
                     <Save />
                     Save window
@@ -139,6 +142,7 @@ export function OpenWindowsPane({
                   <Button
                     size="xs"
                     variant="ghost"
+                    title="Close this window and all its tabs"
                     onClick={() =>
                       requestClose({
                         windowId: window.windowId,
@@ -187,6 +191,7 @@ export function OpenWindowsPane({
                       size="icon-xs"
                       variant="ghost"
                       aria-label="Go to tab"
+                      title="Go to tab"
                       onClick={() => activateTab(tab.tabId, window.windowId)}
                     >
                       <SquareArrowOutUpRight />
@@ -195,6 +200,7 @@ export function OpenWindowsPane({
                       size="icon-xs"
                       variant="ghost"
                       aria-label="Close tab"
+                      title="Close tab"
                       onClick={() => removeTab(tab.tabId)}
                     >
                       <X />

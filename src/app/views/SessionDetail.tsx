@@ -234,6 +234,7 @@ export function SessionDetail({
               ref={inputRef}
               value={draft}
               aria-label="Session name"
+              title="Enter to save, Escape to cancel"
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={handleRenameKey}
               onBlur={() => {
@@ -258,6 +259,7 @@ export function SessionDetail({
                 size="icon-xs"
                 variant="ghost"
                 aria-label="Rename session"
+                title="Rename session"
                 onClick={startRename}
               >
                 <Pencil />
@@ -270,13 +272,17 @@ export function SessionDetail({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button onClick={() => void handleOpen('newWindows')} disabled={busy || restoring}>
+          <Button
+            onClick={() => void handleOpen('newWindows')}
+            disabled={busy || restoring}
+            title="Open this session in new windows"
+          >
             <ExternalLink />
             Open
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon-sm" variant="ghost" aria-label="More actions">
+              <Button size="icon-sm" variant="ghost" aria-label="More actions" title="More actions">
                 <Ellipsis />
               </Button>
             </DropdownMenuTrigger>
@@ -351,6 +357,7 @@ export function SessionDetail({
                       variant="outline"
                       onClick={() => handleOpenWindow(index, 'newWindows')}
                       disabled={busy || restoring}
+                      title="Open this window's tabs in a new window"
                     >
                       Open window
                     </Button>
@@ -359,6 +366,7 @@ export function SessionDetail({
                       variant="ghost"
                       onClick={() => handleOpenWindow(index, 'here')}
                       disabled={busy || restoring}
+                      title="Open this window's tabs in the current window"
                     >
                       Open here
                     </Button>
@@ -366,6 +374,7 @@ export function SessionDetail({
                       size="xs"
                       variant="ghost"
                       onClick={() => void editSession((s) => removeWindowFromSession(s, index))}
+                      title="Remove this window from the session"
                     >
                       <X />
                       Remove
@@ -397,6 +406,7 @@ export function SessionDetail({
                       size="icon-xs"
                       variant="ghost"
                       aria-label="Copy link"
+                      title="Copy link"
                       onClick={() => handleCopyTabLink(window.tabs[tabIndex].url)}
                     >
                       <Link />
@@ -405,6 +415,7 @@ export function SessionDetail({
                       size="icon-xs"
                       variant="ghost"
                       aria-label="Remove from session"
+                      title="Remove from session"
                       onClick={() =>
                         void editSession((s) => removeTabFromSession(s, index, tabIndex))
                       }

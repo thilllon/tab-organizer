@@ -196,7 +196,15 @@ export function OpenTabsView({
               {ASSEMBLE_NAME}
             </Button>
           )}
-          <Button onClick={onSaveAll} disabled={busy || windowCount === 0}>
+          <Button
+            onClick={onSaveAll}
+            disabled={busy || windowCount === 0}
+            title={
+              windowCount > 1
+                ? 'Save every open window as one session'
+                : 'Save this window as a session'
+            }
+          >
             <Save />
             {saveLabel}
           </Button>
@@ -210,6 +218,7 @@ export function OpenTabsView({
           <button
             type="button"
             onClick={onOpenSettings}
+            title="Open Settings"
             className="inline-flex items-center gap-1 rounded-sm underline outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <Keyboard className="size-3.5" />

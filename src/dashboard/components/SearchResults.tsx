@@ -76,7 +76,8 @@ function TabResultRow({
   const href = hrefFor(entry.url);
   const shared = {
     id: rowId(index),
-    title: entry.url,
+    // The full title as well as the address: both can be cut short in the row.
+    title: entry.title.length > 0 ? `${entry.title}\n${entry.url}` : entry.url,
     'aria-current': highlighted ? ('true' as const) : undefined,
     onMouseEnter: () => onHighlight(index),
     onFocus: () => onHighlight(index),
@@ -91,7 +92,10 @@ function TabResultRow({
       <span className="max-w-40 shrink-0 truncate text-xs text-muted-foreground">
         {hostnameOf(entry.url)}
       </span>
-      <span className="max-w-48 shrink-0 truncate text-xs text-muted-foreground">
+      <span
+        className="max-w-48 shrink-0 truncate text-xs text-muted-foreground"
+        title={`${entry.sessionName} · Window ${entry.windowIndex + 1}`}
+      >
         {entry.sessionName} · Window {entry.windowIndex + 1}
       </span>
     </>
@@ -145,7 +149,7 @@ function SessionResultRow({
         aria-current={highlighted ? 'true' : undefined}
         className={`${ROW} ${highlighted ? 'bg-accent' : 'hover:bg-accent'}`}
       >
-        <span className="min-w-0 flex-1 truncate font-medium">
+        <span className="min-w-0 flex-1 truncate font-medium" title={summary.name}>
           <Highlighted text={summary.name} tokens={tokens} />
         </span>
         <span className="shrink-0 text-xs text-muted-foreground">{formatSessionMeta(summary)}</span>

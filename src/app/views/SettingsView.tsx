@@ -121,7 +121,10 @@ function Advanced({
 }) {
   return (
     <details className="group -mx-2 rounded-md px-2">
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md py-2 text-sm font-medium text-foreground/80 hover:bg-muted">
+      <summary
+        title="Show or hide more settings"
+        className="flex cursor-pointer list-none items-center gap-2 rounded-md py-2 text-sm font-medium text-foreground/80 hover:bg-muted"
+      >
         <svg
           aria-hidden="true"
           viewBox="0 0 10 10"
@@ -161,7 +164,11 @@ function Field({
         )}
         {hint !== undefined && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
-      <div className="flex items-center gap-2">{children}</div>
+      {/* The hint doubles as the control's tooltip: a title on the wrapper reaches every control
+          inside it that has no title of its own. */}
+      <div className="flex items-center gap-2" title={hint}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -248,6 +255,7 @@ export function SettingsView({
           <Field label="Sort by" htmlFor="sort-by">
             <NativeSelect
               id="sort-by"
+              title="How tabs are ordered when you click the toolbar icon"
               value={sort.sortBy}
               onChange={(event) => {
                 const value = event.target.value;
@@ -462,7 +470,12 @@ export function SettingsView({
               </Field>
             ))}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Button variant="outline" size="sm" onClick={() => void openShortcutSettings()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void openShortcutSettings()}
+              title="Open Chrome's keyboard shortcuts page"
+            >
               <Keyboard />
               Change in Chrome
             </Button>

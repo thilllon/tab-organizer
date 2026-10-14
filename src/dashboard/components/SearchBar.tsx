@@ -150,6 +150,7 @@ export function SearchBar({
           type="text"
           value={text}
           aria-label="Search"
+          title="Search open tabs, saved sessions and their addresses"
           placeholder="Search tabs and sessions (press /)"
           // A pill, filled, with its border only showing on focus: the search box is the one
           // control in the top bar, and a rectangle the same shape as every other input made it
@@ -167,6 +168,7 @@ export function SearchBar({
             size="icon-sm"
             variant="ghost"
             aria-label="Clear search"
+            title="Clear search"
             className="absolute top-1/2 right-1 -translate-y-1/2"
             onClick={clear}
           >
@@ -176,7 +178,10 @@ export function SearchBar({
       </div>
       {/* Wrapping label: the checkbox needs no id to be named by the text next to it. */}
       {showIncludeHistory && (
-        <Label className="gap-1.5 text-xs font-normal text-muted-foreground">
+        <Label
+          className="gap-1.5 text-xs font-normal text-muted-foreground"
+          title="Also search automatic snapshots"
+        >
           <input
             type="checkbox"
             checked={includeHistory}

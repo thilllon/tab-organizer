@@ -68,6 +68,7 @@ export function SidebarResizer({ width, onResize, onCommit }: SidebarResizerProp
       role="separator"
       aria-orientation="vertical"
       aria-label="Resize the sidebar"
+      title="Drag to resize the sidebar, double-click to reset"
       aria-valuenow={width}
       aria-valuemin={MIN_SIDEBAR_WIDTH}
       aria-valuemax={MAX_SIDEBAR_WIDTH}

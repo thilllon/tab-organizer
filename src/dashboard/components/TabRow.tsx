@@ -63,6 +63,8 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
   };
 
   const label = tab.title.length > 0 ? tab.title : tab.url;
+  // The tooltip carries the full title as well as the address: both are cut short in the row.
+  const rowTitle = error ?? (label === tab.url ? tab.url : `${label}\n${tab.url}`);
   const inner = (
     <>
       <Favicon url={tab.url} />
@@ -94,6 +96,7 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
           <input
             type="checkbox"
             aria-label={`Select ${label}`}
+            title="Select this tab (Shift-click selects a range)"
             checked={selection.selected}
             onChange={(event) =>
               selection.onToggle(
@@ -104,11 +107,11 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
           />
         )}
         {href === undefined ? (
-          <button type="button" onClick={open} title={error ?? tab.url} className={rowClass}>
+          <button type="button" onClick={open} title={rowTitle} className={rowClass}>
             {inner}
           </button>
         ) : (
-          <a href={href} onClick={onClick} title={error ?? tab.url} className={rowClass}>
+          <a href={href} onClick={onClick} title={rowTitle} className={rowClass}>
             {inner}
           </a>
         )}

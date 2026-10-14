@@ -42,6 +42,7 @@ export function GroupSection({
           <CollapsibleTrigger asChild>
             <button
               type="button"
+              title={open ? `Collapse ${label}` : `Expand ${label}`}
               className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <ChevronRight className={`size-4 transition-transform ${open ? 'rotate-90' : ''}`} />

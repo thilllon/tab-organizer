@@ -115,6 +115,7 @@ export function SessionSettingsFields({
             id={enabledId}
             checked={settings.historyEnabled}
             disabled={disabled}
+            title="Save what is open on a timer, without asking"
             onCheckedChange={(checked) => onChange({ historyEnabled: checked })}
           />
         </SettingRow>
@@ -260,7 +261,10 @@ function SettingRow({
         </Label>
         {hint !== undefined && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
-      <div className="flex items-center gap-2">{children}</div>
+      {/* The hint doubles as the tooltip of every control in the row without a title of its own. */}
+      <div className="flex items-center gap-2" title={hint}>
+        {children}
+      </div>
     </div>
   );
 }

@@ -64,7 +64,9 @@ export function UnreadableSessionRow({
       <div className="flex items-start gap-3">
         <FileWarning className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-muted-foreground">{summary.name}</p>
+          <p className="truncate text-sm font-medium text-muted-foreground" title={summary.name}>
+            {summary.name}
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {UNREADABLE_SESSION_MESSAGE}
             {' · '}
@@ -76,6 +78,7 @@ export function UnreadableSessionRow({
           size="icon-sm"
           variant="ghost"
           aria-label="Delete session"
+          title="Delete session"
           onClick={() => setConfirming(true)}
         >
           <Trash2 />

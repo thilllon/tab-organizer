@@ -147,6 +147,7 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           // Nothing to free: every snapshot is protected, or there are none.
           disabled={busy || breakdown.unprotectedSnapshotCount === 0}
           onClick={() => setConfirmingHistory(true)}
+          title="Delete every snapshot that is not protected"
         >
           <Trash2 />
           Delete all unprotected
@@ -157,6 +158,7 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           className="text-destructive hover:text-destructive"
           disabled={busy}
           onClick={() => setConfirming(true)}
+          title="Delete all saved sessions and snapshots on this device"
         >
           <Trash2 />
           Delete all session data

@@ -92,23 +92,34 @@ export function SnapshotDetail({
     <section aria-label={`Snapshot ${formatDateTime(summary.createdAt)}`} className="min-w-0">
       <header className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold">{formatDateTime(summary.createdAt)}</h1>
+          <h1 className="truncate text-lg font-semibold" title={formatDateTime(summary.createdAt)}>
+            {formatDateTime(summary.createdAt)}
+          </h1>
           <p className="mt-1 text-xs text-muted-foreground">
             {historyOriginLabel(summary.origin)} · {formatSessionMeta(summary)}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => void handleOpen()} disabled={busy || restoring}>
+          <Button
+            onClick={() => void handleOpen()}
+            disabled={busy || restoring}
+            title="Open this snapshot in new windows"
+          >
             <ExternalLink />
             Open
           </Button>
-          <Button variant="outline" onClick={() => void handleKeep()} disabled={busy}>
+          <Button
+            variant="outline"
+            onClick={() => void handleKeep()}
+            disabled={busy}
+            title="Move to saved sessions, where nothing removes it"
+          >
             <BookmarkPlus />
             Keep
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon-sm" variant="ghost" aria-label="More actions">
+              <Button size="icon-sm" variant="ghost" aria-label="More actions" title="More actions">
                 <Ellipsis />
               </Button>
             </DropdownMenuTrigger>

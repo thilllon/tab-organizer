@@ -108,7 +108,13 @@ export function ProgressToast({
               </ul>
             )}
           </div>
-          <Button size="icon-xs" variant="ghost" aria-label="Dismiss" onClick={onDismiss}>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            aria-label="Dismiss"
+            title="Dismiss"
+            onClick={onDismiss}
+          >
             <X />
           </Button>
         </div>

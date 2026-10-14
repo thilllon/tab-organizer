@@ -44,10 +44,20 @@ export function SelectionBar({
   return (
     <>
       <div className="flex min-w-0 flex-1 items-center gap-1">
-        <Button size="icon-sm" variant="ghost" aria-label="Clear selection" onClick={onClear}>
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          aria-label="Clear selection"
+          title="Clear selection"
+          onClick={onClear}
+        >
           <X />
         </Button>
-        <p aria-live="polite" className="truncate text-lg font-semibold">
+        <p
+          aria-live="polite"
+          title={selectionLabel(count)}
+          className="truncate text-lg font-semibold"
+        >
           {selectionLabel(count)}
         </p>
       </div>
@@ -74,7 +84,12 @@ export function SelectionBar({
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon" variant="ghost" aria-label="More actions for the selected tabs">
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label="More actions for the selected tabs"
+            title="More actions for the selected tabs"
+          >
             <EllipsisVertical />
           </Button>
         </DropdownMenuTrigger>

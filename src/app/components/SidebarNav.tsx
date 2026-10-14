@@ -53,6 +53,7 @@ function NavItem({ icon, label, sub, time, meta, current, route, onClick }: NavI
     <li>
       <a
         href={formatRoute(route)}
+        title={label}
         aria-current={current ? 'page' : undefined}
         onClick={(event) => {
           if (browserHandlesClick(event)) {
@@ -137,7 +138,14 @@ export function SidebarNav({
           icon={<LayoutGrid />}
           label="Open tabs"
           sub={`${pluralize(windowCount, 'window')}`}
-          meta={<span className="font-mono text-xs text-muted-foreground">{tabCount}</span>}
+          meta={
+            <span
+              title={`${pluralize(tabCount, 'tab')} open`}
+              className="font-mono text-xs text-muted-foreground"
+            >
+              {tabCount}
+            </span>
+          }
           current={route.view === 'open'}
           route={{ view: 'open' }}
           onClick={() => onNavigate({ view: 'open' })}
@@ -160,7 +168,9 @@ export function SidebarNav({
               time={`Saved ${formatDateTime(summary.updatedAt)}`}
               meta={
                 summary.unreadable === undefined ? undefined : (
-                  <Badge variant="secondary">newer</Badge>
+                  <Badge variant="secondary" title="Saved by a newer version of Tab Organizer">
+                    newer
+                  </Badge>
                 )
               }
               current={route.view === 'saved' && route.id === summary.id}
@@ -176,6 +186,7 @@ export function SidebarNav({
         variant="ghost"
         size="sm"
         aria-expanded={historyOpen}
+        title={historyOpen ? 'Hide snapshots' : 'Show snapshots'}
         onClick={toggleHistory}
         className="justify-start gap-2 px-2 font-normal text-muted-foreground"
       >
@@ -195,9 +206,13 @@ export function SidebarNav({
               sub={`${pluralize(summary.windowCount, 'window')} · ${pluralize(summary.tabCount, 'tab')}`}
               meta={
                 summary.id === recoveredId ? (
-                  <Badge variant="secondary">recovered</Badge>
+                  <Badge variant="secondary" title="Taken before the last browser restart">
+                    recovered
+                  </Badge>
                 ) : summary.protected === true ? (
-                  <Badge variant="outline">kept</Badge>
+                  <Badge variant="outline" title="Kept: never removed to make room">
+                    kept
+                  </Badge>
                 ) : undefined
               }
               current={route.view === 'auto' && route.id === summary.id}

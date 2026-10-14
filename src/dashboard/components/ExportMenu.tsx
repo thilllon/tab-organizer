@@ -126,7 +126,18 @@ export function ExportMenu({
           menu closes, and a disabled trigger would drop that focus to <body>. Every action here
           is a read, so a second click at worst writes the same file twice. */}
       <DropdownMenuTrigger asChild>
-        <Button size={size} variant="ghost" aria-label="Export">
+        <Button
+          size={size}
+          variant="ghost"
+          aria-label="Export"
+          title={
+            groupIndex !== undefined
+              ? 'Export or copy this group'
+              : windowIndex !== undefined
+                ? 'Export or copy this window'
+                : 'Export or copy all of it'
+          }
+        >
           <Download />
         </Button>
       </DropdownMenuTrigger>
