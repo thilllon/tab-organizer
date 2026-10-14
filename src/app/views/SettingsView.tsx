@@ -106,16 +106,20 @@ function Group({
 
 /**
  * The settings people rarely change, folded away. `<details>` rather than a toggle so the browser
- * owns the open state and keyboard behaviour; the marker is drawn by CSS in index.css.
+ * owns the open state and keyboard behaviour. The marker is a small solid triangle drawn centred in
+ * its own box, so it lines up with the label and turns from right to down on open.
  */
 function Advanced({ label, children }: { label: string; children: ReactNode }) {
   return (
     <details className="group -mx-2 rounded-md px-2">
       <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md py-2 text-sm font-medium text-foreground/80 hover:bg-muted">
-        <span
+        <svg
           aria-hidden="true"
-          className="size-2.5 rotate-[-45deg] border-r-2 border-b-2 border-primary transition-transform group-open:rotate-45"
-        />
+          viewBox="0 0 10 10"
+          className="size-2.5 shrink-0 text-primary transition-transform group-open:rotate-90"
+        >
+          <path d="M3 1.5 8 5 3 8.5Z" fill="currentColor" />
+        </svg>
         {label}
       </summary>
       <div className="space-y-5 py-3">{children}</div>

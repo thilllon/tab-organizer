@@ -29,8 +29,8 @@ export interface StorageMeterProps {
  * total, split into saved sessions and automatic snapshots from the index's `bytes` fields, plus
  * the hint that names the snapshots when they are what is filling the disk.
  *
- * Two remedies sit beside it, because this is where a quota notice sends the user (spec §4: the
- * toast links to the meter *and* to "Delete old history"): "Delete all unprotected", the one that
+ * Two remedies sit below it, bottom-left, because this is where a quota notice sends the user
+ * (spec §4: the toast links to the meter *and* to "Delete old history"): "Delete all unprotected", the one that
  * actually frees the space and keeps every saved session, and only then the all-or-nothing
  * "Delete all session data". The first is the same action the History section offers, behind the
  * same confirm — the quota path never points at that collapsed section, so it is repeated here.
@@ -129,28 +129,6 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           {bytes === undefined ? 'Measuring…' : storageTotalLine(breakdown)}
           {bytes === undefined ? '' : ` · ${storageDetailLine(breakdown)}`}
         </p>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="xs"
-            // Nothing to free: every snapshot is protected, or there are none.
-            disabled={busy || breakdown.unprotectedSnapshotCount === 0}
-            onClick={() => setConfirmingHistory(true)}
-          >
-            <Trash2 />
-            Delete all unprotected
-          </Button>
-          <Button
-            variant="outline"
-            size="xs"
-            className="text-destructive hover:text-destructive"
-            disabled={busy}
-            onClick={() => setConfirming(true)}
-          >
-            <Trash2 />
-            Delete all session data
-          </Button>
-        </div>
       </div>
 
       {/* Decorative: the same numbers are in the line above, spelled out. */}
@@ -161,6 +139,29 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
       </div>
 
       {hint !== undefined && <p className="mt-2 text-xs text-muted-foreground">{hint}</p>}
+      {/* Bottom-left, under what they act on: the numbers and the hint come first. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          size="xs"
+          // Nothing to free: every snapshot is protected, or there are none.
+          disabled={busy || breakdown.unprotectedSnapshotCount === 0}
+          onClick={() => setConfirmingHistory(true)}
+        >
+          <Trash2 />
+          Delete all unprotected
+        </Button>
+        <Button
+          variant="outline"
+          size="xs"
+          className="text-destructive hover:text-destructive"
+          disabled={busy}
+          onClick={() => setConfirming(true)}
+        >
+          <Trash2 />
+          Delete all session data
+        </Button>
+      </div>
       {error !== undefined && (
         <p role="alert" className="mt-2 text-xs text-destructive">
           {error}
