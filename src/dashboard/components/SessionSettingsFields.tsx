@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { NativeSelect } from '@/dashboard/components/NativeSelect';
 import {
   HISTORY_INTERVALS,
   HISTORY_MAX_MAX,
@@ -33,11 +34,6 @@ export interface SessionSettingsFieldsProps {
    */
   subset?: 'all' | 'basic' | 'advanced';
 }
-
-// A native <select>: the repo has no shadcn Select component and this is the only place two
-// would be needed. Styled like `Input` so it sits with the rest of the controls.
-const SELECT_CLASS =
-  'h-8 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30';
 
 /**
  * The four `SessionSettings` controls, shared by the dashboard's settings row and the Options
@@ -99,9 +95,8 @@ export function SessionSettingsFields({
       {showAdvanced && (
         <div className="flex items-center gap-2">
           <Label htmlFor={intervalId}>Snapshot interval</Label>
-          <select
+          <NativeSelect
             id={intervalId}
-            className={SELECT_CLASS}
             value={String(settings.historyIntervalMinutes)}
             disabled={disabled || !settings.historyEnabled}
             onChange={(event) => {
@@ -116,7 +111,7 @@ export function SessionSettingsFields({
                 {intervalLabel(minutes)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
       )}
 
@@ -149,9 +144,8 @@ export function SessionSettingsFields({
       {showAdvanced && (
         <div className="flex items-center gap-2">
           <Label htmlFor={lazyId}>Lazy restore</Label>
-          <select
+          <NativeSelect
             id={lazyId}
-            className={SELECT_CLASS}
             value={settings.restoreLazy}
             disabled={disabled}
             onChange={(event) => {
@@ -166,7 +160,7 @@ export function SessionSettingsFields({
                 {lazyLabel(mode)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
       )}
     </div>
