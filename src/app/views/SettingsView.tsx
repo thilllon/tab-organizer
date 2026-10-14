@@ -374,7 +374,6 @@ export function SettingsView({
               onChange={writeSession}
               subset="advanced"
               idPrefix="settings-sessions-advanced"
-              className="gap-x-6 gap-y-4"
             />
           </Advanced>
           {sessionSettings.error !== undefined && (

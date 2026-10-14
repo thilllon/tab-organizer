@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -28,7 +28,7 @@ export interface SessionSettingsFieldsProps {
   disabled?: boolean;
   /** Every change writes straight through `useSessionSettings().update` — there is no Save button. */
   onChange(patch: Partial<SessionSettings>): void;
-  /** Layout classes: a wrapping row in the dashboard, a stack in the Options card. */
+  /** Extra layout classes for the stack of rows (one setting per line). */
   className?: string;
   /** Distinguishes the control ids when a page renders more than one instance. */
   idPrefix?: string;
@@ -108,22 +108,24 @@ export function SessionSettingsFields({
   const intervalDisabled = disabled || !settings.historyEnabled;
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-x-6 gap-y-3', className)}>
+    <div className={cn('space-y-5', className)}>
       {showBasic && (
-        <div className="flex items-center gap-2">
+        <SettingRow label="Automatic snapshots" htmlFor={enabledId}>
           <Switch
             id={enabledId}
             checked={settings.historyEnabled}
             disabled={disabled}
             onCheckedChange={(checked) => onChange({ historyEnabled: checked })}
           />
-          <Label htmlFor={enabledId}>Automatic snapshots</Label>
-        </div>
+        </SettingRow>
       )}
 
       {showAdvanced && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={intervalId}>Snapshot interval</Label>
+        <SettingRow
+          label="Snapshot interval"
+          htmlFor={intervalId}
+          hint={`Custom: ${HISTORY_INTERVAL_MIN_MINUTES} to ${HISTORY_INTERVAL_MAX_MINUTES} minutes.`}
+        >
           <NativeSelect
             id={intervalId}
             value={intervalChoice}
@@ -170,15 +172,18 @@ export function SessionSettingsFields({
                   }
                 }}
               />
-              <span className="text-sm">minutes</span>
+              <span className="text-sm text-muted-foreground">minutes</span>
             </>
           )}
-        </div>
+        </SettingRow>
       )}
 
       {showAdvanced && (
-        <Label htmlFor={maxId} className="gap-2">
-          Keep last
+        <SettingRow
+          label="Keep last"
+          htmlFor={maxId}
+          hint="Older snapshots are removed first. Protected ones are never counted."
+        >
           <Input
             id={maxId}
             type="number"
@@ -198,13 +203,16 @@ export function SessionSettingsFields({
               }
             }}
           />
-          snapshots
-        </Label>
+          <span className="text-sm text-muted-foreground">snapshots</span>
+        </SettingRow>
       )}
 
       {showAdvanced && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={lazyId}>Lazy restore</Label>
+        <SettingRow
+          label="Lazy restore"
+          htmlFor={lazyId}
+          hint="Opens tabs without loading them until you visit them."
+        >
           <NativeSelect
             id={lazyId}
             value={settings.restoreLazy}
@@ -222,8 +230,37 @@ export function SessionSettingsFields({
               </option>
             ))}
           </NativeSelect>
-        </div>
+        </SettingRow>
       )}
+    </div>
+  );
+}
+
+/**
+ * One setting per line: the label (and an optional grey hint) on the left, the control on the
+ * right. The same shape as `Field` in the Settings view, so these rows line up with the sorting
+ * rows above them; the label is a real `<label>` pointing at the control.
+ */
+function SettingRow({
+  label,
+  htmlFor,
+  hint,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+      <div className="min-w-48 flex-1">
+        <Label htmlFor={htmlFor} className="text-sm font-normal">
+          {label}
+        </Label>
+        {hint !== undefined && <p className="text-xs text-muted-foreground">{hint}</p>}
+      </div>
+      <div className="flex items-center gap-2">{children}</div>
     </div>
   );
 }
