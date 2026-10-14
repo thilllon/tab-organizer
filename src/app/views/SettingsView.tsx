@@ -107,9 +107,18 @@ function Group({
 /**
  * The settings people rarely change, folded away. `<details>` rather than a toggle so the browser
  * owns the open state and keyboard behaviour. The marker is a small solid triangle drawn centred in
- * its own box, so it lines up with the label and turns from right to down on open.
+ * its own box, so it lines up with the label and turns from right to down on open; `description`
+ * says in small grey text which settings are inside.
  */
-function Advanced({ label, children }: { label: string; children: ReactNode }) {
+function Advanced({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description: string;
+  children: ReactNode;
+}) {
   return (
     <details className="group -mx-2 rounded-md px-2">
       <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md py-2 text-sm font-medium text-foreground/80 hover:bg-muted">
@@ -120,7 +129,8 @@ function Advanced({ label, children }: { label: string; children: ReactNode }) {
         >
           <path d="M3 1.5 8 5 3 8.5Z" fill="currentColor" />
         </svg>
-        {label}
+        <span>{label}</span>
+        <span className="text-xs font-normal text-muted-foreground">{description}</span>
       </summary>
       <div className="space-y-5 py-3">{children}</div>
     </details>
@@ -341,7 +351,7 @@ export function SettingsView({
             </NativeSelect>
           </Field>
 
-          <Advanced label="Advanced — order, pinned tabs, suspended tabs">
+          <Advanced label="Advanced" description="Pinned tabs, suspended tabs">
             <Field label="Sort pinned tabs" hint="Off: pinned tabs stay exactly where they are.">
               <Switch
                 id="sort-pinned"
@@ -403,7 +413,7 @@ export function SettingsView({
             subset="basic"
             idPrefix="settings-sessions"
           />
-          <Advanced label="Advanced — interval, how many to keep, loading">
+          <Advanced label="Advanced" description="Interval, how many to keep, loading">
             <SessionSettingsFields
               settings={sessionSettings.settings}
               disabled={sessionSettings.loading}
@@ -435,7 +445,7 @@ export function SettingsView({
               Import…
             </Button>
           </Field>
-          <Advanced label="Advanced — storage used, delete everything">
+          <Advanced label="Advanced" description="Storage used, delete everything">
             <StorageMeter summaries={summaries} onNotice={onNotice} />
           </Advanced>
         </Group>
