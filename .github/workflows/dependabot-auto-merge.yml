@@ -50,5 +50,6 @@ jobs:
           BODY: |-
             **Not auto-merged** — this is a `${{ steps.metadata.outputs.update-type || 'unclassified' }}` update.
 
-            Only minor and patch updates merge themselves. An admin has to read the changelog
-            for breaking changes, check that `ci` is green, and merge this PR by hand.
+            Only minor and patch updates merge themselves. A maintainer has to read the changelog
+            for breaking changes, check that `ci` is green (admins can merge past a red check),
+            and merge this PR by hand.
