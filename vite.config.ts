@@ -75,7 +75,7 @@ const manifest = defineManifest((env) => {
       // here; Settings supplies the name (src/app/lib/command-rows.ts).
       _execute_action: { suggested_key: { default: DEFAULT_SHORTCUTS._execute_action } },
       'save-session': { description: 'Save the current window as a session' },
-      'open-dashboard': { description: 'Open the Sessions dashboard' },
+      'open-dashboard': { description: 'Open Tab Organizer' },
       'assemble-tabs': {
         suggested_key: { default: DEFAULT_SHORTCUTS['assemble-tabs'] },
         description: ASSEMBLE_LABEL,

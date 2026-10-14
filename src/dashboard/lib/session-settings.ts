@@ -51,11 +51,17 @@ export function intervalSelectValue(minutes: number, customOpen: boolean): strin
  * enforces on what is stored.
  */
 export function parseIntervalMinutes(raw: string): number | undefined {
-  const parsed = Number.parseInt(raw.trim(), 10);
+  const text = raw.trim();
+  // `Number`, not `parseInt`: a number input also accepts "1e3" and "2.5", which parseInt would
+  // cut at the first non-digit (1e3 becoming 1 minute). Rounded like normalizeHistoryInterval.
+  const parsed = text === '' ? Number.NaN : Number(text);
   if (!Number.isFinite(parsed)) {
     return undefined;
   }
-  return Math.min(HISTORY_INTERVAL_MAX_MINUTES, Math.max(HISTORY_INTERVAL_MIN_MINUTES, parsed));
+  return Math.min(
+    HISTORY_INTERVAL_MAX_MINUTES,
+    Math.max(HISTORY_INTERVAL_MIN_MINUTES, Math.round(parsed)),
+  );
 }
 
 export function isRestoreLazy(value: string): value is RestoreLazy {

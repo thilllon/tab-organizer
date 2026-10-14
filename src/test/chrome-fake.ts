@@ -1066,6 +1066,13 @@ export function createChromeFake(): ChromeFake {
     onClicked: onActionClicked,
   };
 
+  const toAlarm = (name: string, info: chrome.alarms.AlarmCreateInfo): chrome.alarms.Alarm => ({
+    name,
+    periodInMinutes: info.periodInMinutes,
+    persistAcrossSessions: true,
+    scheduledTime: info.when ?? Date.now() + (info.delayInMinutes ?? 0) * 60_000,
+  });
+
   const alarms = {
     async create(
       nameOrInfo: string | chrome.alarms.AlarmCreateInfo | undefined,
@@ -1083,12 +1090,12 @@ export function createChromeFake(): ChromeFake {
       return state.alarms.delete(name ?? '');
     },
     async getAll(): Promise<chrome.alarms.Alarm[]> {
-      return [...state.alarms.entries()].map(([name, info]) => ({
-        name,
-        periodInMinutes: info.periodInMinutes,
-        persistAcrossSessions: true,
-        scheduledTime: info.when ?? Date.now() + (info.delayInMinutes ?? 0) * 60_000,
-      }));
+      return [...state.alarms.entries()].map(([name, info]) => toAlarm(name, info));
+    },
+    /** Like Chrome's promise form: resolves `undefined` when there is no alarm by that name. */
+    async get(name?: string): Promise<chrome.alarms.Alarm | undefined> {
+      const info = state.alarms.get(name ?? '');
+      return info === undefined ? undefined : toAlarm(name ?? '', info);
     },
     onAlarm,
   };

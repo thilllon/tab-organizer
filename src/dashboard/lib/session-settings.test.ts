@@ -79,8 +79,13 @@ describe('parseIntervalMinutes', () => {
     expect(parseIntervalMinutes('99999')).toBe(HISTORY_INTERVAL_MAX_MINUTES);
   });
 
-  it('truncates a fractional entry to whole minutes', () => {
-    expect(parseIntervalMinutes('12.9')).toBe(12);
+  it('rounds a fractional entry to whole minutes, as stored values are', () => {
+    expect(parseIntervalMinutes('12.9')).toBe(13);
+    expect(parseIntervalMinutes('12.4')).toBe(12);
+  });
+
+  it('reads exponent notation the way the number input does', () => {
+    expect(parseIntervalMinutes('1e3')).toBe(1000);
   });
 
   it('returns undefined for an empty or non-numeric entry', () => {

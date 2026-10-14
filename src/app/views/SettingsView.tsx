@@ -360,7 +360,11 @@ export function SettingsView({
           </Field>
 
           <Advanced label="Advanced" description="Pinned tabs, suspended tabs">
-            <Field label="Sort pinned tabs" hint="Off: pinned tabs stay exactly where they are.">
+            <Field
+              label="Sort pinned tabs"
+              htmlFor="sort-pinned"
+              hint="Off: pinned tabs stay exactly where they are."
+            >
               <Switch
                 id="sort-pinned"
                 checked={sort.sortPinnedTabs}
@@ -370,6 +374,7 @@ export function SettingsView({
 
             <Field
               label="Group suspended tabs together"
+              htmlFor="group-suspended"
               hint="On: suspended tabs move to the front as one block."
             >
               <Switch
@@ -381,6 +386,7 @@ export function SettingsView({
 
             <Field
               label="Tab suspender extension ID"
+              htmlFor="suspender-id"
               hint="Which extension’s suspended pages to recognise. Empty uses The Marvellous Suspender."
             >
               <div className="flex items-center gap-2">

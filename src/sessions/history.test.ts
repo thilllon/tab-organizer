@@ -12,7 +12,7 @@ import {
   scheduleFirstSnapshot,
   takeHistorySnapshot,
 } from './history';
-import { INDEX_KEY, sessionRepo } from './storage';
+import { INDEX_KEY, SETTINGS_KEY, sessionRepo } from './storage';
 
 // Local time 2026-08-29 14:03 so generated names are deterministic.
 const NOW = new Date(2026, 7, 29, 14, 3).getTime();
@@ -416,7 +416,7 @@ describe('ensureHistoryAlarm', () => {
     expect(alarms[0]).toMatchObject({ name: HISTORY_ALARM, periodInMinutes: 5 });
   });
 
-  it('uses the given settings without reading storage', async () => {
+  it('uses the given settings without reading them from storage', async () => {
     await sessionRepo.setSettings({ historyEnabled: false });
     const getSpy = vi.spyOn(chrome.storage.local, 'get');
 
@@ -427,8 +427,46 @@ describe('ensureHistoryAlarm', () => {
       restoreLazy: 'auto',
     });
 
-    expect(getSpy).not.toHaveBeenCalled();
+    const keysRead = getSpy.mock.calls.flatMap(([keys]) => (Array.isArray(keys) ? keys : [keys]));
+    expect(keysRead).not.toContain(SETTINGS_KEY);
     expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 30 });
+  });
+
+  it('leaves a running alarm with the same interval alone, so its countdown is not restarted', async () => {
+    await chrome.alarms.create(HISTORY_ALARM, { periodInMinutes: 1440, when: 123_456 });
+    await sessionRepo.setSettings({ historyIntervalMinutes: 1440 });
+
+    await ensureHistoryAlarm();
+
+    expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({
+      periodInMinutes: 1440,
+      when: 123_456,
+    });
+  });
+
+  it('times a new alarm from the last snapshot rather than from now', async () => {
+    const lastSnapshotAt = Date.now() - 10 * 60_000;
+    await sessionRepo.setHistoryMeta({ lastHash: 'h', lastSnapshotAt });
+    await sessionRepo.setSettings({ historyIntervalMinutes: 60 });
+
+    await ensureHistoryAlarm();
+
+    expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({
+      periodInMinutes: 60,
+      when: lastSnapshotAt + 60 * 60_000,
+    });
+  });
+
+  it('fires a new alarm at once when the last snapshot is already older than the interval', async () => {
+    await sessionRepo.setHistoryMeta({ lastHash: 'h', lastSnapshotAt: Date.now() - 3 * 3_600_000 });
+    await sessionRepo.setSettings({ historyIntervalMinutes: 60 });
+    const before = Date.now();
+
+    await ensureHistoryAlarm();
+
+    const when = getChromeFake().state.alarms.get(HISTORY_ALARM)?.when ?? 0;
+    expect(when).toBeGreaterThanOrEqual(before);
+    expect(when).toBeLessThanOrEqual(Date.now());
   });
 
   it('replaces an existing alarm when the interval changes (no duplicate)', async () => {

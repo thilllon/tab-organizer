@@ -175,15 +175,30 @@ export async function promoteRecoveredSnapshot(): Promise<SessionId | null> {
 /**
  * Re-asserts the periodic alarm from the settings (reads them when not given). Chrome drops all
  * alarms on extension update/reload, so this runs from `onInstalled`/`onStartup` and whenever
- * `sessionSettings` changes. `alarms.create` with an existing name replaces it (no churn); with
- * history off both alarms are cleared so the worker goes back to waking on user actions only.
+ * `sessionSettings` changes. With history off both alarms are cleared so the worker goes back to
+ * waking on user actions only.
+ *
+ * An alarm already running at the right interval is left alone: `alarms.create` restarts the
+ * countdown, and this runs on every settings write and every browser start, so with a long
+ * interval (up to a day) re-creating it each time could keep pushing the next snapshot away for
+ * good. A new alarm is timed from the last snapshot, not from now, for the same reason.
  */
 export async function ensureHistoryAlarm(settings?: SessionSettings): Promise<void> {
   const resolved = settings ?? (await sessionRepo.getSettings());
   if (resolved.historyEnabled) {
-    await chrome.alarms.create(HISTORY_ALARM, {
-      periodInMinutes: resolved.historyIntervalMinutes,
-    });
+    const period = resolved.historyIntervalMinutes;
+    const existing = await chrome.alarms.get(HISTORY_ALARM);
+    if (existing?.periodInMinutes === period) {
+      return;
+    }
+    const meta = await sessionRepo.getHistoryMeta();
+    const due = meta === undefined ? undefined : meta.lastSnapshotAt + period * 60_000;
+    await chrome.alarms.create(
+      HISTORY_ALARM,
+      due === undefined
+        ? { periodInMinutes: period }
+        : { periodInMinutes: period, when: Math.max(Date.now(), due) },
+    );
     return;
   }
   await chrome.alarms.clear(HISTORY_ALARM);

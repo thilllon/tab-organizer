@@ -65,9 +65,9 @@ Tab Organizer fully supports Chrome's native tab groups. It sorts your existing 
 
 ▸ Duplicate Tab Detection
 How many times have you opened the same page in multiple tabs? Tab Organizer can help:
-• Do nothing: Leave duplicates as they are.
-• Close duplicates: Automatically close all duplicate tabs, keeping only the active one (or the first one).
-• Group duplicates: Move duplicate tabs into a labeled Chrome tab group so you can review them before closing.
+• Keep all: Leave duplicates as they are.
+• Keep one: Close the extra copies, keeping the active one (or the first one).
+• Group them: Move duplicates into a labeled Chrome tab group so you can review them before closing.
 
 ▸ Gather All Windows Into One
 Right-click the icon → "Assemble!" (or use a keyboard shortcut) and the tabs of every other window move into the one you are using. Tabs are moved, never reopened, so pinned tabs, tab groups, history and anything you typed stay as they were, and the tab you are looking at stays in front. Incognito and popup windows are left alone.
@@ -119,13 +119,13 @@ Saved sessions and snapshots are stored in Chrome's local extension storage on t
 SETTINGS
 
 Press ⚙ Settings on the Tab Organizer page (Chrome's own "Options" item opens the same screen) to configure:
-• Tab Grouping Mode
-  - Subdomain: Groups tabs by full hostname (e.g., mail.google.com ≠ drive.google.com)
-  - Domain: Groups tabs by base domain (e.g., all *.google.com tabs together)
-• Duplicate Tab Handling
-  - Do nothing: Leave duplicate tabs as they are
-  - Keep one, close the rest: Automatically close duplicates
-  - Group into tab group: Collect duplicates into a labeled group for review
+• Sort by: URL, title or Custom. Custom adds, right below it:
+  - Tab groups: by full hostname (mail.google.com ≠ drive.google.com) or by domain (all *.google.com together)
+  - Grouping direction and whether each site keeps its own tab order
+• Duplicate tabs
+  - Keep all: Leave duplicate tabs as they are
+  - Keep one: Close the extra copies
+  - Group them: Collect duplicates into a labeled group for review
 • Sessions
   - Automatic snapshots: on or off; interval, how many to keep and lazy restore under Advanced
   - Backup: export everything, import, storage used, delete everything
@@ -195,8 +195,8 @@ A: Tab Organizer needs Chrome 123 or newer and should work on any Chromium-based
 TIPS
 
 • Prefix your Chrome tab group names with numbers (e.g., "1-Priority", "2-Reference") to control their sort order.
-• Use Domain grouping mode if you use many Google or Microsoft services. It keeps all their subdomains together.
-• Try the "Group duplicates" option first before "Close duplicates". It lets you review which tabs will be affected before you close them.
+• With Custom sorting, group tabs by domain if you use many Google or Microsoft services. It keeps their subdomains together.
+• Try "Group them" for duplicate tabs before "Keep one". It lets you review which tabs will be affected before any are closed.
 • Save a session before a big cleanup; closing tabs is free when you can bring them all back.
 
 SUPPORT
