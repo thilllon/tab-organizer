@@ -1,12 +1,19 @@
 import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
-import { type CommandRow, commandRows } from '@/app/lib/command-rows';
+import {
+  COMMANDS_FAILED,
+  COMMANDS_LOADING,
+  type CommandRow,
+  commandRows,
+  NOT_SET,
+  shortcutsDescription,
+} from '@/app/lib/command-rows';
+import { isMacPlatform } from '@/app/lib/shortcut-keys';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ASSEMBLE_NAME, DEFAULT_SHORTCUTS } from '@/constants';
 import { NativeSelect } from '@/dashboard/components/NativeSelect';
 import { SessionSettingsFields } from '@/dashboard/components/SessionSettingsFields';
 import { StorageMeter } from '@/dashboard/components/StorageMeter';
@@ -36,6 +43,28 @@ import type { SessionSettings, SessionSummary, SortSettings } from '@/types';
  * problem, not something to explain in a toast.
  */
 const SAVED_MESSAGE = 'Setting saved';
+
+/** Chrome names keys differently on a Mac (Option, Command), so the page asks once. */
+const IS_MAC = isMacPlatform(navigator.userAgent);
+
+/** One shortcut as small key chips joined by "+", or a grey "Not set". */
+function ShortcutKeys({ keys }: { keys: readonly string[] }) {
+  if (keys.length === 0) {
+    return <span className="text-xs text-muted-foreground">{NOT_SET}</span>;
+  }
+  return (
+    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+      {keys.map((key, index) => (
+        <span key={key} className="flex items-center gap-1">
+          {index > 0 && <span aria-hidden="true">+</span>}
+          <kbd className="rounded border bg-muted px-1.5 py-0.5 font-sans text-xs text-foreground">
+            {key}
+          </kbd>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export interface SettingsViewProps {
   summaries: SessionSummary[];
@@ -144,7 +173,8 @@ export function SettingsView({
   const [suspenderDraft, setSuspenderDraft] = useState(
     DEFAULT_SORT_SETTINGS.tabSuspenderExtensionId,
   );
-  const [commands, setCommands] = useState<CommandRow[]>([]);
+  // `null` until Chrome answers; `'failed'` when it does not.
+  const [commands, setCommands] = useState<CommandRow[] | null | 'failed'>(null);
   const sessionSettings = useSessionSettings();
 
   useEffect(() => {
@@ -155,9 +185,10 @@ export function SettingsView({
     });
     // The real keys, read from Chrome rather than promised by this page: they are unbound until
     // the user assigns them at chrome://extensions/shortcuts.
-    void chrome.commands.getAll().then((all) => {
-      setCommands(commandRows(all));
-    });
+    chrome.commands.getAll().then(
+      (all) => setCommands(commandRows(all, IS_MAC)),
+      () => setCommands('failed'),
+    );
   }, []);
 
   /**
@@ -404,17 +435,17 @@ export function SettingsView({
           </Advanced>
         </Group>
 
-        <Group
-          title="Keyboard shortcuts"
-          description={`Chrome owns these. Sorting starts as ${DEFAULT_SHORTCUTS._execute_action} and ${ASSEMBLE_NAME} as ${DEFAULT_SHORTCUTS['assemble-tabs']} (Option in place of Alt on a Mac) when those keys are free; the rest start unset.`}
-        >
-          {commands.map((command) => (
-            <Field key={command.name} label={command.name}>
-              <span className="rounded border px-2 py-0.5 font-mono text-xs text-muted-foreground">
-                {command.shortcut}
-              </span>
-            </Field>
-          ))}
+        <Group title="Keyboard shortcuts" description={shortcutsDescription(IS_MAC)}>
+          {commands === null && <p className="text-xs text-muted-foreground">{COMMANDS_LOADING}</p>}
+          {commands === 'failed' && (
+            <p className="text-xs text-muted-foreground">{COMMANDS_FAILED}</p>
+          )}
+          {Array.isArray(commands) &&
+            commands.map((command) => (
+              <Field key={command.id} label={command.name} hint={command.hint}>
+                <ShortcutKeys keys={command.keys} />
+              </Field>
+            ))}
           <Button variant="outline" size="sm" onClick={() => void openShortcutSettings()}>
             <Keyboard />
             Change in Chrome

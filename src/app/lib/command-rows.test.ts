@@ -1,27 +1,89 @@
 import { describe, expect, it } from 'vitest';
-import { commandRows, NOT_SET, SORT_COMMAND_LABEL } from './command-rows';
+import {
+  commandRows,
+  SORT_COMMAND_LABEL,
+  shortcutsDescription,
+  suggestedKeyFor,
+  UNNAMED_COMMAND,
+} from './command-rows';
 
 describe('commandRows', () => {
   it('names the built-in icon-click command, which Chrome leaves without a description', () => {
-    expect(commandRows([{ name: '_execute_action', description: '', shortcut: '' }])).toEqual([
-      { name: SORT_COMMAND_LABEL, shortcut: NOT_SET },
-    ]);
+    const [row] = commandRows([{ name: '_execute_action', description: '', shortcut: '' }], false);
+    expect(row?.name).toBe(SORT_COMMAND_LABEL);
+    expect(row?.keys).toEqual([]);
   });
 
   it('lists sorting first and keeps the others in the order Chrome gave them', () => {
-    const rows = commandRows([
-      { name: 'save-session', description: 'Save the current window as a session', shortcut: '' },
-      { name: 'assemble-tabs', description: 'Move the tabs', shortcut: 'Alt+A' },
-      { name: '_execute_action', description: '', shortcut: 'Alt+Shift+S' },
-    ]);
+    const rows = commandRows(
+      [
+        {
+          name: 'save-session',
+          description: 'Save the current window as a session',
+          shortcut: '',
+        },
+        { name: 'assemble-tabs', description: 'Move the tabs', shortcut: 'Alt+A' },
+        { name: '_execute_action', description: '', shortcut: 'Alt+Shift+S' },
+      ],
+      false,
+    );
     expect(rows).toEqual([
-      { name: SORT_COMMAND_LABEL, shortcut: 'Alt+Shift+S' },
-      { name: 'Save the current window as a session', shortcut: NOT_SET },
-      { name: 'Move the tabs', shortcut: 'Alt+A' },
+      { id: '_execute_action', name: SORT_COMMAND_LABEL, keys: ['Alt', 'Shift', 'S'] },
+      { id: 'save-session', name: 'Save the current window as a session', keys: [] },
+      { id: 'assemble-tabs', name: 'Move the tabs', keys: ['Alt', 'A'] },
     ]);
   });
 
-  it('falls back to the command name when there is no description', () => {
-    expect(commandRows([{ name: 'mystery' }])).toEqual([{ name: 'mystery', shortcut: NOT_SET }]);
+  it('turns the glyphs Chrome reports on a Mac into key names', () => {
+    const [row] = commandRows([{ name: '_execute_action', shortcut: '⌥⇧S' }], true);
+    expect(row?.keys).toEqual(['Option', 'Shift', 'S']);
+    expect(row?.hint).toBeUndefined();
+  });
+
+  it('points at the suggested key when Chrome left a suggested command unbound', () => {
+    // An existing install updated to a version that adds a suggested_key keeps it unbound.
+    const [row] = commandRows(
+      [{ name: 'assemble-tabs', description: 'Assemble!', shortcut: '' }],
+      true,
+    );
+    expect(row?.keys).toEqual([]);
+    expect(row?.hint).toContain('Option + Shift + A');
+    expect(row?.hint).toContain("Chrome's shortcut page");
+    expect(row?.hint).not.toContain('—');
+  });
+
+  it('gives no hint to a command that ships without a suggestion', () => {
+    const [row] = commandRows([{ name: 'save-session', description: 'Save', shortcut: '' }], false);
+    expect(row?.hint).toBeUndefined();
+  });
+
+  it('never leaves a row without a name', () => {
+    expect(commandRows([{ name: 'mystery' }], false)[0]?.name).toBe('mystery');
+    expect(commandRows([{ name: 'mystery', description: '  ' }], false)[0]?.name).toBe('mystery');
+    const [nameless] = commandRows([{ description: '' }], false);
+    expect(nameless?.name).toBe(UNNAMED_COMMAND);
+    expect(nameless?.id).not.toBe('');
+  });
+});
+
+describe('suggestedKeyFor', () => {
+  it('reads the manifest suggestions and nothing inherited', () => {
+    expect(suggestedKeyFor('_execute_action')).toBe('Alt+Shift+S');
+    expect(suggestedKeyFor('save-session')).toBeUndefined();
+    expect(suggestedKeyFor('toString')).toBeUndefined();
+    expect(suggestedKeyFor(undefined)).toBeUndefined();
+  });
+});
+
+describe('shortcutsDescription', () => {
+  it('names the default keys the way the platform does, without glyphs or em dashes', () => {
+    const mac = shortcutsDescription(true);
+    expect(mac).toContain('Option + Shift + S');
+    expect(mac).toContain('Option + Shift + A');
+    expect(mac).not.toContain('Alt');
+    expect(mac).not.toContain('—');
+    const other = shortcutsDescription(false);
+    expect(other).toContain('Alt + Shift + S');
+    expect(other).not.toContain('Option');
   });
 });
