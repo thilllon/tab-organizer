@@ -5,20 +5,24 @@ import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { ASSEMBLE_NAME, DEFAULT_SHORTCUTS } from '@/constants';
+import { NativeSelect } from '@/dashboard/components/NativeSelect';
 import { SessionSettingsFields } from '@/dashboard/components/SessionSettingsFields';
 import { StorageMeter } from '@/dashboard/components/StorageMeter';
 import { useSessionSettings } from '@/dashboard/hooks/useSessionSettings';
 import {
   DEFAULT_SORT_SETTINGS,
+  DUPLICATE_TAB_OPTIONS,
   disabledSortControls,
+  GROUP_FROM_OPTIONS,
+  GROUPING_MODE_OPTIONS,
   isDuplicateTabHandling,
   isGroupFrom,
   isGroupingMode,
   isSortBy,
   parseSortSettings,
+  SORT_BY_OPTIONS,
   SORT_SETTING_KEYS,
   suspenderIdStatus,
   toStoredSortSettings,
@@ -89,11 +93,28 @@ function Advanced({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Field({
+  label,
+  hint,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  /** The id of the control this label names; given, the label is a real `<label>`. */
+  htmlFor?: string;
+  children: ReactNode;
+}) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
       <div className="min-w-48 flex-1">
-        <p className="text-sm">{label}</p>
+        {htmlFor === undefined ? (
+          <p className="text-sm">{label}</p>
+        ) : (
+          <Label htmlFor={htmlFor} className="leading-normal font-normal">
+            {label}
+          </Label>
+        )}
         {hint !== undefined && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
       <div className="flex items-center gap-2">{children}</div>
@@ -177,87 +198,94 @@ export function SettingsView({
         {children}
 
         <Group title="Sorting" description="What clicking the toolbar icon does.">
-          <Field label="Sort by">
-            <RadioGroup
+          <Field label="Sort by" htmlFor="sort-by">
+            <NativeSelect
+              id="sort-by"
               value={sort.sortBy}
-              onValueChange={(value) => isSortBy(value) && write({ sortBy: value })}
-              className="flex gap-4"
+              onChange={(event) => {
+                const value = event.target.value;
+                if (isSortBy(value)) {
+                  write({ sortBy: value });
+                }
+              }}
             >
-              <span className="flex items-center gap-2">
-                <RadioGroupItem value="url" id="sort-url" />
-                <Label htmlFor="sort-url">By URL</Label>
-              </span>
-              <span className="flex items-center gap-2">
-                <RadioGroupItem value="title" id="sort-title" />
-                <Label htmlFor="sort-title">By title</Label>
-              </span>
-              <span className="flex items-center gap-2">
-                <RadioGroupItem value="custom" id="sort-custom" />
-                <Label htmlFor="sort-custom">Custom</Label>
-              </span>
-            </RadioGroup>
+              {SORT_BY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
           </Field>
 
-          <Field label="Duplicate tabs" hint="When the same address is open more than once.">
-            <RadioGroup
+          <Field
+            label="Duplicate tabs"
+            hint="When the same address is open more than once."
+            htmlFor="duplicate-tabs"
+          >
+            <NativeSelect
+              id="duplicate-tabs"
               value={sort.duplicateTabHandling}
-              onValueChange={(value) =>
-                isDuplicateTabHandling(value) && write({ duplicateTabHandling: value })
-              }
-              className="flex gap-4"
+              onChange={(event) => {
+                const value = event.target.value;
+                if (isDuplicateTabHandling(value)) {
+                  write({ duplicateTabHandling: value });
+                }
+              }}
             >
-              <span className="flex items-center gap-2">
-                <RadioGroupItem value="none" id="dupe-none" />
-                <Label htmlFor="dupe-none">Keep all</Label>
-              </span>
-              <span className="flex items-center gap-2">
-                <RadioGroupItem value="closeAllButOne" id="dupe-close" />
-                <Label htmlFor="dupe-close">Keep one</Label>
-              </span>
-              <span className="flex items-center gap-2">
-                <RadioGroupItem value="group" id="dupe-group" />
-                <Label htmlFor="dupe-group">Group them</Label>
-              </span>
-            </RadioGroup>
+              {DUPLICATE_TAB_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
           </Field>
 
-          <Field label="Tab groups" hint="Collect tabs from the same site into a Chrome tab group.">
-            <RadioGroup
+          <Field
+            label="Tab groups"
+            hint="Collect tabs from the same site into a Chrome tab group."
+            htmlFor="grouping-mode"
+          >
+            <NativeSelect
+              id="grouping-mode"
               value={sort.groupingMode}
-              onValueChange={(value) => isGroupingMode(value) && write({ groupingMode: value })}
-              className="flex gap-4"
+              onChange={(event) => {
+                const value = event.target.value;
+                if (isGroupingMode(value)) {
+                  write({ groupingMode: value });
+                }
+              }}
             >
-              <span className="flex items-center gap-2">
-                <RadioGroupItem value="subdomain" id="group-subdomain" />
-                <Label htmlFor="group-subdomain">By full hostname</Label>
-              </span>
-              <span className="flex items-center gap-2">
-                <RadioGroupItem value="domain" id="group-domain" />
-                <Label htmlFor="group-domain">By domain</Label>
-              </span>
-            </RadioGroup>
+              {GROUPING_MODE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
           </Field>
 
           <Advanced label="Advanced — order, pinned tabs, suspended tabs">
             <Field
               label="Grouping direction"
               hint={customOnly.groupFrom ? 'Custom sorting only.' : undefined}
+              htmlFor="group-from"
             >
-              <RadioGroup
+              <NativeSelect
+                id="group-from"
                 value={sort.groupFrom}
                 disabled={customOnly.groupFrom}
-                onValueChange={(value) => isGroupFrom(value) && write({ groupFrom: value })}
-                className="flex gap-4"
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (isGroupFrom(value)) {
+                    write({ groupFrom: value });
+                  }
+                }}
               >
-                <span className="flex items-center gap-2">
-                  <RadioGroupItem value="leftToRight" id="group-ltr" />
-                  <Label htmlFor="group-ltr">Left to right</Label>
-                </span>
-                <span className="flex items-center gap-2">
-                  <RadioGroupItem value="rightToLeft" id="group-rtl" />
-                  <Label htmlFor="group-rtl">Right to left</Label>
-                </span>
-              </RadioGroup>
+                {GROUP_FROM_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </NativeSelect>
             </Field>
 
             <Field

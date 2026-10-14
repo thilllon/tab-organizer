@@ -53,6 +53,39 @@ export function isGroupingMode(value: unknown): value is GroupingMode {
   return value === 'subdomain' || value === 'domain';
 }
 
+/** One entry of a Settings dropdown: the stored value and the words shown for it. */
+export interface SortOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+/**
+ * What each dropdown in the Sorting section offers, in the order shown. The values are exactly the
+ * ones the guards above accept (pinned by `sort-settings.test.ts`), so a choice can never write a
+ * value the sort engine does not read.
+ */
+export const SORT_BY_OPTIONS: readonly SortOption<SortBy>[] = [
+  { value: 'url', label: 'By URL' },
+  { value: 'title', label: 'By title' },
+  { value: 'custom', label: 'Custom' },
+];
+
+export const DUPLICATE_TAB_OPTIONS: readonly SortOption<DuplicateTabHandling>[] = [
+  { value: 'none', label: 'Keep all' },
+  { value: 'closeAllButOne', label: 'Keep one' },
+  { value: 'group', label: 'Group them' },
+];
+
+export const GROUPING_MODE_OPTIONS: readonly SortOption<GroupingMode>[] = [
+  { value: 'subdomain', label: 'By full hostname' },
+  { value: 'domain', label: 'By domain' },
+];
+
+export const GROUP_FROM_OPTIONS: readonly SortOption<GroupFrom>[] = [
+  { value: 'leftToRight', label: 'Left to right' },
+  { value: 'rightToLeft', label: 'Right to left' },
+];
+
 /** A Chrome extension id: exactly 32 characters from the alphabet a–p, lower case. */
 const EXTENSION_ID_PATTERN = /^[a-p]{32}$/;
 

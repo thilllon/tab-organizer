@@ -3,7 +3,10 @@ import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/sessions/capture';
 import type { SortSettings } from '@/types';
 import {
   DEFAULT_SORT_SETTINGS,
+  DUPLICATE_TAB_OPTIONS,
   disabledSortControls,
+  GROUP_FROM_OPTIONS,
+  GROUPING_MODE_OPTIONS,
   isDuplicateTabHandling,
   isExtensionId,
   isGroupFrom,
@@ -11,6 +14,7 @@ import {
   isSortBy,
   normalizeSuspenderId,
   parseSortSettings,
+  SORT_BY_OPTIONS,
   SORT_SETTING_KEYS,
   suspenderIdStatus,
   toStoredSortSettings,
@@ -231,5 +235,51 @@ describe('disabledSortControls', () => {
       groupFrom: true,
       preserveOrderWithinGroups: true,
     });
+  });
+});
+
+describe('dropdown options', () => {
+  const cases = [
+    { name: 'SORT_BY_OPTIONS', options: SORT_BY_OPTIONS, guard: isSortBy, count: 3 },
+    {
+      name: 'DUPLICATE_TAB_OPTIONS',
+      options: DUPLICATE_TAB_OPTIONS,
+      guard: isDuplicateTabHandling,
+      count: 3,
+    },
+    {
+      name: 'GROUPING_MODE_OPTIONS',
+      options: GROUPING_MODE_OPTIONS,
+      guard: isGroupingMode,
+      count: 2,
+    },
+    { name: 'GROUP_FROM_OPTIONS', options: GROUP_FROM_OPTIONS, guard: isGroupFrom, count: 2 },
+  ];
+
+  for (const { name, options, guard, count } of cases) {
+    it(`${name} offers every stored value once, each accepted by its guard`, () => {
+      const values = options.map((option) => option.value);
+      expect(new Set(values).size).toBe(count);
+      expect(values.every((value) => guard(value))).toBe(true);
+      expect(options.every((option) => option.label.trim() !== '')).toBe(true);
+    });
+  }
+
+  it('keeps the wording the radio buttons had', () => {
+    expect(SORT_BY_OPTIONS.map((option) => option.label)).toEqual(['By URL', 'By title', 'Custom']);
+    expect(DUPLICATE_TAB_OPTIONS.map((option) => option.label)).toEqual([
+      'Keep all',
+      'Keep one',
+      'Group them',
+    ]);
+  });
+
+  it('offers each default as one of its choices', () => {
+    expect(SORT_BY_OPTIONS.map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.sortBy);
+    expect(DUPLICATE_TAB_OPTIONS.map((o) => o.value)).toContain(
+      DEFAULT_SORT_SETTINGS.duplicateTabHandling,
+    );
+    expect(GROUPING_MODE_OPTIONS.map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.groupingMode);
+    expect(GROUP_FROM_OPTIONS.map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.groupFrom);
   });
 });
