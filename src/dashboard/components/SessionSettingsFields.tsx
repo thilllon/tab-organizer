@@ -4,13 +4,18 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { NativeSelect } from '@/dashboard/components/NativeSelect';
 import {
+  CUSTOM_INTERVAL,
+  HISTORY_INTERVAL_MAX_MINUTES,
+  HISTORY_INTERVAL_MIN_MINUTES,
   HISTORY_INTERVALS,
   HISTORY_MAX_MAX,
   HISTORY_MAX_MIN,
   intervalLabel,
+  intervalSelectValue,
   isRestoreLazy,
   lazyLabel,
   parseHistoryInterval,
+  parseIntervalMinutes,
   parseSnapshotLimit,
   RESTORE_LAZY_MODES,
 } from '@/dashboard/lib/session-settings';
@@ -55,6 +60,7 @@ export function SessionSettingsFields({
   const showAdvanced = subset !== 'basic';
   const enabledId = `${idPrefix}-history-enabled`;
   const intervalId = `${idPrefix}-history-interval`;
+  const customIntervalId = `${idPrefix}-history-interval-custom`;
   const maxId = `${idPrefix}-history-max`;
   const lazyId = `${idPrefix}-restore-lazy`;
 
@@ -78,6 +84,29 @@ export function SessionSettingsFields({
     }
   };
 
+  // "Custom" shows a minutes input. It stays open after the user picks it even while the stored
+  // value is still a preset, and closes again when a preset is picked.
+  const [customOpen, setCustomOpen] = useState(false);
+  const intervalChoice = intervalSelectValue(settings.historyIntervalMinutes, customOpen);
+  const [intervalDraft, setIntervalDraft] = useState(String(settings.historyIntervalMinutes));
+  useEffect(() => {
+    setIntervalDraft(String(settings.historyIntervalMinutes));
+  }, [settings.historyIntervalMinutes]);
+
+  const commitInterval = () => {
+    const parsed = parseIntervalMinutes(intervalDraft);
+    if (parsed === undefined) {
+      setIntervalDraft(String(settings.historyIntervalMinutes));
+      return;
+    }
+    setIntervalDraft(String(parsed));
+    if (parsed !== settings.historyIntervalMinutes) {
+      onChange({ historyIntervalMinutes: parsed });
+    }
+  };
+
+  const intervalDisabled = disabled || !settings.historyEnabled;
+
   return (
     <div className={cn('flex flex-wrap items-center gap-x-6 gap-y-3', className)}>
       {showBasic && (
@@ -97,11 +126,17 @@ export function SessionSettingsFields({
           <Label htmlFor={intervalId}>Snapshot interval</Label>
           <NativeSelect
             id={intervalId}
-            value={String(settings.historyIntervalMinutes)}
-            disabled={disabled || !settings.historyEnabled}
+            value={intervalChoice}
+            disabled={intervalDisabled}
             onChange={(event) => {
-              const minutes = parseHistoryInterval(event.target.value);
+              const value = event.target.value;
+              if (value === CUSTOM_INTERVAL) {
+                setCustomOpen(true);
+                return;
+              }
+              const minutes = parseHistoryInterval(value);
               if (minutes !== undefined) {
+                setCustomOpen(false);
                 onChange({ historyIntervalMinutes: minutes });
               }
             }}
@@ -111,7 +146,33 @@ export function SessionSettingsFields({
                 {intervalLabel(minutes)}
               </option>
             ))}
+            <option value={CUSTOM_INTERVAL}>Custom</option>
           </NativeSelect>
+          {intervalChoice === CUSTOM_INTERVAL && (
+            <>
+              <Input
+                id={customIntervalId}
+                aria-label="Custom snapshot interval in minutes"
+                type="number"
+                inputMode="numeric"
+                min={HISTORY_INTERVAL_MIN_MINUTES}
+                max={HISTORY_INTERVAL_MAX_MINUTES}
+                step={1}
+                className="h-8 w-20"
+                value={intervalDraft}
+                disabled={intervalDisabled}
+                onChange={(event) => setIntervalDraft(event.target.value)}
+                onBlur={commitInterval}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    commitInterval();
+                  }
+                }}
+              />
+              <span className="text-sm">minutes</span>
+            </>
+          )}
         </div>
       )}
 

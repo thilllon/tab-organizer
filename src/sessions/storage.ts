@@ -1,5 +1,7 @@
 import {
   DEFAULT_SESSION_SETTINGS,
+  HISTORY_INTERVAL_MAX_MINUTES,
+  HISTORY_INTERVAL_MIN_MINUTES,
   SESSION_SCHEMA_VERSION,
   type Session,
   type SessionId,
@@ -211,6 +213,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+/**
+ * The stored snapshot interval as the alarm will use it: a finite number is rounded to whole
+ * minutes and clamped into [HISTORY_INTERVAL_MIN_MINUTES, HISTORY_INTERVAL_MAX_MINUTES]; anything
+ * that is not a number at all falls back to the default.
+ */
+export function normalizeHistoryInterval(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return DEFAULT_SESSION_SETTINGS.historyIntervalMinutes;
+  }
+  return Math.min(
+    HISTORY_INTERVAL_MAX_MINUTES,
+    Math.max(HISTORY_INTERVAL_MIN_MINUTES, Math.round(value)),
+  );
+}
+
 function normalizeSettings(value: unknown): SessionSettings {
   if (!isRecord(value)) {
     return { ...DEFAULT_SESSION_SETTINGS };
@@ -223,10 +240,7 @@ function normalizeSettings(value: unknown): SessionSettings {
       typeof value.historyEnabled === 'boolean'
         ? value.historyEnabled
         : DEFAULT_SESSION_SETTINGS.historyEnabled,
-    historyIntervalMinutes:
-      interval === 5 || interval === 10 || interval === 30
-        ? interval
-        : DEFAULT_SESSION_SETTINGS.historyIntervalMinutes,
+    historyIntervalMinutes: normalizeHistoryInterval(interval),
     historyMaxSnapshots:
       typeof max === 'number' && Number.isInteger(max) && max > 0
         ? max

@@ -121,10 +121,23 @@ export interface SessionIndex {
 export interface SessionSettings {
   // chrome.storage.local key 'sessionSettings' (device-local; NOT sync)
   historyEnabled: boolean; // default true (owner decision)
-  historyIntervalMinutes: 5 | 10 | 30; // default 5
+  /**
+   * Whole minutes between automatic snapshots, default 5. The Settings view offers 5, 10 and 30 or
+   * any value the user types; `normalizeSettings` clamps whatever is stored into
+   * [HISTORY_INTERVAL_MIN_MINUTES, HISTORY_INTERVAL_MAX_MINUTES].
+   */
+  historyIntervalMinutes: number;
   historyMaxSnapshots: number; // default 20 unprotected
   restoreLazy: 'auto' | 'always' | 'never'; // default 'auto' = discard when tabCount > 50
 }
+
+/**
+ * Bounds for `historyIntervalMinutes`. Chrome accepts `periodInMinutes >= 0.5` for a packed
+ * extension, so 1 minute is safely above its floor; a day is the longest interval that still makes
+ * sense for crash recovery.
+ */
+export const HISTORY_INTERVAL_MIN_MINUTES = 1;
+export const HISTORY_INTERVAL_MAX_MINUTES = 1440;
 
 export const DEFAULT_SESSION_SETTINGS: SessionSettings = {
   historyEnabled: true,

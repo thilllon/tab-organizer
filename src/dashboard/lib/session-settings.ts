@@ -1,4 +1,8 @@
-import type { SessionSettings } from '@/types';
+import {
+  HISTORY_INTERVAL_MAX_MINUTES,
+  HISTORY_INTERVAL_MIN_MINUTES,
+  type SessionSettings,
+} from '@/types';
 
 /**
  * Pure rules behind the session-settings controls (dashboard settings row + Options "Sessions"
@@ -6,29 +10,52 @@ import type { SessionSettings } from '@/types';
  * decided here and unit-tested (AGENTS.md "Testing" — vitest runs without a DOM).
  */
 
-export type HistoryInterval = SessionSettings['historyIntervalMinutes'];
 export type RestoreLazy = SessionSettings['restoreLazy'];
 
-/** The intervals the alarm supports (spec §3); anything else falls back in `normalizeSettings`. */
-export const HISTORY_INTERVALS: readonly HistoryInterval[] = [5, 10, 30];
+/**
+ * The preset intervals the select offers. Any other whole number of minutes in
+ * [HISTORY_INTERVAL_MIN_MINUTES, HISTORY_INTERVAL_MAX_MINUTES] is a "Custom" value the user types.
+ */
+export const HISTORY_INTERVALS: readonly number[] = [5, 10, 30];
+
+/** The select's value for "type your own"; never a number, so it cannot collide with a preset. */
+export const CUSTOM_INTERVAL = 'custom';
+
+export { HISTORY_INTERVAL_MAX_MINUTES, HISTORY_INTERVAL_MIN_MINUTES };
 export const RESTORE_LAZY_MODES: readonly RestoreLazy[] = ['auto', 'always', 'never'];
 
 /** Ring-buffer bounds for `historyMaxSnapshots`, mirrored on the number input's min/max. */
 export const HISTORY_MAX_MIN = 1;
 export const HISTORY_MAX_MAX = 200;
 
-/** Reads the interval select's string value back into the union `SessionSettings` stores. */
-export function parseHistoryInterval(value: string): HistoryInterval | undefined {
-  switch (value) {
-    case '5':
-      return 5;
-    case '10':
-      return 10;
-    case '30':
-      return 30;
-    default:
-      return undefined;
+/** Reads a preset option of the interval select back into minutes; `undefined` for "Custom". */
+export function parseHistoryInterval(value: string): number | undefined {
+  return HISTORY_INTERVALS.find((minutes) => String(minutes) === value);
+}
+
+/**
+ * Which option the interval select shows: the preset that matches the stored value, or "Custom"
+ * when the stored value is not a preset or the user has just chosen to type one.
+ */
+export function intervalSelectValue(minutes: number, customOpen: boolean): string {
+  if (!customOpen && HISTORY_INTERVALS.includes(minutes)) {
+    return String(minutes);
   }
+  return CUSTOM_INTERVAL;
+}
+
+/**
+ * Reads the custom interval input. Like `parseSnapshotLimit`: `undefined` for an empty or
+ * non-numeric entry (the stored value stays), otherwise whole minutes clamped into
+ * [HISTORY_INTERVAL_MIN_MINUTES, HISTORY_INTERVAL_MAX_MINUTES], the same range `normalizeSettings`
+ * enforces on what is stored.
+ */
+export function parseIntervalMinutes(raw: string): number | undefined {
+  const parsed = Number.parseInt(raw.trim(), 10);
+  if (!Number.isFinite(parsed)) {
+    return undefined;
+  }
+  return Math.min(HISTORY_INTERVAL_MAX_MINUTES, Math.max(HISTORY_INTERVAL_MIN_MINUTES, parsed));
 }
 
 export function isRestoreLazy(value: string): value is RestoreLazy {
@@ -50,8 +77,8 @@ export function parseSnapshotLimit(raw: string): number | undefined {
 }
 
 /** "Every 5 minutes" — the interval select's option text. */
-export function intervalLabel(minutes: HistoryInterval): string {
-  return `Every ${minutes} minutes`;
+export function intervalLabel(minutes: number): string {
+  return minutes === 1 ? 'Every minute' : `Every ${minutes} minutes`;
 }
 
 /** The lazy-restore select's option text; 'auto' names the threshold `planRestore` applies. */

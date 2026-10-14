@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getChromeFake } from '@/test/chrome-fake';
 import {
   DEFAULT_SESSION_SETTINGS,
+  HISTORY_INTERVAL_MAX_MINUTES,
+  HISTORY_INTERVAL_MIN_MINUTES,
   SESSION_SCHEMA_VERSION,
   type Session,
   type SessionIndex,
@@ -12,6 +14,7 @@ import {
   HISTORY_META_KEY,
   INDEX_KEY,
   LOCK_NAME,
+  normalizeHistoryInterval,
   SETTINGS_KEY,
   sessionKey,
   sessionRepo,
@@ -929,12 +932,59 @@ describe('sessionRepo settings', () => {
     const fake = getChromeFake();
     fake.state.local.set(SETTINGS_KEY, {
       historyEnabled: 'yes',
-      historyIntervalMinutes: 7,
+      historyIntervalMinutes: '7',
       historyMaxSnapshots: -3,
       restoreLazy: 'sometimes',
     });
 
     await expect(sessionRepo.getSettings()).resolves.toEqual(DEFAULT_SESSION_SETTINGS);
+  });
+
+  it('keeps a custom snapshot interval and persists it', async () => {
+    const fake = getChromeFake();
+
+    await sessionRepo.setSettings({ historyIntervalMinutes: 7 });
+
+    expect(fake.state.local.get(SETTINGS_KEY)).toMatchObject({ historyIntervalMinutes: 7 });
+    await expect(sessionRepo.getSettings()).resolves.toMatchObject({ historyIntervalMinutes: 7 });
+  });
+
+  it('clamps a stored interval into whole minutes within the supported range', async () => {
+    const fake = getChromeFake();
+    fake.state.local.set(SETTINGS_KEY, { historyIntervalMinutes: 0.2 });
+    await expect(sessionRepo.getSettings()).resolves.toMatchObject({
+      historyIntervalMinutes: HISTORY_INTERVAL_MIN_MINUTES,
+    });
+
+    await sessionRepo.setSettings({ historyIntervalMinutes: 100000 });
+    expect(fake.state.local.get(SETTINGS_KEY)).toMatchObject({
+      historyIntervalMinutes: HISTORY_INTERVAL_MAX_MINUTES,
+    });
+  });
+});
+
+describe('normalizeHistoryInterval', () => {
+  it('keeps any whole number of minutes in range', () => {
+    expect(normalizeHistoryInterval(5)).toBe(5);
+    expect(normalizeHistoryInterval(7)).toBe(7);
+    expect(normalizeHistoryInterval(HISTORY_INTERVAL_MAX_MINUTES)).toBe(
+      HISTORY_INTERVAL_MAX_MINUTES,
+    );
+  });
+
+  it('rounds fractions and clamps to the range', () => {
+    expect(normalizeHistoryInterval(12.4)).toBe(12);
+    expect(normalizeHistoryInterval(0)).toBe(HISTORY_INTERVAL_MIN_MINUTES);
+    expect(normalizeHistoryInterval(-30)).toBe(HISTORY_INTERVAL_MIN_MINUTES);
+    expect(normalizeHistoryInterval(5000)).toBe(HISTORY_INTERVAL_MAX_MINUTES);
+  });
+
+  it('falls back to the default for anything that is not a finite number', () => {
+    const fallback = DEFAULT_SESSION_SETTINGS.historyIntervalMinutes;
+    expect(normalizeHistoryInterval('10')).toBe(fallback);
+    expect(normalizeHistoryInterval(Number.NaN)).toBe(fallback);
+    expect(normalizeHistoryInterval(Number.POSITIVE_INFINITY)).toBe(fallback);
+    expect(normalizeHistoryInterval(undefined)).toBe(fallback);
   });
 });
 

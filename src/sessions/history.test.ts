@@ -443,6 +443,14 @@ describe('ensureHistoryAlarm', () => {
     expect(alarms[0]).toMatchObject({ name: HISTORY_ALARM, periodInMinutes: 30 });
   });
 
+  it('arms a custom interval the user typed', async () => {
+    await sessionRepo.setSettings({ historyIntervalMinutes: 45 });
+
+    await ensureHistoryAlarm();
+
+    expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 45 });
+  });
+
   it('clears both alarms when history is disabled and leaves other alarms alone', async () => {
     await ensureHistoryAlarm();
     await scheduleFirstSnapshot();
