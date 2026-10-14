@@ -14,7 +14,6 @@ import { useSessionSettings } from '@/dashboard/hooks/useSessionSettings';
 import {
   DEFAULT_SORT_SETTINGS,
   DUPLICATE_TAB_OPTIONS,
-  disabledSortControls,
   GROUP_FROM_OPTIONS,
   GROUPING_MODE_OPTIONS,
   isDuplicateTabHandling,
@@ -24,6 +23,7 @@ import {
   parseSortSettings,
   SORT_BY_OPTIONS,
   SORT_SETTING_KEYS,
+  showsCustomSortOptions,
   suspenderIdStatus,
   toStoredSortSettings,
 } from '@/options/lib/sort-settings';
@@ -125,8 +125,9 @@ function Field({
 /**
  * Everything configurable, in one place inside the app: Chrome's own "Options" entry opens this
  * very view (`app.html#settings`). It is the content of the Settings dialog in `App.tsx` — a
- * fixed title row over a scrolling body — so it must be rendered inside a `DialogContent`. Three sorting choices are visible because they change what a
- * click on the icon visibly does; the other five sit under "Advanced". Nothing has a Save button
+ * fixed title row over a scrolling body — so it must be rendered inside a `DialogContent`. Sort by and Duplicate tabs are visible because they change what a
+ * click on the icon visibly does, with the three Custom-only choices indented under Sort by while
+ * Custom is chosen; the other three sit under "Advanced". Nothing has a Save button
  * — a setting is written the moment it changes, as it already was for the session settings.
  */
 export function SettingsView({
@@ -185,7 +186,7 @@ export function SettingsView({
     });
   };
 
-  const customOnly = disabledSortControls(sort.sortBy);
+  const showCustomOptions = showsCustomSortOptions(sort.sortBy);
   const suspenderStatus = suspenderIdStatus(suspenderDraft);
 
   return (
@@ -217,6 +218,70 @@ export function SettingsView({
             </NativeSelect>
           </Field>
 
+          {/* Only "Custom" reads these (CUSTOM_ONLY_SETTINGS), so they sit under "Sort by",
+              indented, while it is chosen, and are not shown at all otherwise. */}
+          {showCustomOptions && (
+            <div className="space-y-5 border-l-2 border-border pl-4">
+              <Field
+                label="Tab groups"
+                hint="What counts as the same site."
+                htmlFor="grouping-mode"
+              >
+                <NativeSelect
+                  id="grouping-mode"
+                  value={sort.groupingMode}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (isGroupingMode(value)) {
+                      write({ groupingMode: value });
+                    }
+                  }}
+                >
+                  {GROUPING_MODE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+
+              <Field
+                label="Grouping direction"
+                hint="Which end of the tab strip decides the order of the sites."
+                htmlFor="group-from"
+              >
+                <NativeSelect
+                  id="group-from"
+                  value={sort.groupFrom}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (isGroupFrom(value)) {
+                      write({ groupFrom: value });
+                    }
+                  }}
+                >
+                  {GROUP_FROM_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+
+              <Field
+                label="Preserve order within groups"
+                hint="Keep each site’s tabs in the order you opened them."
+                htmlFor="preserve-order"
+              >
+                <Switch
+                  id="preserve-order"
+                  checked={sort.preserveOrderWithinGroups}
+                  onCheckedChange={(checked) => write({ preserveOrderWithinGroups: checked })}
+                />
+              </Field>
+            </div>
+          )}
+
           <Field
             label="Duplicate tabs"
             hint="When the same address is open more than once."
@@ -240,70 +305,7 @@ export function SettingsView({
             </NativeSelect>
           </Field>
 
-          <Field
-            label="Tab groups"
-            hint="Collect tabs from the same site into a Chrome tab group."
-            htmlFor="grouping-mode"
-          >
-            <NativeSelect
-              id="grouping-mode"
-              value={sort.groupingMode}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (isGroupingMode(value)) {
-                  write({ groupingMode: value });
-                }
-              }}
-            >
-              {GROUPING_MODE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-
           <Advanced label="Advanced — order, pinned tabs, suspended tabs">
-            <Field
-              label="Grouping direction"
-              hint={customOnly.groupFrom ? 'Custom sorting only.' : undefined}
-              htmlFor="group-from"
-            >
-              <NativeSelect
-                id="group-from"
-                value={sort.groupFrom}
-                disabled={customOnly.groupFrom}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (isGroupFrom(value)) {
-                    write({ groupFrom: value });
-                  }
-                }}
-              >
-                {GROUP_FROM_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-
-            <Field
-              label="Preserve order within groups"
-              hint={
-                customOnly.preserveOrderWithinGroups
-                  ? 'Custom sorting only.'
-                  : 'Keep each group’s tabs in the order you opened them.'
-              }
-            >
-              <Switch
-                id="preserve-order"
-                checked={sort.preserveOrderWithinGroups}
-                disabled={customOnly.preserveOrderWithinGroups}
-                onCheckedChange={(checked) => write({ preserveOrderWithinGroups: checked })}
-              />
-            </Field>
-
             <Field label="Sort pinned tabs" hint="Off: pinned tabs stay exactly where they are.">
               <Switch
                 id="sort-pinned"

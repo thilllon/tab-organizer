@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/sessions/capture';
 import type { SortSettings } from '@/types';
 import {
+  CUSTOM_ONLY_SETTINGS,
   DEFAULT_SORT_SETTINGS,
   DUPLICATE_TAB_OPTIONS,
-  disabledSortControls,
   GROUP_FROM_OPTIONS,
   GROUPING_MODE_OPTIONS,
   isDuplicateTabHandling,
@@ -16,6 +16,7 @@ import {
   parseSortSettings,
   SORT_BY_OPTIONS,
   SORT_SETTING_KEYS,
+  showsCustomSortOptions,
   suspenderIdStatus,
   toStoredSortSettings,
 } from './sort-settings';
@@ -218,21 +219,26 @@ describe('toStoredSortSettings', () => {
   });
 });
 
-describe('disabledSortControls', () => {
-  it('enables the grouping direction and order-within-groups only for custom', () => {
-    expect(disabledSortControls('custom')).toEqual({
-      groupFrom: false,
-      preserveOrderWithinGroups: false,
-    });
+describe('showsCustomSortOptions', () => {
+  it('shows the Custom-only settings only for custom sorting', () => {
+    expect(showsCustomSortOptions('custom')).toBe(true);
+    expect(showsCustomSortOptions('url')).toBe(false);
+    expect(showsCustomSortOptions('title')).toBe(false);
   });
 
-  it('disables both under the URL and title modes, which never read them', () => {
-    expect(disabledSortControls('url')).toEqual({
-      groupFrom: true,
-      preserveOrderWithinGroups: true,
-    });
-    expect(disabledSortControls('title')).toEqual({
-      groupFrom: true,
+  it('covers every setting sortByTitleOrUrl never reads, and only those', () => {
+    expect([...CUSTOM_ONLY_SETTINGS].sort()).toEqual(
+      ['groupFrom', 'groupingMode', 'preserveOrderWithinGroups'].sort(),
+    );
+    for (const key of CUSTOM_ONLY_SETTINGS) {
+      expect(SORT_SETTING_KEYS).toContain(key);
+    }
+  });
+
+  it('keeps a hidden setting stored as it is', () => {
+    expect(toStoredSortSettings({ ...ALL_CHANGED, sortBy: 'url' })).toMatchObject({
+      groupingMode: 'domain',
+      groupFrom: 'rightToLeft',
       preserveOrderWithinGroups: true,
     });
   });

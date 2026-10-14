@@ -179,13 +179,23 @@ export function toStoredSortSettings(draft: SortSettings): SortSettings {
 }
 
 /**
- * The settings only `sortByCustom()` reads (`src/background/sort.ts`): `sortByTitleOrUrl()` is not
- * even passed them, so under "By URL"/"By title" they change nothing.
+ * The settings only `sortByCustom()` reads (`src/background/sort.ts`, called from `sortTabs()` in
+ * `src/background/index.ts`): `sortByTitleOrUrl()` is not even passed them, so under "By URL" /
+ * "By title" they change nothing. `groupingMode` belongs here too: it only decides which tabs
+ * `sortByCustom()` keeps together (`extractGroupingKey`), and no other code reads it.
  */
-export type CustomOnlySetting = 'groupFrom' | 'preserveOrderWithinGroups';
+export type CustomOnlySetting = 'groupingMode' | 'groupFrom' | 'preserveOrderWithinGroups';
 
-/** Which controls the page disables (rather than hides) for the selected sort mode. */
-export function disabledSortControls(sortBy: SortBy): Record<CustomOnlySetting, boolean> {
-  const customOnly = sortBy !== 'custom';
-  return { groupFrom: customOnly, preserveOrderWithinGroups: customOnly };
+export const CUSTOM_ONLY_SETTINGS: readonly CustomOnlySetting[] = [
+  'groupingMode',
+  'groupFrom',
+  'preserveOrderWithinGroups',
+];
+
+/**
+ * Whether the Settings view shows the Custom-only settings (indented under "Sort by"). They are
+ * hidden rather than disabled under the other modes; their stored values are kept either way.
+ */
+export function showsCustomSortOptions(sortBy: SortBy): boolean {
+  return sortBy === 'custom';
 }
