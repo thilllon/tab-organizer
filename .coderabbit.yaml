@@ -1,12 +1,16 @@
-# CodeRabbit — free AI review for public repos (https://docs.coderabbit.ai/reference/yaml-template)
-language: "ko-KR"
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+tone_instructions: Be concise and actionable. Prioritize concrete correctness, security, and compatibility issues; avoid repeating feedback already covered by CI.
 reviews:
-  profile: "chill"
-  high_level_summary: true
-  request_changes_workflow: true
+  profile: chill
+  high_level_summary_in_walkthrough: true
   auto_review:
     enabled: true
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 0
     drafts: false
+    # The default branch (main) is reviewed without adding other targets.
+    base_branches: []
   path_filters:
     - "!dist/**"
     - "!package/**"
@@ -24,11 +28,14 @@ reviews:
         Session data must go through sessionRepo under the Web Lock (never raw
         chrome.storage), never into chrome.storage.sync, and never persist Chrome runtime ids
         (tab/window/group ids). Restore code must sanitise URLs before opening them.
-    - path: "src/dashboard/**"
+    - path: "src/{app,dashboard}/**"
       instructions: >-
         Extension page React code. Flag network requests of any kind (only
         chrome.runtime.getURL('/_favicon/…') images are allowed), dangerouslySetInnerHTML,
         missing effect cleanup, and unguarded async races (this codebase uses generation
         counters).
-chat:
-  auto_reply: true
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - AGENTS.md
