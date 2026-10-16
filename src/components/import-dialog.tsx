@@ -1,6 +1,6 @@
 import { Upload } from 'lucide-react';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { QuotaNotice } from '@/components/QuotaNotice';
+import { QuotaNotice } from '@/components/quota-notice';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

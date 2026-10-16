@@ -1,23 +1,23 @@
 import { Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ImportDialog } from '@/components/ImportDialog';
-import { ProgressToast } from '@/components/ProgressToast';
-import { QuotaNotice } from '@/components/QuotaNotice';
-import { type PendingRestore, RestoreConfirmDialog } from '@/components/RestoreConfirmDialog';
-import { SavedToasts } from '@/components/SavedToasts';
-import { SearchBar } from '@/components/SearchBar';
-import { SearchResults } from '@/components/SearchResults';
-import { SidebarNav } from '@/components/SidebarNav';
-import { SidebarResizer } from '@/components/SidebarResizer';
-import { UnreadableSessionRow } from '@/components/UnreadableSessionRow';
+import { ImportDialog } from '@/components/import-dialog';
+import { ProgressToast } from '@/components/progress-toast';
+import { QuotaNotice } from '@/components/quota-notice';
+import { type PendingRestore, RestoreConfirmDialog } from '@/components/restore-confirm-dialog';
+import { SavedToasts } from '@/components/saved-toasts';
+import { SearchBar } from '@/components/search-bar';
+import { SearchResults } from '@/components/search-results';
+import { SidebarNav } from '@/components/sidebar-nav';
+import { SidebarResizer } from '@/components/sidebar-resizer';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useOpenWindows } from '@/hooks/useOpenWindows';
-import { useRestore } from '@/hooks/useRestore';
-import { useSavedToasts } from '@/hooks/useSavedToasts';
-import { useSearchCorpus } from '@/hooks/useSearchCorpus';
-import { useSessionIndex } from '@/hooks/useSessionIndex';
-import { useSessionSettings } from '@/hooks/useSessionSettings';
+import { UnreadableSessionRow } from '@/components/unreadable-session-row';
+import { useOpenWindows } from '@/hooks/use-open-windows';
+import { useRestore } from '@/hooks/use-restore';
+import { useSavedToasts } from '@/hooks/use-saved-toasts';
+import { useSearchCorpus } from '@/hooks/use-search-corpus';
+import { useSessionIndex } from '@/hooks/use-session-index';
+import { useSessionSettings } from '@/hooks/use-session-settings';
 import {
   formatRoute,
   HOME,
@@ -64,10 +64,10 @@ import { readSidebarWidth, writeSidebarWidth } from '@/lib/sidebar-width';
 import { isQuotaError } from '@/lib/storage-quota';
 import { NOTICE_MS } from '@/lib/toast-queue';
 import { currentWindowTarget, goToTab } from '@/lib/window-actions';
-import { OpenTabsView } from '@/pages/OpenTabsView';
-import { type OpenScope, SessionDetail } from '@/pages/SessionDetail';
-import { SettingsView } from '@/pages/SettingsView';
-import { SnapshotDetail } from '@/pages/SnapshotDetail';
+import { OpenTabsView } from '@/pages/open-tabs-view';
+import { type OpenScope, SessionDetail } from '@/pages/session-detail';
+import { SettingsView } from '@/pages/settings-view';
+import { SnapshotDetail } from '@/pages/snapshot-detail';
 import type { Session, SessionSettings } from '@/types';
 
 const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };

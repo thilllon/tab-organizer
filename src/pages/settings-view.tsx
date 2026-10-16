@@ -1,14 +1,14 @@
 import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
-import { NativeSelect } from '@/components/NativeSelect';
-import { SessionSettingsFields } from '@/components/SessionSettingsFields';
-import { StorageMeter } from '@/components/StorageMeter';
+import { NativeSelect } from '@/components/native-select';
+import { SessionSettingsFields } from '@/components/session-settings-fields';
+import { StorageMeter } from '@/components/storage-meter';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useSessionSettings } from '@/hooks/useSessionSettings';
+import { useSessionSettings } from '@/hooks/use-session-settings';
 import {
   CHANGE_ONLY_IN_CHROME,
   COMMANDS_FAILED,
@@ -175,7 +175,7 @@ function Field({
 
 /**
  * Everything configurable, in one place inside the app: Chrome's own "Options" entry opens this
- * very view (`app.html#settings`). It is the content of the Settings dialog in `App.tsx` — a
+ * very view (`app.html#settings`). It is the content of the Settings dialog in `app.tsx` — a
  * fixed title row over a scrolling body — so it must be rendered inside a `DialogContent`. Sort by and Duplicate tabs are visible because they change what a
  * click on the icon visibly does, with the three Custom-only choices indented under Sort by while
  * Custom is chosen; the other three sit under "Advanced". Nothing has a Save button

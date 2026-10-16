@@ -1,9 +1,9 @@
 import { HardDrive, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { DeleteAllDataDialog } from '@/components/DeleteAllDataDialog';
-import { DeleteAllHistoryDialog } from '@/components/DeleteAllHistoryDialog';
+import { DeleteAllDataDialog } from '@/components/delete-all-data-dialog';
+import { DeleteAllHistoryDialog } from '@/components/delete-all-history-dialog';
 import { Button } from '@/components/ui/button';
-import { isIndexChange } from '@/hooks/useSessionIndex';
+import { isIndexChange } from '@/hooks/use-session-index';
 import { pluralize } from '@/lib/display-format';
 import { errorMessage } from '@/lib/error-message';
 import { sessionRepo } from '@/lib/session-repo';

@@ -1,6 +1,6 @@
 import { FileWarning, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { DeleteSessionDialog } from '@/components/DeleteSessionDialog';
+import { DeleteSessionDialog } from '@/components/delete-session-dialog';
 import { Button } from '@/components/ui/button';
 import { formatDateTime } from '@/lib/display-format';
 import { errorMessage } from '@/lib/error-message';

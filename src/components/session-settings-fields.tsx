@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react';
-import { NativeSelect } from '@/components/NativeSelect';
+import { NativeSelect } from '@/components/native-select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';

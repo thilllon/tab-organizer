@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { followSystemTheme } from '@/lib/theme';
-import { App } from '@/pages/App';
+import { App } from '@/pages/app';
 
 import '@/styles/index.css';
 

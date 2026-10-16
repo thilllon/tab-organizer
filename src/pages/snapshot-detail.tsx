@@ -1,7 +1,7 @@
 import { BookmarkPlus, Ellipsis, ExternalLink, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { DeleteSessionDialog } from '@/components/DeleteSessionDialog';
-import { ExportMenu } from '@/components/ExportMenu';
+import { DeleteSessionDialog } from '@/components/delete-session-dialog';
+import { ExportMenu } from '@/components/export-menu';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,8 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { WindowTree } from '@/components/WindowTree';
-import { useSessionBody } from '@/hooks/useSessionBody';
+import { WindowTree } from '@/components/window-tree';
+import { useSessionBody } from '@/hooks/use-session-body';
 import { formatDateTime, formatSessionMeta } from '@/lib/display-format';
 import { errorMessage } from '@/lib/error-message';
 import { openSavedTab } from '@/lib/open-saved-tab';

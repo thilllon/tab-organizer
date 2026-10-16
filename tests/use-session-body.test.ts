@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isBodyChange } from '@/hooks/useSessionBody';
+import { isBodyChange } from '@/hooks/use-session-body';
 import { sessionKey } from '@/lib/session-repo';
 
 describe('isBodyChange', () => {

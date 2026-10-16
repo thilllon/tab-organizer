@@ -1,7 +1,7 @@
 import { Ellipsis, ExternalLink, Link, Pencil, Trash2, X } from 'lucide-react';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
-import { DeleteSessionDialog } from '@/components/DeleteSessionDialog';
-import { ExportMenu } from '@/components/ExportMenu';
+import { DeleteSessionDialog } from '@/components/delete-session-dialog';
+import { ExportMenu } from '@/components/export-menu';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,8 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { WindowTree } from '@/components/WindowTree';
-import { useSessionBody } from '@/hooks/useSessionBody';
+import { WindowTree } from '@/components/window-tree';
+import { useSessionBody } from '@/hooks/use-session-body';
 import { formatDateTime, formatSessionMeta } from '@/lib/display-format';
 import { copyText } from '@/lib/download-and-copy';
 import { errorMessage } from '@/lib/error-message';

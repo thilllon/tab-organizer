@@ -1,7 +1,7 @@
 import { Pin } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { Favicon } from '@/components/Favicon';
+import { Favicon } from '@/components/favicon';
 import { hostnameOf } from '@/lib/display-format';
 import { openTabInBackground } from '@/lib/open-in-background';
 import { browserHandlesClick, hrefFor } from '@/lib/row-link';

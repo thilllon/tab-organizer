@@ -2,7 +2,7 @@ import { SETTINGS_KEY } from '@/lib/session-repo';
 
 /**
  * Does this `chrome.storage.onChanged` event touch `sessionSettings`? Mirrors `isIndexChange`
- * (src/hooks/useSessionIndex.ts) for the settings key: session settings are device-local
+ * (src/hooks/use-session-index.ts) for the settings key: session settings are device-local
  * and live in `chrome.storage.local` only, so a `sync` change of the same name is never ours.
  */
 export function isSettingsChange(

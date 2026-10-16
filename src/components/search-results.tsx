@@ -1,6 +1,6 @@
 import { RotateCcw } from 'lucide-react';
 import { useEffect } from 'react';
-import { Favicon } from '@/components/Favicon';
+import { Favicon } from '@/components/favicon';
 import { Button } from '@/components/ui/button';
 import { formatSessionMeta, hostnameOf, pluralize } from '@/lib/display-format';
 import { browserHandlesClick, hrefFor } from '@/lib/row-link';

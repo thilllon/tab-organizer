@@ -7,7 +7,7 @@ export interface SavedToastsProps {
 
 /**
  * The stack of toasts — "Setting saved" confirmations and the app's notices — pinned to the bottom
- * centre of the viewport, or of the Settings dialog when `App.tsx` renders it in there (the dialog
+ * centre of the viewport, or of the Settings dialog when `app.tsx` renders it in there (the dialog
  * is translated into place, which makes it the containing block for `fixed` children).
  *
  * `fixed` rather than placed in the flow: a line in the flow pushes everything under it down when

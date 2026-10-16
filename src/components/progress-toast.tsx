@@ -1,6 +1,6 @@
 import { LoaderCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { RestoreProgress } from '@/hooks/useRestore';
+import type { RestoreProgress } from '@/hooks/use-restore';
 import {
   formatRate,
   formatWindowLine,

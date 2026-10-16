@@ -1,9 +1,9 @@
 import { AppWindow, Save, SquareArrowOutUpRight, X } from 'lucide-react';
 import { useState } from 'react';
-import { CloseWindowDialog } from '@/components/CloseWindowDialog';
+import { CloseWindowDialog } from '@/components/close-window-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { WindowTree } from '@/components/WindowTree';
+import { WindowTree } from '@/components/window-tree';
 import type { OpenWindowView } from '@/lib/open-windows';
 import type { TabSelection } from '@/lib/tab-selection';
 import { closeTab, closeWindow, goToTab } from '@/lib/window-actions';

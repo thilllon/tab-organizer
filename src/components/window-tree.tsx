@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { GroupSection } from '@/components/GroupSection';
-import { TabRow, type TabRowSelection } from '@/components/TabRow';
+import { GroupSection } from '@/components/group-section';
+import { TabRow, type TabRowSelection } from '@/components/tab-row';
 import { Button } from '@/components/ui/button';
 import { pluralize } from '@/lib/display-format';
 import { hiddenTabCount, initialTabPage, nextTabPage, showMoreLabel } from '@/lib/tab-paging';

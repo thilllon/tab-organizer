@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { TabRow, type TabRowSelection } from '@/components/TabRow';
+import { TabRow, type TabRowSelection } from '@/components/tab-row';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { pluralize } from '@/lib/display-format';
 import { groupChipClass, groupRailClass } from '@/lib/group-colors';

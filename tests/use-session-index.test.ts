@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isIndexChange } from '@/hooks/useSessionIndex';
+import { isIndexChange } from '@/hooks/use-session-index';
 import { INDEX_KEY } from '@/lib/session-repo';
 
 describe('isIndexChange', () => {

@@ -1,11 +1,11 @@
 import { Combine, Keyboard, Save } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { CloseTabsDialog } from '@/components/CloseTabsDialog';
-import { OpenWindowsPane } from '@/components/OpenWindowsPane';
-import { SelectionBar } from '@/components/SelectionBar';
+import { CloseTabsDialog } from '@/components/close-tabs-dialog';
+import { OpenWindowsPane } from '@/components/open-windows-pane';
+import { SelectionBar } from '@/components/selection-bar';
 import { Button } from '@/components/ui/button';
 import { ASSEMBLE_LABEL, ASSEMBLE_NAME } from '@/constants';
-import type { OpenWindowsState } from '@/hooks/useOpenWindows';
+import type { OpenWindowsState } from '@/hooks/use-open-windows';
 import { pluralize } from '@/lib/display-format';
 import { copyText } from '@/lib/download-and-copy';
 import {
@@ -156,7 +156,7 @@ export function OpenTabsView({
   return (
     <section aria-label="Open tabs" className="min-w-0">
       {selecting ? (
-        // `--app-header-h` is the page header's measured height (App.tsx), so the bar sits flush
+        // `--app-header-h` is the page header's measured height (app.tsx), so the bar sits flush
         // under it whatever that header wraps to.
         <header className="sticky top-[var(--app-header-h,4rem)] z-[5] -my-2 flex min-h-16 flex-wrap items-center gap-2 bg-background py-2">
           <SelectionBar
