@@ -427,9 +427,12 @@ class Preparation {
       }
     };
 
-    /** The sidebar entry for a session; clicking it puts that session in the main pane. */
+    /**
+     * The sidebar entry for a session; clicking it puts that session in the main pane. The rows are
+     * links since they got addresses (SidebarNav's NavItem), not buttons.
+     */
     const sidebarEntry = (name: string): Locator =>
-      page.getByRole('navigation', { name: 'Sessions' }).locator('li button').filter({
+      page.getByRole('navigation', { name: 'Sessions' }).locator('li a').filter({
         hasText: name,
       });
 
@@ -541,10 +544,7 @@ class Preparation {
         await toggle.first().click();
         await page.waitForTimeout(300);
       }
-      const snapshot = page
-        .getByRole('navigation', { name: 'Sessions' })
-        .locator('li button')
-        .last();
+      const snapshot = page.getByRole('navigation', { name: 'Sessions' }).locator('li a').last();
       if (!(await Preparation.isVisible(snapshot))) {
         return 'no snapshot to show';
       }
