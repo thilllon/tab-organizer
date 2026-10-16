@@ -804,7 +804,7 @@ export function createChromeFake(): ChromeFake {
    * Chrome's own `windows.create` validation, verified against Chrome for Testing 151:
    * a minimized window can never be focused, a maximized/fullscreen one can never be created
    * unfocused, and no non-'normal' state may be combined with explicit bounds. All three reject
-   * with the same message. Modelled here so `src/lib/restore.ts` cannot regress into passing
+   * with the same message. Modelled here so `src/lib/session-restore.ts` cannot regress into passing
    * a combination Chrome refuses (see the comment in `openTargetWindow`).
    */
   function rejectInvalidCreateState(data?: chrome.windows.CreateData): void {

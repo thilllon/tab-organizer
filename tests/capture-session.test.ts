@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { captureSession } from '@/lib/capture';
+import { captureSession } from '@/lib/session-capture';
 import { getChromeFake } from './chrome-fake';
 
 async function seedWindow(urls: string[], focused: boolean): Promise<number> {

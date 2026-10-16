@@ -1,4 +1,4 @@
-import { contentHash } from '@/lib/hash';
+import { contentHash } from '@/lib/session-hash';
 import type { Session, TabSnapshot, WindowSnapshot } from '@/types';
 
 /**

@@ -17,9 +17,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { copyText, downloadExport } from '@/lib/download';
-import { errorMessage } from '@/lib/errors';
-import { scopeToSession, serialize, toMarkdown, toText } from '@/lib/export';
+import { copyText, downloadExport } from '@/lib/download-and-copy';
+import { errorMessage } from '@/lib/error-message';
 import {
   buildExportScope,
   copiedLinksNotice,
@@ -30,7 +29,8 @@ import {
   NOTHING_TO_EXPORT,
 } from '@/lib/export-actions';
 import { countTabs } from '@/lib/restore-summary';
-import { sessionRepo } from '@/lib/storage';
+import { scopeToSession, serialize, toMarkdown, toText } from '@/lib/session-export';
+import { sessionRepo } from '@/lib/session-repo';
 import type { ExportFormat, Session, SessionSummary } from '@/types';
 
 const FORMAT_ICONS: Record<ExportFormat, LucideIcon> = {

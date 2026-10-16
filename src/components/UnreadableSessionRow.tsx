@@ -2,10 +2,10 @@ import { FileWarning, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { DeleteSessionDialog } from '@/components/DeleteSessionDialog';
 import { Button } from '@/components/ui/button';
-import { errorMessage } from '@/lib/errors';
-import { formatDateTime } from '@/lib/format';
-import { UNREADABLE_SESSION_MESSAGE, unreadableSchemaLabel } from '@/lib/session-utils';
-import { sessionRepo } from '@/lib/storage';
+import { formatDateTime } from '@/lib/display-format';
+import { errorMessage } from '@/lib/error-message';
+import { UNREADABLE_SESSION_MESSAGE, unreadableSchemaLabel } from '@/lib/session-list';
+import { sessionRepo } from '@/lib/session-repo';
 import type { SessionSummary, UnreadableSession } from '@/types';
 
 export interface UnreadableSessionRowProps {

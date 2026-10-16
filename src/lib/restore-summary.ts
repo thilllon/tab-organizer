@@ -1,5 +1,5 @@
-import { pluralize } from '@/lib/format';
-import type { RestoreResult, RestoreTarget } from '@/lib/restore';
+import { pluralize } from '@/lib/display-format';
+import type { RestoreResult, RestoreTarget } from '@/lib/session-restore';
 import type { Session } from '@/types';
 
 /** Spec §6: confirm (with the lazy checkbox) when a restore would open more than 100 tabs. */

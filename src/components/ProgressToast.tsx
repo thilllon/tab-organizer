@@ -1,7 +1,6 @@
 import { LoaderCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { RestoreProgress } from '@/hooks/useRestore';
-import type { RestoreResult } from '@/lib/restore';
 import {
   formatRate,
   formatWindowLine,
@@ -9,6 +8,7 @@ import {
   lazyRestoreSummaryHint,
 } from '@/lib/restore-progress';
 import { formatRestoreSummary, splitRestoreErrors } from '@/lib/restore-summary';
+import type { RestoreResult } from '@/lib/session-restore';
 
 export interface ProgressToastProps {
   progress?: RestoreProgress;

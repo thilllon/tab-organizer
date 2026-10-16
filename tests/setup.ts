@@ -6,7 +6,7 @@ type LockCallback<T> = (lock: Lock | null) => T | Promise<T>;
 
 /**
  * Minimal Web Locks shim for runtimes without `navigator.locks` (Node < 24, some CI images).
- * Serialises callbacks per lock name, which is all `withLock()` in src/lib/storage.ts needs.
+ * Serialises callbacks per lock name, which is all `withLock()` in src/lib/session-repo.ts needs.
  */
 function createLocksShim(): LockManager {
   const queues = new Map<string, Promise<unknown>>();

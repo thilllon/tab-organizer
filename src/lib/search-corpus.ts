@@ -1,6 +1,6 @@
-import { errorMessage } from '@/lib/errors';
-import { entriesFromSession, type SearchEntry } from '@/lib/search';
-import { sessionKey, sessionRepo } from '@/lib/storage';
+import { errorMessage } from '@/lib/error-message';
+import { entriesFromSession, type SearchEntry } from '@/lib/search-engine';
+import { sessionKey, sessionRepo } from '@/lib/session-repo';
 import type { SessionId, SessionSummary } from '@/types';
 
 /**

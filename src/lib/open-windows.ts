@@ -1,4 +1,4 @@
-import { captureWindowsWithIds, loadSuspendedPrefix } from '@/lib/capture';
+import { captureWindowsWithIds, loadSuspendedPrefix } from '@/lib/session-capture';
 import type { GroupSnapshot, TabSnapshot, WindowSnapshot } from '@/types';
 
 /**

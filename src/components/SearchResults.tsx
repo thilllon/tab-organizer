@@ -2,9 +2,9 @@ import { RotateCcw } from 'lucide-react';
 import { useEffect } from 'react';
 import { Favicon } from '@/components/Favicon';
 import { Button } from '@/components/ui/button';
-import { formatSessionMeta, hostnameOf, pluralize } from '@/lib/format';
-import { browserHandlesClick, hrefFor } from '@/lib/link';
-import { splitOnMatches } from '@/lib/search';
+import { formatSessionMeta, hostnameOf, pluralize } from '@/lib/display-format';
+import { browserHandlesClick, hrefFor } from '@/lib/row-link';
+import { splitOnMatches } from '@/lib/search-engine';
 import type { SearchGroup, SearchItem } from '@/lib/search-nav';
 
 export interface SearchResultsProps {

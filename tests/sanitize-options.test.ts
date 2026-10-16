@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/capture';
 import { loadSanitizeOptions } from '@/lib/sanitize-options';
+import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import { getChromeFake } from './chrome-fake';
 
 describe('loadSanitizeOptions', () => {

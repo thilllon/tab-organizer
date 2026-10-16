@@ -13,13 +13,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { WindowTree } from '@/components/WindowTree';
 import { useSessionBody } from '@/hooks/useSessionBody';
-import { copyText } from '@/lib/download';
-import { errorMessage } from '@/lib/errors';
+import { formatDateTime, formatSessionMeta } from '@/lib/display-format';
+import { copyText } from '@/lib/download-and-copy';
+import { errorMessage } from '@/lib/error-message';
 import { COPIED_LINK } from '@/lib/export-actions';
-import { formatDateTime, formatSessionMeta } from '@/lib/format';
 import { openSavedTab } from '@/lib/open-saved-tab';
 import { removeTabFromSession, removeWindowFromSession } from '@/lib/session-edit';
-import { sessionRepo } from '@/lib/storage';
+import { sessionRepo } from '@/lib/session-repo';
 import type { Session, SessionSummary } from '@/types';
 
 /** Where an "Open" goes: brand-new windows, or the window the app itself is in. */

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HISTORY_ALARM, HISTORY_FIRST_ALARM } from '@/lib/history';
-import { INDEX_KEY, SETTINGS_KEY } from '@/lib/storage';
+import { HISTORY_ALARM, HISTORY_FIRST_ALARM } from '@/lib/history-snapshots';
+import { INDEX_KEY, SETTINGS_KEY } from '@/lib/session-repo';
 import {
   COMMAND_IDS,
   clearBadge,
@@ -76,10 +76,10 @@ function historySession(id: string, createdAt: number): Session {
 }
 
 /** Loads a fresh copy of the worker module against this test's fake (see AGENTS.md "Testing"). */
-async function loadWorker(): Promise<typeof import('@/lib/storage')> {
+async function loadWorker(): Promise<typeof import('@/lib/session-repo')> {
   vi.resetModules();
   await import('@/service-worker');
-  return await import('@/lib/storage');
+  return await import('@/lib/session-repo');
 }
 
 afterEach(() => {
@@ -370,7 +370,7 @@ describe('listener wiring', () => {
   it("onInstalled with reason 'update' registers the menus and runs migrateAll then reconcile", async () => {
     vi.resetModules();
     await import('@/service-worker');
-    const { sessionRepo } = await import('@/lib/storage');
+    const { sessionRepo } = await import('@/lib/session-repo');
     const fake = getChromeFake();
     const migrateSpy = vi.spyOn(sessionRepo, 'migrateAll');
     const reconcileSpy = vi.spyOn(sessionRepo, 'reconcile');
@@ -414,7 +414,7 @@ describe('listener wiring', () => {
   it('onStartup clears the badge and reconciles', async () => {
     vi.resetModules();
     await import('@/service-worker');
-    const { sessionRepo } = await import('@/lib/storage');
+    const { sessionRepo } = await import('@/lib/session-repo');
     const fake = getChromeFake();
     fake.state.badge.text = '✓';
     const reconcileSpy = vi.spyOn(sessionRepo, 'reconcile');

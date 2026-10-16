@@ -4,7 +4,7 @@ import {
   type SearchEntry,
   type SearchResult,
   type SearchSource,
-} from '@/lib/search';
+} from '@/lib/search-engine';
 import type { SessionSummary } from '@/types';
 
 /** The tier-1 (session name) block plus the tier-2 sources, in the order they are rendered. */

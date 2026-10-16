@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type SearchEntry, search } from '@/lib/search';
+import { type SearchEntry, search } from '@/lib/search-engine';
 import {
   buildSearchGroups,
   flattenSearchItems,

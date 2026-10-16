@@ -6,7 +6,7 @@ import {
   type RestoreOptions,
   type RestorePlan,
   withRetryOnce,
-} from '@/lib/restore';
+} from '@/lib/session-restore';
 import type { Session, WindowSnapshot } from '@/types';
 import { getChromeFake } from './chrome-fake';
 

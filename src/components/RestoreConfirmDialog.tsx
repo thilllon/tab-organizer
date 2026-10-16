@@ -9,8 +9,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { isLazyRestore, type RestoreTarget } from '@/lib/restore';
 import { countTabs, formatRestoreDestination } from '@/lib/restore-summary';
+import { isLazyRestore, type RestoreTarget } from '@/lib/session-restore';
 import type { Session, SessionSettings } from '@/types';
 
 export interface PendingRestore {

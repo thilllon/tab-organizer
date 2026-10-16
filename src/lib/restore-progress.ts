@@ -5,7 +5,7 @@
  * they can be tested without a DOM.
  */
 
-import { pluralize } from '@/lib/format';
+import { pluralize } from '@/lib/display-format';
 
 /**
  * "Window 2 of 3" — which window of the plan is being filled. `index` is 0-based, as

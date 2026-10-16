@@ -6,7 +6,7 @@ import {
   scheduleIdle,
   selectPrewarmIds,
 } from '@/lib/search-corpus';
-import { sessionKey, sessionRepo } from '@/lib/storage';
+import { sessionKey, sessionRepo } from '@/lib/session-repo';
 import type { Session, SessionSummary } from '@/types';
 
 function makeSession(id: string, urls: string[], overrides: Partial<Session> = {}): Session {

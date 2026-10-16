@@ -18,8 +18,8 @@ import {
   NOT_SET,
   shortcutsDescription,
 } from '@/lib/command-rows';
+import { openShortcutSettings } from '@/lib/open-shortcut-settings';
 import { isMacPlatform } from '@/lib/shortcut-keys';
-import { openShortcutSettings } from '@/lib/shortcuts';
 import {
   DEFAULT_SORT_SETTINGS,
   DUPLICATE_TAB_OPTIONS,

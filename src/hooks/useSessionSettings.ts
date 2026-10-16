@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { errorMessage } from '@/lib/errors';
-import { isSettingsChange } from '@/lib/settings-change';
-import { sessionRepo } from '@/lib/storage';
+import { errorMessage } from '@/lib/error-message';
+import { sessionRepo } from '@/lib/session-repo';
+import { isSettingsChange } from '@/lib/settings-change-event';
 import { DEFAULT_SESSION_SETTINGS, type SessionSettings } from '@/types';
 
 export interface SessionSettingsState {

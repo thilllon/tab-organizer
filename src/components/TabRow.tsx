@@ -2,9 +2,9 @@ import { Pin } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Favicon } from '@/components/Favicon';
-import { hostnameOf } from '@/lib/format';
-import { browserHandlesClick, hrefFor } from '@/lib/link';
-import { openTabInBackground } from '@/lib/open-tab';
+import { hostnameOf } from '@/lib/display-format';
+import { openTabInBackground } from '@/lib/open-in-background';
+import { browserHandlesClick, hrefFor } from '@/lib/row-link';
 import type { TabSnapshot } from '@/types';
 
 /** A row's tick box, where the list has a selection (the Open tabs list). */
@@ -37,7 +37,7 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
       void Promise.resolve(onOpen()).then(setError);
       return;
     }
-    // Sanitised (and awaited) in open-tab.ts: a stored url may be anything the page had at
+    // Sanitised (and awaited) in open-in-background.ts: a stored url may be anything the page had at
     // capture time, and a rejected create must surface here rather than vanish.
     void openTabInBackground(tab.url).then((result) => {
       setError(result.ok ? undefined : result.reason);

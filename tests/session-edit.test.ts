@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { contentHash } from '@/lib/hash';
 import { removeTabFromSession, removeWindowFromSession } from '@/lib/session-edit';
+import { contentHash } from '@/lib/session-hash';
 import type { Session, TabSnapshot, WindowSnapshot } from '@/types';
 
 function tab(url: string, groupIndex?: number, pinned = false): TabSnapshot {

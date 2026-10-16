@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { formatBytes, pluralize } from '@/lib/format';
+import { formatBytes, pluralize } from '@/lib/display-format';
 
 export interface DeleteAllDataDialogProps {
   open: boolean;

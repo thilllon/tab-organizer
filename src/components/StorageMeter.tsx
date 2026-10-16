@@ -4,9 +4,9 @@ import { DeleteAllDataDialog } from '@/components/DeleteAllDataDialog';
 import { DeleteAllHistoryDialog } from '@/components/DeleteAllHistoryDialog';
 import { Button } from '@/components/ui/button';
 import { isIndexChange } from '@/hooks/useSessionIndex';
-import { errorMessage } from '@/lib/errors';
-import { pluralize } from '@/lib/format';
-import { sessionRepo } from '@/lib/storage';
+import { pluralize } from '@/lib/display-format';
+import { errorMessage } from '@/lib/error-message';
+import { sessionRepo } from '@/lib/session-repo';
 import {
   STORAGE_METER_ID,
   snapshotHint,

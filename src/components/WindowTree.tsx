@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { GroupSection } from '@/components/GroupSection';
 import { TabRow, type TabRowSelection } from '@/components/TabRow';
 import { Button } from '@/components/ui/button';
-import { pluralize } from '@/lib/format';
-import { segmentTabs } from '@/lib/segments';
+import { pluralize } from '@/lib/display-format';
 import { hiddenTabCount, initialTabPage, nextTabPage, showMoreLabel } from '@/lib/tab-paging';
+import { segmentTabs } from '@/lib/tab-segments';
 import type { WindowSnapshot } from '@/types';
 
 export interface WindowTreeProps {

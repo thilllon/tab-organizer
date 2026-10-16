@@ -1,6 +1,6 @@
-import { toMarkdownLinks } from '@/lib/export';
-import { pluralize } from '@/lib/format';
+import { pluralize } from '@/lib/display-format';
 import type { OpenWindowView } from '@/lib/open-windows';
+import { toMarkdownLinks } from '@/lib/session-export';
 
 /**
  * The selection on the Open tabs list: which live tabs are ticked, and what the bar above them

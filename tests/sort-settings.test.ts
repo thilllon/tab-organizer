@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/capture';
+import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import {
   CUSTOM_ONLY_SETTINGS,
   DEFAULT_SORT_SETTINGS,

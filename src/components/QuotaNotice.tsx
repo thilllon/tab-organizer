@@ -1,6 +1,6 @@
 import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { QUOTA_NOTICE } from '@/lib/quota';
+import { QUOTA_NOTICE } from '@/lib/storage-quota';
 
 export interface QuotaNoticeProps {
   /** Scrolls the storage meter into view and focuses it (see `revealStorageMeter`). */

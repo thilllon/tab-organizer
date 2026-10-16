@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { TabRow, type TabRowSelection } from '@/components/TabRow';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { pluralize } from '@/lib/format';
+import { pluralize } from '@/lib/display-format';
 import { groupChipClass, groupRailClass } from '@/lib/group-colors';
 import type { GroupSnapshot, TabSnapshot } from '@/types';
 

@@ -6,8 +6,8 @@ import { SelectionBar } from '@/components/SelectionBar';
 import { Button } from '@/components/ui/button';
 import { ASSEMBLE_LABEL, ASSEMBLE_NAME } from '@/constants';
 import type { OpenWindowsState } from '@/hooks/useOpenWindows';
-import { copyText } from '@/lib/download';
-import { pluralize } from '@/lib/format';
+import { pluralize } from '@/lib/display-format';
+import { copyText } from '@/lib/download-and-copy';
 import {
   type CopyFormat,
   closedTabsNotice,

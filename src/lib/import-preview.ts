@@ -1,12 +1,12 @@
-import { errorMessage } from '@/lib/errors';
-import { formatBytes, pluralize } from '@/lib/format';
-import type { ImportFormat } from '@/lib/import';
+import { formatBytes, pluralize } from '@/lib/display-format';
+import { errorMessage } from '@/lib/error-message';
+import type { ImportFormat } from '@/lib/session-import';
 import type { Session } from '@/types';
 
 /**
  * The import dialog's decisions, kept out of the component: the size guard, how a detected format
  * is named, and the preview tree shown before anything is written. Parsing itself lives in
- * `src/lib/import.ts`; nothing here touches storage or the DOM.
+ * `src/lib/session-import.ts`; nothing here touches storage or the DOM.
  */
 
 /**

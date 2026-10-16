@@ -1,5 +1,5 @@
-import { errorMessage } from '@/lib/errors';
-import type { RestoreTarget } from '@/lib/restore';
+import { errorMessage } from '@/lib/error-message';
+import type { RestoreTarget } from '@/lib/session-restore';
 
 export type ActionResult = { ok: true } | { ok: false; reason: string };
 

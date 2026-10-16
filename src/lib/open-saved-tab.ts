@@ -1,4 +1,4 @@
-import { openTabInBackground } from '@/lib/open-tab';
+import { openTabInBackground } from '@/lib/open-in-background';
 import { goToTab } from '@/lib/window-actions';
 
 /**

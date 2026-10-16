@@ -1,6 +1,5 @@
 import { ASSEMBLE_LABEL } from '@/constants';
-import { assembleTabs } from '@/lib/assemble';
-import { captureSession } from '@/lib/capture';
+import { assembleTabs } from '@/lib/assemble-tabs';
 import {
   ensureHistoryAlarm,
   HISTORY_ALARM,
@@ -8,11 +7,12 @@ import {
   promoteRecoveredSnapshot,
   scheduleFirstSnapshot,
   takeHistorySnapshot,
-} from '@/lib/history';
-import { ensureUniqueName } from '@/lib/naming';
-import { openDashboard } from '@/lib/open-dashboard';
+} from '@/lib/history-snapshots';
+import { openDashboard } from '@/lib/open-app-page';
+import { captureSession } from '@/lib/session-capture';
+import { ensureUniqueName } from '@/lib/session-naming';
+import { SETTINGS_KEY, sessionRepo } from '@/lib/session-repo';
 import { sortTabGroups } from '@/lib/sort-tabs';
-import { SETTINGS_KEY, sessionRepo } from '@/lib/storage';
 
 /**
  * The service worker: the manifest's `background.service_worker`, and the one file that is only
@@ -175,7 +175,7 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
  * abort the handler. `registerContextMenus` touches the menus API, and `migrateAll`/`reconcile`
  * read the stored index — a `sessionIndex` from a future schema (or plain garbage) makes
  * `migrateIndex` throw, and without this the alarms would never be armed again. `reconcile()`
- * itself tolerates such an index and rebuilds it from the bodies (see storage.ts), so the two
+ * itself tolerates such an index and rebuilds it from the bodies (see session-repo.ts), so the two
  * halves together mean a damaged index is both survivable and repaired.
  */
 async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<void> {

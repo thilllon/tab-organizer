@@ -1,13 +1,13 @@
-import { errorMessage } from '@/lib/errors';
-import type { ExportScope } from '@/lib/export';
-import { pluralize } from '@/lib/format';
-import { sessionRepo } from '@/lib/storage';
+import { pluralize } from '@/lib/display-format';
+import { errorMessage } from '@/lib/error-message';
+import type { ExportScope } from '@/lib/session-export';
+import { sessionRepo } from '@/lib/session-repo';
 import type { ExportFormat, Session, SessionId, SessionSummary } from '@/types';
 
 /**
  * Everything the export menu and the header's "Export all" decide, kept out of the components:
  * which items the menu shows, what a scope is called, what the confirmation says, and how the
- * bodies of a whole backup are collected. Serialization itself lives in `src/lib/export.ts`.
+ * bodies of a whole backup are collected. Serialization itself lives in `src/lib/session-export.ts`.
  */
 
 export interface ExportFormatItem {

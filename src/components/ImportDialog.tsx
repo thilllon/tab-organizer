@@ -12,9 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { errorMessage } from '@/lib/errors';
-import { pluralize } from '@/lib/format';
-import { type ImportFormat, importSessions } from '@/lib/import';
+import { pluralize } from '@/lib/display-format';
+import { errorMessage } from '@/lib/error-message';
 import {
   buildImportPreview,
   checkImportSize,
@@ -25,12 +24,13 @@ import {
   importFormatLabel,
   utf8ByteLength,
 } from '@/lib/import-preview';
-import { isQuotaError } from '@/lib/quota';
-import { sessionRepo } from '@/lib/storage';
+import { type ImportFormat, importSessions } from '@/lib/session-import';
+import { sessionRepo } from '@/lib/session-repo';
 import { revealStorageMeter } from '@/lib/storage-meter';
+import { isQuotaError } from '@/lib/storage-quota';
 import type { Session } from '@/types';
 
-/** Extensions the picker offers; every one of them is handled by a parser in import.ts. */
+/** Extensions the picker offers; every one of them is handled by a parser in session-import.ts. */
 export const IMPORT_ACCEPT = '.json,.html,.htm,.md,.txt';
 
 const TEXTAREA_LABEL = 'Paste sessions, bookmarks or links';
@@ -54,7 +54,7 @@ export interface ImportDialogProps {
 }
 
 /**
- * File picker + paste box for spec §8's import. The parsers are pure (`src/lib/import.ts`),
+ * File picker + paste box for spec §8's import. The parsers are pure (`src/lib/session-import.ts`),
  * so the whole preview — detected format, warnings, the session → window → tab tree and the
  * totals — is computed from the text before a single write happens. Committing writes each
  * session through `sessionRepo.put`, which takes the Web Lock per session.

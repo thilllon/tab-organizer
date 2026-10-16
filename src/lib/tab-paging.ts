@@ -1,4 +1,4 @@
-import { pluralize } from '@/lib/format';
+import { pluralize } from '@/lib/display-format';
 
 /**
  * Paging for very large windows (spec §12 Phase 6: "a 10,000-tab session never mounts 10,000

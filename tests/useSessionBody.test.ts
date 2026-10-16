@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isBodyChange } from '@/hooks/useSessionBody';
-import { sessionKey } from '@/lib/storage';
+import { sessionKey } from '@/lib/session-repo';
 
 describe('isBodyChange', () => {
   it('is true when the body of the given session changed in local storage', () => {

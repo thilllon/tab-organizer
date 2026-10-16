@@ -12,18 +12,24 @@ import { SidebarResizer } from '@/components/SidebarResizer';
 import { UnreadableSessionRow } from '@/components/UnreadableSessionRow';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useSavedToasts } from '@/hooks/use-saved-toasts';
 import { useOpenWindows } from '@/hooks/useOpenWindows';
 import { useRestore } from '@/hooks/useRestore';
+import { useSavedToasts } from '@/hooks/useSavedToasts';
 import { useSearchCorpus } from '@/hooks/useSearchCorpus';
 import { useSessionIndex } from '@/hooks/useSessionIndex';
 import { useSessionSettings } from '@/hooks/useSessionSettings';
-import { assembleTabs } from '@/lib/assemble';
+import {
+  formatRoute,
+  HOME,
+  parseRoute,
+  type Route,
+  routeSessionId,
+  viewBehind,
+} from '@/lib/app-route';
 import { assembleOutcome } from '@/lib/assemble-notice';
-import { type CaptureScope, captureSessionWithTabIds } from '@/lib/capture';
-import { downloadExport } from '@/lib/download';
-import { errorMessage } from '@/lib/errors';
-import { toJson } from '@/lib/export';
+import { assembleTabs } from '@/lib/assemble-tabs';
+import { downloadExport } from '@/lib/download-and-copy';
+import { errorMessage } from '@/lib/error-message';
 import {
   type CollectProgress,
   collectProgressNotice,
@@ -34,14 +40,10 @@ import {
   shouldTickProgress,
 } from '@/lib/export-actions';
 import { importedNotice } from '@/lib/import-preview';
-import { browserHandlesClick } from '@/lib/link';
-import { ensureUniqueName } from '@/lib/naming';
-import { openTabInBackground } from '@/lib/open-tab';
-import { isQuotaError } from '@/lib/quota';
-import type { RestoreTarget } from '@/lib/restore';
+import { openTabInBackground } from '@/lib/open-in-background';
 import { needsRestoreConfirm } from '@/lib/restore-summary';
-import { formatRoute, HOME, parseRoute, type Route, routeSessionId, viewBehind } from '@/lib/route';
-import { DEFAULT_LIMIT_PER_SOURCE, search } from '@/lib/search';
+import { browserHandlesClick } from '@/lib/row-link';
+import { DEFAULT_LIMIT_PER_SOURCE, search } from '@/lib/search-engine';
 import {
   buildSearchGroups,
   flattenSearchItems,
@@ -52,9 +54,14 @@ import {
   type SearchItem,
   sessionNameMatches,
 } from '@/lib/search-nav';
-import { pickWindow, recoveredSnapshot, splitByKind } from '@/lib/session-utils';
+import { type CaptureScope, captureSessionWithTabIds } from '@/lib/session-capture';
+import { toJson } from '@/lib/session-export';
+import { pickWindow, recoveredSnapshot, splitByKind } from '@/lib/session-list';
+import { ensureUniqueName } from '@/lib/session-naming';
+import { sessionRepo } from '@/lib/session-repo';
+import type { RestoreTarget } from '@/lib/session-restore';
 import { readSidebarWidth, writeSidebarWidth } from '@/lib/sidebar-width';
-import { sessionRepo } from '@/lib/storage';
+import { isQuotaError } from '@/lib/storage-quota';
 import { NOTICE_MS } from '@/lib/toast-queue';
 import { currentWindowTarget, goToTab } from '@/lib/window-actions';
 import { OpenTabsView } from '@/pages/OpenTabsView';

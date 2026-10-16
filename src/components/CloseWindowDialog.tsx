@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { pluralize } from '@/lib/format';
+import { pluralize } from '@/lib/display-format';
 
 export interface CloseWindowDialogProps {
   /** Window number as shown in the pane (1-based), or undefined while the dialog fades out. */

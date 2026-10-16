@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { OpenWindowsState } from '@/hooks/useOpenWindows';
-import { errorMessage } from '@/lib/errors';
-import { entriesFromOpenWindows, type SearchEntry } from '@/lib/search';
+import { errorMessage } from '@/lib/error-message';
 import { SearchCorpusCache, scheduleIdle, selectPrewarmIds } from '@/lib/search-corpus';
+import { entriesFromOpenWindows, type SearchEntry } from '@/lib/search-engine';
 import type { SessionId, SessionSummary } from '@/types';
 
 export interface UseSearchCorpusOptions {

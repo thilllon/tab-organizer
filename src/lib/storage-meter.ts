@@ -1,4 +1,4 @@
-import { formatBytes, pluralize } from '@/lib/format';
+import { formatBytes, pluralize } from '@/lib/display-format';
 import type { SessionSummary } from '@/types';
 
 /**

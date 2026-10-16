@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { toJson } from '@/lib/export';
 import {
   buildExportScope,
   COPIED_LINK,
@@ -17,8 +16,9 @@ import {
   shouldReportProgress,
   shouldTickProgress,
 } from '@/lib/export-actions';
-import { importSessions } from '@/lib/import';
-import { sessionKey, sessionRepo } from '@/lib/storage';
+import { toJson } from '@/lib/session-export';
+import { importSessions } from '@/lib/session-import';
+import { sessionKey, sessionRepo } from '@/lib/session-repo';
 import type { Session, SessionSummary } from '@/types';
 
 function makeSession(overrides: Partial<Session> = {}): Session {

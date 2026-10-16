@@ -2,9 +2,9 @@ import { ChevronRight, Clock, FolderOpen, LayoutGrid, Undo2 } from 'lucide-react
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDateTime, pluralize } from '@/lib/format';
-import { browserHandlesClick } from '@/lib/link';
-import { formatRoute, type Route } from '@/lib/route';
+import { formatRoute, type Route } from '@/lib/app-route';
+import { formatDateTime, pluralize } from '@/lib/display-format';
+import { browserHandlesClick } from '@/lib/row-link';
 import { HISTORY_OPEN_KEY, readUiState, writeUiState } from '@/lib/ui-state';
 import { cn } from '@/lib/utils';
 import type { SessionSummary } from '@/types';

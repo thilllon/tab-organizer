@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { errorMessage } from '@/lib/errors';
-import { INDEX_KEY, sessionRepo } from '@/lib/storage';
+import { errorMessage } from '@/lib/error-message';
+import { INDEX_KEY, sessionRepo } from '@/lib/session-repo';
 import type { SessionSummary } from '@/types';
 
 export function isIndexChange(

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { loadSanitizeOptions } from '@/lib/sanitize-options';
+import { sessionRepo } from '@/lib/session-repo';
 import {
   executeRestore,
   planRestore,
   type RestoreResult,
   type RestoreTarget,
   screenRectOf,
-} from '@/lib/restore';
-import { loadSanitizeOptions } from '@/lib/sanitize-options';
-import { sessionRepo } from '@/lib/storage';
+} from '@/lib/session-restore';
 import type { Session, SessionSettings } from '@/types';
 
 export interface RestoreProgress {

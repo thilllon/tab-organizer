@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { pluralize } from '@/lib/format';
+import { pluralize } from '@/lib/display-format';
 
 export interface DeleteAllHistoryDialogProps {
   /** How many unprotected snapshots the confirm covers. */

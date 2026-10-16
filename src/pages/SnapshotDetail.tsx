@@ -11,11 +11,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { WindowTree } from '@/components/WindowTree';
 import { useSessionBody } from '@/hooks/useSessionBody';
-import { errorMessage } from '@/lib/errors';
-import { formatDateTime, formatSessionMeta } from '@/lib/format';
+import { formatDateTime, formatSessionMeta } from '@/lib/display-format';
+import { errorMessage } from '@/lib/error-message';
 import { openSavedTab } from '@/lib/open-saved-tab';
-import { historyOriginLabel } from '@/lib/session-utils';
-import { sessionRepo } from '@/lib/storage';
+import { historyOriginLabel } from '@/lib/session-list';
+import { sessionRepo } from '@/lib/session-repo';
 import type { Session, SessionSummary } from '@/types';
 
 export interface SnapshotDetailProps {

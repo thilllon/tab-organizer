@@ -1,4 +1,4 @@
-import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/capture';
+import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import type { DuplicateTabHandling, GroupFrom, GroupingMode, SortBy, SortSettings } from '@/types';
 
 /**
@@ -115,7 +115,7 @@ export function suspenderIdStatus(draft: string): SuspenderIdStatus {
  * the default otherwise.
  *
  * An empty field means "use the default", and must resolve to the default id *before* it reaches
- * storage. `loadSuspendedPrefix()` (`src/lib/capture.ts`, the sessions side) already falls
+ * storage. `loadSuspendedPrefix()` (`src/lib/session-capture.ts`, the sessions side) already falls
  * back to the default for an empty stored id, but the sort engine does not: it interpolates
  * whatever it read into `chrome-extension://<id>/suspended.html#`, so an empty or malformed id
  * there yields a prefix that matches no tab and silently disables suspended-tab handling.
@@ -179,7 +179,7 @@ export function toStoredSortSettings(draft: SortSettings): SortSettings {
 }
 
 /**
- * The settings only `sortByCustom()` reads (`src/lib/sort.ts`, called from `sortTabs()` in
+ * The settings only `sortByCustom()` reads (`src/lib/sort-order.ts`, called from `sortTabs()` in
  * `src/lib/sort-tabs.ts`): `sortByTitleOrUrl()` is not even passed them, so under "By URL" /
  * "By title" they change nothing. `groupingMode` belongs here too: it only decides which tabs
  * `sortByCustom()` keeps together (`extractGroupingKey`), and no other code reads it.

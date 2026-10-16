@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isIndexChange } from '@/hooks/useSessionIndex';
-import { INDEX_KEY } from '@/lib/storage';
+import { INDEX_KEY } from '@/lib/session-repo';
 
 describe('isIndexChange', () => {
   it('is true when the session index changed in local storage', () => {

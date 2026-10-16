@@ -1,11 +1,17 @@
 /**
  * Sorting the current window: what a click on the toolbar icon (or its shortcut) does. The event
  * listener that calls it lives in `src/service-worker.ts`; the pure ordering rules are in
- * `sort.ts` and `move-plan.ts`.
+ * `sort-order.ts` and `move-plan.ts`.
  */
-import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/capture';
+
 import { isContiguous, type MoveBatch, planMoves } from '@/lib/move-plan';
-import { findDuplicateTabs, hashStringToColor, sortByCustom, sortByTitleOrUrl } from '@/lib/sort';
+import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
+import {
+  findDuplicateTabs,
+  hashStringToColor,
+  sortByCustom,
+  sortByTitleOrUrl,
+} from '@/lib/sort-order';
 import type { DuplicateTabHandling, SortSettings } from '@/types';
 
 let tabSuspenderExtensionId = '';
@@ -13,7 +19,7 @@ let suspendedPrefix = `chrome-extension://${tabSuspenderExtensionId}/suspended.h
 let suspendedPrefixLen = suspendedPrefix.length;
 
 // `tabSuspenderExtensionId` defaults to "The Marvellous Suspender", the de facto The Great
-// Suspender replacement. The id is declared once, in src/lib/capture.ts, whose
+// Suspender replacement. The id is declared once, in src/lib/session-capture.ts, whose
 // `loadSuspendedPrefix()` reads the very same stored setting for the sessions feature.
 const DEFAULT_SETTINGS: SortSettings = {
   sortBy: 'url',

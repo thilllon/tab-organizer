@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage } from '@/lib/error-message';
 import { type OpenWindowView, snapshotOpenWindows, subscribeOpenWindows } from '@/lib/open-windows';
 
 export interface OpenWindowsState {

@@ -1,5 +1,5 @@
-import type { AssembleResult } from '@/lib/assemble';
-import { pluralize } from '@/lib/format';
+import type { AssembleResult } from '@/lib/assemble-tabs';
+import { pluralize } from '@/lib/display-format';
 
 /** What the Open tabs view says after its Assemble button ran: a passing toast, or an error line. */
 export type AssembleOutcome =
