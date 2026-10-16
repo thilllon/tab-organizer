@@ -24,7 +24,7 @@ const manifest = defineManifest((env) => {
     version: pkg.version ?? '0.0.0',
     manifest_version: 3,
     // Floor for the APIs used without a runtime guard:
-    // - 123: promise-form `chrome.contextMenus.removeAll()` (awaited in src/background/sessions.ts)
+    // - 123: promise-form `chrome.contextMenus.removeAll()` (awaited in src/service-worker.ts)
     // - 104: the `favicon` permission / `_favicon/` endpoint (dashboard tab rows)
     // `chrome.storage.local.getKeys()` (130) is behind a `typeof` guard, so it does not raise this.
     minimum_chrome_version: '123',
@@ -44,7 +44,7 @@ const manifest = defineManifest((env) => {
     // everything (a fragment is allowed here; verified in Chrome for Testing 151).
     options_page: 'app.html#settings',
     background: {
-      service_worker: 'src/background/index.ts',
+      service_worker: 'src/service-worker.ts',
       type: 'module',
     },
     web_accessible_resources: [
@@ -54,7 +54,7 @@ const manifest = defineManifest((env) => {
       },
     ],
     // `alarms` is touched at module-evaluation time (`chrome.alarms.onAlarm.addListener` in
-    // src/background/sessions.ts), so it must ship with that listener — see AGENTS.md.
+    // src/service-worker.ts), so it must ship with that listener — see AGENTS.md.
     permissions: [
       'tabs',
       'tabGroups',
@@ -72,7 +72,7 @@ const manifest = defineManifest((env) => {
       // Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked`
       // exactly as a click does, so the shortcut sorts (and snapshots) through the very same
       // listeners — there is no second code path to keep in step. Chrome ignores a description
-      // here; Settings supplies the name (src/app/lib/command-rows.ts).
+      // here; Settings supplies the name (src/lib/command-rows.ts).
       _execute_action: { suggested_key: { default: DEFAULT_SHORTCUTS._execute_action } },
       'save-session': { description: 'Save the current window as a session' },
       'open-dashboard': { description: 'Open Tab Organizer' },
@@ -133,7 +133,7 @@ export default defineConfig(() => {
       skipWebSocketTokenCheck: true,
     },
     test: {
-      setupFiles: ['src/test/setup.ts'],
+      setupFiles: ['tests/setup.ts'],
       // Only this tree's suites: Claude Code worktrees under .claude/ carry their own copies.
       exclude: [...configDefaults.exclude, '.claude/**'],
     },

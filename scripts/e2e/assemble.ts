@@ -3,7 +3,7 @@
  * last-focused one with `chrome.tabs.move` / `chrome.tabGroups.move`.
  *
  * It needs a e2e build, the only build that exposes the worker's command handler (as
- * `globalThis.__tabOrganizerE2e`, see src/background/sessions.ts) — the command is otherwise only
+ * `globalThis.__tabOrganizerE2e`, see src/service-worker.ts) — the command is otherwise only
  * reachable through a keyboard shortcut:
  *
  *     pnpm e2e:assemble        # vite build --mode e2e --outDir node_modules/.cache/tab-organizer/e2e && tsx scripts/e2e/assemble.ts

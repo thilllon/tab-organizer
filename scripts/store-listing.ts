@@ -4,8 +4,8 @@
  * The store's "Description" field takes plain text only, so that file keeps the description
  * already in store form inside a fenced block under `### Description` -- what is in the block is
  * what gets pasted, nothing is generated from it. This module finds the block and holds the two
- * length limits the store enforces; `store-listing.test.ts` checks the real file against them on
- * every `pnpm test`.
+ * length limits the store enforces; `tests/store-listing.test.ts` checks the real file against
+ * them on every `pnpm test`.
  */
 
 import path from 'node:path';

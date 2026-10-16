@@ -9,7 +9,7 @@
 /**
  * Schemes allowed into an `href`.
  *
- * Deliberately far narrower than `sanitizeRestoreUrl()` (src/sessions/restore.ts), which also
+ * Deliberately far narrower than `sanitizeRestoreUrl()` (src/lib/restore.ts), which also
  * passes `chrome:`, `file:`, `about:blank` and our own `chrome-extension:` because it feeds
  * `chrome.tabs.create`, an API that may go where a link may not. Two separate reasons to be
  * strict here:

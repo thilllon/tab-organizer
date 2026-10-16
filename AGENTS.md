@@ -16,9 +16,9 @@
 
 This is a **Chrome Extension** with three execution contexts:
 
-1. **Background Service Worker** (`src/background/index.ts` + `src/background/sessions.ts`) — The core engine. Runs as a Manifest V3 service worker. `index.ts` handles tab sorting, grouping and duplicate detection, triggered by the icon click (`chrome.action.onClicked`). `sessions.ts` (imported by `index.ts` with a single `import './sessions';` line) registers, synchronously at module top level, the sessions listeners: `runtime.onInstalled` (recreate context menus; `sessionRepo.migrateAll()` when `details.reason === 'update'`, then `sessionRepo.reconcile()`, then `ensureHistoryAlarm()`), `runtime.onStartup` (clear badge, reconcile, `promoteRecoveredSnapshot()`, re-arm the periodic alarm, one-shot `history-first` alarm), `contextMenus.onClicked` and `commands.onCommand` (save window / save all / open dashboard / gather all windows into the focused one — `assemble-tabs`, logic in `src/background/assemble.ts`), `alarms.onAlarm` (`takeHistorySnapshot({ origin: 'alarm' })`), a **second** `action.onClicked` listener (fire-and-forget `takeHistorySnapshot({ origin: 'manual' })` alongside the sort, which it never awaits or alters) and `storage.onChanged` (re-arm or clear the alarm when `sessionSettings` changes). The worker wakes only on those events — plus the history alarm while snapshots are enabled (the default); with snapshots off no alarm exists and it wakes on user actions only. There are **no** `chrome.tabs.on*` / `chrome.windows.on*` / `chrome.tabGroups.on*` listeners in the worker.
-2. **The app page** (`src/app/`, rendered in `app.html`) — one React SPA for everything that is not the icon click; there is no separate options page since v7.2.0. `App.tsx` owns the hash route (`src/app/lib/route.ts`: `#open`, `#saved/<id>`, `#auto/<id>`, `#search/<q>`, `#settings`), the session index, the restore hook and the search state; the sidebar (`SidebarNav`) lists open tabs, saved sessions and — folded away, marked "recovered" after a restart — the snapshots. The main pane is one of: `OpenTabsView` (live `OpenWindowsPane`, one Save button), `SessionDetail` (rename, open, open one window, remove a tab/window, export, delete), `SnapshotDetail` (open, **Keep** = move into the saved list, delete), or `SearchResults`. Settings is not a pane: `#settings` draws `SettingsView` as a dialog over whichever of those was showing (sort settings as dropdowns, the Custom-only ones indented under Sort by and shown only for Custom, the rest under "Advanced"; session settings one per line; backup + `StorageMeter`; and the keyboard shortcuts Chrome reports). Every control writes as it changes — no Save button anywhere. It **runs restores in the page** (never in the service worker, so the worker's idle/lifetime limits do not apply) and talks to `chrome.*` directly — there is no message passing to the worker. `openDashboard()` (`src/sessions/open-dashboard.ts`) is a singleton: it focuses an existing app tab or creates one. `followSystemTheme()` (`src/lib/theme.ts`) runs once at startup; there is no theme control.
-3. **Reusable page code** (`src/dashboard/`) — the components, hooks and pure helpers the app page is built from (`WindowTree`, `ExportMenu`, `ImportDialog`, `ProgressToast`, `useSessionIndex`, `useSessionBody`, `useRestore`, `useOpenWindows` — which registers `chrome.tabs/windows/tabGroups.on*` listeners _in the page_ — `useSearchCorpus`, `lib/*`). The directory keeps its name from the dashboard it grew out of; nothing in it owns a page any more.
+1. **Background Service Worker** (`src/service-worker.ts`) — The core engine. Runs as a Manifest V3 service worker. It is one file and the only one the worker loads directly; it holds the event wiring and nothing else, and calls into `src/lib/`. It registers, synchronously at module top level, every listener: the icon click (`chrome.action.onClicked`), which runs `sortTabGroups()` from `src/lib/sort-tabs.ts` (sorting, grouping and duplicate detection), the sort settings' `runtime.onInstalled`, and the sessions listeners: `runtime.onInstalled` (recreate context menus; `sessionRepo.migrateAll()` when `details.reason === 'update'`, then `sessionRepo.reconcile()`, then `ensureHistoryAlarm()`), `runtime.onStartup` (clear badge, reconcile, `promoteRecoveredSnapshot()`, re-arm the periodic alarm, one-shot `history-first` alarm), `contextMenus.onClicked` and `commands.onCommand` (save window / save all / open dashboard / gather all windows into the focused one — `assemble-tabs`, logic in `src/lib/assemble.ts`), `alarms.onAlarm` (`takeHistorySnapshot({ origin: 'alarm' })`), a **second** `action.onClicked` listener (fire-and-forget `takeHistorySnapshot({ origin: 'manual' })` alongside the sort, which it never awaits or alters) and `storage.onChanged` (re-arm or clear the alarm when `sessionSettings` changes). The worker wakes only on those events — plus the history alarm while snapshots are enabled (the default); with snapshots off no alarm exists and it wakes on user actions only. There are **no** `chrome.tabs.on*` / `chrome.windows.on*` / `chrome.tabGroups.on*` listeners in the worker.
+2. **The app page** (`src/pages/`, rendered in `app.html`) — one React SPA for everything that is not the icon click; there is no separate options page since v7.2.0. `App.tsx` owns the hash route (`src/lib/route.ts`: `#open`, `#saved/<id>`, `#auto/<id>`, `#search/<q>`, `#settings`), the session index, the restore hook and the search state; the sidebar (`SidebarNav`) lists open tabs, saved sessions and — folded away, marked "recovered" after a restart — the snapshots. The main pane is one of: `OpenTabsView` (live `OpenWindowsPane`, one Save button), `SessionDetail` (rename, open, open one window, remove a tab/window, export, delete), `SnapshotDetail` (open, **Keep** = move into the saved list, delete), or `SearchResults`. Settings is not a pane: `#settings` draws `SettingsView` as a dialog over whichever of those was showing (sort settings as dropdowns, the Custom-only ones indented under Sort by and shown only for Custom, the rest under "Advanced"; session settings one per line; backup + `StorageMeter`; and the keyboard shortcuts Chrome reports). Every control writes as it changes — no Save button anywhere. It **runs restores in the page** (never in the service worker, so the worker's idle/lifetime limits do not apply) and talks to `chrome.*` directly — there is no message passing to the worker. `openDashboard()` (`src/lib/open-dashboard.ts`) is a singleton: it focuses an existing app tab or creates one. `followSystemTheme()` (`src/lib/theme.ts`) runs once at startup; there is no theme control.
+3. **Shared code** (`src/components/`, `src/hooks/`, `src/lib/`) — the components, hooks and logic the pages and the worker are built from (`WindowTree`, `ExportMenu`, `ImportDialog`, `ProgressToast`, `useSessionIndex`, `useSessionBody`, `useRestore`, `useOpenWindows` (which registers `chrome.tabs/windows/tabGroups.on*` listeners _in the page_), `useSearchCorpus`, and every module in `src/lib/`). None of it owns a page or registers a worker listener.
 
 There is **no popup**, **no content script**, **no message-passing protocol** and **no external server**. The extension icon click directly triggers sorting and nothing else.
 
@@ -28,8 +28,8 @@ Sorting (unchanged):
 
 ```
 User clicks extension icon
--> chrome.action.onClicked listener (src/background/index.ts)
--> sortTabGroups()
+-> chrome.action.onClicked listener (src/service-worker.ts)
+-> sortTabGroups() (src/lib/sort-tabs.ts)
 -> Load settings from chrome.storage.sync
 -> Query pinned tabs, tab groups, ungrouped tabs
 -> Sort each set independently
@@ -41,7 +41,7 @@ Gathering every window into the focused one (`assemble-tabs` — right-click "As
 
 ```
 Right-click icon → "Assemble!" / keyboard shortcut the user bound at chrome://extensions/shortcuts
--> handleMenuOrCommand('assemble-tabs') (src/background/sessions.ts) -> assembleTabs() (src/background/assemble.ts)
+-> handleMenuOrCommand('assemble-tabs') (src/service-worker.ts) -> assembleTabs() (src/lib/assemble.ts)
 -> ignored while a run is in progress; nothing to do with a single normal window
 -> chrome.windows.getLastFocused({ populate: true, windowTypes: ['normal'] })  // target + its active tab id
 -> pickSourceWindows() (pure: other normal windows with the same incognito mode)
@@ -60,13 +60,13 @@ Saving a session:
 
 ```
 Right-click icon menu item / keyboard command / the app page's Save button
--> handleMenuOrCommand(id) (src/background/sessions.ts) or src/app/App.tsx
--> captureSession('window' | 'all' | { windowId }) (src/sessions/capture.ts)
+-> handleMenuOrCommand(id) (src/service-worker.ts) or src/pages/App.tsx
+-> captureSession('window' | 'all' | { windowId }) (src/lib/capture.ts)
 -> chrome.windows.getAll({ populate: true, windowTypes: ['normal'] })
 -> chrome.tabGroups.query({})
 -> captureWindows(windows, groups, options) (pure: drops incognito, own pages, empty windows;
    unwraps suspended tabs; groups by first appearance)
--> sessionRepo.put(session) (src/sessions/storage.ts, under the Web Lock)
+-> sessionRepo.put(session) (src/lib/storage.ts, under the Web Lock)
 -> chrome.storage.local.set({ 'session:<id>': body })  // body first
 -> chrome.storage.local.set({ sessionIndex })          // then index (newest first)
 -> showSavedBadge() (worker only; cleared after 2 s and at the start of every handler)
@@ -89,7 +89,7 @@ History snapshot (service worker; the alarm, or the icon click while snapshots a
 
 ```
 alarms.onAlarm('history-snapshot' | 'history-first') / second action.onClicked listener
--> takeHistorySnapshot({ origin }) (src/sessions/history.ts)
+-> takeHistorySnapshot({ origin }) (src/lib/history.ts)
 -> sessionRepo.getSettings(): 'disabled' when historyEnabled is false (no window query at all)
 -> captureSession('all') -> contentHash(windows) vs historyMeta.lastHash -> 'skipped-unchanged'
 -> sessionRepo.put({ kind: 'history', name: 'Snapshot <stamp> · N windows · M tabs' })
@@ -97,7 +97,7 @@ alarms.onAlarm('history-snapshot' | 'history-first') / second action.onClicked l
 -> sessionRepo.setHistoryMeta({ lastHash, lastSnapshotAt })
 ```
 
-Search, export and import run entirely in the app page: `useSearchCorpus` builds `SearchEntry[]` per session body (pre-warmed on idle, invalidated per key by `storage.onChanged`) plus the open-windows snapshot and feeds `search()` from `src/sessions/search.ts`; `ExportMenu` calls the pure serializers in `src/sessions/export.ts` and hands the text to `src/dashboard/lib/download.ts` (Blob URL + `<a download>` — no `downloads` permission) or to the clipboard; `ImportDialog` runs `importSessions()` from `src/sessions/import.ts` (type guards in `guards.ts`), shows a preview, then `sessionRepo.put()` per session.
+Search, export and import run entirely in the app page: `useSearchCorpus` builds `SearchEntry[]` per session body (pre-warmed on idle, invalidated per key by `storage.onChanged`) plus the open-windows snapshot and feeds `search()` from `src/lib/search.ts`; `ExportMenu` calls the pure serializers in `src/lib/export.ts` and hands the text to `src/lib/download.ts` (Blob URL + `<a download>` — no `downloads` permission) or to the clipboard; `ImportDialog` runs `importSessions()` from `src/lib/import.ts` (type guards in `guards.ts`), shows a preview, then `sessionRepo.put()` per session.
 
 Sort settings are persisted in `chrome.storage.sync` and loaded fresh on every sort invocation. Session data and `sessionSettings` live in `chrome.storage.local` and are read through `sessionRepo` only. The dashboard reloads its list when `chrome.storage.onChanged` reports a change to `sessionIndex`, and `useSessionSettings` re-reads on a `sessionSettings` change.
 
@@ -106,71 +106,73 @@ Sort settings are persisted in `chrome.storage.sync` and loaded fresh on every s
 ```
 tab-organizer/
 ├── src/
-│   ├── background/
-│   │   ├── assemble.ts       # Service worker: assemble-tabs — move other windows' tabs into the focused one
-│   │   ├── index.ts          # Service worker: sort orchestration, Chrome API calls, action.onClicked; imports './sessions'
-│   │   ├── index.test.ts     # Icon click against the chrome fake: order, no-op when sorted, single move, double click
-│   │   ├── sessions.ts       # Service worker: context menus, commands, badge, reconcile on install/startup
-│   │   ├── sessions.test.ts  # Tests against the chrome fake
-│   │   ├── move-plan.ts (+test) # Pure: which chrome.tabs.move calls reorder a block, moving only what is out of place
-│   │   ├── sort.ts           # Pure sorting/grouping logic (extracted for testability)
-│   │   └── sort.test.ts      # Unit tests for sort.ts (vitest)
-│   ├── sessions/              # Session domain logic (pure where possible, thin chrome wrappers)
-│   │   ├── naming.ts (+test)      # defaultSessionName(), slugify()
-│   │   ├── migrate.ts (+test)     # migrateSession(), migrateIndex(), UnknownSchemaVersionError
-│   │   ├── hash.ts (+test)        # contentHash() — FNV-1a over urls/pinned/group index/group title
-│   │   ├── capture.ts (+test)     # captureWindows()/captureWindowsWithIds() (pure) + captureSession(),
-│   │   │                          #   loadSuspendedPrefix() (the one chrome.storage.sync read)
-│   │   ├── storage.ts (+test)     # sessionRepo, withLock(), storage keys — the ONLY writer of session data
-│   │   ├── restore.ts (+test)     # sanitizeRestoreUrl(), clampToScreen(), planRestore() (pure), executeRestore()
-│   │   ├── suspender.ts (+test)   # unwrapSuspendedUrl() — verbatim remainder after `uri=` (capture + restore)
-│   │   ├── history.ts (+test)     # takeHistorySnapshot(), promoteRecoveredSnapshot(), ensureHistoryAlarm(), scheduleFirstSnapshot()
-│   │   ├── search.ts (+test)      # tokenizer / matcher / ranker over SearchEntry[] (open > saved > history)
-│   │   ├── export.ts (+test)      # toJson/toMarkdown/toText/toHtml/toCsv, scopeToSession(), exportFilename()
-│   │   ├── import.ts (+test)      # detectFormat(), parseJson/parseNetscapeHtml/parseTextOrMarkdown, importSessions()
-│   │   ├── guards.ts (+test)      # hand-written type guards for external data (isSession, isExportBundle, …)
-│   │   ├── open-dashboard.ts      # openDashboard() singleton
-│   │   └── shortcuts.ts           # openShortcutSettings() — chrome://extensions/shortcuts
-│   ├── app/                   # The one extension page (app.html)
-│   │   ├── index.tsx          # React entry point
-│   │   ├── App.tsx            # Routing, sidebar + main pane, dialogs, notices
-│   │   ├── components/        # SidebarNav
-│   │   ├── lib/               # route.ts (+test), open-saved-tab.ts — hash routes, jump-don't-duplicate
-│   │   └── views/             # OpenTabsView, SessionDetail, SnapshotDetail, SettingsView
-│   ├── redirect/
-│   │   └── to-app.ts          # dashboard.html / options.html → app.html (kept for old links)
-│   ├── dashboard/             # Shared page code the app is built from (name kept from v7.1)
-│   │   ├── index.css          # @import '../options/index.css'
-│   │   ├── hooks/             # useSessionIndex, useSessionBody, useRestore, useOpenWindows (page-side tab listeners),
-│   │   │                      #   useSessionSettings, useSearchCorpus
-│   │   ├── lib/               # Page-side helpers (+ adjacent tests): download, errors, export-actions, format,
-│   │   │                      #   group-colors, import-preview, open-tab, open-windows, quota, restore-progress,
-│   │   │                      #   restore-summary, sanitize-options, search-corpus, search-nav, tab-selection,
-│   │   │                      #   segments, session-edit, session-settings, session-utils, settings-change,
-│   │   │                      #   storage-meter, tab-paging, ui-state (sessionStorage), window-actions
-│   │   └── components/        # SessionCard, WindowTree, GroupSection, TabRow, Favicon, ProgressToast, EmptyState,
-│   │                          #   RestoreConfirmDialog, DeleteSessionDialog, DeleteAllHistoryDialog,
-│   │                          #   DeleteAllDataDialog, CloseWindowDialog, OpenWindowsPane, HistorySection,
-│   │                          #   HistoryRow, RecoveredBanner, SessionSettingsRow, SessionSettingsFields,
-│   │                          #   SearchBar, SearchResults, ExportMenu, ImportDialog, StorageMeter, QuotaNotice, SelectionBar,
-│   │                          #   CloseTabsDialog
-│   ├── options/
-│   │   ├── index.tsx          # React entry point
-│   │   ├── Options.tsx        # Settings UI component + "Sessions" card
-│   │   └── index.css          # Tailwind CSS with shadcn theme
-│   ├── components/ui/         # Reusable UI components (shadcn/ui via the CLI: button, radio-group, label, input,
-│   │                          #   dialog, dropdown-menu, badge, separator, collapsible, switch)
-│   ├── lib/
-│   │   ├── utils.ts           # cn() utility (clsx + tailwind-merge)
-│   │   └── theme.ts (+test)   # followSystemTheme()/withDarkClass() — dark mode follows the OS, no setting
-│   ├── test/
-│   │   ├── chrome-fake.ts     # Typed in-memory chrome.* fake (storage, tabs, windows, tabGroups, menus, alarms)
-│   │   ├── chrome-fake.test.ts # Tests for the fake itself
-│   │   └── setup.ts           # vitest setupFiles: installs the fake on globalThis.chrome + navigator.locks shim
-│   ├── constants.ts (+test)   # Plain data shared with the manifest: DEFAULT_SHORTCUTS (suggested keys by command id),
-│   │                          #   ASSEMBLE_NAME / ASSEMBLE_LABEL — imported by vite.config.ts, so no chrome.* and no src imports
-│   ├── types.ts               # Shared TypeScript types (SortSettings + Session* types)
-│   └── global.d.ts            # Vite client type declarations
+│   ├── service-worker.ts       # The manifest's service worker, the only file loaded there: every chrome event listener
+│   │                           #   (icon click: sort + history snapshot; install/startup; menus; commands; alarms;
+│   │                           #   storage.onChanged), badges, MENU_IDS / COMMAND_IDS. Wiring only; the work is in lib/
+│   ├── pages/                  # Screens: the one extension page (app.html) and its views
+│   │   ├── index.tsx           # React entry point (app.html)
+│   │   ├── App.tsx             # Routing, sidebar + main pane, dialogs, notices
+│   │   ├── OpenTabsView.tsx    # Live windows, Save, Assemble!, the tab selection
+│   │   ├── SessionDetail.tsx   # One saved session
+│   │   ├── SnapshotDetail.tsx  # One history snapshot
+│   │   ├── SettingsView.tsx    # The content of the Settings dialog
+│   │   └── to-app.ts           # dashboard.html / options.html → app.html (kept for old links)
+│   ├── components/             # Every hand-made component, flat: SidebarNav, SidebarResizer, SavedToasts, WindowTree,
+│   │   │                       #   GroupSection, TabRow, Favicon, NativeSelect, ProgressToast, OpenWindowsPane,
+│   │   │                       #   SelectionBar, SearchBar, SearchResults, ExportMenu, ImportDialog, StorageMeter,
+│   │   │                       #   QuotaNotice, SessionSettingsFields, UnreadableSessionRow, RestoreConfirmDialog,
+│   │   │                       #   DeleteSessionDialog, DeleteAllHistoryDialog, DeleteAllDataDialog,
+│   │   │                       #   CloseWindowDialog, CloseTabsDialog
+│   │   └── ui/                 # Stock shadcn/ui only, added with the CLI (button, label, input, dialog, dropdown-menu,
+│   │                           #   badge, collapsible, switch). Never a custom component
+│   ├── hooks/                  # React hooks, flat: useSessionIndex, useSessionBody, useSessionSettings, useRestore,
+│   │                           #   useOpenWindows (page-side tab listeners), useSearchCorpus, use-saved-toasts
+│   ├── lib/                    # All logic, flat (one level, no subfolders); tests for each module are in tests/
+│   │   ├── sort-tabs.ts        # sortTabGroups(): the icon-click sort orchestration, Chrome API calls, duplicates
+│   │   ├── sort.ts             # Pure sorting/grouping logic
+│   │   ├── move-plan.ts        # Pure: which chrome.tabs.move calls reorder a block, moving only what is out of place
+│   │   ├── sort-settings.ts    # parseSortSettings(), toStoredSortSettings(), SORT_SETTING_KEYS
+│   │   ├── assemble.ts         # assemble-tabs: move other windows' tabs into the focused one
+│   │   ├── naming.ts           # defaultSessionName(), ensureUniqueName(), slugify()
+│   │   ├── migrate.ts          # migrateSession(), migrateIndex(), UnknownSchemaVersionError
+│   │   ├── hash.ts             # contentHash(): FNV-1a over urls/pinned/group index/group title
+│   │   ├── capture.ts          # captureWindows()/captureWindowsWithIds() (pure) + captureSession(),
+│   │   │                       #   loadSuspendedPrefix() (the one chrome.storage.sync read)
+│   │   ├── storage.ts          # sessionRepo, withLock(), storage keys: the ONLY writer of session data
+│   │   ├── restore.ts          # sanitizeRestoreUrl(), clampToScreen(), planRestore() (pure), executeRestore()
+│   │   ├── suspender.ts        # unwrapSuspendedUrl(): verbatim remainder after `uri=` (capture + restore)
+│   │   ├── history.ts          # takeHistorySnapshot(), promoteRecoveredSnapshot(), ensureHistoryAlarm(), scheduleFirstSnapshot()
+│   │   ├── search.ts           # tokenizer / matcher / ranker over SearchEntry[] (open > saved > history)
+│   │   ├── export.ts           # toJson/toMarkdown/toText/toHtml/toCsv, scopeToSession(), exportFilename()
+│   │   ├── import.ts           # detectFormat(), parseJson/parseNetscapeHtml/parseTextOrMarkdown, importSessions()
+│   │   ├── guards.ts           # hand-written type guards for external data (isSession, isExportBundle, …)
+│   │   ├── open-dashboard.ts   # openDashboard() singleton
+│   │   ├── shortcuts.ts        # openShortcutSettings(): chrome://extensions/shortcuts
+│   │   ├── route.ts            # hash routes (#open, #saved/<id>, #auto/<id>, #search/<q>, #settings)
+│   │   ├── theme.ts            # followSystemTheme()/withDarkClass(): dark mode follows the OS, no setting
+│   │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
+│   │   └── …                   # Page-side helpers: assemble-notice, command-rows, download, errors, export-actions,
+│   │                           #   format, group-colors, import-preview, link, open-saved-tab, open-tab, open-windows,
+│   │                           #   quota, restore-progress, restore-summary, sanitize-options, search-corpus,
+│   │                           #   search-nav, segments, session-edit, session-settings, session-utils,
+│   │                           #   settings-change, shortcut-keys, sidebar-width, storage-meter, tab-paging,
+│   │                           #   tab-selection, toast-queue, ui-state (sessionStorage), window-actions
+│   ├── styles/
+│   │   └── index.css           # Tailwind CSS with the shadcn theme tokens + the .cv-* content-visibility rules
+│   ├── constants.ts            # Plain data shared with the manifest: DEFAULT_SHORTCUTS (suggested keys by command id),
+│   │                           #   ASSEMBLE_NAME / ASSEMBLE_LABEL; imported by vite.config.ts, so no chrome.* and no src imports
+│   ├── types.ts                # Shared TypeScript types (SortSettings + Session* types)
+│   └── global.d.ts             # Vite client type declarations
+├── tests/                      # Every unit test, flat: <module>.test.ts for src/lib/<module>.ts and the hooks
+│   ├── setup.ts                # vitest setupFiles: installs the fake on globalThis.chrome + navigator.locks shim
+│   ├── chrome-fake.ts          # Typed in-memory chrome.* fake (storage, tabs, windows, tabGroups, menus, alarms)
+│   ├── chrome-fake.test.ts     # Tests for the fake itself
+│   ├── service-worker.test.ts  # The worker's listeners and handlers against the chrome fake
+│   ├── service-worker-sort.test.ts # Icon click against the chrome fake: order, no-op when sorted, single move, double click
+│   ├── store-listing.test.ts   # scripts/store-listing.ts: the store's two length limits
+│   ├── window-bounds.test.ts   # scripts/window-bounds.ts
+│   ├── …                       # sort, move-plan, assemble, storage, restore, history, capture, … one file per module
+│   └── tsconfig.json           # Type-checks the tests with node types (`pnpm typecheck` runs it as a second tsc pass)
 ├── public/
 │   └── img/                   # Extension logos (SVG, ICO, 16/32/48/128px PNG)
 ├── scripts/
@@ -186,8 +188,8 @@ tab-organizer/
 │   ├── generate-ico.ts        # Generates multi-size .ico from SVG (macOS: qlmanage + sips)
 │   ├── prepare-registration.ts # Full visual-asset pipeline (build, sort + the five dashboard-*.png screenshots,
 │   │                          #   promo images); every optional step has a SKIP_* flag, the demo video/GIF need RECORD_VIDEO=1
-│   ├── store-listing.ts (+test) # Reads the description block out of docs/store_listing.md; the store's two length limits
-│   ├── window-bounds.ts (+test) # macOS: the demo browser's window id and bounds through `osascript -l JavaScript` (no install);
+│   ├── store-listing.ts       # Reads the description block out of docs/store_listing.md (test in tests/)
+│   ├── window-bounds.ts       # macOS: the demo browser's window id and bounds through `osascript -l JavaScript` (no install);
 │   │                          #   only Chromium / Chrome for Testing — never the owner's own Google Chrome
 │   ├── store-bundle.ts        # Gathers zip, screenshots, promo images and SUBMIT.md into package/store-<version>/
 │   ├── promo-template.html    # HTML template for CWS promotional images
@@ -220,13 +222,15 @@ tab-organizer/
 └── package.json
 ```
 
+**Layout rules (set by the owner).** `src/pages/` holds screens (the page entry, `App.tsx` and its views, the redirect); `src/components/` holds every hand-made component, flat; `src/components/ui/` holds stock shadcn/ui components only, as the CLI writes them, and never a custom component (a component built on top of one goes in `src/components/`); `src/hooks/` holds React hooks, flat; `src/lib/` holds all logic, one level only with no subfolders; `src/styles/index.css` is the one stylesheet; `src/service-worker.ts` is the worker. Tests live in `tests/` at the repo root, flat, never next to their source. A new file goes in the folder its kind names, not next to whatever uses it.
+
 ---
 
 ## Key Source Files
 
-### `src/background/index.ts` — Orchestration & Chrome APIs
+### `src/lib/sort-tabs.ts`: Sort orchestration & Chrome APIs
 
-Handles event listeners, settings loading, Chrome API calls (`tabs.move`, `tabs.group`, `tabGroups.update`), and duplicate tab handling. Imports pure sorting logic from `sort.ts`.
+Handles settings loading, Chrome API calls (`tabs.move`, `tabs.group`, `tabGroups.update`), and duplicate tab handling for the icon click; the listener that calls `sortTabGroups()` is in `src/service-worker.ts`. Imports pure sorting logic from `sort.ts`.
 
 | Function                | Purpose                                                                                                                                                                            |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -236,17 +240,17 @@ Handles event listeners, settings loading, Chrome API calls (`tabs.move`, `tabs.
 | `closeDuplicateTabs()`  | Keeps active/first tab, closes the rest.                                                                                                                                           |
 | `groupDuplicateTabs()`  | Groups duplicate tabs into a Chrome tab group.                                                                                                                                     |
 
-### `src/background/assemble.ts` — Gather all windows into one
+### `src/lib/assemble.ts` — Gather all windows into one
 
-Moves every tab of the other normal windows into the last-focused normal window. **Only `chrome.tabs.move` / `chrome.tabGroups.move`** — never reopen by URL and close, never duplicate — so tab ids, history and page state survive and a failed call leaves a tab in its window. Pure halves: `pickSourceWindows(windows, target)` (other `type: 'normal'` windows with the target's `incognito`) and `planWindowMoves(tabs)` (see below). `assembleTabs()` runs them per source window with a per-window try/catch and one retry on "Tabs cannot be edited right now" (`withRetryOnce` from `src/sessions/restore.ts`), guarded by a module-level in-progress flag. Chrome behaviours it depends on, verified in a real browser (see Real-Chrome QA): a cross-window `tabs.move` drops `pinned` (re-pin in order and each lands at the end of the target's pinned area); `tabGroups.move` keeps the group id, title, colour and collapsed state — **but** a group holding its source window's active tab makes that tab the target's active tab and expands the group (`tabs.move` never activates anything). The owner's rule is that the target's active tab never changes, not even for a moment, so this is prevented, not repaired: before any group moves, the source window's active tab is parked on an ungrouped anchor that moves last — the active tab itself when ungrouped, else a pinned tab (the pinned block then moves last), else the last ungrouped tab (moved last to just before the tab that followed it). Activating an ungrouped tab expands nothing; activating a tab inside a collapsed group would expand it. A window of groups only takes its active tab out of its group (`tabs.ungroup`; from the middle of a collapsed group that expands the group, which is collapsed again at once), moves the groups, then puts the tab back into the same group at the same offset (`rejoin`). A single-tab group vanishes when emptied, so it is rebuilt with the same title, colour and collapsed state (`regroup` — the one case where the group id changes). `restoreTargetView()` is only a safety net for races (e.g. the user activating a tab in a window that is still being emptied).
+Moves every tab of the other normal windows into the last-focused normal window. **Only `chrome.tabs.move` / `chrome.tabGroups.move`** — never reopen by URL and close, never duplicate — so tab ids, history and page state survive and a failed call leaves a tab in its window. Pure halves: `pickSourceWindows(windows, target)` (other `type: 'normal'` windows with the target's `incognito`) and `planWindowMoves(tabs)` (see below). `assembleTabs()` runs them per source window with a per-window try/catch and one retry on "Tabs cannot be edited right now" (`withRetryOnce` from `src/lib/restore.ts`), guarded by a module-level in-progress flag. Chrome behaviours it depends on, verified in a real browser (see Real-Chrome QA): a cross-window `tabs.move` drops `pinned` (re-pin in order and each lands at the end of the target's pinned area); `tabGroups.move` keeps the group id, title, colour and collapsed state — **but** a group holding its source window's active tab makes that tab the target's active tab and expands the group (`tabs.move` never activates anything). The owner's rule is that the target's active tab never changes, not even for a moment, so this is prevented, not repaired: before any group moves, the source window's active tab is parked on an ungrouped anchor that moves last — the active tab itself when ungrouped, else a pinned tab (the pinned block then moves last), else the last ungrouped tab (moved last to just before the tab that followed it). Activating an ungrouped tab expands nothing; activating a tab inside a collapsed group would expand it. A window of groups only takes its active tab out of its group (`tabs.ungroup`; from the middle of a collapsed group that expands the group, which is collapsed again at once), moves the groups, then puts the tab back into the same group at the same offset (`rejoin`). A single-tab group vanishes when emptied, so it is rebuilt with the same title, colour and collapsed state (`regroup` — the one case where the group id changes). `restoreTargetView()` is only a safety net for races (e.g. the user activating a tab in a window that is still being emptied).
 
-### `src/background/sort.ts` — Pure Sorting Logic
+### `src/lib/sort.ts` — Pure Sorting Logic
 
 Contains all pure sorting and grouping functions, extracted for testability. No Chrome API side effects. Both sorts build one `TabSortKey` per tab (pinned, suspended, group position, text) through `sortedByKey()` instead of parsing urls inside the comparator, and every text comparison goes through one module-level `Intl.Collator` — the same result as argument-less `localeCompare`. They still reorder the array they are given.
 
-### `src/background/move-plan.ts` — Which tabs to move
+### `src/lib/move-plan.ts` — Which tabs to move
 
-Pure. `planMoves(current, desired)` returns the `chrome.tabs.move` calls (`MoveBatch[]`, indices relative to the block's first tab) that turn one order of a contiguous block into another, and `[]` when nothing is out of place. It prices two candidates as _tabs displaced + calls_ and takes the cheaper: `fewestDisplaced` keeps the longest already-ordered run (`longestIncreasingRun`, patience sorting) and moves only the rest, joining moves onto consecutive indices into one call; `wholeBlock` is the single call the sorter always made, which wins when the order is thoroughly shuffled. The weights are measured, not guessed (Chrome for Testing 153, 300 tabs): a tab that really changes place costs about 1.2 ms, a tab asked to move to where it already is costs almost nothing, and a call that moves something adds about one more tab's worth. `applyMoves()` models Chrome's block move for the tests; `isContiguous()` is the guard `sortTabs()` uses before trusting relative indices (otherwise it falls back to the whole-block call). A plan is only right for the order it was made from, so the `action.onClicked` listener in `index.ts` chains runs on a module-level promise (`sortQueue`): a double click sorts twice in sequence, never side by side (`src/background/index.test.ts`).
+Pure. `planMoves(current, desired)` returns the `chrome.tabs.move` calls (`MoveBatch[]`, indices relative to the block's first tab) that turn one order of a contiguous block into another, and `[]` when nothing is out of place. It prices two candidates as _tabs displaced + calls_ and takes the cheaper: `fewestDisplaced` keeps the longest already-ordered run (`longestIncreasingRun`, patience sorting) and moves only the rest, joining moves onto consecutive indices into one call; `wholeBlock` is the single call the sorter always made, which wins when the order is thoroughly shuffled. The weights are measured, not guessed (Chrome for Testing 153, 300 tabs): a tab that really changes place costs about 1.2 ms, a tab asked to move to where it already is costs almost nothing, and a call that moves something adds about one more tab's worth. `applyMoves()` models Chrome's block move for the tests; `isContiguous()` is the guard `sortTabs()` uses before trusting relative indices (otherwise it falls back to the whole-block call). A plan is only right for the order it was made from, so the sorting `action.onClicked` listener in `src/service-worker.ts` chains runs on a module-level promise (`sortQueue`): a double click sorts twice in sequence, never side by side (`tests/service-worker-sort.test.ts`).
 
 | Function                   | Purpose                                                                                                 |
 | -------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -262,9 +266,9 @@ Pure. `planMoves(current, desired)` returns the `chrome.tabs.move` calls (`MoveB
 | `hashStringToColor()`      | Deterministically maps a string to a Chrome tab group color.                                            |
 | `updateTabGroupMap()`      | Tracks first-seen ordering of tab groups by hostname or title.                                          |
 
-### `src/background/sessions.ts` — Sessions listeners (service worker)
+### `src/service-worker.ts`: The service worker
 
-Registers listeners synchronously at module top level; imported by `index.ts`. Exports for tests: `MENU_IDS = { assembleTabs: 'assemble-tabs', saveAll: 'save-all' }`, `COMMAND_IDS = { saveSession: 'save-session', openDashboard: 'open-dashboard', assembleTabs: 'assemble-tabs' }` (must equal the `commands` block in `vite.config.ts`), `registerContextMenus()`, `handleMenuOrCommand(id)`, `showSavedBadge()`, `showErrorBadge()`, `clearBadge()`. A `vite build --mode e2e` build (and only that build — Vite inlines `MODE`, so every other build drops the branch) also sets `globalThis.__tabOrganizerE2e = { handleMenuOrCommand }` so `scripts/e2e/assemble.ts` can trigger a command without a keyboard. Alarm names come from `src/sessions/history.ts` (`HISTORY_ALARM = 'history-snapshot'`, `HISTORY_FIRST_ALARM = 'history-first'`).
+The manifest's `background.service_worker` and the only module loaded there. Registers every listener synchronously at module top level: the sorting `action.onClicked` (chained on `sortQueue`, calls `sortTabGroups()`), the sort settings' `runtime.onInstalled` (`installedVersion` / `newInstall` / `newUpdate`), and the listeners in the table below. It holds wiring only; the work is done by `src/lib/`. Exports for tests: `MENU_IDS = { assembleTabs: 'assemble-tabs', saveAll: 'save-all' }`, `COMMAND_IDS = { saveSession: 'save-session', openDashboard: 'open-dashboard', assembleTabs: 'assemble-tabs' }` (must equal the `commands` block in `vite.config.ts`), `registerContextMenus()`, `handleMenuOrCommand(id)`, `showSavedBadge()`, `showErrorBadge()`, `clearBadge()`. A `vite build --mode e2e` build (and only that build — Vite inlines `MODE`, so every other build drops the branch) also sets `globalThis.__tabOrganizerE2e = { handleMenuOrCommand }` so `scripts/e2e/assemble.ts` can trigger a command without a keyboard. Alarm names come from `src/lib/history.ts` (`HISTORY_ALARM = 'history-snapshot'`, `HISTORY_FIRST_ALARM = 'history-first'`).
 
 | Listener                                        | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -272,10 +276,10 @@ Registers listeners synchronously at module top level; imported by `index.ts`. E
 | `runtime.onStartup`                             | `clearBadge()`; `sessionRepo.reconcile()`; `promoteRecoveredSnapshot()` (errors caught locally); `ensureHistoryAlarm(settings)`; `scheduleFirstSnapshot(settings)` (one-shot `history-first`, 1 min out, so the first capture happens after Chrome has restored its tabs).                                                                                                                                                                                                                                                                                                         |
 | `contextMenus.onClicked` / `commands.onCommand` | `clearBadge()`; `save-session` (command) → capture current window; `save-all` (menu) → all windows; `open-dashboard` (command) → `openDashboard()`; `assemble-tabs` (menu or command) → `assembleTabs()` (✓ when every window merged, ! and a logged error when any failed, no badge for a single window or a repeat trigger). A save runs the name through `ensureUniqueName()` and shows `showErrorBadge()` when nothing was capturable or the write failed.                                                                                                                     |
 | `alarms.onAlarm`                                | `clearBadge()`; `history-snapshot` / `history-first` → `takeHistorySnapshot({ origin: 'alarm' })`; other alarm names ignored. `takeHistorySnapshot` returns `'disabled'` itself when history is off, so no settings read here.                                                                                                                                                                                                                                                                                                                                                     |
-| `action.onClicked` (second listener)            | `takeHistorySnapshot({ origin: 'manual' })`, fire-and-forget, concurrent with the sort in `index.ts` (never awaited by it, never alters it). Costs one storage read while history is off. Errors are reported, never thrown — the click must keep sorting.                                                                                                                                                                                                                                                                                                                         |
+| `action.onClicked` (second listener)            | `takeHistorySnapshot({ origin: 'manual' })`, fire-and-forget, concurrent with the sorting listener in the same file (never awaited by it, never alters it). Costs one storage read while history is off. Errors are reported, never thrown — the click must keep sorting.                                                                                                                                                                                                                                                                                                          |
 | `storage.onChanged`                             | `areaName === 'local'` and `sessionSettings` in `changes` → `ensureHistoryAlarm()` (re-reads through `sessionRepo.getSettings()` for the same normalisation as every other read). Re-arms on interval change, clears both alarms when history is turned off.                                                                                                                                                                                                                                                                                                                       |
 
-### `src/sessions/` — Session domain
+### `src/lib/` — Session domain modules
 
 | Module              | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -318,35 +322,35 @@ interface SortSettings {
 
 Session types (spec §3): `SESSION_SCHEMA_VERSION`, `SessionId`, `SessionKind` (`'saved' | 'history'`), `SessionOrigin`, `TabGroupColor`, `TabSnapshot`, `GroupSnapshot`, `WindowSnapshot`, `WindowBounds`, `Session`, `SessionSummary`, `SessionIndex`, `SessionSettings` + `DEFAULT_SESSION_SETTINGS`, `ExportFormat`, `ExportBundle`. Chrome runtime ids (tab/window/group) are never persisted; groups are referenced by index. `SortSettings` is untouched.
 
-### `src/app/` — The extension page
+### `src/pages/` — The extension page
 
 `App.tsx` is the container: hash route, session index, open windows, restore, search, dialogs, the notice toasts and the error lines. Views are presentational and take explicit props.
 
-| File                   | What it owns                                                                                                                                         |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lib/route.ts` (+test) | `parseRoute` / `formatRoute` for `#open`, `#settings`, `#saved/<id>`, `#auto/<id>`, `#search/<q>`; anything unknown falls back to the open-tabs view |
+| File               | What it owns                                                                                                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/route.ts` | `parseRoute` / `formatRoute` for `#open`, `#settings`, `#saved/<id>`, `#auto/<id>`, `#search/<q>`; anything unknown falls back to the open-tabs view |
 
-**Notices are toasts, errors are lines.** A notice ("Exported …", "Saved …", "Setting saved") never takes a line in the layout: a line above the content pushes the pane down when it appears and back up when it goes, which reads as the page shaking. `App.tsx` owns one stack (`useSavedToasts` + `SavedToasts`, queue rules in `src/app/lib/toast-queue.ts`): `setNotice(message, key?)` shows a plain 4 s toast (`NOTICE_MS`), `onSaved` the 1 s ticked one, and toasts sharing a `key` are one toast that is rewritten in place (the "Export everything" count and its final line). Errors and the quota notice stay inline because they must remain until dealt with.
+**Notices are toasts, errors are lines.** A notice ("Exported …", "Saved …", "Setting saved") never takes a line in the layout: a line above the content pushes the pane down when it appears and back up when it goes, which reads as the page shaking. `App.tsx` owns one stack (`useSavedToasts` + `SavedToasts`, queue rules in `src/lib/toast-queue.ts`): `setNotice(message, key?)` shows a plain 4 s toast (`NOTICE_MS`), `onSaved` the 1 s ticked one, and toasts sharing a `key` are one toast that is rewritten in place (the "Export everything" count and its final line). Errors and the quota notice stay inline because they must remain until dealt with.
 
 **Settings is a dialog with an address.** `#settings` is still a route (Chrome's "Options" opens it, a middle-click opens it in its own tab), but `App.tsx` draws it as a shadcn `Dialog` over the view you were in: `useRoute()` returns both `route` (the address) and `page` (what the panes show — `viewBehind(route, previous)` in `route.ts`, i.e. the last non-settings view, the open tabs after a direct load). The view behind is read from the history entry below through the Navigation API (`viewBelow()` in `App.tsx`), so it is still right after a reload or a typed `#settings`: when there is such an entry, closing (Escape, ×, click outside) is `history.back()` and leaves no dead Back press; when Settings is the first thing the tab showed (direct load), the entry is replaced by the open-tabs view instead. Focus returns to whatever opened it, the restore `ProgressToast` moves inside the dialog while it is open, and closing blurs the focused field first so a write-on-blur input is not lost. The error lines and the toast stack render inside the dialog while it is open. `SettingsView` must be rendered inside a `DialogContent`; its width and scrolling body are classes passed from `App.tsx`, never edits to `src/components/ui/dialog.tsx`.
-| `lib/open-saved-tab.ts` | Clicking a saved tab: jump to that exact URL if it is already open, otherwise open it in the background |
-| `components/SidebarNav.tsx` | The left column; snapshots folded away, the recovered one badged |
-| `views/OpenTabsView.tsx` | Live windows + the Save button (label follows the window count); the tab selection (see below); and, with more than one window open, **Assemble!** — `App.tsx` calls `assembleTabs()` from `src/background/assemble.ts` in the page (it is only `chrome.*` calls; the target is the last-focused window, i.e. this one) and words the result with `assembleOutcome()` in `lib/assemble-notice.ts` |
-| `views/SessionDetail.tsx` | Rename (click the title), Open / Open in this window, per-window and per-tab actions, export, delete |
-| `views/SnapshotDetail.tsx` | Open, **Keep** (`duplicateAsSaved` + `remove` — a move), delete |
-| `views/SettingsView.tsx` | The content of the Settings dialog: Sorting (Sort by + Duplicate tabs; Tab groups, Grouping direction and Preserve order indented under Sort by only while it is Custom; three more under Advanced), Sessions, Backup, Keyboard shortcuts. Every control writes immediately; every dropdown is `src/dashboard/components/NativeSelect.tsx`; an `Advanced` fold shows a grey description of what it holds |
+| `src/lib/open-saved-tab.ts` | Clicking a saved tab: jump to that exact URL if it is already open, otherwise open it in the background |
+| `src/components/SidebarNav.tsx` | The left column; snapshots folded away, the recovered one badged |
+| `src/pages/OpenTabsView.tsx` | Live windows + the Save button (label follows the window count); the tab selection (see below); and, with more than one window open, **Assemble!** — `App.tsx` calls `assembleTabs()` from `src/lib/assemble.ts` in the page (it is only `chrome.*` calls; the target is the last-focused window, i.e. this one) and words the result with `assembleOutcome()` in `src/lib/assemble-notice.ts` |
+| `src/pages/SessionDetail.tsx` | Rename (click the title), Open / Open in this window, per-window and per-tab actions, export, delete |
+| `src/pages/SnapshotDetail.tsx` | Open, **Keep** (`duplicateAsSaved` + `remove` — a move), delete |
+| `src/pages/SettingsView.tsx` | The content of the Settings dialog: Sorting (Sort by + Duplicate tabs; Tab groups, Grouping direction and Preserve order indented under Sort by only while it is Custom; three more under Advanced), Sessions, Backup, Keyboard shortcuts. Every control writes immediately; every dropdown is `src/components/NativeSelect.tsx`; an `Advanced` fold shows a grey description of what it holds |
 
-**Selecting open tabs.** Only the Open tabs list has tick boxes (`TabRow`'s optional `selection` prop, threaded through `GroupSection` → `WindowTree` → `OpenWindowsPane`; saved sessions, snapshots and search results pass nothing and render exactly as before). A click on the row still goes to the tab — only the box selects, shift-click takes the range from the box ticked last. `OpenTabsView` holds the selection (a set of runtime tab ids, component state only, pruned whenever the live list changes) and, while it is not empty, draws `SelectionBar` **in place of** its heading — same height, so the list does not jump — sticky under the page header (`--app-header-h`, measured in `App.tsx`). Closing more than one tab asks first (`CloseTabsDialog`): a range or a by-site selection also ticks tabs the list is not showing (collapsed groups, pages past "show more"). Save goes through the app's one `save()` with `captureSession({ tabIds })` (the chosen tabs keep their windows); Copy / Close / "Save & close" (closes only after the save is stored) / "Select all tabs like this · not like this" (same site) are decided in `src/dashboard/lib/tab-selection.ts` and `closeTabs()` in `window-actions.ts`, both with tests.
+**Selecting open tabs.** Only the Open tabs list has tick boxes (`TabRow`'s optional `selection` prop, threaded through `GroupSection` → `WindowTree` → `OpenWindowsPane`; saved sessions, snapshots and search results pass nothing and render exactly as before). A click on the row still goes to the tab — only the box selects, shift-click takes the range from the box ticked last. `OpenTabsView` holds the selection (a set of runtime tab ids, component state only, pruned whenever the live list changes) and, while it is not empty, draws `SelectionBar` **in place of** its heading — same height, so the list does not jump — sticky under the page header (`--app-header-h`, measured in `App.tsx`). Closing more than one tab asks first (`CloseTabsDialog`): a range or a by-site selection also ticks tabs the list is not showing (collapsed groups, pages past "show more"). Save goes through the app's one `save()` with `captureSession({ tabIds })` (the chosen tabs keep their windows); Copy / Close / "Save & close" (closes only after the save is stored) / "Select all tabs like this · not like this" (same site) are decided in `src/lib/tab-selection.ts` and `closeTabs()` in `window-actions.ts`, both with tests.
 
-Sort settings keep their parsing/validation in `src/options/lib/sort-settings.ts` (`parseSortSettings`, `toStoredSortSettings`, `isExtensionId`, `SORT_SETTING_KEYS`, the dropdown option lists `SORT_BY_OPTIONS` / `DUPLICATE_TAB_OPTIONS` / `GROUPING_MODE_OPTIONS` / `GROUP_FROM_OPTIONS`, and `CUSTOM_ONLY_SETTINGS` + `showsCustomSortOptions(sortBy)`: the settings only `sortByCustom()` reads, hidden rather than disabled for the other modes) with tests; `SettingsView` stays a thin component. Adding a sort setting means adding it there, to `SORT_SETTING_KEYS` and to the Settings view: under Sort by if only Custom sorting uses it, visible if it changes what a click does, Advanced otherwise.
+Sort settings keep their parsing/validation in `src/lib/sort-settings.ts` (`parseSortSettings`, `toStoredSortSettings`, `isExtensionId`, `SORT_SETTING_KEYS`, the dropdown option lists `SORT_BY_OPTIONS` / `DUPLICATE_TAB_OPTIONS` / `GROUPING_MODE_OPTIONS` / `GROUP_FROM_OPTIONS`, and `CUSTOM_ONLY_SETTINGS` + `showsCustomSortOptions(sortBy)`: the settings only `sortByCustom()` reads, hidden rather than disabled for the other modes) with tests; `SettingsView` stays a thin component. Adding a sort setting means adding it there, to `SORT_SETTING_KEYS` and to the Settings view: under Sort by if only Custom sorting uses it, visible if it changes what a click does, Advanced otherwise.
 
-Keyboard shortcuts are shown through `src/app/lib/command-rows.ts` (`commandRows(commands, isMac)`: every row has a name and either keys or "Not set", plus a grey hint when a `DEFAULT_SHORTCUTS` suggestion exists but Chrome has not assigned it, which is what an existing install sees after an update adds a `suggested_key`) and `src/app/lib/shortcut-keys.ts` (turns Chrome's Mac glyphs `⌥⇧S` and `Alt+Shift+S` strings into named keys for this platform).
+Keyboard shortcuts are shown through `src/lib/command-rows.ts` (`commandRows(commands, isMac)`: every row has a name and either keys or "Not set", plus a grey hint when a `DEFAULT_SHORTCUTS` suggestion exists but Chrome has not assigned it, which is what an existing install sees after an update adds a `suggested_key`) and `src/lib/shortcut-keys.ts` (turns Chrome's Mac glyphs `⌥⇧S` and `Alt+Shift+S` strings into named keys for this platform).
 
 ### `vite.config.ts` — Build & Manifest
 
 The Chrome extension manifest is **defined inline** in `vite.config.ts` using `@crxjs/vite-plugin`'s `defineManifest()`. There is no separate `manifest.json` file. When modifying extension metadata, permissions, or entry points, edit this file.
 
-Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`, `favicon`, `alarms`. `minimum_chrome_version: '123'` (promise-form `contextMenus.removeAll()` is awaited unguarded; `favicon` needs 104; `storage.local.getKeys()` (130) is behind a `typeof` guard so it does not raise the floor). Commands: `_execute_action`, `save-session`, `open-dashboard`, `assemble-tabs` — `save-session` and `open-dashboard` ship without `suggested_key`; `_execute_action` suggests `Alt+Shift+S` and `assemble-tabs` `Alt+Shift+A` — both read from `DEFAULT_SHORTCUTS` in `src/constants.ts`, the one place to change a default key (Option+Shift+S / Option+Shift+A on a Mac; Chrome drops it silently if another extension holds the key, so the UI shows what `chrome.commands.getAll()` reports rather than promising it). `_execute_action` is Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked` exactly as a click does, so the shortcut sorts through the same two listeners with no second code path. Chrome gives it no description (and calls it "Activate the extension" on its shortcuts page); `commandRows()` in `src/app/lib/command-rows.ts` names it for Settings. Second HTML entry `dashboard.html` is registered via `build.rollupOptions.input` because crxjs only auto-builds manifest-referenced pages. `defineConfig` comes from `vitest/config` so `test.setupFiles: ['src/test/setup.ts']` applies.
+Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`, `favicon`, `alarms`. `minimum_chrome_version: '123'` (promise-form `contextMenus.removeAll()` is awaited unguarded; `favicon` needs 104; `storage.local.getKeys()` (130) is behind a `typeof` guard so it does not raise the floor). Commands: `_execute_action`, `save-session`, `open-dashboard`, `assemble-tabs` — `save-session` and `open-dashboard` ship without `suggested_key`; `_execute_action` suggests `Alt+Shift+S` and `assemble-tabs` `Alt+Shift+A` — both read from `DEFAULT_SHORTCUTS` in `src/constants.ts`, the one place to change a default key (Option+Shift+S / Option+Shift+A on a Mac; Chrome drops it silently if another extension holds the key, so the UI shows what `chrome.commands.getAll()` reports rather than promising it). `_execute_action` is Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked` exactly as a click does, so the shortcut sorts through the same two listeners with no second code path. Chrome gives it no description (and calls it "Activate the extension" on its shortcuts page); `commandRows()` in `src/lib/command-rows.ts` names it for Settings. Second HTML entry `dashboard.html` is registered via `build.rollupOptions.input` because crxjs only auto-builds manifest-referenced pages. `defineConfig` comes from `vitest/config` so `test.setupFiles: ['tests/setup.ts']` applies.
 
 ---
 
@@ -412,7 +416,7 @@ pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<na
 
 - Strict mode enabled
 - Path alias: `@/*` maps to `./src/*`
-- No `any` types — use proper type narrowing (see type guards in `Options.tsx`)
+- No `any` types — use proper type narrowing (see the type guards in `src/lib/guards.ts` and `src/lib/sort-settings.ts`)
 - Chrome API types from `@types/chrome`
 
 ### Git Conventions
@@ -425,8 +429,8 @@ pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<na
 ### Component Patterns
 
 - UI components use shadcn/ui conventions: `cn()` for class merging, CVA for variants
-- Components are in `src/components/ui/` and are generated via `shadcn` CLI
-- Application components (like `Options.tsx`) are in feature directories
+- Stock components are in `src/components/ui/` and are generated via `shadcn` CLI
+- Hand-made components are in `src/components/` (flat) and screens in `src/pages/`; `src/components/ui/` is for stock shadcn components only
 
 ---
 
@@ -436,7 +440,7 @@ pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<na
 
 The manifest is generated at build time from `vite.config.ts`. Key points:
 
-- **Service Worker**: `src/background/index.ts` (module type)
+- **Service Worker**: `src/service-worker.ts` (module type), the only module the manifest names for the worker
 - **One page**: `app.html` (`build.rollupOptions.input`), opened only through `openDashboard()`, so there is only ever one app tab. `options.html` and `dashboard.html` are redirects to it, kept for links from older versions.
 - **Options Page**: `options_page: 'app.html#settings'` (not `options_ui` — full-page, not embedded). A fragment in `options_page` is accepted; verified in Chrome for Testing 151.
 - **No popup**: Extension icon click triggers sorting directly. `action.default_title` is the tooltip that tells a first-time user about the right-click menu.
@@ -460,7 +464,7 @@ No `host_permissions`, no `downloads` (export uses a Blob URL + `<a download>` i
 
 ### Storage Schema
 
-**`chrome.storage.sync`** — `SortSettings` (defaults `DEFAULT_SETTINGS` in `src/background/index.ts`) plus `installedVersion`, `newInstall`, `newUpdate` written by the existing `onInstalled` handler. Sessions code **reads** exactly one key from it and never writes: `loadSuspendedPrefix()` in `src/sessions/capture.ts` reads `tabSuspenderExtensionId` (falling back to the Marvellous Suspender id) to build the `chrome-extension://<id>/suspended.html#` prefix. That one function is the only sync access in the sessions feature, and both capture and the dashboard's restore sanitiser (`src/dashboard/lib/sanitize-options.ts`) go through it. Nothing else in `src/sessions/**` or `src/dashboard/**` touches `chrome.storage.sync`. Session data and `sessionSettings` must never go to sync (100 KB total, 8 KB per item, write-rate limits).
+**`chrome.storage.sync`** — `SortSettings` (defaults `DEFAULT_SETTINGS` in `src/lib/sort-tabs.ts`) plus `installedVersion`, `newInstall`, `newUpdate` written by the sort settings' `onInstalled` listener in `src/service-worker.ts`. Sessions code **reads** exactly one key from it and never writes: `loadSuspendedPrefix()` in `src/lib/capture.ts` reads `tabSuspenderExtensionId` (falling back to the Marvellous Suspender id) to build the `chrome-extension://<id>/suspended.html#` prefix. That one function is the only sync access in the sessions feature, and both capture and the dashboard's restore sanitiser (`src/lib/sanitize-options.ts`) go through it. Nothing else in the sessions modules of `src/lib/`, in `src/hooks/`, `src/components/` or `src/pages/` touches `chrome.storage.sync` (`sort-tabs.ts` and the Settings view's sort settings are the sort feature's own sync access). Session data and `sessionSettings` must never go to sync (100 KB total, 8 KB per item, write-rate limits).
 
 **`chrome.storage.local`** — session data, one key per record, never one big array:
 
@@ -473,17 +477,17 @@ No `host_permissions`, no `downloads` (export uses a Blob URL + `<a download>` i
 
 Write order is body → index (put) and body → index (delete). `sessionRepo.reconcile()` (app-page mount, `onInstalled`, `onStartup`) re-indexes orphan `session:*` bodies via `chrome.storage.local.getKeys()` (guarded fallback to `get(null)`), drops index entries without a body, and re-derives an entry that no longer matches its body. It is the **repair** path, so it is the one reader that tolerates an unreadable index: it treats it as empty and rebuilds it from the bodies. Every mutation still rejects on a future-schema index — this build must not overwrite a store a newer one wrote. A future-schema _body_ is kept and flagged instead of dropped (`SessionSummary.unreadable`), so a downgrade shows an inert "saved by a newer version" row the user can delete rather than an empty list. `sessionRepo.removeAll()` ("Delete all session data" in the dashboard's `StorageMeter`) removes every `session:*` body, `sessionIndex` and `historyMeta` under the lock; `sessionSettings` survives. `chrome.storage.local.getBytesInUse()` feeds the meter.
 
-**`sessionStorage`** (the app tab only) — `src/dashboard/lib/ui-state.ts` keeps two per-tab UI flags there (`tab-organizer:history-open`, `tab-organizer:recovered-dismissed`). Not user data, never `chrome.storage`, never through `sessionRepo`; both accessors are guarded because `sessionStorage` is absent under vitest and throws when the browser blocks site data.
+**`sessionStorage`** (the app tab only) — `src/lib/ui-state.ts` keeps two per-tab UI flags there (`tab-organizer:history-open`, `tab-organizer:recovered-dismissed`). Not user data, never `chrome.storage`, never through `sessionRepo`; both accessors are guarded because `sessionStorage` is absent under vitest and throws when the browser blocks site data.
 
 ### Sessions rules (do not break)
 
-- **Single write path.** Every write to session keys goes through `sessionRepo` in `src/sessions/storage.ts`, which serializes with `withLock()` (`navigator.locks.request('tab-organizer:sessions', …)`, shared by the service worker and both extension pages; promise-chain fallback when Web Locks are unavailable). Never call `chrome.storage.local.set/remove` for session keys anywhere else.
-- **Never add tab listeners to the service worker.** No `chrome.tabs.on*`, `chrome.windows.on*`, `chrome.tabGroups.on*` in `src/background/**` — ever. History uses `chrome.alarms` only; the dashboard's live open-windows pane registers its listeners inside the page (`useOpenWindows`), where they die with the tab. Every worker listener is registered synchronously at module top level of `src/background/sessions.ts` — never inside an async callback or after an `await`.
+- **Single write path.** Every write to session keys goes through `sessionRepo` in `src/lib/storage.ts`, which serializes with `withLock()` (`navigator.locks.request('tab-organizer:sessions', …)`, shared by the service worker and both extension pages; promise-chain fallback when Web Locks are unavailable). Never call `chrome.storage.local.set/remove` for session keys anywhere else.
+- **Never add tab listeners to the service worker.** No `chrome.tabs.on*`, `chrome.windows.on*`, `chrome.tabGroups.on*` in `src/service-worker.ts`, or in any module it imports at load time — ever. History uses `chrome.alarms` only; the dashboard's live open-windows pane registers its listeners inside the page (`useOpenWindows`), where they die with the tab. Every worker listener is registered synchronously at module top level of `src/service-worker.ts` — never inside an async callback or after an `await`.
 - **`chrome.storage.sync` is read-only for sessions code** — one key, `tabSuspenderExtensionId`, through `loadSuspendedPrefix()` in `capture.ts`. Session data and session settings live in `chrome.storage.local` only.
 - **The icon click stays `sortTabGroups()` only.** No `default_popup`, no dialogs, no `openDashboard()` on `action.onClicked`. `sort.ts` and the duplicate handlers are not edited by session work.
 - **Restore runs in the app page**, never in the worker. Own extension pages are excluded from every capture.
 - **No Chrome runtime ids in stored data** — groups are referenced by `groupIndex`; pinned tabs never carry `groupIndex`; at most one `active` tab per window.
-- **A chrome namespace touched at module-evaluation time needs its permission in the same commit.** Anything `src/background/sessions.ts` (or any module it imports) reads or calls while the module body runs — `chrome.alarms.onAlarm.addListener(…)`, `chrome.something.CONSTANT`, a top-level `chrome.x.y()` — runs before `index.ts`'s own body, because `import './sessions';` is hoisted. A missing permission makes that line throw, the whole service-worker module fails to evaluate, `chrome.action.onClicked` is never registered, and **tab sorting dies too** — a permission typo takes out the unrelated core feature, not just sessions. So add the permission to `vite.config.ts` in the very same commit as the code that touches the namespace (never "wire it up now, add the permission later"). `alarms` is the live example: `chrome.alarms.onAlarm.addListener` in `sessions.ts` and `'alarms'` in `permissions` landed together and must stay together.
+- **A chrome namespace touched at module-evaluation time needs its permission in the same commit.** Anything `src/service-worker.ts` (or any module it imports) reads or calls while the module body runs, such as `chrome.alarms.onAlarm.addListener(…)`, `chrome.something.CONSTANT` or a top-level `chrome.x.y()`, runs while the one worker module evaluates, and the imported modules' bodies run before the worker's own. A missing permission makes that line throw, the whole service-worker module fails to evaluate, and every listener after it is never registered: the sorting `chrome.action.onClicked` sits near the end of the file, so **tab sorting dies too** — a permission typo takes out the unrelated core feature, not just sessions. So add the permission to `vite.config.ts` in the very same commit as the code that touches the namespace (never "wire it up now, add the permission later"). `alarms` is the live example: `chrome.alarms.onAlarm.addListener` in `src/service-worker.ts` and `'alarms'` in `permissions` landed together and must stay together.
 
 ---
 
@@ -497,7 +501,7 @@ Runs on push to `main`, PRs to `main`, and manual dispatch:
 2. Restore the pnpm store cache (keyed on `pnpm-lock.yaml`)
 3. `pnpm install --frozen-lockfile`
 4. `pnpm typecheck`
-5. `pnpm test` (vitest; includes `scripts/store-listing.test.ts`, which fails on a store description over 16,000 characters or a summary over 132)
+5. `pnpm test` (vitest; includes `tests/store-listing.test.ts`, which fails on a store description over 16,000 characters or a summary over 132)
 6. `pnpm format` (Biome check + Prettier; fails on unfixable lint errors)
 7. `pnpm build`
 
@@ -520,7 +524,7 @@ Scheduled security scanning for JavaScript/TypeScript (Fridays at 19:42 UTC).
 
 ## Testing
 
-Unit tests use **Vitest** and live adjacent to their source files. Pure sorting logic in `src/background/sort.ts` is tested in `src/background/sort.test.ts`, covering:
+Unit tests use **Vitest** and live in `tests/` at the repo root, flat, one `<module>.test.ts` per module (never next to the source). `tests/tsconfig.json` type-checks them with Node types added, so a test may use `fs` / `path` while `src/` may not; `pnpm typecheck` is `tsc --noEmit && tsc --noEmit -p tests`. Pure sorting logic in `src/lib/sort.ts` is tested in `tests/sort.test.ts`, covering:
 
 - `compareByUrlComponents` — hostname normalization (`www.` stripping), pathname/search/hash ordering, special schemes (`chrome://`, `chrome-extension://`, `file://`, `about:blank`)
 - `extractGroupingKey` — subdomain vs domain mode, two-part TLDs (`co.uk`, `ac.kr`, `com.au`)
@@ -528,9 +532,9 @@ Unit tests use **Vitest** and live adjacent to their source files. Pure sorting 
 - `findDuplicateTabs` — duplicate detection, `pendingUrl` fallback, special scheme handling
 - `sortByTitleOrUrl` — title/URL sorting, pinned tab exclusion, edge cases (empty arrays, mixed schemes, large diverse tab sets)
 
-`vite.config.ts` sets `test.setupFiles: ['src/test/setup.ts']`, which installs `createChromeFake()` from `src/test/chrome-fake.ts` on `globalThis.chrome` before every test (typed against `@types/chrome`, no `any`) and a `navigator.locks` shim. Tests reach the fake through `getChromeFake()`: `state`, `fire.installed/startup/menuClicked/command/alarm/actionClicked/tabReplaced`, `failNext(api, n, message)` (`tabs.create`, `tabs.group`, `tabs.discard`, `tabs.move`, `tabGroups.update`, `tabGroups.move`, `windows.create`, `storage.local.set`) and `commitNavigation(tabId)` (`state.deferCommit` models a navigation that has not committed). The `chrome.tabs`/`chrome.windows`/`chrome.tabGroups` `on*` events are emitted by the fake's own mutations — creating, moving, grouping or closing a tab fires them, which is what `useOpenWindows` is tested against — so only `actionClicked` (the second `action.onClicked` listener) and `tabReplaced` (no mutation produces it) need `fire.*` helpers of their own. Moves between windows follow real Chrome, pinned in `chrome-fake.test.ts`: a cross-window `tabs.move` drops `pinned`, leaves the group, arrives inactive and closes an emptied source window; `tabGroups.move` carries the members and group properties, and carries the source's active tab (expanding the group) when it holds it; activating a tab inside a collapsed group expands it; `tabs.ungroup` of a group's middle tab moves it just after the group (expanding a collapsed group when it is the active tab); `windows.create` honours `type` and `incognito`. Do not relax these — `src/background/assemble.test.ts` would pass falsely. Session tests live next to their modules: `src/sessions/*.test.ts` (naming, migrate, hash, capture invariants, storage order/reconcile/lock/prune/protect, planner chunking and step order, executeRestore against the fake, history dedupe/prune/recovery promotion/alarm re-arm, search tokenising and ranking, export serializers incl. CSV quoting and HTML escaping, import detection/parsers/JSON round-trip, guards on malformed input, suspender unwrap) and `src/background/sessions.test.ts` (menus recreated on install, badge, handlers, alarm / second-click / `storage.onChanged` wiring). Page-side logic is tested in `src/dashboard/hooks/*.test.ts` and `src/dashboard/lib/*.test.ts`; React components themselves are not unit-tested (vitest runs in Node without a DOM) — keep decisions in pure helpers with tests and leave components thin.
+`vite.config.ts` sets `test.setupFiles: ['tests/setup.ts']`, which installs `createChromeFake()` from `tests/chrome-fake.ts` on `globalThis.chrome` before every test (typed against `@types/chrome`, no `any`) and a `navigator.locks` shim. Tests reach the fake through `getChromeFake()`: `state`, `fire.installed/startup/menuClicked/command/alarm/actionClicked/tabReplaced`, `failNext(api, n, message)` (`tabs.create`, `tabs.group`, `tabs.discard`, `tabs.move`, `tabGroups.update`, `tabGroups.move`, `windows.create`, `storage.local.set`) and `commitNavigation(tabId)` (`state.deferCommit` models a navigation that has not committed). The `chrome.tabs`/`chrome.windows`/`chrome.tabGroups` `on*` events are emitted by the fake's own mutations — creating, moving, grouping or closing a tab fires them, which is what `useOpenWindows` is tested against — so only `actionClicked` (the second `action.onClicked` listener) and `tabReplaced` (no mutation produces it) need `fire.*` helpers of their own. Moves between windows follow real Chrome, pinned in `chrome-fake.test.ts`: a cross-window `tabs.move` drops `pinned`, leaves the group, arrives inactive and closes an emptied source window; `tabGroups.move` carries the members and group properties, and carries the source's active tab (expanding the group) when it holds it; activating a tab inside a collapsed group expands it; `tabs.ungroup` of a group's middle tab moves it just after the group (expanding a collapsed group when it is the active tab); `windows.create` honours `type` and `incognito`. Do not relax these — `tests/assemble.test.ts` would pass falsely. Session tests are `tests/<module>.test.ts` for each session module of `src/lib/` (naming, migrate, hash, capture invariants, storage order/reconcile/lock/prune/protect, planner chunking and step order, executeRestore against the fake, history dedupe/prune/recovery promotion/alarm re-arm, search tokenising and ranking, export serializers incl. CSV quoting and HTML escaping, import detection/parsers/JSON round-trip, guards on malformed input, suspender unwrap) and `tests/service-worker.test.ts` (menus recreated on install, badge, handlers, alarm / second-click / `storage.onChanged` wiring). Page-side logic and hooks are tested in `tests/` too (`tests/<helper>.test.ts`, `tests/useSessionBody.test.ts`, `tests/useSessionIndex.test.ts`); React components themselves are not unit-tested (vitest runs in Node without a DOM) — keep decisions in pure helpers with tests and leave components thin.
 
-**Testing a module that registers `chrome.*` listeners at import time** (`src/background/index.ts`, `src/background/sessions.ts`): `src/test/setup.ts` assigns one throw-away fake to `globalThis.chrome` at module load (just so these modules are importable at all), then installs a **fresh** fake in `beforeEach`. A `import './sessions'` at the top of a test file runs once, before any `beforeEach`, and registers its listeners on the throw-away instance — every later `getChromeFake().fire.*` call reaches a different fake, so nothing fires. The fix is to defer the import into the test body, after `beforeEach` has installed that test's fake: `vi.resetModules(); await import('./sessions');`. `src/background/sessions.test.ts`'s `describe('listener wiring', …)` block does exactly this per test (`onInstalled`/`onStartup`/menu-click/command tests); the same file's other tests call the statically-imported `handleMenuOrCommand()`, `registerContextMenus()`, etc. directly, which is fine since those don't depend on which fake the listeners were registered against. (`src/sessions/storage.test.ts` also calls `vi.resetModules()` before re-importing `./storage`, but for an unrelated reason — getting a fresh copy of that module's own `fallbackChain` state to test the no-`navigator.locks` code path in isolation, not a listener-registration issue.)
+**Testing a module that registers `chrome.*` listeners at import time** (`src/service-worker.ts`): `tests/setup.ts` assigns one throw-away fake to `globalThis.chrome` at module load (just so these modules are importable at all), then installs a **fresh** fake in `beforeEach`. A static `import '@/service-worker'` at the top of a test file runs once, before any `beforeEach`, and registers its listeners on the throw-away instance — every later `getChromeFake().fire.*` call reaches a different fake, so nothing fires. The fix is to defer the import into the test body, after `beforeEach` has installed that test's fake: `vi.resetModules(); await import('@/service-worker');`. `tests/service-worker.test.ts`'s `describe('listener wiring', …)` block does exactly this per test (`onInstalled`/`onStartup`/menu-click/command tests), and so does `tests/service-worker-sort.test.ts` for the icon click; the same file's other tests call the statically-imported `handleMenuOrCommand()`, `registerContextMenus()`, etc. directly, which is fine since those don't depend on which fake the listeners were registered against. (`tests/storage.test.ts` also calls `vi.resetModules()` before re-importing `@/lib/storage`, but for an unrelated reason — getting a fresh copy of that module's own `fallbackChain` state to test the no-`navigator.locks` code path in isolation, not a listener-registration issue.)
 
 ### Real-Chrome smoke test (committed)
 
@@ -542,7 +546,7 @@ pnpm build && pnpm exec tsx scripts/e2e/smoke.ts
 
 It runs under `tsx`, not vitest, so `pnpm test` does not include it — run it by hand after touching restore, capture or the worker's listeners. Steps run in order and a failure stops the run (the rest report `SKIP`); the process exits 1 if any step failed. Flags: `PW_CHROMIUM` (binary, default `/opt/pw-browsers/chromium`), `HEADLESS=0`, `SMOKE_TIMEOUT_MS`, `SMOKE_KEEP_OPEN=1`. `scripts/e2e/browser.ts` (`launchExtension()`), `server.ts` (127.0.0.1 fixture pages — the QA browser has no outbound network) and `fixtures.ts` (sessions seeded straight into `chrome.storage.local`) are shared with `scripts/prepare-registration.ts`. Extend it by appending a `Step` to `STEPS`; history, search, export and import are not covered yet.
 
-Playwright itself is a devDependency, used by this harness and by `scripts/prepare-registration.ts` for the release screenshots and demo video. The manual CDP passes described below are what produced the `waitForCommit` and window-state fixes in `src/sessions/restore.ts`.
+Playwright itself is a devDependency, used by this harness and by `scripts/prepare-registration.ts` for the release screenshots and demo video. The manual CDP passes described below are what produced the `waitForCommit` and window-state fixes in `src/lib/restore.ts`.
 
 ### Real-Chrome assemble-tabs check (committed)
 
@@ -563,7 +567,7 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 - **Do not let Playwright launch the browser when the run can reach `chrome.tabs.discard`.** Its default Chromium launch flags make Chrome for Testing 151 **SIGSEGV on `chrome.tabs.discard`** (i.e. exactly the lazy-restore path). For that path, launch Chrome for Testing yourself with `--load-extension=<dist>` plus `--remote-debugging-port=<port>` (and a scratch `--user-data-dir`), then attach with `chromium.connectOverCDP('http://127.0.0.1:<port>')`. `scripts/e2e/browser.ts` does use `chromium.launchPersistentContext`, which is safe only because its fixture is far below `LAZY_AUTO_THRESHOLD` and so never discards a tab — keep it that way, or move that harness to CDP first.
 - **Pick the right service worker.** Component extensions register service workers too, so `context.serviceWorkers()` has several entries. Select ours by its URL ending in `/service-worker-loader.js` — never by index — and `evaluate` the `chrome.*` calls inside it.
 - **`--load-extension` is ignored by branded Chrome ≥ 137.** Use a Chrome for Testing binary (`npx @puppeteer/browsers install chrome@<version>`), not the installed Chrome.
-- **Verified this way (do not "simplify" these back):** `chrome.windows.create` rejects `{ state: 'minimized', focused: true }`, `{ state: 'maximized' | 'fullscreen', focused: false }`, and any non-`'normal'` state combined with `left/top/width/height`, all with `Invalid value for state` — so restore always creates a `'normal'`, unfocused window and applies the real state afterwards with `windows.update`. And `chrome.tabs.discard` on a tab whose navigation has not committed silently unloads it with `url: ''`, losing the URL — hence `waitForCommit`. `src/test/chrome-fake.ts` models both behaviours so the unit tests hold the line.
+- **Verified this way (do not "simplify" these back):** `chrome.windows.create` rejects `{ state: 'minimized', focused: true }`, `{ state: 'maximized' | 'fullscreen', focused: false }`, and any non-`'normal'` state combined with `left/top/width/height`, all with `Invalid value for state` — so restore always creates a `'normal'`, unfocused window and applies the real state afterwards with `windows.update`. And `chrome.tabs.discard` on a tab whose navigation has not committed silently unloads it with `url: ''`, losing the URL — hence `waitForCommit`. `tests/chrome-fake.ts` models both behaviours so the unit tests hold the line.
 
 ---
 
@@ -572,13 +576,13 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 ### Adding a new setting
 
 1. Add the type to `src/types.ts`
-2. Add a default value to `DEFAULT_SETTINGS` in `src/background/index.ts`
-3. Add the control to `src/app/views/SettingsView.tsx` (with a type guard in `src/options/lib/sort-settings.ts`) — visible only if it changes what a click on the icon visibly does, otherwise inside "Advanced"
-4. Use the setting in the relevant sort/handler function in `src/background/index.ts`
+2. Add a default value to `DEFAULT_SETTINGS` in `src/lib/sort-tabs.ts`
+3. Add the control to `src/pages/SettingsView.tsx` (with a type guard in `src/lib/sort-settings.ts`) — visible only if it changes what a click on the icon visibly does, otherwise inside "Advanced"
+4. Use the setting in the relevant sort/handler function in `src/lib/sort-tabs.ts`
 
 ### Adding a new UI component
 
-1. Run `pnpm dlx shadcn@latest add <component-name>` or create manually in `src/components/ui/`
+1. A stock shadcn component: run `pnpm dlx shadcn@latest add <component-name>` (it lands in `src/components/ui/` and stays as generated). Anything hand-made, including a wrapper around a shadcn component, is created in `src/components/`, never in `src/components/ui/`
 2. Use the `cn()` utility from `src/lib/utils.ts` for class merging
 3. Follow CVA pattern for variant-based components
 
@@ -589,23 +593,23 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 
 ### Adding a sessions feature
 
-1. Put pure logic in `src/sessions/<module>.ts` with an adjacent `*.test.ts` (use `getChromeFake()` only for the thin chrome wrapper)
-2. Persist through `sessionRepo` only — extend `src/sessions/storage.ts` if a new operation is needed, inside `withLock()`
-3. Shared UI goes in `src/dashboard/` (hooks under `hooks/`, components under `components/`, pure page helpers under `lib/` with tests) and the screen that uses it in `src/app/views/`, reachable through a route in `src/app/lib/route.ts`; the service worker only gets new _event_ listeners (`onInstalled`, `onStartup`, menus, commands, alarms, `storage.onChanged`) in `src/background/sessions.ts`, registered at module top level
+1. Put pure logic in `src/lib/<module>.ts` with a `tests/<module>.test.ts` (use `getChromeFake()` only for the thin chrome wrapper)
+2. Persist through `sessionRepo` only — extend `src/lib/storage.ts` if a new operation is needed, inside `withLock()`
+3. Components go in `src/components/`, hooks in `src/hooks/`, pure page helpers in `src/lib/` (tests in `tests/`), and the screen that uses it in `src/pages/`, reachable through a route in `src/lib/route.ts`; the service worker only gets new _event_ listeners (`onInstalled`, `onStartup`, menus, commands, alarms, `storage.onChanged`) in `src/service-worker.ts`, registered at module top level
 4. Icon-only buttons need `aria-label`; dialogs use the shadcn `Dialog`, menus the shadcn `DropdownMenu`; comment non-obvious Chrome behaviour at the call site
 
 ### Changing a session setting
 
-1. Extend `SessionSettings` / `DEFAULT_SESSION_SETTINGS` in `src/types.ts` and `normalizeSettings()` in `src/sessions/storage.ts` (unknown or invalid stored values must fall back to the default; `historyIntervalMinutes` is any whole number of minutes, clamped to `HISTORY_INTERVAL_MIN_MINUTES`..`HISTORY_INTERVAL_MAX_MINUTES` (1..1440) by `normalizeHistoryInterval()`, with 5/10/30 offered as presets beside "Custom")
+1. Extend `SessionSettings` / `DEFAULT_SESSION_SETTINGS` in `src/types.ts` and `normalizeSettings()` in `src/lib/storage.ts` (unknown or invalid stored values must fall back to the default; `historyIntervalMinutes` is any whole number of minutes, clamped to `HISTORY_INTERVAL_MIN_MINUTES`..`HISTORY_INTERVAL_MAX_MINUTES` (1..1440) by `normalizeHistoryInterval()`, with 5/10/30 offered as presets beside "Custom")
 2. Read/write through `sessionRepo.getSettings()` / `setSettings(patch)` — `useSessionSettings` on the app page; never `chrome.storage.local` directly
-3. Add the control once, in `src/dashboard/components/SessionSettingsFields.tsx` (parsing/clamping in `src/dashboard/lib/session-settings.ts`), and pick its `subset`: `basic` shows it next to the snapshot switch, `advanced` folds it away in the Settings view
+3. Add the control once, in `src/components/SessionSettingsFields.tsx` (parsing/clamping in `src/lib/session-settings.ts`), and pick its `subset`: `basic` shows it next to the snapshot switch, `advanced` folds it away in the Settings view
 4. If the setting affects the alarm, `ensureHistoryAlarm()` already re-runs on every `sessionSettings` change via the worker's `storage.onChanged` listener — do not add another listener
 5. Document the new setting in `docs/store_listing.md` (Settings + FAQ) and, if it changes what is stored or for how long, in `PRIVACY_POLICY.md`
 
 ### Adding a new sort mode
 
 1. Add the mode to `SortBy` type in `src/types.ts`
-2. Add a `case` in the `switch` statement inside `sortTabs()` in `src/background/index.ts`
+2. Add a `case` in the `switch` statement inside `sortTabs()` in `src/lib/sort-tabs.ts`
 3. Implement the sort function following existing patterns (`sortByTitleOrUrl`, `sortByCustom`)
 
 ---
@@ -613,13 +617,13 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 ## Gotchas & Edge Cases
 
 - **No `manifest.json` file**: The manifest is defined inline in `vite.config.ts`. Don't look for a separate manifest file.
-- **Suspended tabs**: The extension integrates with "The Marvellous Suspender". Suspended tab URLs are wrapped in `chrome-extension://<id>/suspended.html#ttl=…&pos=…&uri=<real-url>` with the real URL appended raw (not percent-encoded). Sorting unwraps with `tabToUrl()` in `sort.ts`; capture and the restore sanitiser use `unwrapSuspendedUrl()` in `src/sessions/suspender.ts`, which returns the verbatim remainder after `uri=` — parsing it with `URLSearchParams` would cut the URL at its first `&`. A wrapper that cannot be unwrapped keeps the raw wrapper URL at capture time and is skipped by `sanitizeRestoreUrl` (foreign `chrome-extension://`) at restore time.
+- **Suspended tabs**: The extension integrates with "The Marvellous Suspender". Suspended tab URLs are wrapped in `chrome-extension://<id>/suspended.html#ttl=…&pos=…&uri=<real-url>` with the real URL appended raw (not percent-encoded). Sorting unwraps with `tabToUrl()` in `sort.ts`; capture and the restore sanitiser use `unwrapSuspendedUrl()` in `src/lib/suspender.ts`, which returns the verbatim remainder after `uri=` — parsing it with `URLSearchParams` would cut the URL at its first `&`. A wrapper that cannot be unwrapped keeps the raw wrapper URL at capture time and is skipped by `sanitizeRestoreUrl` (foreign `chrome-extension://`) at restore time.
 - **Tab group IDs**: `-1` means ungrouped in the Chrome API. The code uses this convention throughout.
-- **Module-scoped state**: `tabSuspenderExtensionId`, `suspendedPrefix`, and `suspendedPrefixLen` are module-level variables in `index.ts`, updated in `sortTabs()`. Sort functions in `sort.ts` receive these as parameters rather than accessing globals, keeping them pure and testable.
+- **Module-scoped state**: `tabSuspenderExtensionId`, `suspendedPrefix`, and `suspendedPrefixLen` are module-level variables in `src/lib/sort-tabs.ts`, updated in `sortTabs()`. Sort functions in `sort.ts` receive these as parameters rather than accessing globals, keeping them pure and testable.
 - **Tab ID arrays**: Chrome's `tabs.move()` and `tabs.group()` require `[number, ...number[]]` tuple type for non-empty arrays.
 - **`scripts/zip.ts` and archiver 8**: archiver 8 is ESM and exports no callable default — the archive classes come by name (`import { ZipArchive } from 'archiver'`). `finalize()` resolves before the file is complete, so the script also waits for the write stream's `close` event; don't "simplify" either back.
 - **`pnpm-workspace.yaml`**: Exists but this is not a monorepo — it holds pnpm's install policy: `allowBuilds` (only `esbuild` may run install scripts) and `minimumReleaseAge: 10080` (minutes — only versions published at least 7 days ago are installed; pnpm's default is 1 day). A lockfile entry younger than that makes `pnpm install --frozen-lockfile` fail, in CI too, so `dependabot.yml` carries the matching `cooldown: default-days: 7` for npm. `minimumReleaseAgeExclude` is the escape hatch (exact `name@version`); the list there now is dated and temporary.
-- **The store description is plain text, by hand**: the code block under `### Description` in `docs/store_listing.md` is pasted into the store as it is — no Markdown inside it, and nothing is generated from it. `scripts/store-listing.test.ts` holds the 16,000 / 132 character limits.
+- **The store description is plain text, by hand**: the code block under `### Description` in `docs/store_listing.md` is pasted into the store as it is — no Markdown inside it, and nothing is generated from it. `tests/store-listing.test.ts` holds the 16,000 / 132 character limits.
 - **No Python**: every script is TypeScript run with `tsx`. The one macOS call that needed pyobjc (the Chrome window's id and bounds) goes through `osascript -l JavaScript` in `scripts/window-bounds.ts`.
 - **Pre-push `update-docs` hook amends commits**: on feature branches push with `LEFTHOOK_EXCLUDE=update-docs git push …` and do one manual docs pass per phase.
 - **`chrome.tabs.Tab.id` and `chrome.windows.Window.id/state/type/left/top/width/height` are optional** in `@types/chrome` 0.2.x — always narrow before use; never `!`. `Tab.windowId`/`groupId` are required (`-1` = no group).
@@ -629,5 +633,5 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 - **The first post-launch snapshot is delayed on purpose**: `onStartup` arms the one-shot `history-first` alarm 1 minute out because Chrome is still restoring tabs while `onStartup` runs; a capture then would record half-loaded windows.
 - **`promoteRecoveredSnapshot()` is idempotent**: only snapshots captured _after_ the newest existing recovered one qualify, so a restart with no new snapshot in between never turns another ring entry into a protected one.
 - **History dedupe hashes URLs, not titles**: `contentHash()` covers url/pinned/groupIndex/group title, so a page changing its `<title>` never produces a new snapshot; deleting the snapshot that `historyMeta.lastHash` points at also drops `historyMeta`, otherwise the next capture of that layout would be skipped forever.
-- **Import never trusts input**: everything pasted or uploaded goes through `src/sessions/guards.ts`; imported sessions get fresh ids, `kind: 'saved'`, `origin: 'import'` and never keep `protected`. Netscape HTML is parsed with the module's own tokenizer — `DOMParser` is unavailable under vitest (Node, no DOM).
+- **Import never trusts input**: everything pasted or uploaded goes through `src/lib/guards.ts`; imported sessions get fresh ids, `kind: 'saved'`, `origin: 'import'` and never keep `protected`. Netscape HTML is parsed with the module's own tokenizer — `DOMParser` is unavailable under vitest (Node, no DOM).
 - **Open-windows pane listeners live in the page**: `useOpenWindows` registers `chrome.tabs/windows/tabGroups.on*` in `app.html` and coalesces refetches; `windowId`/`tabId` in `SearchEntry` for open tabs are in-memory only and are never written to storage.

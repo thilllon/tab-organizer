@@ -1,6 +1,6 @@
 /**
  * Real-Chrome check of the icon-click sort: the tabs end up in order, and only the tabs that were
- * out of place are moved (src/background/move-plan.ts). The unit tests hold the plan against a
+ * out of place are moved (src/lib/move-plan.ts). The unit tests hold the plan against a
  * model of `chrome.tabs.move`; this holds it against Chrome itself, including what a move at the
  * edge of a tab group does to the group.
  *

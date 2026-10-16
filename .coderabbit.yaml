@@ -17,18 +17,18 @@ reviews:
     - "!screenshots/**"
     - "!pnpm-lock.yaml"
   path_instructions:
-    - path: "src/background/**"
+    - path: "src/service-worker.ts"
       instructions: >-
         Manifest V3 service worker. Flag any chrome.tabs/chrome.windows/chrome.tabGroups event
         listener (forbidden here), listeners registered after an await, module-scope mutable
         state relied on between events, and any chrome namespace used at module-evaluation
         time without a matching manifest permission in the same PR.
-    - path: "src/sessions/**"
+    - path: "src/lib/**"
       instructions: >-
         Session data must go through sessionRepo under the Web Lock (never raw
         chrome.storage), never into chrome.storage.sync, and never persist Chrome runtime ids
         (tab/window/group ids). Restore code must sanitise URLs before opening them.
-    - path: "src/{app,dashboard}/**"
+    - path: "src/{pages,components,hooks}/**"
       instructions: >-
         Extension page React code. Flag network requests of any kind (only
         chrome.runtime.getURL('/_favicon/…') images are allowed), dangerouslySetInnerHTML,
