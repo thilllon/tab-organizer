@@ -9,7 +9,7 @@ reviews:
     auto_incremental_review: true
     auto_pause_after_reviewed_commits: 0
     drafts: false
-    # The default branch (main) is reviewed without adding other targets.
+    # Pull requests into the default branch (main) are reviewed; no other base branches.
     base_branches: []
   path_filters:
     - "!dist/**"
