@@ -112,7 +112,8 @@ pnpm dev
 pnpm dev                    # Start Vite dev server (port 5173)
 pnpm build                  # Vite build -> dist/ (no type check; run typecheck separately)
 pnpm typecheck              # Type check only (tsc --noEmit)
-pnpm format                 # Biome check --write + Prettier (md/mdx/yml/yaml)
+pnpm format                 # oxfmt over the whole repository (format:check in CI)
+pnpm lint                   # oxlint
 pnpm test                   # Run tests (vitest)
 pnpm release                # release-it: regenerate CWS assets, bump version, build, ZIP, GitHub release
 ```

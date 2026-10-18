@@ -36,7 +36,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import type { Locator, Page } from '@playwright/test';
+
 import type { ExportBundle } from '../src/types';
 import { type ExtensionSession, launchExtension } from './e2e/browser';
 import { buildDashboardFixtures, seedSessions } from './e2e/fixtures';

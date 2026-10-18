@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   clampToScreen,
   DEFAULT_CHUNK_SIZE,

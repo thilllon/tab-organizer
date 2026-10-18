@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { getChromeFake } from './chrome-fake';
 
 describe('chrome fake: tab strip', () => {

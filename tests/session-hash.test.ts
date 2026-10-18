@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { contentHash, fnv1a32 } from '@/lib/session-hash';
 import type { WindowSnapshot } from '@/types';
 

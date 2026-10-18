@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { dropToast, MAX_TOASTS, pushToast, type Toast, upsertToast } from '@/lib/toast-queue';
 
 const t = (id: number, message = 'Saved'): Toast => ({ id, message });

@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   OPEN_WINDOWS_DEBOUNCE_MS,
   snapshotOpenWindows,
   subscribeOpenWindows,
 } from '@/lib/open-windows';
+
 import { getChromeFake } from './chrome-fake';
 
 const OWN_PREFIX = 'chrome-extension://fakeextid/';

@@ -1,4 +1,5 @@
 import { beforeEach } from 'vitest';
+
 import { createChromeFake } from './chrome-fake';
 
 /** `lib.dom.d.ts` declares `LockGrantedCallback` non-generic, so a typed alias is used instead. */

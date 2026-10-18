@@ -29,7 +29,9 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import type { Locator, Page } from '@playwright/test';
+
 import { type ExtensionSession, launchExtension } from './browser';
 import { type DemoServer, startDemoServer } from './server';
 

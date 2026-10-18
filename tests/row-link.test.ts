@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { browserHandlesClick, hrefFor } from '@/lib/row-link';
 
 describe('hrefFor', () => {

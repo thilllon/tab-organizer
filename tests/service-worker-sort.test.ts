@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { getChromeFake } from './chrome-fake';
 
 /** Lets every pending promise chain in the worker run to its end. */

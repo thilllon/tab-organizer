@@ -1,5 +1,6 @@
 import { Ellipsis, ExternalLink, Link, Pencil, Trash2, X } from 'lucide-react';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+
 import { DeleteSessionDialog } from '@/components/delete-session-dialog';
 import { ExportMenu } from '@/components/export-menu';
 import { Button } from '@/components/ui/button';
@@ -230,6 +231,7 @@ export function SessionDetail({
         <div className="min-w-0 flex-1">
           {editing ? (
             <Input
+              // oxlint-disable-next-line jsx-a11y/no-autofocus -- the field appears because the title was just clicked to rename it.
               autoFocus
               ref={inputRef}
               value={draft}
@@ -345,7 +347,7 @@ export function SessionDetail({
           <div role="tree" aria-label={`Windows in ${summary.name}`} className="space-y-2">
             {body.session.windows.map((window, index) => (
               <WindowTree
-                // biome-ignore lint/suspicious/noArrayIndexKey: no stable window id
+                // oxlint-disable-next-line react/no-array-index-key -- no stable window id
                 key={`window-${index}`}
                 window={window}
                 index={index}

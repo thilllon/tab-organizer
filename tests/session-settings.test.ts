@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   CUSTOM_INTERVAL,
   HISTORY_INTERVAL_MAX_MINUTES,

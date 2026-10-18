@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   DEFAULT_LIMIT_PER_SOURCE,
   entriesFromOpenWindows,
@@ -714,15 +715,14 @@ describe('splitOnMatches', () => {
  * Spec §12 Phase 4 / §7: result highlighting goes through `splitOnMatches()` and there is no
  * `dangerouslySetInnerHTML` anywhere — true by construction today, and this is what keeps it true.
  *
- * Biome's `lint/security/noDangerouslySetInnerHtml` (in the recommended preset, so already an
- * error in `pnpm format`) covers the JSX-attribute form; this catches the two ways round it that
- * a lint rule cannot — a `biome-ignore` comment, and the prop passed through
- * `createElement`/a spread object — for the price of one glob.
+ * oxlint's `react/no-danger` (an error in `pnpm lint`) covers the JSX-attribute form; this catches
+ * the two ways round it that a lint rule cannot, an `oxlint-disable` comment and the prop passed
+ * through `createElement`/a spread object, for the price of one glob.
  */
 describe('the source tree', () => {
-  // Every module under src/, as text. `import.meta.glob` rather than a `node:fs` walk: this
-  // tsconfig gives src/ the chrome typings only, so node built-ins are not importable here.
-  const SOURCES = import.meta.glob<string>('../**/*.{ts,tsx}', {
+  // Every module under src/, as text, through Vite's own glob so the list is exactly what the build
+  // sees.
+  const SOURCES = import.meta.glob<string>('../src/**/*.{ts,tsx}', {
     query: '?raw',
     import: 'default',
     eager: true,

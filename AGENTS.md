@@ -209,8 +209,8 @@ tab-organizer/
 ├── vite.config.ts             # Vite + CRX plugin config (manifest defined here)
 ├── tsconfig.json              # TypeScript config (strict mode)
 ├── tsconfig.node.json         # TypeScript config for vite.config.ts
-├── biome.json                 # Biome linter/formatter config
-├── .prettierrc.json           # Prettier config (Markdown/YAML; pnpm-lock.yaml ignored via .prettierignore)
+├── .oxfmtrc.json              # oxfmt: formats every file type it knows (TS/TSX/JS, JSON, Markdown, YAML, TOML, CSS, HTML)
+├── .oxlintrc.json             # oxlint: correctness rules + the React/a11y rules the code honours
 ├── .release-it.json           # release-it config (hooks run prepare-registration, build, zip)
 ├── lefthook.yml               # Git hooks (pre-commit: format; pre-push: typecheck/test/build/docs)
 ├── mise.toml                  # Tool versions (Node, pnpm, lefthook, gitleaks)
@@ -302,10 +302,10 @@ The manifest's `background.service_worker` and the only module loaded there. Reg
 All shared types are defined here. Both the service worker and the app page import from this file.
 
 ```typescript
-type SortBy = "url" | "title" | "custom";
-type GroupFrom = "leftToRight" | "rightToLeft";
-type DuplicateTabHandling = "none" | "closeAllButOne" | "group";
-type GroupingMode = "subdomain" | "domain";
+type SortBy = 'url' | 'title' | 'custom';
+type GroupFrom = 'leftToRight' | 'rightToLeft';
+type DuplicateTabHandling = 'none' | 'closeAllButOne' | 'group';
+type GroupingMode = 'subdomain' | 'domain';
 
 interface SortSettings {
   sortBy: SortBy;
@@ -362,7 +362,7 @@ Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`,
 | CSS              | Tailwind CSS 4                                                       |
 | UI Components    | shadcn/ui (Radix UI + CVA)                                           |
 | Build            | Vite 8 + @crxjs/vite-plugin                                          |
-| Linter/Formatter | Biome (JS/TS/CSS) + Prettier (Markdown/YAML)                         |
+| Linter/Formatter | oxlint + oxfmt (every file type oxfmt supports)                      |
 | Git Hooks        | Lefthook                                                             |
 | Testing          | Vitest (unit) + `scripts/e2e/smoke.ts` (real Chrome, via Playwright) |
 | Release          | release-it (GitHub release + ZIP via `scripts/zip.ts`)               |
@@ -377,7 +377,10 @@ Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`,
 pnpm dev              # Start Vite dev server (port 5173)
 pnpm build            # Vite build -> dist/ (no type check; run typecheck separately)
 pnpm typecheck        # Type check only (tsc --noEmit)
-pnpm format           # Biome check --write + Prettier (md/mdx/yml/yaml)
+pnpm format           # oxfmt --write over the whole repository
+pnpm format:check     # oxfmt --check (what CI runs)
+pnpm lint             # oxlint --deny-warnings
+pnpm lint:fix         # oxlint --fix
 pnpm test             # Run tests (vitest)
 pnpm release          # release-it: regenerate CWS assets, bump version, build, ZIP, GitHub release
 
@@ -400,16 +403,18 @@ pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<na
 
 ## Code Style & Conventions
 
-### Enforced by Biome (`biome.json`)
+### Enforced by oxfmt (`.oxfmtrc.json`) and oxlint (`.oxlintrc.json`)
 
+- **Scope**: every file oxfmt can format: TS/TSX/JS, JSON, Markdown, YAML, TOML, CSS and HTML (the two `scripts/*-template.html` included; their `{{PLACEHOLDER}}`s survive). Only generated output is left out: `dist`, `package`, `screenshots`, `pnpm-lock.yaml`, plus whatever `.gitignore` lists
 - **Indent**: 2 spaces
 - **Line width**: 100 characters
 - **Line endings**: LF
 - **Quotes**: Single quotes for JS/TS, double quotes for JSX
 - **Semicolons**: Always
 - **Trailing commas**: Always
-- **Block statements**: Required (`useBlockStatements: error`)
-- **Import organization**: Automatic via Biome assist
+- **Imports**: sorted by oxfmt (`sortImports`)
+- **Block statements**: Required (oxlint `curly: all`)
+- **Lint rules**: oxlint's correctness category as errors, plus `react/no-array-index-key`, `react/no-danger`, `jsx-a11y/prefer-tag-over-role` and `jsx-a11y/no-noninteractive-element-to-interactive-role`. The React Compiler rules (`react/set-state-in-effect`, `react/refs`, `react/purity`) are off: the app is not compiled with it. A deliberate exception is an `oxlint-disable-next-line <rule> -- <reason>` comment on the line above, always with the reason
 
 ### TypeScript
 
@@ -422,7 +427,7 @@ pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<na
 
 - **Commit format**: Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - **DO NOT** add `Co-Authored-By` lines to commit messages
-- **Pre-commit hook**: `pnpm format` (Biome check + Prettier, staged files auto-fixed)
+- **Pre-commit hook**: oxfmt on the staged files (re-staged when fixed), then oxlint on the staged JS/TS files
 - **Pre-push hook** (parallel): `pnpm typecheck`, `pnpm test`, `pnpm build`, and an `update-docs` step that, when `src/**`, `scripts/**`, `package.json`, or `vite.config.ts` changed in the last commit, runs `claude -p` to refresh `AGENTS.md`/`README.md` and amends the commit
 
 ### Component Patterns
@@ -501,8 +506,9 @@ Runs on push to `main`, PRs to `main`, and manual dispatch:
 3. `pnpm install --frozen-lockfile`
 4. `pnpm typecheck`
 5. `pnpm test` (vitest; includes `tests/store-listing.test.ts`, which fails on a store description over 16,000 characters or a summary over 132)
-6. `pnpm format` (Biome check + Prettier; fails on unfixable lint errors)
-7. `pnpm build`
+6. `pnpm format:check` (oxfmt; fails when any file is not formatted)
+7. `pnpm lint` (oxlint; fails on any warning or error)
+8. `pnpm build`
 
 Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates, grouping minor/patch bumps. Auto-merge is opt-in per pull request and Dependabot never opts its own in, so `dependabot-auto-merge.yml` runs `gh pr merge --auto --squash` on a Dependabot PR whose `update-type` (from `dependabot/fetch-metadata`) is minor or patch — and only when Dependabot itself caused the run, so a commit a person pushes onto its branch is not auto-merged; GitHub then merges it once the required `ci` check passes. Major updates stay open for a person. A merge made with the workflow's `GITHUB_TOKEN` does not start the `push` run of `ci.yml` on `main` — the PR's own run is the evidence.
 

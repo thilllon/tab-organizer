@@ -1,5 +1,6 @@
 import { Combine, Keyboard, Save } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+
 import { CloseTabsDialog } from '@/components/close-tabs-dialog';
 import { OpenWindowsPane } from '@/components/open-windows-pane';
 import { SelectionBar } from '@/components/selection-bar';

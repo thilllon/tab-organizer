@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import type { OpenWindowView } from '@/lib/open-windows';
 import {
   closedTabsNotice,

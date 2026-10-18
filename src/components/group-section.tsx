@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+
 import { TabRow, type TabRowSelection } from '@/components/tab-row';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { pluralize } from '@/lib/display-format';
@@ -60,11 +61,11 @@ export function GroupSection({
           {actions}
         </div>
         <CollapsibleContent>
-          {/* biome-ignore lint/a11y/useSemanticElements: <fieldset> is for form controls; this is the ARIA group of tab rows inside a tab group. */}
+          {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- <fieldset> is for form controls; this is the ARIA group of tab rows inside a tab group. */}
           <ul role="group" className={`ml-5 border-l-2 pl-2 ${groupRailClass(group.color)}`}>
             {tabs.map((tab, index) => (
               <TabRow
-                // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.
+                // oxlint-disable-next-line react/no-array-index-key -- no stable tab id; order is fixed.
                 key={`${index}-${tab.url}`}
                 tab={tab}
                 selection={tabSelection?.(startIndex + index)}

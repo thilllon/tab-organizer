@@ -1,5 +1,6 @@
 import { Upload } from 'lucide-react';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+
 import { QuotaNotice } from '@/components/quota-notice';
 import { Button } from '@/components/ui/button';
 import {
@@ -231,7 +232,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
               <ul className="space-y-2">
                 {parsed.preview.sessions.map((previewSession, sessionIndex) => (
                   <li
-                    // biome-ignore lint/suspicious/noArrayIndexKey: preview names are not unique
+                    // oxlint-disable-next-line react/no-array-index-key -- preview names are not unique
                     key={`session-${sessionIndex}`}
                   >
                     <p className="truncate text-sm font-medium" title={previewSession.name}>
@@ -251,7 +252,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                           <ul className="text-xs text-muted-foreground">
                             {previewWindow.titles.map((title, titleIndex) => (
                               <li
-                                // biome-ignore lint/suspicious/noArrayIndexKey: titles repeat
+                                // oxlint-disable-next-line react/no-array-index-key -- titles repeat
                                 key={`title-${titleIndex}`}
                                 className="truncate"
                                 title={title}

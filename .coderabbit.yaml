@@ -12,23 +12,23 @@ reviews:
     # The default branch (main) is reviewed without adding other targets.
     base_branches: []
   path_filters:
-    - "!dist/**"
-    - "!package/**"
-    - "!screenshots/**"
-    - "!pnpm-lock.yaml"
+    - '!dist/**'
+    - '!package/**'
+    - '!screenshots/**'
+    - '!pnpm-lock.yaml'
   path_instructions:
-    - path: "src/service-worker.ts"
+    - path: 'src/service-worker.ts'
       instructions: >-
         Manifest V3 service worker. Flag any chrome.tabs/chrome.windows/chrome.tabGroups event
         listener (forbidden here), listeners registered after an await, module-scope mutable
         state relied on between events, and any chrome namespace used at module-evaluation
         time without a matching manifest permission in the same PR.
-    - path: "src/lib/**"
+    - path: 'src/lib/**'
       instructions: >-
         Session data must go through sessionRepo under the Web Lock (never raw
         chrome.storage), never into chrome.storage.sync, and never persist Chrome runtime ids
         (tab/window/group ids). Restore code must sanitise URLs before opening them.
-    - path: "src/{pages,components,hooks}/**"
+    - path: 'src/{pages,components,hooks}/**'
       instructions: >-
         Extension page React code. Flag network requests of any kind (only
         chrome.runtime.getURL('/_favicon/…') images are allowed), dangerouslySetInnerHTML,

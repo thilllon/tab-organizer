@@ -8,6 +8,7 @@
  */
 
 import type { Worker } from '@playwright/test';
+
 import {
   type GroupSnapshot,
   SESSION_SCHEMA_VERSION,
@@ -74,7 +75,7 @@ const TAB_POOL: TabSeed[] = [
     url: 'https://www.typescriptlang.org/docs/handbook/2/narrowing.html',
     title: 'Narrowing — TypeScript',
   },
-  { url: 'https://biomejs.dev/linter/rules/', title: 'Lint rules — Biome' },
+  { url: 'https://oxc.rs/docs/guide/usage/linter/rules', title: 'Rules — Oxlint' },
   { url: 'https://vitest.dev/api/expect.html', title: 'expect — Vitest' },
   { url: 'https://playwright.dev/docs/chrome-extensions', title: 'Chrome extensions — Playwright' },
   {

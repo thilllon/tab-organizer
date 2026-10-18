@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   GROUP_CHIP_CLASS,
   GROUP_RAIL_CLASS,

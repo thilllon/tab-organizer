@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { HISTORY_ALARM, HISTORY_FIRST_ALARM } from '@/lib/history-snapshots';
 import { INDEX_KEY, SETTINGS_KEY } from '@/lib/session-repo';
 import {
@@ -13,6 +14,7 @@ import {
   showSavedBadge,
 } from '@/service-worker';
 import { SESSION_SCHEMA_VERSION, type Session, type SessionIndex } from '@/types';
+
 import { getChromeFake } from './chrome-fake';
 
 const APP_URL = 'chrome-extension://fakeextid/app.html';

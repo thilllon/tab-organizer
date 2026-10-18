@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
+
 import { GroupSection } from '@/components/group-section';
 import { TabRow, type TabRowSelection } from '@/components/tab-row';
 import { Button } from '@/components/ui/button';
@@ -75,7 +76,7 @@ export function WindowTree({
     <section
       // A window is a node of the sessions tree; it stays a <section> so its heading keeps
       // labelling a real region.
-      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: see above
+      // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role -- see above
       role="treeitem"
       aria-expanded
       aria-label={`Window ${index + 1}`}
@@ -92,7 +93,7 @@ export function WindowTree({
         {badge}
         {actions !== undefined && <div className="ml-auto flex items-center gap-1">{actions}</div>}
       </header>
-      {/* biome-ignore lint/a11y/useSemanticElements: <fieldset> is for form controls; this is the ARIA group of tab rows under a window node. */}
+      {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- <fieldset> is for form controls; this is the ARIA group of tab rows under a window node. */}
       <ul role="group" className="p-1">
         {segments.map((segment, segmentIndex) => {
           const groupIndex = segment.groupIndex;
@@ -100,7 +101,7 @@ export function WindowTree({
           if (group !== undefined && groupIndex !== undefined) {
             return (
               <GroupSection
-                // biome-ignore lint/suspicious/noArrayIndexKey: no stable segment id
+                // oxlint-disable-next-line react/no-array-index-key -- no stable segment id
                 key={`group-${segmentIndex}-${String(groupIndex)}`}
                 group={group}
                 tabs={segment.tabs}
@@ -114,7 +115,7 @@ export function WindowTree({
           }
           return segment.tabs.map((tab, tabIndex) => (
             <TabRow
-              // biome-ignore lint/suspicious/noArrayIndexKey: no stable tab id; order is fixed.
+              // oxlint-disable-next-line react/no-array-index-key -- no stable tab id; order is fixed.
               key={`tab-${segmentIndex}-${tabIndex}-${tab.url}`}
               tab={tab}
               selection={tabSelection?.(segment.startIndex + tabIndex)}

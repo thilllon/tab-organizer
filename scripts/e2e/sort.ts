@@ -17,7 +17,9 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import type { Worker } from '@playwright/test';
+
 import { launchExtension } from './browser';
 import { startDemoServer } from './server';
 

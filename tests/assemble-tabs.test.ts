@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import { assembleTabs, pickSourceWindows, planWindowMoves } from '@/lib/assemble-tabs';
+
 import { getChromeFake } from './chrome-fake';
 
 const DRAGGING = 'Tabs cannot be edited right now (user may be dragging a tab).';

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { unwrapSuspendedUrl } from '@/lib/suspended-url';
 
 const PREFIX = 'chrome-extension://suspenderid/suspended.html#';

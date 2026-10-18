@@ -10,6 +10,7 @@
  */
 
 import { existsSync } from 'node:fs';
+
 import { type BrowserContext, chromium, type Worker } from '@playwright/test';
 
 const DEFAULT_CHROMIUM = '/opt/pw-browsers/chromium';

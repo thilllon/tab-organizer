@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { INDEX_KEY, SETTINGS_KEY } from '@/lib/session-repo';
 import { isSettingsChange } from '@/lib/settings-change-event';
 

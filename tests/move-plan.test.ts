@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { applyMoves, isContiguous, longestIncreasingRun, planMoves } from '@/lib/move-plan';
 
 /** Deterministic pseudo-random numbers, so a failure reproduces. */

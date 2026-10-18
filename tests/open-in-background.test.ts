@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import { openTabInBackground } from '@/lib/open-in-background';
+
 import { getChromeFake } from './chrome-fake';
 
 describe('openTabInBackground', () => {

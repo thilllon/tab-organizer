@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   CHANGE_ONLY_IN_CHROME,
   commandRows,

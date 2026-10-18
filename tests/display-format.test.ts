@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { formatBytes, formatSessionMeta, hostnameOf, pluralize } from '@/lib/display-format';
 
 describe('pluralize', () => {

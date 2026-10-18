@@ -51,7 +51,7 @@ export function applyMoves(order: readonly number[], batches: readonly MoveBatch
 export function longestIncreasingRun(values: readonly number[]): Set<number> {
   // tails[k] = position of the smallest value that ends an increasing run of length k + 1.
   const tails: number[] = [];
-  const previous: number[] = new Array(values.length).fill(-1);
+  const previous: number[] = Array.from({ length: values.length }, () => -1);
   values.forEach((value, position) => {
     let low = 0;
     let high = tails.length;
@@ -141,7 +141,7 @@ function cost(plan: Costed): number {
  * order). Nothing at all when the order is already right.
  */
 export function planMoves(current: readonly number[], desired: readonly number[]): MoveBatch[] {
-  if (desired.length === 0 || desired.every((tabId, position) => current[position] === tabId)) {
+  if (desired.every((tabId, position) => current[position] === tabId)) {
     return [];
   }
   const minimal = fewestDisplaced(current, desired);

@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "curly": ["error", "all"],
+    "react/no-array-index-key": "error",
+    "jsx-a11y/prefer-tag-over-role": "error",
+    "jsx-a11y/no-noninteractive-element-to-interactive-role": "error",
+    "react/react-in-jsx-scope": "off",
+    "react/set-state-in-effect": "off",
+    "react/refs": "off",
+    "react/purity": "off",
+    "react/no-danger": "error"
+  },
+  "ignorePatterns": ["dist", "package", "screenshots"]
+}

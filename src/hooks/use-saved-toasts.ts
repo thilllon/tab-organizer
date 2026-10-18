@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { dropToast, TOAST_MS, type Toast, upsertToast } from '@/lib/toast-queue';
 
 export interface ToastOptions {

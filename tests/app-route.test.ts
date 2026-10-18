@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { formatRoute, HOME, parseRoute, routeSessionId, viewBehind } from '@/lib/app-route';
 
 describe('parseRoute', () => {

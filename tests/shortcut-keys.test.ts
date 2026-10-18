@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { isMacPlatform, shortcutKeys, shortcutText } from '@/lib/shortcut-keys';
 
 describe('shortcutKeys', () => {

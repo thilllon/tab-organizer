@@ -1,8 +1,10 @@
 import path from 'node:path';
+
 import { crx, defineManifest } from '@crxjs/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { configDefaults, defineConfig } from 'vitest/config';
+
 import packageJson from './package.json';
 import { ASSEMBLE_LABEL, DEFAULT_SHORTCUTS } from './src/constants';
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import { openDashboard } from '@/lib/open-app-page';
+
 import { getChromeFake } from './chrome-fake';
 
 const APP_URL = 'chrome-extension://fakeextid/app.html';

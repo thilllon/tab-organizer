@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import type { OpenWindowsState } from '@/hooks/use-open-windows';
 import { errorMessage } from '@/lib/error-message';
 import { SearchCorpusCache, scheduleIdle, selectPrewarmIds } from '@/lib/search-corpus';

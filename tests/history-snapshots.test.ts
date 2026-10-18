@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   defaultHistoryName,
   ensureHistoryAlarm,
@@ -12,6 +13,7 @@ import {
 } from '@/lib/history-snapshots';
 import { INDEX_KEY, SETTINGS_KEY, sessionRepo } from '@/lib/session-repo';
 import { SESSION_SCHEMA_VERSION, type Session, type WindowSnapshot } from '@/types';
+
 import { getChromeFake } from './chrome-fake';
 
 // Local time 2026-08-29 14:03 so generated names are deterministic.

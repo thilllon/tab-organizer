@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { parseWindowList, pickDemoWindow, type ScreenWindow } from '../scripts/window-bounds';
 
 function win(owner: string, id: number, overrides: Partial<ScreenWindow> = {}): ScreenWindow {

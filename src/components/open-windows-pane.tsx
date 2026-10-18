@@ -1,5 +1,6 @@
 import { AppWindow, Save, SquareArrowOutUpRight, X } from 'lucide-react';
 import { useState } from 'react';
+
 import { CloseWindowDialog } from '@/components/close-window-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

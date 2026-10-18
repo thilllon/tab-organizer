@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+
 import type { Toast } from '@/lib/toast-queue';
 
 export interface SavedToastsProps {
@@ -26,6 +27,7 @@ export interface SavedToastsProps {
 export function SavedToasts({ toasts }: SavedToastsProps) {
   return (
     <div
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a live region for a stack of toasts, not a form's <output>.
       role="status"
       aria-live="polite"
       className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex flex-col items-center gap-2"

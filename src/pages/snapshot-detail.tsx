@@ -1,5 +1,6 @@
 import { BookmarkPlus, Ellipsis, ExternalLink, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+
 import { DeleteSessionDialog } from '@/components/delete-session-dialog';
 import { ExportMenu } from '@/components/export-menu';
 import { Button } from '@/components/ui/button';
@@ -160,7 +161,7 @@ export function SnapshotDetail({
           <div role="tree" aria-label="Windows in this snapshot" className="space-y-2">
             {body.session.windows.map((window, index) => (
               <WindowTree
-                // biome-ignore lint/suspicious/noArrayIndexKey: no stable window id
+                // oxlint-disable-next-line react/no-array-index-key -- no stable window id
                 key={`window-${index}`}
                 window={window}
                 index={index}

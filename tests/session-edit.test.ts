@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { removeTabFromSession, removeWindowFromSession } from '@/lib/session-edit';
 import { contentHash } from '@/lib/session-hash';
 import type { Session, TabSnapshot, WindowSnapshot } from '@/types';

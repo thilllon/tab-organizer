@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import { openShortcutSettings, SHORTCUTS_URL } from '@/lib/open-shortcut-settings';
+
 import { getChromeFake } from './chrome-fake';
 
 describe('openShortcutSettings', () => {

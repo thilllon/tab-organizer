@@ -5,10 +5,10 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     # pnpm refuses versions younger than 7 days (minimumReleaseAge in pnpm-workspace.yaml), so a
     # PR for a fresher version would fail `pnpm install --frozen-lockfile` in CI.
     cooldown:
@@ -17,16 +17,16 @@ updates:
       npm-minor-patch:
         applies-to: version-updates
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     groups:
       actions-minor-patch:
         applies-to: version-updates
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'

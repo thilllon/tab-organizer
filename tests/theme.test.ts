@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { DARK_CLASS, DARK_MEDIA_QUERY, withDarkClass } from '@/lib/theme';
 
 describe('withDarkClass', () => {

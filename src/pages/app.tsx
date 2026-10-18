@@ -1,5 +1,6 @@
 import { Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { ImportDialog } from '@/components/import-dialog';
 import { ProgressToast } from '@/components/progress-toast';
 import { QuotaNotice } from '@/components/quota-notice';
@@ -467,6 +468,7 @@ export function App() {
   // the activation in the same handler, so anything activated inside that handler would come from
   // the previous render's `items`/`highlight`. `resolveActivation` waits for the results that
   // describe the typed text.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- runs after every render on purpose (see above).
   useEffect(() => {
     if (pendingActivation === undefined) {
       return;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   closeTab,
   closeTabs,
@@ -6,6 +7,7 @@ import {
   currentWindowTarget,
   goToTab,
 } from '@/lib/window-actions';
+
 import { getChromeFake } from './chrome-fake';
 
 describe('goToTab', () => {

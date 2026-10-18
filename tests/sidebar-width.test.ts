@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   clampSidebarWidth,
   DEFAULT_SIDEBAR_WIDTH,

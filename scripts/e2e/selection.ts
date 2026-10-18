@@ -12,7 +12,9 @@
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import type { Page } from '@playwright/test';
+
 import { type ExtensionSession, launchExtension } from './browser';
 import { DEMO_PAGES, startDemoServer } from './server';
 
@@ -207,7 +209,9 @@ async function main(): Promise<void> {
       await menuItem(page, 'Save & close');
       await page.waitForURL(/#saved\//, { timeout: UI_TIMEOUT });
       const id = decodeURIComponent(page.url().split('#saved/')[1] ?? '');
-      const saved = await (await ext.worker()).evaluate(async (sessionId: string) => {
+      const saved = await (
+        await ext.worker()
+      ).evaluate(async (sessionId: string) => {
         const key = `session:${sessionId}`;
         const stored = (await chrome.storage.local.get(key))[key] as
           | { windows: { tabs: { url: string }[] }[] }

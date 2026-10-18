@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { UnknownSchemaVersionError } from '@/lib/session-migrate';
 import {
   HISTORY_META_KEY,
@@ -20,6 +21,7 @@ import {
   type SessionIndex,
   type WindowSnapshot,
 } from '@/types';
+
 import { getChromeFake } from './chrome-fake';
 
 function makeWindow(urls: string[]): WindowSnapshot {

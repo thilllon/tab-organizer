@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { ASSEMBLE_LABEL, ASSEMBLE_NAME, DEFAULT_SHORTCUTS } from '@/constants';
 import { COMMAND_IDS } from '@/service-worker';
 

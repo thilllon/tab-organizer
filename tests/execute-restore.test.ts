@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import {
   executeRestore,
   isTabsCannotBeEditedError,
@@ -8,6 +9,7 @@ import {
   withRetryOnce,
 } from '@/lib/session-restore';
 import type { Session, WindowSnapshot } from '@/types';
+
 import { getChromeFake } from './chrome-fake';
 
 const SANITIZE: RestoreOptions['sanitize'] = {

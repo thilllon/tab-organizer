@@ -1,23 +1,26 @@
 {
   "name": "tab-organizer",
   "displayName": "Tab Organizer",
-  "description": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
   "version": "7.12.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/thilllon/tab-organizer.git"
-  },
+  "description": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
   "keywords": [
     "chrome-extension",
     "tab-organizer",
     "tab-sort"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thilllon/tab-organizer.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
-    "format": "biome check --write . && prettier --write '**/*.{md,mdx,yml,yaml}'",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "oxlint --deny-warnings",
+    "lint:fix": "oxlint --fix --deny-warnings",
     "store:bundle": "tsx ./scripts/store-bundle.ts",
     "test": "vitest run",
     "e2e:smoke": "tsx scripts/e2e/smoke.ts",
@@ -37,7 +40,6 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.15",
     "@crxjs/vite-plugin": "^3.0.0",
     "@playwright/test": "^1.64.0",
     "@tailwindcss/vite": "^4.3.3",
@@ -48,7 +50,8 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "archiver": "^8.0.0",
-    "prettier": "^3.9.10",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
     "release-it": "^21.1.1",
     "shadcn": "^4.21.4",
     "tailwindcss": "^4.3.3",

@@ -37,7 +37,7 @@ export function makeEvent<T extends (...args: never[]) => void>(): FakeEvent<T> 
     },
     emit(...args) {
       // Copy so a listener that removes itself does not break iteration.
-      for (const callback of [...listeners]) {
+      for (const callback of Array.from(listeners)) {
         callback(...args);
       }
     },

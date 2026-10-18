@@ -1,4 +1,5 @@
 import { LoaderCircle, X } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import type { RestoreProgress } from '@/hooks/use-restore';
 import {
@@ -88,19 +89,19 @@ export function ProgressToast({
               structuralProblems.length > 0) && (
               <ul className="mt-2 max-h-40 space-y-1 overflow-auto text-xs text-muted-foreground">
                 {result.skipped.map((url, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static snapshot, never reordered
+                  // oxlint-disable-next-line react/no-array-index-key -- static snapshot, never reordered
                   <li key={`skipped-${i}`} className="truncate" title={url}>
                     Skipped: {url}
                   </li>
                 ))}
                 {tabErrors.map((entry, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static snapshot, never reordered
+                  // oxlint-disable-next-line react/no-array-index-key -- static snapshot, never reordered
                   <li key={`error-${i}`} className="truncate" title={entry.message}>
                     Failed: {entry.url} ({entry.message})
                   </li>
                 ))}
                 {structuralProblems.map((entry, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static snapshot, never reordered
+                  // oxlint-disable-next-line react/no-array-index-key -- static snapshot, never reordered
                   <li key={`structural-${i}`} className="truncate" title={entry.message}>
                     Problem: {entry.url} ({entry.message})
                   </li>

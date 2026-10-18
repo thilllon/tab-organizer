@@ -1,4 +1,5 @@
 import { type KeyboardEvent, type PointerEvent, useRef } from 'react';
+
 import {
   clampSidebarWidth,
   MAX_SIDEBAR_WIDTH,
@@ -63,8 +64,8 @@ export function SidebarResizer({ width, onResize, onCommit }: SidebarResizerProp
   };
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: a resize handle is exactly ARIA's `separator`.
     <div
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a draggable resize handle is ARIA's focusable `separator`; an <hr> cannot be one.
       role="separator"
       aria-orientation="vertical"
       aria-label="Resize the sidebar"

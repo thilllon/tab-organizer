@@ -1,5 +1,6 @@
 import { RotateCcw } from 'lucide-react';
 import { useEffect } from 'react';
+
 import { Favicon } from '@/components/favicon';
 import { Button } from '@/components/ui/button';
 import { formatSessionMeta, hostnameOf, pluralize } from '@/lib/display-format';
@@ -33,14 +34,14 @@ function Highlighted({ text, tokens }: { text: string; tokens: string[] }) {
       {splitOnMatches(text, tokens).map((segment, index) =>
         segment.match ? (
           <mark
-            // biome-ignore lint/suspicious/noArrayIndexKey: segments are positional by definition
+            // oxlint-disable-next-line react/no-array-index-key -- segments are positional by definition
             key={index}
             className="rounded-xs bg-primary/20 text-foreground"
           >
             {segment.text}
           </mark>
         ) : (
-          // biome-ignore lint/suspicious/noArrayIndexKey: segments are positional by definition
+          // oxlint-disable-next-line react/no-array-index-key -- segments are positional by definition
           <span key={index}>{segment.text}</span>
         ),
       )}
@@ -201,6 +202,7 @@ export function SearchResults({
           Search results
         </h2>
         {/* Nothing but the count lives in the live region, so it announces "12 results". */}
+        {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a live region, not a form's <output>. */}
         <p role="status" aria-live="polite" className="text-xs text-muted-foreground">
           {pluralize(total, 'result')}
         </p>

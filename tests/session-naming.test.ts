@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { defaultSessionName, ensureUniqueName, slugify } from '@/lib/session-naming';
 
 describe('ensureUniqueName', () => {

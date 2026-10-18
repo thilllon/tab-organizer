@@ -29,7 +29,9 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import type { BrowserContext, Page, Worker } from '@playwright/test';
+
 import { installNameShim, launchExtension } from './browser';
 import { startDemoServer } from './server';
 

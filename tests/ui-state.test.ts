@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+
 import {
   HISTORY_OPEN_KEY,
   RECOVERED_DISMISSED_KEY,
