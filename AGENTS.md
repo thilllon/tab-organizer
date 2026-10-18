@@ -213,7 +213,7 @@ tab-organizer/
 ├── .prettierrc.json           # Prettier config (Markdown/YAML; pnpm-lock.yaml ignored via .prettierignore)
 ├── .release-it.json           # release-it config (hooks run prepare-registration, build, zip)
 ├── lefthook.yml               # Git hooks (pre-commit: format; pre-push: typecheck/test/build/docs)
-├── mise.toml                  # Tool versions (Node, pnpm, lefthook)
+├── mise.toml                  # Tool versions (Node, pnpm, lefthook, gitleaks)
 ├── components.json            # shadcn/ui configuration
 ├── PRIVACY_POLICY.md          # Privacy policy (update when permissions change)
 └── package.json
