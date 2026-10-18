@@ -197,8 +197,8 @@ const STEPS: Step[] = [
         `no built extension at ${DIST} — run \`pnpm build\` first`,
       );
       assert(
-        existsSync(path.join(DIST, 'dashboard.html')),
-        `${DIST} has no dashboard.html — rebuild with \`pnpm build\``,
+        existsSync(path.join(DIST, 'app.html')),
+        `${DIST} has no app.html — rebuild with \`pnpm build\``,
       );
       return path.relative(ROOT, DIST);
     },

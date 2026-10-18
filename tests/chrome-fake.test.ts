@@ -547,9 +547,7 @@ describe('chrome fake: failNext and events', () => {
   it('runtime, badge, menus and alarms are inspectable', async () => {
     const fake = getChromeFake();
     expect(chrome.runtime.id).toBe('fakeextid');
-    expect(chrome.runtime.getURL('/dashboard.html')).toBe(
-      'chrome-extension://fakeextid/dashboard.html',
-    );
+    expect(chrome.runtime.getURL('/app.html')).toBe('chrome-extension://fakeextid/app.html');
     expect(chrome.runtime.getManifest().version).toBe('7.0.0');
     await chrome.action.setBadgeText({ text: '✓' });
     await chrome.action.setBadgeBackgroundColor({ color: '#16a34a' });

@@ -68,7 +68,7 @@ describe('sanitizeRestoreUrl', () => {
     'chrome://settings/',
     'chrome://extensions/shortcuts',
     'about:blank',
-    'chrome-extension://fakeextid/dashboard.html',
+    'chrome-extension://fakeextid/app.html',
   ])('allows %s', (url) => {
     expect(sanitizeRestoreUrl(url, SANITIZE)).toBe(url);
   });

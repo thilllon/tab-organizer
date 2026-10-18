@@ -354,7 +354,7 @@ class Preparation {
       this.skip('3/8  Options page screenshots', 'SKIP_OPTIONS=1');
       return;
     }
-    const optionsUrl = `chrome-extension://${this.extensionId}/options.html`;
+    const optionsUrl = `chrome-extension://${this.extensionId}/app.html#settings`;
 
     for (const { width, height } of [
       { width: 1280, height: 800 },

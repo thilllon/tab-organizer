@@ -15,7 +15,7 @@ describe('openTabInBackground', () => {
     expect(foreign.ok).toBe(false);
     expect(getChromeFake().state.createdTabs).toEqual([]);
 
-    const own = await openTabInBackground('chrome-extension://fakeextid/dashboard.html');
+    const own = await openTabInBackground('chrome-extension://fakeextid/app.html');
     expect(own).toEqual({ ok: true });
     expect(getChromeFake().state.createdTabs).toHaveLength(1);
   });

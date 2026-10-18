@@ -115,8 +115,7 @@ tab-organizer/
 │   │   ├── open-tabs-view.tsx    # Live windows, Save, Assemble!, the tab selection
 │   │   ├── session-detail.tsx   # One saved session
 │   │   ├── snapshot-detail.tsx  # One history snapshot
-│   │   ├── settings-view.tsx    # The content of the Settings dialog
-│   │   └── to-app.ts           # dashboard.html / options.html → app.html (kept for old links)
+│   │   └── settings-view.tsx    # The content of the Settings dialog
 │   ├── components/             # Every hand-made component, flat: SidebarNav, SidebarResizer, SavedToasts, WindowTree,
 │   │   │                       #   GroupSection, TabRow, Favicon, NativeSelect, ProgressToast, OpenWindowsPane,
 │   │   │                       #   SelectionBar, SearchBar, SearchResults, ExportMenu, ImportDialog, StorageMeter,
@@ -205,8 +204,6 @@ tab-organizer/
 │   │   └── dependabot-auto-merge.yml # Turns auto-merge on for Dependabot's minor/patch PRs
 │   └── dependabot.yml         # Weekly npm + GitHub Actions updates (minor/patch grouped)
 ├── app.html                   # The extension page (the only real HTML entry)
-├── options.html               # Redirect to app.html#settings (old links)
-├── dashboard.html             # Redirect to app.html (old links)
 ├── docs/superpowers/          # Design specs and plans — local only, git-ignored ("spec §N" in comments refers to
 │                              #   specs/2026-08-29-sessions-design.md there)
 ├── vite.config.ts             # Vite + CRX plugin config (manifest defined here)
@@ -222,7 +219,7 @@ tab-organizer/
 └── package.json
 ```
 
-**Layout rules (set by the owner).** `src/pages/` holds screens (the page entry, `app.tsx` and its views, the redirect); `src/components/` holds every hand-made component, flat; `src/components/ui/` holds stock shadcn/ui components only, as the CLI writes them, and never a custom component (a component built on top of one goes in `src/components/`); `src/hooks/` holds React hooks, flat; `src/lib/` holds all logic, one level only with no subfolders; `src/styles/index.css` is the one stylesheet; `src/service-worker.ts` is the worker. Tests live in `tests/` at the repo root, flat, never next to their source. A new file goes in the folder its kind names, not next to whatever uses it.
+**Layout rules (set by the owner).** `src/pages/` holds screens (the page entry, `app.tsx` and its views); `src/components/` holds every hand-made component, flat; `src/components/ui/` holds stock shadcn/ui components only, as the CLI writes them, and never a custom component (a component built on top of one goes in `src/components/`); `src/hooks/` holds React hooks, flat; `src/lib/` holds all logic, one level only with no subfolders; `src/styles/index.css` is the one stylesheet; `src/service-worker.ts` is the worker. Tests live in `tests/` at the repo root, flat, never next to their source. A new file goes in the folder its kind names, not next to whatever uses it.
 
 **File names are kebab-case everywhere** (`sidebar-nav.tsx`, `use-open-windows.ts`, `session-repo.ts`, `close-tabs-dialog.test.ts`), the convention the stock shadcn files in `src/components/ui/` already use. What is inside follows TypeScript and React: components are PascalCase (`SidebarNav`), hooks and functions camelCase (`useOpenWindows`, `sortTabGroups`), constants UPPER_SNAKE_CASE. Name a lib file for what it holds (`session-repo.ts`, not `storage.ts`): with one flat folder, a generic name says nothing.
 
@@ -352,7 +349,7 @@ Keyboard shortcuts are shown through `src/lib/command-rows.ts` (`commandRows(com
 
 The Chrome extension manifest is **defined inline** in `vite.config.ts` using `@crxjs/vite-plugin`'s `defineManifest()`. There is no separate `manifest.json` file. When modifying extension metadata, permissions, or entry points, edit this file.
 
-Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`, `favicon`, `alarms`. `minimum_chrome_version: '123'` (promise-form `contextMenus.removeAll()` is awaited unguarded; `favicon` needs 104; `storage.local.getKeys()` (130) is behind a `typeof` guard so it does not raise the floor). Commands: `_execute_action`, `save-session`, `open-dashboard`, `assemble-tabs` — `save-session` and `open-dashboard` ship without `suggested_key`; `_execute_action` suggests `Alt+Shift+S` and `assemble-tabs` `Alt+Shift+A` — both read from `DEFAULT_SHORTCUTS` in `src/constants.ts`, the one place to change a default key (Option+Shift+S / Option+Shift+A on a Mac; Chrome drops it silently if another extension holds the key, so the UI shows what `chrome.commands.getAll()` reports rather than promising it). `_execute_action` is Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked` exactly as a click does, so the shortcut sorts through the same two listeners with no second code path. Chrome gives it no description (and calls it "Activate the extension" on its shortcuts page); `commandRows()` in `src/lib/command-rows.ts` names it for Settings. Second HTML entry `dashboard.html` is registered via `build.rollupOptions.input` because crxjs only auto-builds manifest-referenced pages. `defineConfig` comes from `vitest/config` so `test.setupFiles: ['tests/setup.ts']` applies.
+Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`, `favicon`, `alarms`. `minimum_chrome_version: '123'` (promise-form `contextMenus.removeAll()` is awaited unguarded; `favicon` needs 104; `storage.local.getKeys()` (130) is behind a `typeof` guard so it does not raise the floor). Commands: `_execute_action`, `save-session`, `open-dashboard`, `assemble-tabs` — `save-session` and `open-dashboard` ship without `suggested_key`; `_execute_action` suggests `Alt+Shift+S` and `assemble-tabs` `Alt+Shift+A` — both read from `DEFAULT_SHORTCUTS` in `src/constants.ts`, the one place to change a default key (Option+Shift+S / Option+Shift+A on a Mac; Chrome drops it silently if another extension holds the key, so the UI shows what `chrome.commands.getAll()` reports rather than promising it). `_execute_action` is Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked` exactly as a click does, so the shortcut sorts through the same two listeners with no second code path. Chrome gives it no description (and calls it "Activate the extension" on its shortcuts page); `commandRows()` in `src/lib/command-rows.ts` names it for Settings. `app.html` is registered via `build.rollupOptions.input` because crxjs only auto-builds manifest-referenced pages and `options_page` carries a `#settings` fragment. `defineConfig` comes from `vitest/config` so `test.setupFiles: ['tests/setup.ts']` applies.
 
 ---
 
@@ -443,7 +440,7 @@ pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<na
 The manifest is generated at build time from `vite.config.ts`. Key points:
 
 - **Service Worker**: `src/service-worker.ts` (module type), the only module the manifest names for the worker
-- **One page**: `app.html` (`build.rollupOptions.input`), opened only through `openDashboard()`, so there is only ever one app tab. `options.html` and `dashboard.html` are redirects to it, kept for links from older versions.
+- **One page**: `app.html` (`build.rollupOptions.input`), opened only through `openDashboard()`, so there is only ever one app tab. It is the only HTML page; the `options.html` and `dashboard.html` of v7.1 and earlier are gone (the store is kept on the latest version, and Chrome's "Options" opens `app.html#settings` directly).
 - **Options Page**: `options_page: 'app.html#settings'` (not `options_ui` — full-page, not embedded). A fragment in `options_page` is accepted; verified in Chrome for Testing 151.
 - **No popup**: Extension icon click triggers sorting directly. `action.default_title` is the tooltip that tells a first-time user about the right-click menu.
 - **No content scripts**: All operations use Chrome APIs only

@@ -70,7 +70,7 @@ describe('captureSession', () => {
 
   it('uses the given name verbatim and drops own extension pages', async () => {
     const fake = getChromeFake();
-    await seedWindow(['https://a.example/', chrome.runtime.getURL('dashboard.html')], true);
+    await seedWindow(['https://a.example/', chrome.runtime.getURL('app.html')], true);
 
     const session = await captureSession('window', 'My tabs');
 

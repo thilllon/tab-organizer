@@ -136,7 +136,7 @@ describe('captureWindows', () => {
   it('drops our own extension pages', () => {
     const win = makeWindow({
       tabs: tabsInOrder(
-        { url: 'chrome-extension://fakeextid/dashboard.html' },
+        { url: 'chrome-extension://fakeextid/app.html' },
         { url: 'https://a.com/' },
         { url: 'chrome-extension://fakeextid/options.html' },
       ),
@@ -166,7 +166,7 @@ describe('captureWindows', () => {
   it('drops windows that become empty after filtering', () => {
     const onlyDashboard = makeWindow({
       id: 1,
-      tabs: tabsInOrder({ url: 'chrome-extension://fakeextid/dashboard.html' }),
+      tabs: tabsInOrder({ url: 'chrome-extension://fakeextid/app.html' }),
     });
     const noTabs = makeWindow({ id: 2, tabs: [] });
     const populated = makeWindow({ id: 3, tabs: undefined });
@@ -363,7 +363,7 @@ describe('captureWindows', () => {
   it('yields no active tab when the active tab was an own page', () => {
     const win = makeWindow({
       tabs: tabsInOrder(
-        { url: 'chrome-extension://fakeextid/dashboard.html', active: true },
+        { url: 'chrome-extension://fakeextid/app.html', active: true },
         { url: 'https://a.com/' },
       ),
     });
@@ -464,7 +464,7 @@ describe('captureWindowsWithIds', () => {
   it('keeps a window left with no capturable tabs, unlike captureWindows', () => {
     const win = makeWindow({
       id: 3,
-      tabs: tabsInOrder({ url: 'chrome-extension://fakeextid/dashboard.html' }),
+      tabs: tabsInOrder({ url: 'chrome-extension://fakeextid/app.html' }),
     });
 
     expect(captureWindows([win], [], OPTIONS)).toEqual([]);

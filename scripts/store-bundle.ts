@@ -32,9 +32,9 @@ const ROOT = path.resolve(__dirname, '..');
  * The screenshots, in upload order. The first is the one that shows up in store search results, so
  * it leads with the product doing its job.
  *
- * `screenshot-1280x800.png` is captured from `options.html` with nothing seeded, so it is the
- * Settings dialog over an empty page — useful as context, useless as a first impression. It goes last. (The file name
- * predates v7.2.0, when Options was still a page of its own.)
+ * `screenshot-1280x800.png` is captured from `app.html#settings` with nothing seeded, so it is the
+ * Settings dialog over an empty page: useful as context, useless as a first impression. It goes
+ * last. (The file name predates v7.2.0, when Options was still a page of its own.)
  */
 const SCREENSHOTS: { from: string; as: string; caption: string }[] = [
   {

@@ -96,10 +96,9 @@ export default defineConfig(() => {
       modulePreload: { polyfill: false },
       rollupOptions: {
         input: {
+          // The one page. crxjs only builds the pages the manifest names, and `options_page` carries a
+          // `#settings` fragment, so the entry is listed here rather than trusted to be picked up.
           app: 'app.html',
-          // Kept so old pinned tabs and bookmarks still land somewhere: both redirect to app.html.
-          options: 'options.html',
-          dashboard: 'dashboard.html',
         },
         output: {
           chunkFileNames: 'assets/chunk-[hash].js',

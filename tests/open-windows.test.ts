@@ -73,7 +73,7 @@ describe('snapshotOpenWindows', () => {
   });
 
   it('hides own extension pages but keeps the window they live in', async () => {
-    const windowId = await seedWindow([`${OWN_PREFIX}dashboard.html`]);
+    const windowId = await seedWindow([`${OWN_PREFIX}app.html`]);
 
     const views = await snapshotOpenWindows({ excludeUrlPrefix: OWN_PREFIX });
 
@@ -83,7 +83,7 @@ describe('snapshotOpenWindows', () => {
   });
 
   it('shows own extension pages when no excludeUrlPrefix is given', async () => {
-    const windowId = await seedWindow([`${OWN_PREFIX}dashboard.html`]);
+    const windowId = await seedWindow([`${OWN_PREFIX}app.html`]);
 
     const views = await snapshotOpenWindows();
 

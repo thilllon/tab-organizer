@@ -101,7 +101,7 @@ describe('takeHistorySnapshot', () => {
   });
 
   it("returns 'skipped-empty' when nothing is capturable (only empty/own-page windows)", async () => {
-    await seedWindow([chrome.runtime.getURL('dashboard.html')]);
+    await seedWindow([chrome.runtime.getURL('app.html')]);
 
     await expect(takeHistorySnapshot({ origin: 'alarm' })).resolves.toEqual({
       outcome: 'skipped-empty',

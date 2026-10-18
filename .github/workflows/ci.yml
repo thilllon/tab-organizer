@@ -39,11 +39,11 @@ jobs:
 
       - run: pnpm build
 
-      # Spec §12 Phase 0 acceptance: `pnpm build` emits the extension's HTML entry points. Both
-      # are rollup inputs, so a config edit that drops one is a silent, shippable break.
-      - name: Verify the build emitted the extension pages
+      # `pnpm build` must emit the extension's one page. It is a rollup input, so a config edit that
+      # drops it is a silent, shippable break.
+      - name: Verify the build emitted the extension page
         run: |
-          for page in dist/dashboard.html dist/options.html; do
+          for page in dist/app.html; do
             test -f "$page" || { echo "::error::$page missing from the build"; exit 1; }
             echo "ok: $page"
           done

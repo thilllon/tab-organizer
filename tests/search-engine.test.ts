@@ -293,7 +293,7 @@ describe('entriesFromOpenWindows', () => {
     const windows = [
       makeWindow({
         tabs: [
-          makeTab({ id: 1, index: 0, url: `${own}dashboard.html`, title: 'Dashboard' }),
+          makeTab({ id: 1, index: 0, url: `${own}app.html`, title: 'Dashboard' }),
           makeTab({ id: 2, index: 1, url: 'https://kept.example/', title: 'Kept' }),
         ],
       }),
