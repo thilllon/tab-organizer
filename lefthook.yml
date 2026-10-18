@@ -1,6 +1,10 @@
 pre-commit:
   piped: true
   commands:
+    # Before anything else: a secret in the staged changes stops the commit (config: .gitleaks.toml).
+    secrets:
+      priority: 0
+      run: gitleaks git --pre-commit --staged --redact --no-banner --verbose
     format:
       priority: 1
       run: pnpm exec oxfmt --no-error-on-unmatched-pattern {staged_files}

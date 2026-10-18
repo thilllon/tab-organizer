@@ -211,8 +211,9 @@ tab-organizer/
 ├── tsconfig.node.json         # TypeScript config for vite.config.ts
 ├── .oxfmtrc.json              # oxfmt: formats every file type it knows (TS/TSX/JS, JSON, Markdown, YAML, TOML, CSS, HTML)
 ├── .oxlintrc.json             # oxlint: correctness rules + the React/a11y rules the code honours
+├── .gitleaks.toml             # gitleaks: the default secret rules, generated output (dist, package, screenshots, lockfile) left out
 ├── .release-it.json           # release-it config (hooks run prepare-registration, build, zip)
-├── lefthook.yml               # Git hooks (pre-commit: format; pre-push: typecheck/test/build/docs)
+├── lefthook.yml               # Git hooks (pre-commit: gitleaks, format, lint; pre-push: typecheck/test/build/docs)
 ├── mise.toml                  # Tool versions (Node, pnpm, lefthook, gitleaks)
 ├── components.json            # shadcn/ui configuration
 ├── PRIVACY_POLICY.md          # Privacy policy (update when permissions change)
@@ -427,7 +428,7 @@ pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<na
 
 - **Commit format**: Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - **DO NOT** add `Co-Authored-By` lines to commit messages
-- **Pre-commit hook**: oxfmt on the staged files (re-staged when fixed), then oxlint on the staged JS/TS files
+- **Pre-commit hook**: gitleaks on the staged changes first (a secret stops the commit; `.gitleaks.toml`), then oxfmt on the staged files (re-staged when fixed), then oxlint on the staged JS/TS files
 - **Pre-push hook** (parallel): `pnpm typecheck`, `pnpm test`, `pnpm build`, and an `update-docs` step that, when `src/**`, `scripts/**`, `package.json`, or `vite.config.ts` changed in the last commit, runs `claude -p` to refresh `AGENTS.md`/`README.md` and amends the commit
 
 ### Component Patterns
@@ -501,14 +502,15 @@ Write order is body → index (put) and body → index (delete). `sessionRepo.re
 
 Runs on push to `main`, PRs to `main`, and manual dispatch:
 
-1. Setup mise tools (`jdx/mise-action`; installs Node, pnpm and lefthook from `mise.toml` — no Node version matrix)
+1. Setup mise tools (`jdx/mise-action`; installs Node, pnpm, lefthook and gitleaks from `mise.toml`; the checkout fetches the full history — no Node version matrix)
 2. Restore the pnpm store cache (keyed on `pnpm-lock.yaml`)
-3. `pnpm install --frozen-lockfile`
-4. `pnpm typecheck`
-5. `pnpm test` (vitest; includes `tests/store-listing.test.ts`, which fails on a store description over 16,000 characters or a summary over 132)
-6. `pnpm format:check` (oxfmt; fails when any file is not formatted)
-7. `pnpm lint` (oxlint; fails on any warning or error)
-8. `pnpm build`
+3. `gitleaks git` over every commit (fails on any finding; config `.gitleaks.toml`)
+4. `pnpm install --frozen-lockfile`
+5. `pnpm typecheck`
+6. `pnpm test` (vitest; includes `tests/store-listing.test.ts`, which fails on a store description over 16,000 characters or a summary over 132)
+7. `pnpm format:check` (oxfmt; fails when any file is not formatted)
+8. `pnpm lint` (oxlint; fails on any warning or error)
+9. `pnpm build`
 
 Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates, grouping minor/patch bumps. Auto-merge is opt-in per pull request and Dependabot never opts its own in, so `dependabot-auto-merge.yml` runs `gh pr merge --auto --squash` on a Dependabot PR whose `update-type` (from `dependabot/fetch-metadata`) is minor or patch — and only when Dependabot itself caused the run, so a commit a person pushes onto its branch is not auto-merged; GitHub then merges it once the required `ci` check passes. Major updates stay open for a person. A merge made with the workflow's `GITHUB_TOKEN` does not start the `push` run of `ci.yml` on `main` — the PR's own run is the evidence.
 

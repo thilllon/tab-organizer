@@ -1,0 +1,10 @@
+# gitleaks: secret scanning for commits (lefthook pre-commit) and the whole history (CI).
+# The default rule set, minus generated output that cannot hold a hand-written secret.
+title = "tab-organizer"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated output: build, store packages, screenshots, lockfile"
+paths = ['''^dist/''', '''^package/''', '''^screenshots/''', '''^pnpm-lock\.yaml$''']

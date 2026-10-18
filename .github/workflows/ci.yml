@@ -12,6 +12,9 @@ jobs:
     runs-on: ['ubuntu-latest']
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The whole history, for the gitleaks scan below.
+          fetch-depth: 0
 
       - uses: jdx/mise-action@v5.1.2
 
@@ -28,6 +31,10 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             pnpm-${{ runner.os }}-
+
+      # Every commit, not only this push: a secret is leaked once it is in any commit (config: .gitleaks.toml).
+      - name: Secret scan (gitleaks)
+        run: gitleaks git --redact --no-banner --verbose
 
       - run: pnpm install --frozen-lockfile
 
