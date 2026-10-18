@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 import { Favicon } from '@/components/favicon';
 import { hostnameOf } from '@/lib/display-format';
-import { openTabInBackground } from '@/lib/open-in-background';
 import { browserHandlesClick, hrefFor } from '@/lib/row-link';
 import type { TabSnapshot } from '@/types';
 
@@ -17,15 +16,15 @@ export interface TabRowSelection {
   onToggle(shiftKey: boolean): void;
 }
 
-export interface TabRowProps {
+interface TabRowProps {
   tab: TabSnapshot;
   /** Left out, the row has no tick box at all (saved sessions, snapshots, search results). */
   selection?: TabRowSelection;
   /**
-   * Open mode (open-windows pane): clicking the row goes to the live tab instead of opening the
-   * saved url in a new background tab. Report a failure through `error` below.
+   * What a click on the row does (go to the live tab, or open the saved url); resolves with an
+   * error message to show on the row, or undefined.
    */
-  onOpen?(): Promise<string | undefined> | undefined;
+  onOpen(): Promise<string | undefined> | undefined;
   /** Trailing icon buttons (Go to tab / Close tab / Remove from session). */
   actions?: ReactNode;
 }
@@ -34,15 +33,7 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
   const [error, setError] = useState<string | undefined>(undefined);
 
   const open = () => {
-    if (onOpen !== undefined) {
-      void Promise.resolve(onOpen()).then(setError);
-      return;
-    }
-    // Sanitised (and awaited) in open-in-background.ts: a stored url may be anything the page had at
-    // capture time, and a rejected create must surface here rather than vanish.
-    void openTabInBackground(tab.url).then((result) => {
-      setError(result.ok ? undefined : result.reason);
-    });
+    void Promise.resolve(onOpen()).then(setError);
   };
 
   /**

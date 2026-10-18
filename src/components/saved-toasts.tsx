@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 
 import type { Toast } from '@/lib/toast-queue';
 
-export interface SavedToastsProps {
+interface SavedToastsProps {
   toasts: readonly Toast[];
 }
 

@@ -5,32 +5,14 @@
  */
 
 import { isContiguous, type MoveBatch, planMoves } from '@/lib/move-plan';
-import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import {
   findDuplicateTabs,
   hashStringToColor,
   sortByCustom,
   sortByTitleOrUrl,
 } from '@/lib/sort-order';
+import { DEFAULT_SORT_SETTINGS } from '@/lib/sort-settings';
 import type { DuplicateTabHandling, SortSettings } from '@/types';
-
-let tabSuspenderExtensionId = '';
-let suspendedPrefix = `chrome-extension://${tabSuspenderExtensionId}/suspended.html#`;
-let suspendedPrefixLen = suspendedPrefix.length;
-
-// `tabSuspenderExtensionId` defaults to "The Marvellous Suspender", the de facto The Great
-// Suspender replacement. The id is declared once, in src/lib/session-capture.ts, whose
-// `loadSuspendedPrefix()` reads the very same stored setting for the sessions feature.
-const DEFAULT_SETTINGS: SortSettings = {
-  sortBy: 'url',
-  groupFrom: 'leftToRight',
-  preserveOrderWithinGroups: false,
-  groupSuspendedTabs: false,
-  tabSuspenderExtensionId: THE_MARVELLOUS_SUSPENDER_EXTENSION_ID,
-  sortPinnedTabs: false,
-  duplicateTabHandling: 'none',
-  groupingMode: 'subdomain',
-};
 
 /*
  * Core sort orchestration
@@ -38,7 +20,7 @@ const DEFAULT_SETTINGS: SortSettings = {
 
 /** What a click on the toolbar icon does: sorts the last-focused window. */
 export async function sortTabGroups(): Promise<void> {
-  const settings = await chrome.storage.sync.get<SortSettings>(DEFAULT_SETTINGS);
+  const settings = await chrome.storage.sync.get<SortSettings>(DEFAULT_SORT_SETTINGS);
 
   const currentWindow = await chrome.windows.getLastFocused();
 
@@ -92,9 +74,11 @@ async function sortTabs(
     return;
   }
 
-  tabSuspenderExtensionId = settings.tabSuspenderExtensionId;
-  suspendedPrefix = `chrome-extension://${tabSuspenderExtensionId}/suspended.html#`;
-  suspendedPrefixLen = suspendedPrefix.length;
+  // `tabSuspenderExtensionId` defaults to "The Marvellous Suspender" (DEFAULT_SORT_SETTINGS);
+  // `loadSuspendedPrefix()` in session-capture.ts reads the same stored setting for sessions.
+  const tabSuspenderExtensionId = settings.tabSuspenderExtensionId;
+  const suspendedPrefix = `chrome-extension://${tabSuspenderExtensionId}/suspended.html#`;
+  const suspendedPrefixLen = suspendedPrefix.length;
 
   const firstTabIndex = tabs[0].index;
   // The order on the strip right now; the sort functions below reorder `tabs` in place.

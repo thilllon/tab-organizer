@@ -1,6 +1,6 @@
 import type { TabSnapshot } from '@/types';
 
-export interface TabSegment {
+interface TabSegment {
   groupIndex?: number;
   tabs: TabSnapshot[];
   /**

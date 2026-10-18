@@ -7,7 +7,7 @@ import {
   SIDEBAR_WIDTH_STEP,
 } from '@/lib/sidebar-width';
 
-export interface SidebarResizerProps {
+interface SidebarResizerProps {
   width: number;
   /** Called on every drag frame and on every arrow key — already clamped. */
   onResize(width: number): void;

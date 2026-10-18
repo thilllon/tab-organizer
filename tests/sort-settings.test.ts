@@ -37,7 +37,7 @@ const ALL_CHANGED: SortSettings = {
 };
 
 describe('DEFAULT_SORT_SETTINGS', () => {
-  it('mirrors DEFAULT_SETTINGS in src/lib/sort-tabs.ts', () => {
+  it('pins the default values', () => {
     expect(DEFAULT_SORT_SETTINGS).toEqual({
       sortBy: 'url',
       groupFrom: 'leftToRight',

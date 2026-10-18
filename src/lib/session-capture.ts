@@ -61,7 +61,7 @@ function isOwnPage(url: string, options: CaptureOptions): boolean {
  * In-memory only, for the dashboard's live open-windows pane: `captureWindows()` — the only path
  * into a stored `Session` — strips every id first (spec §3: runtime ids are never persisted).
  */
-export interface IdentifiedWindowSnapshot extends WindowSnapshot {
+interface IdentifiedWindowSnapshot extends WindowSnapshot {
   windowId: number;
   groups: (GroupSnapshot & { groupId: number })[];
   tabs: (TabSnapshot & { tabId: number })[];
@@ -300,8 +300,8 @@ function scopeWindows(
   return allWindows.filter((win) => win.id !== undefined && win.id === windowId);
 }
 
-export async function captureSession(scope: CaptureScope, name?: string): Promise<Session> {
-  return (await captureSessionWithTabIds(scope, name)).session;
+export async function captureSession(scope: CaptureScope): Promise<Session> {
+  return (await captureSessionWithTabIds(scope)).session;
 }
 
 /**
@@ -313,7 +313,6 @@ export async function captureSession(scope: CaptureScope, name?: string): Promis
  */
 export async function captureSessionWithTabIds(
   scope: CaptureScope,
-  name?: string,
 ): Promise<{ session: Session; tabIds: number[] }> {
   const [allWindows, groups, focused, options] = await Promise.all([
     chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }),
@@ -336,7 +335,7 @@ export async function captureSessionWithTabIds(
       schemaVersion: 1,
       id: crypto.randomUUID(),
       kind: 'saved',
-      name: name ?? defaultSessionName(new Date(now), snapshots.length, tabCount),
+      name: defaultSessionName(new Date(now), snapshots.length, tabCount),
       origin: 'manual',
       createdAt: now,
       updatedAt: now,

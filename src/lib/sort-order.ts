@@ -148,25 +148,17 @@ export function tabToUrl(
   return toUrlOrUnknown(tabUrl);
 }
 
-export function updateTabGroupMap(
+function updateTabGroupMap(
   tabGroupMap: Map<string, number>,
   tab: chrome.tabs.Tab,
-  sortBy: string,
   groupSuspendedTabs: boolean,
   groupingMode: GroupingMode,
   suspendedPrefixLen: number,
 ): void {
-  if (sortBy === 'title') {
-    const title = tab.title ?? '';
-    if (!tabGroupMap.has(title)) {
-      tabGroupMap.set(title, tabGroupMap.size);
-    }
-  } else {
-    const urlParser = tabToUrl(tab, groupSuspendedTabs, suspendedPrefixLen);
-    const host = extractGroupingKey(urlParser.hostname, groupingMode);
-    if (!tabGroupMap.has(host)) {
-      tabGroupMap.set(host, tabGroupMap.size);
-    }
+  const urlParser = tabToUrl(tab, groupSuspendedTabs, suspendedPrefixLen);
+  const host = extractGroupingKey(urlParser.hostname, groupingMode);
+  if (!tabGroupMap.has(host)) {
+    tabGroupMap.set(host, tabGroupMap.size);
   }
 }
 
@@ -246,7 +238,6 @@ export function sortByCustom(
       updateTabGroupMap(
         tabGroupMap,
         tabs[left],
-        'custom',
         groupSuspendedTabs,
         groupingMode,
         suspendedPrefixLen,
@@ -262,7 +253,6 @@ export function sortByCustom(
       updateTabGroupMap(
         tabGroupMap,
         tabs[right],
-        'custom',
         groupSuspendedTabs,
         groupingMode,
         suspendedPrefixLen,
@@ -313,27 +303,13 @@ export function sortByCustom(
     right = suspendedTabCount;
     if (groupFrom === 'leftToRight') {
       while (left !== right) {
-        updateTabGroupMap(
-          tabGroupMap,
-          tabs[left],
-          'custom',
-          false,
-          groupingMode,
-          suspendedPrefixLen,
-        );
+        updateTabGroupMap(tabGroupMap, tabs[left], false, groupingMode, suspendedPrefixLen);
         left += 1;
       }
     } else {
       while (left !== right) {
         right -= 1;
-        updateTabGroupMap(
-          tabGroupMap,
-          tabs[right],
-          'custom',
-          false,
-          groupingMode,
-          suspendedPrefixLen,
-        );
+        updateTabGroupMap(tabGroupMap, tabs[right], false, groupingMode, suspendedPrefixLen);
       }
     }
 

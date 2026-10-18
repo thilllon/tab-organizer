@@ -17,7 +17,7 @@ export interface OpenWindowView {
   tabs: (TabSnapshot & { tabId: number })[];
 }
 
-export interface SnapshotOpenWindowsOptions {
+interface SnapshotOpenWindowsOptions {
   /** `chrome.runtime.getURL('')` — tabs whose url starts with this are our own pages, and hidden. */
   excludeUrlPrefix?: string;
 }

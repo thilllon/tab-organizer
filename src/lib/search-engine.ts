@@ -27,27 +27,24 @@ export interface SearchEntry {
   url: string;
   /** `new URL(url).hostname`, precomputed once; '' when the url does not parse. */
   hostname: string;
-  pinned: boolean;
-  /** Title of the tab's group ('' for an untitled group); absent for ungrouped tabs. */
-  groupTitle?: string;
   /** Chrome runtime ids, open tabs only: in-memory so a result can focus the tab, never persisted. */
   windowId?: number;
   tabId?: number;
 }
 
-export interface OpenEntriesOptions {
+interface OpenEntriesOptions {
   /** `chrome.runtime.getURL('')` — tabs whose url starts with this (our own pages) are dropped. */
   excludeUrlPrefix?: string;
 }
 
-export interface SearchOptions {
+interface SearchOptions {
   /** Entries returned per source (default 200); `count` still reports every match. */
   limitPerSource?: number;
-  /** History bodies are opt-in (the "Include history" checkbox); default false. */
+  /** History bodies are opt-in (the "Also search auto-saved" button); default false. */
   includeHistory?: boolean;
 }
 
-export interface SearchSourceResult {
+interface SearchSourceResult {
   entries: SearchEntry[];
   /** Matches in this source, including those cut off by `limitPerSource`. */
   count: number;
@@ -62,7 +59,7 @@ export interface SearchResult {
   bySource: Record<SearchSource, SearchSourceResult>;
 }
 
-export interface TextSegment {
+interface TextSegment {
   text: string;
   match: boolean;
 }
@@ -81,7 +78,7 @@ export function entriesFromSession(session: Session, source: 'saved' | 'history'
   const entries: SearchEntry[] = [];
   for (const [windowIndex, win] of session.windows.entries()) {
     for (const [tabIndex, tab] of win.tabs.entries()) {
-      const entry: SearchEntry = {
+      entries.push({
         source,
         sessionId: session.id,
         sessionName: session.name,
@@ -91,15 +88,7 @@ export function entriesFromSession(session: Session, source: 'saved' | 'history'
         title: tab.title,
         url: tab.url,
         hostname: hostnameOf(tab.url),
-        pinned: tab.pinned,
-      };
-      if (tab.groupIndex !== undefined) {
-        const groupTitle = win.groups[tab.groupIndex]?.title;
-        if (groupTitle !== undefined) {
-          entry.groupTitle = groupTitle;
-        }
-      }
-      entries.push(entry);
+      });
     }
   }
   return entries;
@@ -113,13 +102,8 @@ export function entriesFromSession(session: Session, source: 'saved' | 'history'
  */
 export function entriesFromOpenWindows(
   windows: chrome.windows.Window[],
-  groups: chrome.tabGroups.TabGroup[],
   opts: OpenEntriesOptions = {},
 ): SearchEntry[] {
-  const groupById = new Map<number, chrome.tabGroups.TabGroup>();
-  for (const group of groups) {
-    groupById.set(group.id, group);
-  }
   const excludePrefix = opts.excludeUrlPrefix ?? '';
   const now = Date.now();
 
@@ -154,15 +138,7 @@ export function entriesFromOpenWindows(
         title: tab.title ?? '',
         url,
         hostname: hostnameOf(url),
-        pinned: tab.pinned,
       };
-      // Pinned tabs cannot be grouped (Chrome invariant); -1 is chrome.tabGroups.TAB_GROUP_ID_NONE.
-      if (!tab.pinned && tab.groupId !== undefined && tab.groupId !== -1) {
-        const group = groupById.get(tab.groupId);
-        if (group !== undefined) {
-          entry.groupTitle = group.title ?? '';
-        }
-      }
       if (win.id !== undefined) {
         entry.windowId = win.id;
       }

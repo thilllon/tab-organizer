@@ -23,9 +23,9 @@ export interface RestoreProgress {
   startedAt: number;
 }
 
-export type RestoreOutcome = { ok: true; result: RestoreResult } | { ok: false; reason: 'busy' };
+type RestoreOutcome = { ok: true } | { ok: false; reason: 'busy' };
 
-export interface UseRestore {
+interface UseRestore {
   /**
    * Plans and executes a restore in this page. Resolves `{ ok: false, reason: 'busy' }` -- without
    * touching any state -- when a restore is already running, so the caller reports that from the
@@ -123,7 +123,7 @@ export function useRestore(): UseRestore {
       // keeping the read right next to where the result lands avoids relying on that detail).
       setCancelled(controller.signal.aborted);
       setLastResult(result);
-      return { ok: true, result };
+      return { ok: true };
     } finally {
       controllerRef.current = null;
       setProgress(undefined);

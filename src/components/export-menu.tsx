@@ -42,12 +42,12 @@ const FORMAT_ICONS: Record<ExportFormat, LucideIcon> = {
   csv: Table2,
 };
 
-export interface ExportMenuProps {
+interface ExportMenuProps {
   /** The index entry the scope belongs to: the id to load, and the name for the filename. */
   summary: Pick<SessionSummary, 'id' | 'name'>;
   /**
-   * The already-loaded body, when the card that hosts this menu is expanded. Left out (a
-   * collapsed card, a history row), the body is read through `sessionRepo.get` on demand.
+   * The already-loaded body of the view that hosts this menu. Left out (still loading), the
+   * body is read through `sessionRepo.get` on demand.
    */
   session?: Session;
   /** Narrows the export to one window of the session. */

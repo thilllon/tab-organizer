@@ -9,7 +9,7 @@ import { goToTab } from '@/lib/window-actions';
  */
 
 /** The open tab to jump to, or `undefined` when this URL is not open anywhere. */
-export function pickOpenTab(
+function pickOpenTab(
   tabs: readonly chrome.tabs.Tab[],
   url: string,
 ): { tabId: number; windowId: number } | undefined {
@@ -26,7 +26,7 @@ export function pickOpenTab(
   return undefined;
 }
 
-export type OpenSavedTabResult = { ok: true; switched: boolean } | { ok: false; reason: string };
+type OpenSavedTabResult = { ok: true; switched: boolean } | { ok: false; reason: string };
 
 export async function openSavedTab(url: string): Promise<OpenSavedTabResult> {
   let open: { tabId: number; windowId: number } | undefined;

@@ -11,7 +11,7 @@ import {
 import { formatRestoreSummary, splitRestoreErrors } from '@/lib/restore-summary';
 import type { RestoreResult } from '@/lib/session-restore';
 
-export interface ProgressToastProps {
+interface ProgressToastProps {
   progress?: RestoreProgress;
   result?: RestoreResult;
   /** True while a cancel has been requested and the running restore is still winding down. */

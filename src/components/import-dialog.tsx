@@ -32,7 +32,7 @@ import { isQuotaError } from '@/lib/storage-quota';
 import type { Session } from '@/types';
 
 /** Extensions the picker offers; every one of them is handled by a parser in session-import.ts. */
-export const IMPORT_ACCEPT = '.json,.html,.htm,.md,.txt';
+const IMPORT_ACCEPT = '.json,.html,.htm,.md,.txt';
 
 const TEXTAREA_LABEL = 'Paste sessions, bookmarks or links';
 
@@ -47,7 +47,7 @@ type ParsedInput =
       preview: ImportPreview;
     };
 
-export interface ImportDialogProps {
+interface ImportDialogProps {
   open: boolean;
   onOpenChange(open: boolean): void;
   /** Called with the number of sessions written; the dashboard shows the confirmation. */

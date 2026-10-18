@@ -16,6 +16,12 @@ export interface SanitizeOptions {
 
 export type RestoreTarget = { kind: 'newWindows' } | { kind: 'window'; windowId: number };
 
+/**
+ * Where an "Open" on the app page goes: brand-new windows, or the window the app itself is in.
+ * The page turns it into a `RestoreTarget`; it is a UI choice, never stored.
+ */
+export type OpenScope = 'newWindows' | 'here';
+
 export interface RestoreOptions {
   target: RestoreTarget;
   lazy: SessionSettings['restoreLazy'];
@@ -23,14 +29,14 @@ export interface RestoreOptions {
   sanitize: SanitizeOptions;
 }
 
-export interface PlannedTab {
+interface PlannedTab {
   url: string;
   pinned: boolean;
   active: boolean;
   groupIndex?: number;
 }
 
-export interface PlannedWindow {
+interface PlannedWindow {
   snapshot: WindowSnapshot;
   tabs: PlannedTab[];
   chunks: PlannedTab[][];
@@ -56,7 +62,7 @@ export interface RestoreResult {
  * The screen the dashboard is on, in virtual-desktop coordinates. `availLeft`/`availTop` are
  * non-standard (absent from lib.dom) but present in Chrome; see `screenRectOf`.
  */
-export interface ScreenRect {
+interface ScreenRect {
   availLeft?: number;
   availTop?: number;
   availWidth: number;
@@ -64,12 +70,12 @@ export interface ScreenRect {
 }
 
 /** Which window of the plan `executeRestore` is filling right now (0-based). */
-export interface RestoreProgressWindow {
+interface RestoreProgressWindow {
   index: number;
   count: number;
 }
 
-export interface RestoreHooks {
+interface RestoreHooks {
   /**
    * Called after every chunk (and once for a window that could not be opened) with the tabs done
    * so far. `window` says which window of the plan those tabs belong to, so the dashboard's toast

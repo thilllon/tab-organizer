@@ -20,31 +20,28 @@ import {
   parseSnapshotLimit,
   RESTORE_LAZY_MODES,
 } from '@/lib/session-settings';
-import { cn } from '@/lib/utils';
 import type { SessionSettings } from '@/types';
 
-export interface SessionSettingsFieldsProps {
+interface SessionSettingsFieldsProps {
   settings: SessionSettings;
   /** True while the settings are still being read, or a write is in flight. */
-  disabled?: boolean;
+  disabled: boolean;
   /** Every change writes straight through `useSessionSettings().update` — there is no Save button. */
   onChange(patch: Partial<SessionSettings>): void;
-  /** Extra layout classes for the stack of rows (one setting per line). */
-  className?: string;
-  /** Distinguishes the control ids when a page renders more than one instance. */
-  idPrefix?: string;
+  /** Distinguishes the control ids of the two instances the Settings view renders. */
+  idPrefix: string;
   /**
    * Which of the four controls to render: the app's Settings view shows the on/off switch first
    * and folds the rest into "Advanced", because a safety net people never think about should not
    * greet them with an interval and a ring size.
    */
-  subset?: 'all' | 'basic' | 'advanced';
+  subset: 'basic' | 'advanced';
 }
 
 /**
- * The four `SessionSettings` controls, shared by the dashboard's settings row and the Options
- * page's "Sessions" card so both surfaces carry the same labels and the same rules. Presentational
- * only: the owning surface holds `useSessionSettings()` and does the writing.
+ * The four `SessionSettings` controls, drawn twice by the Settings dialog's "Sessions" section:
+ * the snapshot switch (`basic`) and, under its "Advanced" fold, the other three (`advanced`).
+ * Presentational only: the Settings view holds `useSessionSettings()` and does the writing.
  *
  * The service worker re-arms the history alarm from its own `storage.onChanged` listener, so
  * nothing here touches `chrome.alarms` (AGENTS.md "Sessions rules").
@@ -53,12 +50,11 @@ export function SessionSettingsFields({
   settings,
   disabled,
   onChange,
-  className,
-  idPrefix = 'session-settings',
-  subset = 'all',
+  idPrefix,
+  subset,
 }: SessionSettingsFieldsProps) {
-  const showBasic = subset !== 'advanced';
-  const showAdvanced = subset !== 'basic';
+  const showBasic = subset === 'basic';
+  const showAdvanced = subset === 'advanced';
   const enabledId = `${idPrefix}-history-enabled`;
   const intervalId = `${idPrefix}-history-interval`;
   const customIntervalId = `${idPrefix}-history-interval-custom`;
@@ -67,7 +63,7 @@ export function SessionSettingsFields({
 
   // The number input is edited as text ("" and "2" happen on the way to "20"), so it keeps a
   // draft and only writes a parsed, clamped value on blur/Enter. Re-seeded whenever the stored
-  // value changes -- including when another surface (the Options page) writes it.
+  // value changes -- including when another app tab writes it.
   const [maxDraft, setMaxDraft] = useState(String(settings.historyMaxSnapshots));
   useEffect(() => {
     setMaxDraft(String(settings.historyMaxSnapshots));
@@ -109,7 +105,7 @@ export function SessionSettingsFields({
   const intervalDisabled = disabled || !settings.historyEnabled;
 
   return (
-    <div className={cn('space-y-5', className)}>
+    <div className="space-y-5">
       {showBasic && (
         <SettingRow label="Automatic snapshots" htmlFor={enabledId}>
           <Switch

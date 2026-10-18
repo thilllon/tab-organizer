@@ -1,13 +1,16 @@
 import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 
+import { AdvancedFold } from '@/components/advanced-fold';
 import { NativeSelect } from '@/components/native-select';
 import { SessionSettingsFields } from '@/components/session-settings-fields';
+import { SettingsField } from '@/components/settings-field';
+import { SettingsSection } from '@/components/settings-section';
+import { ShortcutKeyChips } from '@/components/shortcut-key-chips';
 import { StorageMeter } from '@/components/storage-meter';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useSessionSettings } from '@/hooks/use-session-settings';
 import {
@@ -16,7 +19,6 @@ import {
   COMMANDS_LOADING,
   type CommandRow,
   commandRows,
-  NOT_SET,
   shortcutsDescription,
 } from '@/lib/command-rows';
 import { openShortcutSettings } from '@/lib/open-shortcut-settings';
@@ -49,26 +51,7 @@ const SAVED_MESSAGE = 'Setting saved';
 /** Chrome names keys differently on a Mac (Option, Command), so the page asks once. */
 const IS_MAC = isMacPlatform(navigator.userAgent);
 
-/** One shortcut as small key chips joined by "+", or a grey "Not set". */
-function ShortcutKeys({ keys }: { keys: readonly string[] }) {
-  if (keys.length === 0) {
-    return <span className="text-xs text-muted-foreground">{NOT_SET}</span>;
-  }
-  return (
-    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-      {keys.map((key, index) => (
-        <span key={key} className="flex items-center gap-1">
-          {index > 0 && <span aria-hidden="true">+</span>}
-          <kbd className="rounded border bg-muted px-1.5 py-0.5 font-sans text-xs text-foreground">
-            {key}
-          </kbd>
-        </span>
-      ))}
-    </span>
-  );
-}
-
-export interface SettingsViewProps {
+interface SettingsViewProps {
   summaries: SessionSummary[];
   onNotice(message: string): void;
   /** A setting was written; the app shows the confirmation toast. */
@@ -80,98 +63,6 @@ export interface SettingsViewProps {
   exporting: boolean;
   /** The page's error lines, shown at the top of the scrolling body. */
   children?: ReactNode;
-}
-
-/** One boxed section with a heading and an optional explanation. */
-function Group({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="rounded-lg border bg-background">
-      <div className="border-b px-4 py-3">
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {description !== undefined && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-        )}
-      </div>
-      <div className="space-y-5 px-4 py-4">{children}</div>
-    </section>
-  );
-}
-
-/**
- * The settings people rarely change, folded away. `<details>` rather than a toggle so the browser
- * owns the open state and keyboard behaviour. The marker is a small solid triangle drawn centred in
- * its own box, so it lines up with the label and turns from right to down on open; `description`
- * says in small grey text which settings are inside.
- */
-function Advanced({
-  label,
-  description,
-  children,
-}: {
-  label: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <details className="group -mx-2 rounded-md px-2">
-      <summary
-        title="Show or hide more settings"
-        className="flex cursor-pointer list-none items-center gap-2 rounded-md py-2 text-sm font-medium text-foreground/80 hover:bg-muted"
-      >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 10 10"
-          className="size-2.5 shrink-0 text-primary transition-transform group-open:rotate-90"
-        >
-          <path d="M3 1.5 8 5 3 8.5Z" fill="currentColor" />
-        </svg>
-        <span>{label}</span>
-        <span className="text-xs font-normal text-muted-foreground">{description}</span>
-      </summary>
-      <div className="space-y-5 py-3">{children}</div>
-    </details>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  /** The id of the control this label names; given, the label is a real `<label>`. */
-  htmlFor?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
-      <div className="min-w-48 flex-1">
-        {htmlFor === undefined ? (
-          <p className="text-sm">{label}</p>
-        ) : (
-          <Label htmlFor={htmlFor} className="leading-normal font-normal">
-            {label}
-          </Label>
-        )}
-        {hint !== undefined && <p className="text-xs text-muted-foreground">{hint}</p>}
-      </div>
-      {/* The hint doubles as the control's tooltip: a title on the wrapper reaches every control
-          inside it that has no title of its own. */}
-      <div className="flex items-center gap-2" title={hint}>
-        {children}
-      </div>
-    </div>
-  );
 }
 
 /**
@@ -252,8 +143,8 @@ export function SettingsView({
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/30 px-6 py-4">
         {children}
 
-        <Group title="Sorting" description="What clicking the toolbar icon does.">
-          <Field label="Sort by" htmlFor="sort-by">
+        <SettingsSection title="Sorting" description="What clicking the toolbar icon does.">
+          <SettingsField label="Sort by" htmlFor="sort-by">
             <NativeSelect
               id="sort-by"
               title="How tabs are ordered when you click the toolbar icon"
@@ -271,13 +162,13 @@ export function SettingsView({
                 </option>
               ))}
             </NativeSelect>
-          </Field>
+          </SettingsField>
 
           {/* Only "Custom" reads these (CUSTOM_ONLY_SETTINGS), so they sit under "Sort by",
               indented, while it is chosen, and are not shown at all otherwise. */}
           {showCustomOptions && (
             <div className="space-y-5 border-l-2 border-border pl-4">
-              <Field
+              <SettingsField
                 label="Tab groups"
                 hint="What counts as the same site."
                 htmlFor="grouping-mode"
@@ -298,9 +189,9 @@ export function SettingsView({
                     </option>
                   ))}
                 </NativeSelect>
-              </Field>
+              </SettingsField>
 
-              <Field
+              <SettingsField
                 label="Grouping direction"
                 hint="Which end of the tab strip decides the order of the sites."
                 htmlFor="group-from"
@@ -321,9 +212,9 @@ export function SettingsView({
                     </option>
                   ))}
                 </NativeSelect>
-              </Field>
+              </SettingsField>
 
-              <Field
+              <SettingsField
                 label="Preserve order within groups"
                 hint="Keep each site’s tabs in the order you opened them."
                 htmlFor="preserve-order"
@@ -333,11 +224,11 @@ export function SettingsView({
                   checked={sort.preserveOrderWithinGroups}
                   onCheckedChange={(checked) => write({ preserveOrderWithinGroups: checked })}
                 />
-              </Field>
+              </SettingsField>
             </div>
           )}
 
-          <Field
+          <SettingsField
             label="Duplicate tabs"
             hint="When the same address is open more than once."
             htmlFor="duplicate-tabs"
@@ -358,10 +249,10 @@ export function SettingsView({
                 </option>
               ))}
             </NativeSelect>
-          </Field>
+          </SettingsField>
 
-          <Advanced label="Advanced" description="Pinned tabs, suspended tabs">
-            <Field
+          <AdvancedFold label="Advanced" description="Pinned tabs, suspended tabs">
+            <SettingsField
               label="Sort pinned tabs"
               htmlFor="sort-pinned"
               hint="Off: pinned tabs stay exactly where they are."
@@ -371,9 +262,9 @@ export function SettingsView({
                 checked={sort.sortPinnedTabs}
                 onCheckedChange={(checked) => write({ sortPinnedTabs: checked })}
               />
-            </Field>
+            </SettingsField>
 
-            <Field
+            <SettingsField
               label="Group suspended tabs together"
               htmlFor="group-suspended"
               hint="On: suspended tabs move to the front as one block."
@@ -383,9 +274,9 @@ export function SettingsView({
                 checked={sort.groupSuspendedTabs}
                 onCheckedChange={(checked) => write({ groupSuspendedTabs: checked })}
               />
-            </Field>
+            </SettingsField>
 
-            <Field
+            <SettingsField
               label="Tab suspender extension ID"
               htmlFor="suspender-id"
               hint="Which extension’s suspended pages to recognise. Empty uses The Marvellous Suspender."
@@ -413,11 +304,11 @@ export function SettingsView({
                   <span className="text-xs text-destructive">32 letters a–p</span>
                 )}
               </div>
-            </Field>
-          </Advanced>
-        </Group>
+            </SettingsField>
+          </AdvancedFold>
+        </SettingsSection>
 
-        <Group
+        <SettingsSection
           title="Sessions"
           description="Automatic snapshots are the safety net behind a crash or a closed window. They stay on this device."
         >
@@ -428,7 +319,7 @@ export function SettingsView({
             subset="basic"
             idPrefix="settings-sessions"
           />
-          <Advanced label="Advanced" description="Interval, how many to keep, loading">
+          <AdvancedFold label="Advanced" description="Interval, how many to keep, loading">
             <SessionSettingsFields
               settings={sessionSettings.settings}
               disabled={sessionSettings.loading}
@@ -436,45 +327,48 @@ export function SettingsView({
               subset="advanced"
               idPrefix="settings-sessions-advanced"
             />
-          </Advanced>
+          </AdvancedFold>
           {sessionSettings.error !== undefined && (
             <p role="alert" className="text-xs text-destructive">
               {sessionSettings.error}
             </p>
           )}
-        </Group>
+        </SettingsSection>
 
-        <Group
+        <SettingsSection
           title="Backup"
           description="Sessions live on this device only. Export a file to move them somewhere else."
         >
-          <Field label="Export everything" hint="Saved sessions and snapshots, as one JSON file.">
+          <SettingsField
+            label="Export everything"
+            hint="Saved sessions and snapshots, as one JSON file."
+          >
             <Button variant="outline" size="sm" onClick={onExportAll} disabled={exporting}>
               <Download />
               Export…
             </Button>
-          </Field>
-          <Field label="Import" hint="JSON, bookmark HTML, a Markdown list or plain URLs.">
+          </SettingsField>
+          <SettingsField label="Import" hint="JSON, bookmark HTML, a Markdown list or plain URLs.">
             <Button variant="outline" size="sm" onClick={onImport}>
               <Upload />
               Import…
             </Button>
-          </Field>
-          <Advanced label="Advanced" description="Storage used, delete everything">
+          </SettingsField>
+          <AdvancedFold label="Advanced" description="Storage used, delete everything">
             <StorageMeter summaries={summaries} onNotice={onNotice} />
-          </Advanced>
-        </Group>
+          </AdvancedFold>
+        </SettingsSection>
 
-        <Group title="Keyboard shortcuts" description={shortcutsDescription(IS_MAC)}>
+        <SettingsSection title="Keyboard shortcuts" description={shortcutsDescription(IS_MAC)}>
           {commands === null && <p className="text-xs text-muted-foreground">{COMMANDS_LOADING}</p>}
           {commands === 'failed' && (
             <p className="text-xs text-muted-foreground">{COMMANDS_FAILED}</p>
           )}
           {Array.isArray(commands) &&
             commands.map((command) => (
-              <Field key={command.id} label={command.name} hint={command.hint}>
-                <ShortcutKeys keys={command.keys} />
-              </Field>
+              <SettingsField key={command.id} label={command.name} hint={command.hint}>
+                <ShortcutKeyChips keys={command.keys} />
+              </SettingsField>
             ))}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <Button
@@ -488,7 +382,7 @@ export function SettingsView({
             </Button>
             <p className="text-xs text-muted-foreground">{CHANGE_ONLY_IN_CHROME}</p>
           </div>
-        </Group>
+        </SettingsSection>
       </div>
     </>
   );

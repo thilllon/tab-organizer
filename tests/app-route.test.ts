@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatRoute, HOME, parseRoute, routeSessionId, viewBehind } from '@/lib/app-route';
+import {
+  advanceRoute,
+  formatRoute,
+  HOME,
+  parseRoute,
+  routeOfEntryBelow,
+  routeSessionId,
+  viewBehind,
+} from '@/lib/app-route';
 
 describe('parseRoute', () => {
   it('reads every view from its hash, with or without the leading #', () => {
@@ -60,5 +68,47 @@ describe('viewBehind', () => {
     const search = { view: 'search', query: 'github' } as const;
     expect(viewBehind(search, HOME)).toEqual(search);
     expect(viewBehind(HOME, search)).toEqual(HOME);
+  });
+});
+
+describe('routeOfEntryBelow', () => {
+  const page = '/app.html';
+  const base = 'chrome-extension://abc/app.html';
+
+  it('is undefined when there is no entry below', () => {
+    expect(routeOfEntryBelow(undefined, page)).toBeUndefined();
+    expect(routeOfEntryBelow(null, page)).toBeUndefined();
+  });
+
+  it('is undefined when the entry below is another page', () => {
+    expect(routeOfEntryBelow('chrome-extension://abc/other.html#saved/x', page)).toBeUndefined();
+  });
+
+  it('is undefined when the entry below is Settings itself', () => {
+    expect(routeOfEntryBelow(`${base}#settings`, page)).toBeUndefined();
+  });
+
+  it('reads the view the entry below shows', () => {
+    expect(routeOfEntryBelow(`${base}#saved/x`, page)).toEqual({ view: 'saved', id: 'x' });
+  });
+
+  it('reads an entry without a hash as the open tabs view', () => {
+    expect(routeOfEntryBelow(base, page)).toEqual(HOME);
+  });
+});
+
+describe('advanceRoute', () => {
+  const previous = { route: { view: 'saved', id: 'a' }, page: { view: 'saved', id: 'a' } } as const;
+
+  it('keeps the page behind when Settings opens', () => {
+    expect(advanceRoute(previous, { view: 'settings' })).toEqual({
+      route: { view: 'settings' },
+      page: previous.page,
+    });
+  });
+
+  it('shows any other route as the page', () => {
+    const next = { view: 'saved', id: 'x' } as const;
+    expect(advanceRoute(previous, next)).toEqual({ route: next, page: next });
   });
 });

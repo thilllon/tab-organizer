@@ -208,7 +208,8 @@ function buildSession(plan: SessionPlan, now: number): Session {
  * one large enough — over 100 tabs — to trigger the restore confirm dialog) and three automatic
  * history snapshots.
  */
-export function buildDashboardFixtures(now: number = Date.now()): Session[] {
+export function buildDashboardFixtures(): Session[] {
+  const now = Date.now();
   const plans: SessionPlan[] = [
     {
       id: 'ffffffff-0000-4000-8000-000000000001',
@@ -316,18 +317,12 @@ export function buildDashboardFixtures(now: number = Date.now()): Session[] {
   return plans.map((plan) => buildSession(plan, now));
 }
 
-/** Session ids of the fixture, by role, so callers do not hard-code the UUIDs. */
-export const FIXTURE_IDS = {
-  small: 'ffffffff-0000-4000-8000-000000000001',
-  large: 'ffffffff-0000-4000-8000-000000000002',
-} as const;
-
-export function countTabs(session: Session): number {
+function countTabs(session: Session): number {
   return session.windows.reduce((sum, window) => sum + window.tabs.length, 0);
 }
 
 /** Mirrors `sessionRepo`'s index entry so the dashboard's `reconcile()` finds nothing to repair. */
-export function toSummary(session: Session, bytes: number): SessionSummary {
+function toSummary(session: Session, bytes: number): SessionSummary {
   const summary: SessionSummary = {
     id: session.id,
     kind: session.kind,

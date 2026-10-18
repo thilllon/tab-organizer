@@ -13,14 +13,14 @@ export function isBodyChange(
   return area === 'local' && Object.hasOwn(changes, sessionKey(id));
 }
 
-export interface SessionBodyState {
+interface SessionBodyState {
   session?: Session;
   loading: boolean;
   error?: string;
 }
 
-/** Loads the full Session body for `id`; `null` means "not expanded", nothing is loaded. */
-export function useSessionBody(id: SessionId | null): SessionBodyState {
+/** Loads the full Session body for `id`, and reloads it whenever that body changes in storage. */
+export function useSessionBody(id: SessionId): SessionBodyState {
   const [state, setState] = useState<SessionBodyState>({ loading: false });
   // Generation counter: guards sessionRepo.get() *results* that settle out of order — e.g. the
   // initial load racing a chrome.storage.onChanged-triggered reload (sessionRepo.rename() writes
@@ -30,10 +30,6 @@ export function useSessionBody(id: SessionId | null): SessionBodyState {
   const genRef = useRef(0);
 
   useEffect(() => {
-    if (id === null) {
-      setState({ loading: false });
-      return;
-    }
     // Separate from genRef above: this guards the id-change/unmount case specifically. genRef
     // alone can't do that job too — bumping it on cleanup already invalidates any load() still in
     // flight for this effect instance, but `disposed` also short-circuits state updates before

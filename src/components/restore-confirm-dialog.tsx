@@ -21,7 +21,7 @@ export interface PendingRestore {
   restoreLazy: SessionSettings['restoreLazy'];
 }
 
-export interface RestoreConfirmDialogProps {
+interface RestoreConfirmDialogProps {
   pending?: PendingRestore;
   onConfirm(lazy: SessionSettings['restoreLazy']): void;
   onCancel(): void;

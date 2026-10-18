@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { pluralize } from '@/lib/display-format';
 
-export interface CloseWindowDialogProps {
+interface CloseWindowDialogProps {
   /** Window number as shown in the pane (1-based), or undefined while the dialog fades out. */
   windowNumber?: number;
   tabCount: number;

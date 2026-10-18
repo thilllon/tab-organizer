@@ -12,7 +12,7 @@
 // Events
 // ---------------------------------------------------------------------------
 
-export interface FakeEvent<T extends (...args: never[]) => void> {
+interface FakeEvent<T extends (...args: never[]) => void> {
   addListener(callback: T): void;
   removeListener(callback: T): void;
   hasListener(callback: T): boolean;
@@ -20,7 +20,7 @@ export interface FakeEvent<T extends (...args: never[]) => void> {
   emit(...args: Parameters<T>): void;
 }
 
-export function makeEvent<T extends (...args: never[]) => void>(): FakeEvent<T> {
+function makeEvent<T extends (...args: never[]) => void>(): FakeEvent<T> {
   const listeners = new Set<T>();
   return {
     addListener(callback) {
@@ -48,11 +48,11 @@ export function makeEvent<T extends (...args: never[]) => void>(): FakeEvent<T> 
 // State
 // ---------------------------------------------------------------------------
 
-export type FakeWindowState = `${chrome.windows.WindowState}`;
-export type FakeGroupColor = `${chrome.tabGroups.Color}`;
-export type FakeTabStatus = `${chrome.tabs.TabStatus}`;
+type FakeWindowState = `${chrome.windows.WindowState}`;
+type FakeGroupColor = `${chrome.tabGroups.Color}`;
+type FakeTabStatus = `${chrome.tabs.TabStatus}`;
 
-export interface FakeWindow {
+interface FakeWindow {
   id: number;
   focused: boolean;
   state: FakeWindowState;
@@ -64,7 +64,7 @@ export interface FakeWindow {
   height: number;
 }
 
-export interface FakeTab {
+interface FakeTab {
   id: number;
   windowId: number;
   index: number;
@@ -79,7 +79,7 @@ export interface FakeTab {
   status: FakeTabStatus;
 }
 
-export interface FakeGroup {
+interface FakeGroup {
   id: number;
   windowId: number;
   title: string;
@@ -87,7 +87,7 @@ export interface FakeGroup {
   collapsed: boolean;
 }
 
-export interface FakeState {
+interface FakeState {
   windows: Map<number, FakeWindow>;
   tabs: Map<number, FakeTab>;
   groups: Map<number, FakeGroup>;
@@ -105,23 +105,21 @@ export interface FakeState {
   deferCommit: boolean;
 }
 
-export type FailableApi =
+type FailableApi =
   | 'tabs.create'
   | 'tabs.group'
-  | 'tabs.discard'
   | 'tabs.move'
-  | 'tabGroups.update'
   | 'tabGroups.move'
   | 'windows.create'
   | 'storage.local.set';
 
-export interface FakeFire {
+interface FakeFire {
   installed(details: chrome.runtime.InstalledDetails): void;
   startup(): void;
   menuClicked(menuItemId: string): void;
   command(name: string): void;
   alarm(name: string): void;
-  actionClicked(tab?: chrome.tabs.Tab): void;
+  actionClicked(): void;
   /**
    * `chrome.tabs.onReplaced` (prerender/instant swap). No fake mutation produces it, so it is
    * driven explicitly; the dashboard's open-windows pane listens for it.
@@ -129,7 +127,7 @@ export interface FakeFire {
   tabReplaced(addedTabId: number, removedTabId: number): void;
 }
 
-export interface ChromeFake {
+interface ChromeFake {
   chrome: typeof chrome;
   state: FakeState;
   fire: FakeFire;
@@ -473,13 +471,10 @@ export function createChromeFake(): ChromeFake {
   }
 
   function makeArea(map: Map<string, unknown>, areaName: AreaName, failKey?: FailableApi) {
-    const onChanged = makeEvent<(changes: Changes) => void>();
-
     function emit(changes: Changes): void {
       if (Object.keys(changes).length === 0) {
         return;
       }
-      onChanged.emit(changes);
       storageChanged.emit(changes, areaName);
     }
 
@@ -499,7 +494,6 @@ export function createChromeFake(): ChromeFake {
     }
 
     return {
-      onChanged,
       async get(
         keys?: string | string[] | Record<string, unknown> | null,
       ): Promise<Record<string, unknown>> {
@@ -541,14 +535,6 @@ export function createChromeFake(): ChromeFake {
         }
         emit(changes);
       },
-      async clear(): Promise<void> {
-        const changes: Changes = {};
-        for (const [key, value] of map) {
-          changes[key] = { oldValue: structuredClone(value) };
-        }
-        map.clear();
-        emit(changes);
-      },
       async getKeys(): Promise<string[]> {
         return [...map.keys()];
       },
@@ -583,9 +569,6 @@ export function createChromeFake(): ChromeFake {
         .filter((tab) => info.active === undefined || tab.active === info.active)
         .filter((tab) => info.pinned === undefined || tab.pinned === info.pinned)
         .filter((tab) => info.groupId === undefined || tab.groupId === info.groupId)
-        .filter((tab) => info.index === undefined || tab.index === info.index)
-        .filter((tab) => info.title === undefined || tab.title === info.title)
-        .filter((tab) => info.discarded === undefined || tab.discarded === info.discarded)
         .filter((tab) => urlPatterns.length === 0 || urlPatterns.some((re) => re.test(tab.url)))
         .sort((a, b) => a.windowId - b.windowId || a.index - b.index)
         .map(toChromeTab);
@@ -769,7 +752,6 @@ export function createChromeFake(): ChromeFake {
       dropEmptyGroups();
     },
     async discard(tabId?: number): Promise<chrome.tabs.Tab | undefined> {
-      maybeFail('tabs.discard');
       if (tabId === undefined) {
         return undefined;
       }
@@ -891,18 +873,6 @@ export function createChromeFake(): ChromeFake {
           onWindowFocusChanged.emit(info.focused ? window.id : WINDOW_ID_NONE);
         }
       }
-      if (info.left !== undefined) {
-        window.left = info.left;
-      }
-      if (info.top !== undefined) {
-        window.top = info.top;
-      }
-      if (info.width !== undefined) {
-        window.width = info.width;
-      }
-      if (info.height !== undefined) {
-        window.height = info.height;
-      }
       return toChromeWindow(window, false);
     },
     async remove(windowId: number): Promise<void> {
@@ -926,16 +896,12 @@ export function createChromeFake(): ChromeFake {
     async query(info: chrome.tabGroups.QueryInfo): Promise<chrome.tabGroups.TabGroup[]> {
       return [...state.groups.values()]
         .filter((group) => info.windowId === undefined || group.windowId === info.windowId)
-        .filter((group) => info.collapsed === undefined || group.collapsed === info.collapsed)
-        .filter((group) => info.color === undefined || group.color === info.color)
-        .filter((group) => info.title === undefined || group.title === info.title)
         .map(toChromeGroup);
     },
     async update(
       groupId: number,
       props: chrome.tabGroups.UpdateProperties,
     ): Promise<chrome.tabGroups.TabGroup> {
-      maybeFail('tabGroups.update');
       const group = requireGroup(groupId);
       if (props.title !== undefined) {
         group.title = props.title;
@@ -1042,9 +1008,8 @@ export function createChromeFake(): ChromeFake {
   };
 
   const contextMenus = {
-    create(props: chrome.contextMenus.CreateProperties, callback?: () => void): number | string {
+    create(props: chrome.contextMenus.CreateProperties): number | string {
       state.menus.push({ ...props });
-      callback?.();
       return props.id ?? state.menus.length;
     },
     async removeAll(): Promise<void> {
@@ -1138,11 +1103,7 @@ export function createChromeFake(): ChromeFake {
     tabReplaced(addedTabId, removedTabId) {
       onTabReplaced.emit(addedTabId, removedTabId);
     },
-    actionClicked(tab) {
-      if (tab) {
-        onActionClicked.emit(tab);
-        return;
-      }
+    actionClicked() {
       const active = [...state.tabs.values()].find((entry) => entry.active);
       if (active) {
         onActionClicked.emit(toChromeTab(active));

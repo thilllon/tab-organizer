@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dropToast, TOAST_MS, type Toast, upsertToast } from '@/lib/toast-queue';
 
-export interface ToastOptions {
+interface ToastOptions {
   /** How long it stays up. Default `TOAST_MS`. */
   ms?: number;
   /** A notice rather than a confirmation: shown without the tick. */
@@ -14,7 +14,7 @@ export interface ToastOptions {
   key?: string;
 }
 
-export interface SavedToasts {
+interface SavedToasts {
   toasts: Toast[];
   /** Shows one toast; it removes itself after `options.ms`. */
   show(message: string, options?: ToastOptions): void;

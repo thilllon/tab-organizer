@@ -1,19 +1,21 @@
 import { Globe } from 'lucide-react';
 import { useState } from 'react';
 
-export interface FaviconProps {
+interface FaviconProps {
   url: string;
-  size?: number;
 }
 
-/** CSS pixel size the icon is rendered at; `size` is the bitmap size requested from Chrome. */
+/** CSS pixel size the icon is rendered at. */
 const RENDER_PX = 16;
+
+/** Bitmap size requested from Chrome: twice the rendered size, so it stays crisp on HiDPI. */
+const FAVICON_REQUEST_PX = 32;
 
 /**
  * Renders the site icon from Chrome's local favicon cache (no network); falls back to Globe.
  * Spec §9: request a 32 px bitmap (crisp on HiDPI) and display it at 16×16 CSS px.
  */
-export function Favicon({ url, size = 32 }: FaviconProps) {
+export function Favicon({ url }: FaviconProps) {
   // Tracks *which* url last failed to load, rather than a plain boolean, so a component instance
   // that survives a body reload (same list position, different tab) doesn't keep showing the
   // Globe fallback for a url that hasn't actually failed. No effect needed: `failed` is derived
@@ -31,7 +33,7 @@ export function Favicon({ url, size = 32 }: FaviconProps) {
   }
 
   const src = chrome.runtime.getURL(
-    `/_favicon/?pageUrl=${encodeURIComponent(url)}&size=${String(size)}`,
+    `/_favicon/?pageUrl=${encodeURIComponent(url)}&size=${String(FAVICON_REQUEST_PX)}`,
   );
   return (
     <img

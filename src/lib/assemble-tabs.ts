@@ -27,13 +27,13 @@ import { isTabsCannotBeEditedError, withRetryOnce } from '@/lib/session-restore'
 /** `chrome.tabGroups.TAB_GROUP_ID_NONE`, spelled out so this module stays importable in tests. */
 const NO_GROUP = -1;
 
-export interface GroupLook {
+interface GroupLook {
   title: string;
   color: `${chrome.tabGroups.Color}`;
   collapsed: boolean;
 }
 
-export type AssembleStep =
+type AssembleStep =
   /** In the source window: make this ungrouped tab the active one before any group moves. */
   | { kind: 'activate'; tabId: number }
   /** In the source window: take the active tab out of its group (keeping the group collapsed). */
@@ -56,7 +56,7 @@ export type AssembleResult =
   | { status: 'nothing-to-do' }
   | { status: 'done'; mergedWindows: number; failures: AssembleFailure[] };
 
-export interface AssembleFailure {
+interface AssembleFailure {
   windowId: number;
   error: unknown;
 }

@@ -34,7 +34,7 @@ export interface StorageBreakdown {
 }
 
 /** Percentages for the thin bar; they sum to 100 (or to 0 when nothing is stored). */
-export interface StorageSegments {
+interface StorageSegments {
   saved: number;
   snapshots: number;
   other: number;
@@ -128,27 +128,19 @@ export const STORAGE_METER_ID = 'storage-meter';
 
 /**
  * Scrolls the storage meter into view and parks focus on it, for the "Show storage use" button
- * on a quota notice. `delayMs` lets a caller wait out a dialog's close animation — Radix locks
- * body scrolling while a dialog is open, so scrolling immediately would do nothing.
+ * on a quota notice. It always waits `delayMs` first, to let a dialog's close animation finish —
+ * Radix locks body scrolling while a dialog is open, so scrolling immediately would do nothing.
  *
  * DOM-only, hence untested: the rules that decide *what* the meter says are the pure functions
  * above.
  */
-export function revealStorageMeter(delayMs = 0): void {
-  if (typeof document === 'undefined') {
-    return;
-  }
-  const run = (): void => {
+export function revealStorageMeter(delayMs: number): void {
+  setTimeout(() => {
     const element = document.getElementById(STORAGE_METER_ID);
     if (element === null) {
       return;
     }
     element.scrollIntoView({ block: 'center', behavior: 'smooth' });
     element.focus({ preventScroll: true });
-  };
-  if (delayMs <= 0) {
-    run();
-    return;
-  }
-  setTimeout(run, delayMs);
+  }, delayMs);
 }

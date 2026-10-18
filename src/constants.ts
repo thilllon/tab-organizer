@@ -22,7 +22,7 @@ export const DEFAULT_SHORTCUTS = {
 export const ASSEMBLE_NAME = 'Assemble!';
 
 /** What it does, short enough to sit in brackets after the name. */
-export const ASSEMBLE_EXPLANATION = "move every window's tabs into this one";
+const ASSEMBLE_EXPLANATION = "move every window's tabs into this one";
 
 /**
  * Name and explanation together, for the places that have no tooltip to explain the name: the

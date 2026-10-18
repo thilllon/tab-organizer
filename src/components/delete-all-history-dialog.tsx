@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { pluralize } from '@/lib/display-format';
 
-export interface DeleteAllHistoryDialogProps {
+interface DeleteAllHistoryDialogProps {
   /** How many unprotected snapshots the confirm covers. */
   count: number;
   open: boolean;
@@ -18,7 +18,7 @@ export interface DeleteAllHistoryDialogProps {
 }
 
 /**
- * Confirm for the History section's "Delete all unprotected" — `removeAllHistory` never touches
+ * Confirm for the storage meter's "Delete all unprotected" — `removeAllHistory` never touches
  * saved sessions or protected snapshots, and the copy says so.
  */
 export function DeleteAllHistoryDialog({

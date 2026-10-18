@@ -19,7 +19,7 @@ import { historyOriginLabel } from '@/lib/session-list';
 import { sessionRepo } from '@/lib/session-repo';
 import type { Session, SessionSummary } from '@/types';
 
-export interface SnapshotDetailProps {
+interface SnapshotDetailProps {
   summary: SessionSummary;
   restoring: boolean;
   /** How many snapshots are kept before the oldest unkept one is dropped. */

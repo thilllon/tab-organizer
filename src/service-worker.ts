@@ -124,7 +124,7 @@ async function saveSession(scope: 'window' | 'all'): Promise<void> {
 }
 
 /**
- * Gathers every other window's tabs into the current one (./assemble.ts). A run that merged
+ * Gathers every other window's tabs into the current one (src/lib/assemble-tabs.ts). A run that merged
  * everything shows ✓, one where any window failed shows ! and logs why; a single window, or a
  * second trigger while the first is still moving tabs, shows nothing.
  */
@@ -246,7 +246,7 @@ function onActionClicked(): void {
 }
 
 /**
- * `storage.onChanged` handler: a `sessionSettings` write from the dashboard or Options page
+ * `storage.onChanged` handler: a `sessionSettings` write from the app page's Settings
  * (history toggled, interval changed) re-arms or clears the alarms. The stored value is re-read
  * through `sessionRepo.getSettings()` rather than taken from `changes[...].newValue` so it goes
  * through the same normalisation (and default fallback when the key was removed) as every other
@@ -307,22 +307,4 @@ chrome.action.onClicked.addListener(() => {
   sortQueue = sortQueue.then(sortTabGroups).catch((err: unknown) => {
     console.error('[tab-organizer] sort failed', err);
   });
-});
-
-chrome.runtime.onInstalled.addListener((details) => {
-  const thisVersion = chrome.runtime.getManifest().version;
-
-  if (details.reason === 'install') {
-    chrome.storage.sync.set({
-      installedVersion: thisVersion,
-      newInstall: true,
-      newUpdate: false,
-    });
-  } else if (details.reason === 'update') {
-    chrome.storage.sync.set({
-      installedVersion: thisVersion,
-      newInstall: false,
-      newUpdate: true,
-    });
-  }
 });

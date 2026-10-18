@@ -8,9 +8,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-export interface DeleteSessionDialogProps {
+interface DeleteSessionDialogProps {
   name: string;
-  /** Overridden by the History section, whose rows delete a snapshot rather than a session. */
+  /** Overridden by the snapshot view, which deletes a snapshot rather than a session. */
   title?: string;
   open: boolean;
   onOpenChange(open: boolean): void;

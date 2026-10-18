@@ -25,7 +25,7 @@ import {
 } from '@/lib/tab-selection';
 import { closeTabs } from '@/lib/window-actions';
 
-export interface OpenTabsViewProps {
+interface OpenTabsViewProps {
   openWindows: OpenWindowsState;
   busy: boolean;
   /** How many sessions are already saved: the first-run hint only shows while there are none. */
@@ -237,7 +237,6 @@ export function OpenTabsView({
           error={openWindows.error}
           onSaveWindow={onSaveWindow}
           busy={busy}
-          showHeading={false}
           selection={selection}
           onToggleTab={toggleTab}
         />

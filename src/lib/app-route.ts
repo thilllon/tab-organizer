@@ -81,3 +81,48 @@ export function routeSessionId(route: Route): string | undefined {
 export function viewBehind(route: Route, previous: Route): Route {
   return route.view === 'settings' ? previous : route;
 }
+
+/** The address and the view under it, as the page keeps them. */
+export interface RouteState {
+  route: Route;
+  /** The view the page itself shows — `route`, or what was showing before Settings opened. */
+  page: Route;
+}
+
+/** The state after navigating to `route`: Settings keeps the page that was showing behind it. */
+export function advanceRoute(previous: RouteState, route: Route): RouteState {
+  return { route, page: viewBehind(route, previous.page) };
+}
+
+/**
+ * The view a history entry's url shows, when that entry is this page (`pathname`) showing
+ * something other than Settings; `undefined` otherwise. The pure half of `viewBelow`.
+ */
+export function routeOfEntryBelow(
+  belowUrl: string | null | undefined,
+  pathname: string,
+): Route | undefined {
+  if (belowUrl === undefined || belowUrl === null) {
+    return undefined;
+  }
+  const url = new URL(belowUrl);
+  if (url.pathname !== pathname) {
+    return undefined;
+  }
+  const route = parseRoute(url.hash);
+  return route.view === 'settings' ? undefined : route;
+}
+
+/**
+ * The view on the history entry right below this one, when that entry is this page showing
+ * something other than Settings — which is the view the dialog was opened over, whether the click
+ * came from inside the page or `#settings` was typed into the address bar. Read from the
+ * Navigation API (Chrome 102+) rather than remembered, so it is still right after a reload, a
+ * duplicated tab or a restored browser session. `undefined` when Settings is the first thing this
+ * tab showed (Chrome's "Options", a bookmark).
+ */
+export function viewBelow(): Route | undefined {
+  const index = window.navigation.currentEntry?.index;
+  const below = index === undefined ? undefined : window.navigation.entries()[index - 1];
+  return routeOfEntryBelow(below?.url, window.location.pathname);
+}

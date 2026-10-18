@@ -9,12 +9,12 @@ import { UNREADABLE_SESSION_MESSAGE, unreadableSchemaLabel } from '@/lib/session
 import { sessionRepo } from '@/lib/session-repo';
 import type { SessionSummary, UnreadableSession } from '@/types';
 
-export interface UnreadableSessionRowProps {
+interface UnreadableSessionRowProps {
   summary: SessionSummary;
   /** The marker `reconcile()` put on the index entry; carries the schema version that wrote it. */
   unreadable: UnreadableSession;
   /** Called once the row is removed; it is about to unmount, so move focus elsewhere. */
-  onDeleted?(): void;
+  onDeleted(): void;
 }
 
 /**
@@ -34,7 +34,7 @@ export function UnreadableSessionRow({
 }: UnreadableSessionRowProps) {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
-  // As in SessionCard: the dialog's close-time focus hand-off must not target a button that
+  // The dialog's close-time focus hand-off must not target a button that
   // unmounts with this row.
   const deletingRef = useRef(false);
 
@@ -43,7 +43,7 @@ export function UnreadableSessionRow({
     setConfirming(false);
     try {
       await sessionRepo.remove(summary.id);
-      onDeleted?.();
+      onDeleted();
     } catch (err) {
       deletingRef.current = false;
       setError(errorMessage(err));
@@ -100,7 +100,7 @@ export function UnreadableSessionRow({
         onCloseAutoFocus={(event) => {
           if (deletingRef.current) {
             event.preventDefault();
-            onDeleted?.();
+            onDeleted();
           }
         }}
       />

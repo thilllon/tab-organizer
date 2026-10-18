@@ -28,3 +28,6 @@ docs/superpowers/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Throw-away pages prepare-registration.ts writes and screenshots on every run
+screenshots/*.html

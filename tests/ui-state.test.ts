@@ -1,11 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import {
-  HISTORY_OPEN_KEY,
-  RECOVERED_DISMISSED_KEY,
-  readUiState,
-  writeUiState,
-} from '@/lib/ui-state';
+import { HISTORY_OPEN_KEY, readUiState, writeUiState } from '@/lib/ui-state';
 
 /** Installs a stand-in for the `sessionStorage` vitest's Node environment does not provide. */
 function installSessionStorage(store: Pick<Storage, 'getItem' | 'setItem'>): void {
@@ -33,7 +28,6 @@ afterEach(() => {
 describe('ui-state keys', () => {
   it('uses the documented sessionStorage key names', () => {
     expect(HISTORY_OPEN_KEY).toBe('tab-organizer:history-open');
-    expect(RECOVERED_DISMISSED_KEY).toBe('tab-organizer:recovered-dismissed');
   });
 });
 
@@ -46,7 +40,7 @@ describe('readUiState / writeUiState', () => {
 
   it('returns undefined for a key that was never written', () => {
     installSessionStorage(memoryStorage());
-    expect(readUiState(RECOVERED_DISMISSED_KEY)).toBeUndefined();
+    expect(readUiState(HISTORY_OPEN_KEY)).toBeUndefined();
   });
 
   it('returns undefined when sessionStorage is unavailable', () => {

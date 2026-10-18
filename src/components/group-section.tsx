@@ -8,14 +8,14 @@ import { pluralize } from '@/lib/display-format';
 import { groupChipClass, groupRailClass } from '@/lib/group-colors';
 import type { GroupSnapshot, TabSnapshot } from '@/types';
 
-export interface GroupSectionProps {
+interface GroupSectionProps {
   group: GroupSnapshot;
   tabs: TabSnapshot[];
   /** Index of `tabs[0]` in the window's tab strip; row callbacks get absolute indices. */
   startIndex: number;
   /** Trailing buttons on the group header (the Export menu). */
   actions?: ReactNode;
-  onOpenTab?(tabIndex: number): Promise<string | undefined> | undefined;
+  onOpenTab(tabIndex: number): Promise<string | undefined> | undefined;
   renderTabActions?(tabIndex: number): ReactNode;
   tabSelection?(tabIndex: number): TabRowSelection | undefined;
 }
@@ -69,7 +69,7 @@ export function GroupSection({
                 key={`${index}-${tab.url}`}
                 tab={tab}
                 selection={tabSelection?.(startIndex + index)}
-                onOpen={onOpenTab === undefined ? undefined : () => onOpenTab(startIndex + index)}
+                onOpen={() => onOpenTab(startIndex + index)}
                 actions={renderTabActions?.(startIndex + index)}
               />
             ))}

@@ -11,9 +11,9 @@ import { SESSION_SCHEMA_VERSION } from '@/types';
 
 export type ImportFormat = 'json' | 'html' | 'markdown' | 'text';
 
-export type ImportParser = (text: string, now: number) => Session[] | null;
+type ImportParser = (text: string, now: number) => Session[] | null;
 
-export type ImportResult =
+type ImportResult =
   | { format: ImportFormat; sessions: Session[]; warnings: string[] }
   | { format: null; error: string };
 

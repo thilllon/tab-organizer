@@ -17,13 +17,13 @@ export const HISTORY_FIRST_ALARM = 'history-first';
 const FIRST_SNAPSHOT_DELAY_MINUTES = 1;
 
 /** Which event produced the snapshot; `'recovered'` and `'import'` are never captured directly. */
-export type HistorySnapshotOrigin = Extract<SessionOrigin, 'alarm' | 'manual' | 'startup'>;
+type HistorySnapshotOrigin = Extract<SessionOrigin, 'alarm' | 'manual' | 'startup'>;
 
-export interface HistorySnapshotOptions {
+interface HistorySnapshotOptions {
   origin: HistorySnapshotOrigin;
 }
 
-export type HistorySnapshotOutcome = 'saved' | 'skipped-empty' | 'skipped-unchanged' | 'disabled';
+type HistorySnapshotOutcome = 'saved' | 'skipped-empty' | 'skipped-unchanged' | 'disabled';
 
 export interface HistorySnapshotResult {
   outcome: HistorySnapshotOutcome;
@@ -130,7 +130,7 @@ function isPromotable(summary: SessionSummary): boolean {
  * only notices the loss on the next launch) is always there. Older auto-pins are demoted back to
  * ordinary snapshots — see `sessionRepo.demoteAutoProtected`.
  */
-export const RECOVERED_AUTO_PIN_LIMIT = 2;
+const RECOVERED_AUTO_PIN_LIMIT = 2;
 
 /**
  * Crash recovery, run from `runtime.onStartup`: the newest unprotected alarm/manual/startup

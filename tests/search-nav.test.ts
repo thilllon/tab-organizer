@@ -24,7 +24,6 @@ function entry(overrides: Partial<SearchEntry> = {}): SearchEntry {
     title: 'Docs',
     url: 'https://docs.example/',
     hostname: 'docs.example',
-    pinned: false,
     ...overrides,
   };
 }

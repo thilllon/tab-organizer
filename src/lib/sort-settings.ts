@@ -2,17 +2,16 @@ import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import type { DuplicateTabHandling, GroupFrom, GroupingMode, SortBy, SortSettings } from '@/types';
 
 /**
- * Pure rules behind the Options page's sort settings (`chrome.storage.sync`). The component stays
- * thin: everything that decides what a stored or typed-in value means — and therefore what the
- * "Save" button writes — is decided here and unit-tested (AGENTS.md "Testing": vitest runs without
- * a DOM, so the React components themselves are not tested).
+ * Pure rules behind the Settings dialog's sort settings (`chrome.storage.sync`). The component
+ * stays thin: everything that decides what a stored or typed-in value means — and therefore what a
+ * change writes — is decided here and unit-tested (AGENTS.md "Testing": vitest runs without a DOM,
+ * so the React components themselves are not tested).
  */
 
 /**
- * Mirrors `DEFAULT_SETTINGS` in `src/lib/sort-tabs.ts`, the object the sort engine passes to
- * `chrome.storage.sync.get()` and so what it falls back to for a key that was never written. The
- * two must stay in step: a different default here would show a setting the engine does not apply.
- * `sort-settings.test.ts` pins the values.
+ * The sort defaults, in one place for both readers: the sort engine (`src/lib/sort-tabs.ts`)
+ * passes this object to `chrome.storage.sync.get()`, so it is what a key that was never written
+ * falls back to, and the Settings view shows the same values. `sort-settings.test.ts` pins them.
  */
 export const DEFAULT_SORT_SETTINGS: SortSettings = {
   sortBy: 'url',
@@ -25,7 +24,7 @@ export const DEFAULT_SORT_SETTINGS: SortSettings = {
   groupingMode: 'subdomain',
 };
 
-/** Every key the page reads on mount and writes on "Save" — the whole of `SortSettings`. */
+/** Every key the page reads on mount and writes back on a change — the whole of `SortSettings`. */
 export const SORT_SETTING_KEYS: readonly (keyof SortSettings)[] = [
   'sortBy',
   'groupFrom',
@@ -54,7 +53,7 @@ export function isGroupingMode(value: unknown): value is GroupingMode {
 }
 
 /** One entry of a Settings dropdown: the stored value and the words shown for it. */
-export interface SortOption<T extends string> {
+interface SortOption<T extends string> {
   value: T;
   label: string;
 }
@@ -97,10 +96,10 @@ export function isExtensionId(value: string): boolean {
  * What the suspender-id input currently holds:
  * - `'default'` — empty, i.e. "use the built-in default" (see `normalizeSuspenderId`);
  * - `'valid'` — a well-formed extension id;
- * - `'invalid'` — anything else; the page shows an error and blocks "Save" instead of writing an
- *   id that could never match a tab.
+ * - `'invalid'` — anything else; the page shows an error and writes nothing instead of
+ *   storing an id that could never match a tab.
  */
-export type SuspenderIdStatus = 'default' | 'valid' | 'invalid';
+type SuspenderIdStatus = 'default' | 'valid' | 'invalid';
 
 export function suspenderIdStatus(draft: string): SuspenderIdStatus {
   const trimmed = draft.trim();
@@ -136,8 +135,8 @@ function parseBoolean(value: unknown, fallback: boolean): boolean {
 /**
  * Reads the whole of `SortSettings` out of what `chrome.storage.sync.get()` returned. Every value
  * is validated on its own and falls back to its default, so a missing key, a key left behind by an
- * older version, or a hand-edited value can never put the page (or the "Save" it writes back) into
- * a state the sort engine cannot read.
+ * older version, or a hand-edited value can never put the page (or what it writes back) into a
+ * state the sort engine cannot read.
  */
 export function parseSortSettings(raw: unknown): SortSettings {
   const stored = isRecord(raw) ? raw : {};
@@ -167,7 +166,7 @@ export function parseSortSettings(raw: unknown): SortSettings {
 }
 
 /**
- * The exact object "Save" writes. Only the suspender id needs resolving; the custom-only settings
+ * The exact object a change writes. Only the suspender id needs resolving; the custom-only settings
  * are stored as they are even under "By URL"/"By title" — the engine ignores them there, and
  * keeping them means switching back to "Custom grouping" restores the user's own choice.
  */
@@ -184,7 +183,7 @@ export function toStoredSortSettings(draft: SortSettings): SortSettings {
  * "By title" they change nothing. `groupingMode` belongs here too: it only decides which tabs
  * `sortByCustom()` keeps together (`extractGroupingKey`), and no other code reads it.
  */
-export type CustomOnlySetting = 'groupingMode' | 'groupFrom' | 'preserveOrderWithinGroups';
+type CustomOnlySetting = 'groupingMode' | 'groupFrom' | 'preserveOrderWithinGroups';
 
 export const CUSTOM_ONLY_SETTINGS: readonly CustomOnlySetting[] = [
   'groupingMode',

@@ -8,7 +8,7 @@ import { browserHandlesClick, hrefFor } from '@/lib/row-link';
 import { splitOnMatches } from '@/lib/search-engine';
 import type { SearchGroup, SearchItem } from '@/lib/search-nav';
 
-export interface SearchResultsProps {
+interface SearchResultsProps {
   /** Grouped rows from `buildSearchGroups()`; `startIndex` addresses the flattened list. */
   groups: SearchGroup[];
   /** The query as typed, for the "no matches" line. */
@@ -24,7 +24,7 @@ export interface SearchResultsProps {
   /** Raises the per-source cap (the "Show more" button of any truncated group). */
   onShowMore(): void;
   /** True while session bodies are still being read: the counts can still grow. */
-  warming?: boolean;
+  warming: boolean;
 }
 
 /** Highlighted text, as `<mark>` elements — never `dangerouslySetInnerHTML` (spec §7). */
@@ -206,9 +206,7 @@ export function SearchResults({
         <p role="status" aria-live="polite" className="text-xs text-muted-foreground">
           {pluralize(total, 'result')}
         </p>
-        {warming === true && (
-          <span className="text-xs text-muted-foreground">Still loading sessions…</span>
-        )}
+        {warming && <span className="text-xs text-muted-foreground">Still loading sessions…</span>}
       </div>
 
       {groups.length === 0 ? (

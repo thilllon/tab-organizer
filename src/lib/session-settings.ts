@@ -5,12 +5,12 @@ import {
 } from '@/types';
 
 /**
- * Pure rules behind the session-settings controls (dashboard settings row + Options "Sessions"
- * card). The components stay thin: everything that can be wrong about a typed-in value is
+ * Pure rules behind the session-settings controls (the Settings dialog's "Sessions"
+ * section). The components stay thin: everything that can be wrong about a typed-in value is
  * decided here and unit-tested (AGENTS.md "Testing" — vitest runs without a DOM).
  */
 
-export type RestoreLazy = SessionSettings['restoreLazy'];
+type RestoreLazy = SessionSettings['restoreLazy'];
 
 /**
  * The preset intervals the select offers. Any other whole number of minutes in

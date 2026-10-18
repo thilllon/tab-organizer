@@ -2,7 +2,7 @@ import { errorMessage } from '@/lib/error-message';
 import { loadSanitizeOptions } from '@/lib/sanitize-options';
 import { sanitizeRestoreUrl } from '@/lib/session-restore';
 
-export type OpenTabResult = { ok: true } | { ok: false; reason: string };
+type OpenTabResult = { ok: true } | { ok: false; reason: string };
 
 const UNSUPPORTED_REASON = 'This tab cannot be opened (unsupported URL).';
 

@@ -10,12 +10,12 @@ export function pickWindow(session: Session, windowIndex: number): Session {
 }
 
 /**
- * Splits the index into the two lists the dashboard shows separately: `kind: 'saved'` in the
- * Saved sessions list, `kind: 'history'` in the History section. History snapshots share the
+ * Splits the index into the two lists the sidebar shows separately: `kind: 'saved'` in the
+ * saved sessions list, `kind: 'history'` in the folded snapshots list. History snapshots share the
  * index with saved sessions, so the saved list must filter rather than render everything.
  *
  * Order is preserved from the input — `sessionRepo.listSummaries()` returns newest first, and a
- * snapshot's `updatedAt` is not moved by protect/rename, so the History section gets newest-first
+ * snapshot's `updatedAt` is not moved by protect/rename, so the snapshots list gets newest-first
  * capture order for free.
  */
 export function splitByKind(summaries: readonly SessionSummary[]): {
@@ -52,24 +52,6 @@ export function historyOriginLabel(origin: SessionOrigin): string {
 /** Capture time decides which snapshot is newest (protect/rename never move `createdAt`). */
 function newestFirst(a: SessionSummary, b: SessionSummary): number {
   return b.createdAt - a.createdAt || b.updatedAt - a.updatedAt || a.id.localeCompare(b.id);
-}
-
-/**
- * The recovered banner (spec §12 Phase 3) announces the snapshot `promoteRecoveredSnapshot()`
- * made on the last `runtime.onStartup`. It shows only while that snapshot is the newest one
- * there is: an ordinary snapshot taken after it means the user has been browsing since the
- * restart and no longer needs telling. Dismissing stores its id (sessionStorage
- * `tab-organizer:recovered-dismissed`), which is passed back here as `dismissedId`.
- *
- * Returns the summary to announce — the banner needs its name and id — or `undefined` for "do
- * not show". Ordering of `historySummaries` does not matter.
- */
-export function shouldShowRecoveredBanner(
-  historySummaries: readonly SessionSummary[],
-  dismissedId: string | undefined,
-): SessionSummary | undefined {
-  const newest = recoveredSnapshot(historySummaries);
-  return newest === undefined || newest.id === dismissedId ? undefined : newest;
 }
 
 /**

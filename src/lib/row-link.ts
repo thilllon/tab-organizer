@@ -38,7 +38,7 @@ export function hrefFor(url: string): string | undefined {
   return LINKABLE_PROTOCOLS.has(parsed.protocol) ? parsed.href : undefined;
 }
 
-export interface ClickModifiers {
+interface ClickModifiers {
   button?: number;
   metaKey?: boolean;
   ctrlKey?: boolean;

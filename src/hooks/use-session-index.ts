@@ -11,11 +11,10 @@ export function isIndexChange(
   return area === 'local' && Object.hasOwn(changes, INDEX_KEY);
 }
 
-export interface SessionIndexState {
+interface SessionIndexState {
   sessions: SessionSummary[];
   loading: boolean;
   error?: string;
-  refresh(): Promise<void>;
 }
 
 export function useSessionIndex(): SessionIndexState {
@@ -88,5 +87,5 @@ export function useSessionIndex(): SessionIndexState {
     };
   }, [refresh]);
 
-  return { sessions, loading, error, refresh };
+  return { sessions, loading, error };
 }

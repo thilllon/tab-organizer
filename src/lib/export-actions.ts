@@ -5,12 +5,12 @@ import { sessionRepo } from '@/lib/session-repo';
 import type { ExportFormat, Session, SessionId, SessionSummary } from '@/types';
 
 /**
- * Everything the export menu and the header's "Export all" decide, kept out of the components:
+ * Everything the export menu and Settings' "Export everything" decide, kept out of the components:
  * which items the menu shows, what a scope is called, what the confirmation says, and how the
  * bodies of a whole backup are collected. Serialization itself lives in `src/lib/session-export.ts`.
  */
 
-export interface ExportFormatItem {
+interface ExportFormatItem {
   format: ExportFormat;
   /** Menu item text; also what the QA script looks for. */
   label: string;
@@ -109,7 +109,7 @@ export interface CollectProgress {
   total: number;
 }
 
-export interface CollectedBodies {
+interface CollectedBodies {
   /** The bodies that could be read, in the order their summaries were given. */
   sessions: Session[];
   /** Ids whose body is gone or unreadable (deleted mid-pass, or a newer schema version). */
@@ -145,7 +145,7 @@ export const NOTHING_TO_EXPORT_ALL = 'Nothing to export: there are no saved sess
 
 /**
  * Reads every body in `summaries` through `sessionRepo.get()` — saved sessions and history
- * snapshots alike — so the header's "Export all" can put them in one `ExportBundle`.
+ * snapshots alike — so Settings' "Export everything" can put them in one `ExportBundle`.
  *
  * Sequential on purpose: a backup of hundreds of sessions is read one body at a time so the page
  * never holds a burst of parallel reads, and `onProgress` can drive an honest counter. A body

@@ -9,7 +9,7 @@ import { hiddenTabCount, initialTabPage, nextTabPage, showMoreLabel } from '@/li
 import { segmentTabs } from '@/lib/tab-segments';
 import type { WindowSnapshot } from '@/types';
 
-export interface WindowTreeProps {
+interface WindowTreeProps {
   /**
    * A saved `WindowSnapshot` or a live `OpenWindowView` — the live one is the same shape with
    * runtime ids added, so the tree renders both without knowing which it has.
@@ -22,10 +22,9 @@ export interface WindowTreeProps {
   actions?: ReactNode;
   /**
    * Called with a tab's absolute index in `window.tabs` when its row is clicked; resolves with an
-   * error message to show inline, or undefined. Left out, the row opens the saved url in a
-   * background tab.
+   * error message to show inline, or undefined.
    */
-  onOpenTab?(tabIndex: number): Promise<string | undefined> | undefined;
+  onOpenTab(tabIndex: number): Promise<string | undefined> | undefined;
   /** Trailing icon buttons for the tab at that absolute index. */
   renderTabActions?(tabIndex: number): ReactNode;
   /** Trailing buttons on a group header, by that group's index in `window.groups`. */
@@ -119,9 +118,7 @@ export function WindowTree({
               key={`tab-${segmentIndex}-${tabIndex}-${tab.url}`}
               tab={tab}
               selection={tabSelection?.(segment.startIndex + tabIndex)}
-              onOpen={
-                onOpenTab === undefined ? undefined : () => onOpenTab(segment.startIndex + tabIndex)
-              }
+              onOpen={() => onOpenTab(segment.startIndex + tabIndex)}
               actions={renderTabActions?.(segment.startIndex + tabIndex)}
             />
           ));

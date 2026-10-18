@@ -9,7 +9,7 @@ import type { OpenWindowView } from '@/lib/open-windows';
 import type { TabSelection } from '@/lib/tab-selection';
 import { closeTab, closeWindow, goToTab } from '@/lib/window-actions';
 
-export interface OpenWindowsPaneProps {
+interface OpenWindowsPaneProps {
   windows: OpenWindowView[];
   /** The window this dashboard tab is in; it gets the "This window" marker. */
   currentWindowId?: number;
@@ -18,12 +18,10 @@ export interface OpenWindowsPaneProps {
   /** Saves that live window as a session; the app owns the notice toasts and the error lines. */
   onSaveWindow(windowId: number): void;
   /** Disables the save buttons while a save or a restore is running. */
-  busy?: boolean;
-  /** False when the surrounding view already says "Open tabs" above it. */
-  showHeading?: boolean;
-  /** The ticked tabs, by tab id. Given together with `onToggleTab`, every row gets a tick box. */
-  selection?: TabSelection;
-  onToggleTab?(tabId: number, shiftKey: boolean): void;
+  busy: boolean;
+  /** The ticked tabs, by tab id; every row gets a tick box that `onToggleTab` flips. */
+  selection: TabSelection;
+  onToggleTab(tabId: number, shiftKey: boolean): void;
 }
 
 interface PendingClose {
@@ -45,7 +43,6 @@ export function OpenWindowsPane({
   error,
   onSaveWindow,
   busy,
-  showHeading = true,
   selection,
   onToggleTab,
 }: OpenWindowsPaneProps) {
@@ -88,7 +85,8 @@ export function OpenWindowsPane({
 
   return (
     <section aria-labelledby="open-windows-heading" className="min-w-0">
-      <div className={showHeading ? 'flex items-center gap-2' : 'sr-only'}>
+      {/* The surrounding view already says "Open tabs" above it; the heading names the tree. */}
+      <div className="sr-only">
         <h2 id="open-windows-heading" className="text-sm font-semibold">
           Open windows
         </h2>
@@ -166,21 +164,17 @@ export function OpenWindowsPane({
                 const result = await goToTab(tab.tabId, window.windowId);
                 return result.ok ? undefined : result.reason;
               }}
-              tabSelection={
-                selection === undefined || onToggleTab === undefined
-                  ? undefined
-                  : (tabIndex) => {
-                      const tab = window.tabs[tabIndex];
-                      if (tab === undefined) {
-                        return undefined;
-                      }
-                      return {
-                        selected: selection.has(tab.tabId),
-                        active: selection.size > 0,
-                        onToggle: (shiftKey) => onToggleTab(tab.tabId, shiftKey),
-                      };
-                    }
-              }
+              tabSelection={(tabIndex) => {
+                const tab = window.tabs[tabIndex];
+                if (tab === undefined) {
+                  return undefined;
+                }
+                return {
+                  selected: selection.has(tab.tabId),
+                  active: selection.size > 0,
+                  onToggle: (shiftKey) => onToggleTab(tab.tabId, shiftKey),
+                };
+              }}
               renderTabActions={(tabIndex) => {
                 const tab = window.tabs[tabIndex];
                 if (tab === undefined) {

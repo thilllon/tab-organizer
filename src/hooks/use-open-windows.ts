@@ -9,7 +9,6 @@ export interface OpenWindowsState {
   currentWindowId?: number;
   loading: boolean;
   error?: string;
-  refresh(): Promise<void>;
 }
 
 /**
@@ -83,5 +82,5 @@ export function useOpenWindows(): OpenWindowsState {
     };
   }, [refresh]);
 
-  return { windows, currentWindowId, loading, error, refresh };
+  return { windows, currentWindowId, loading, error };
 }

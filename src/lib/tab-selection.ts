@@ -110,7 +110,7 @@ export function selectBySite(
 /** How a copied selection can be written. Plain links are what the Copy button itself does. */
 export type CopyFormat = 'links' | 'markdown' | 'titled';
 
-export interface CopyFormatItem {
+interface CopyFormatItem {
   format: CopyFormat;
   label: string;
 }

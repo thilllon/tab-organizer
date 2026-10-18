@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { COPY_FORMAT_ITEMS, type CopyFormat, selectionLabel } from '@/lib/tab-selection';
 
-export interface SelectionBarProps {
+interface SelectionBarProps {
   count: number;
   /** A save or a restore is running: saving has to wait, copying and closing do not. */
   busy: boolean;

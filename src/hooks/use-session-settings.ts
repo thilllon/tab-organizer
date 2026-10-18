@@ -5,7 +5,7 @@ import { sessionRepo } from '@/lib/session-repo';
 import { isSettingsChange } from '@/lib/settings-change-event';
 import { DEFAULT_SESSION_SETTINGS, type SessionSettings } from '@/types';
 
-export interface SessionSettingsState {
+interface SessionSettingsState {
   /** The stored settings; `DEFAULT_SESSION_SETTINGS` until the first read resolves. */
   settings: SessionSettings;
   loading: boolean;
@@ -19,9 +19,9 @@ export interface SessionSettingsState {
 }
 
 /**
- * `sessionSettings` for an extension page (spec §12 Phase 3). Both the dashboard's settings row
- * and the Options "Sessions" card use this; either can be open while the other writes, so the
- * hook re-reads on every `chrome.storage.onChanged` for the settings key. The service worker
+ * `sessionSettings` for an extension page (spec §12 Phase 3). The Settings dialog uses this; another
+ * app tab can write while it is open, so the hook re-reads on every `chrome.storage.onChanged`
+ * for the settings key. The service worker
  * watches the same key and re-arms the history alarm itself — this hook must never touch
  * `chrome.alarms`, and never writes storage except through `sessionRepo`.
  */

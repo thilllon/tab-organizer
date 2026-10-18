@@ -2,9 +2,7 @@ import type { AssembleResult } from '@/lib/assemble-tabs';
 import { pluralize } from '@/lib/display-format';
 
 /** What the Open tabs view says after its Assemble button ran: a passing toast, or an error line. */
-export type AssembleOutcome =
-  | { kind: 'notice'; message: string }
-  | { kind: 'error'; message: string };
+type AssembleOutcome = { kind: 'notice'; message: string } | { kind: 'error'; message: string };
 
 export function assembleOutcome(result: AssembleResult): AssembleOutcome {
   if (result.status === 'busy') {

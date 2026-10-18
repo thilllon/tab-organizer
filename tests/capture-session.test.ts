@@ -64,19 +64,17 @@ describe('captureSession', () => {
   it('{ windowId } of a window that is gone yields no windows', async () => {
     await seedWindow(['https://a.example/'], true);
 
-    const session = await captureSession({ windowId: 9999 }, 'Gone');
+    const session = await captureSession({ windowId: 9999 });
 
     expect(session.windows).toEqual([]);
-    expect(session.name).toBe('Gone');
   });
 
-  it('uses the given name verbatim and drops own extension pages', async () => {
+  it('drops own extension pages', async () => {
     const fake = getChromeFake();
     await seedWindow(['https://a.example/', chrome.runtime.getURL('app.html')], true);
 
-    const session = await captureSession('window', 'My tabs');
+    const session = await captureSession('window');
 
-    expect(session.name).toBe('My tabs');
     expect(session.windows[0].tabs.map((t) => t.url)).toEqual(['https://a.example/']);
     expect(fake.state.tabs.size).toBe(2);
   });

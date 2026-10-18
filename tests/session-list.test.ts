@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   historyOriginLabel,
   pickWindow,
-  shouldShowRecoveredBanner,
+  recoveredSnapshot,
   splitByKind,
   UNREADABLE_SESSION_MESSAGE,
   unreadableSchemaLabel,
@@ -103,7 +103,7 @@ describe('historyOriginLabel', () => {
   });
 });
 
-describe('shouldShowRecoveredBanner', () => {
+describe('recoveredSnapshot', () => {
   const recovered = makeSummary({
     id: 'r1',
     origin: 'recovered',
@@ -115,29 +115,21 @@ describe('shouldShowRecoveredBanner', () => {
 
   it('returns the newest snapshot when it is the recovered one', () => {
     const older = makeSummary({ id: 'h1', createdAt: 1000, updatedAt: 1000 });
-    expect(shouldShowRecoveredBanner([recovered, older], undefined)).toEqual(recovered);
+    expect(recoveredSnapshot([recovered, older])).toEqual(recovered);
   });
 
   it('ignores the order it is given', () => {
     const older = makeSummary({ id: 'h1', createdAt: 1000, updatedAt: 1000 });
-    expect(shouldShowRecoveredBanner([older, recovered], undefined)).toEqual(recovered);
+    expect(recoveredSnapshot([older, recovered])).toEqual(recovered);
   });
 
   it('does not show once a newer ordinary snapshot exists', () => {
     const newer = makeSummary({ id: 'h9', createdAt: 9000, updatedAt: 9000 });
-    expect(shouldShowRecoveredBanner([recovered, newer], undefined)).toBeUndefined();
-  });
-
-  it('does not show when that snapshot was dismissed', () => {
-    expect(shouldShowRecoveredBanner([recovered], 'r1')).toBeUndefined();
-  });
-
-  it('shows again when the dismissed id belongs to an older recovery', () => {
-    expect(shouldShowRecoveredBanner([recovered], 'r0')).toEqual(recovered);
+    expect(recoveredSnapshot([recovered, newer])).toBeUndefined();
   });
 
   it('does not show without history snapshots', () => {
-    expect(shouldShowRecoveredBanner([], undefined)).toBeUndefined();
+    expect(recoveredSnapshot([])).toBeUndefined();
   });
 });
 

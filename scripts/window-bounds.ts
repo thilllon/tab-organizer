@@ -8,7 +8,7 @@
 
 import { execFileSync } from 'node:child_process';
 
-export interface WindowBounds {
+interface WindowBounds {
   id: number;
   x: number;
   y: number;

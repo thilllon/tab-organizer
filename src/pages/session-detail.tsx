@@ -18,15 +18,14 @@ import { formatDateTime, formatSessionMeta } from '@/lib/display-format';
 import { copyText } from '@/lib/download-and-copy';
 import { errorMessage } from '@/lib/error-message';
 import { COPIED_LINK } from '@/lib/export-actions';
+import { isComposingEnter } from '@/lib/ime-composition';
 import { openSavedTab } from '@/lib/open-saved-tab';
 import { removeTabFromSession, removeWindowFromSession } from '@/lib/session-edit';
 import { sessionRepo } from '@/lib/session-repo';
+import type { OpenScope } from '@/lib/session-restore';
 import type { Session, SessionSummary } from '@/types';
 
-/** Where an "Open" goes: brand-new windows, or the window the app itself is in. */
-export type OpenScope = 'newWindows' | 'here';
-
-export interface SessionDetailProps {
+interface SessionDetailProps {
   summary: SessionSummary;
   restoring: boolean;
   onOpen(session: Session, scope: OpenScope): Promise<void>;
@@ -35,15 +34,6 @@ export interface SessionDetailProps {
   onNotice(message: string): void;
   /** The session is gone; the view must navigate away from its address. */
   onDeleted(): void;
-}
-
-/**
- * Enter pressed to confirm an IME composition (Japanese, Korean, Chinese, …) reaches the input as
- * a keydown too and must not commit the rename. `isComposing` is the standard signal; keyCode 229
- * is the legacy one some IMEs still send with `isComposing` false.
- */
-function isComposingEnter(event: KeyboardEvent<HTMLInputElement>): boolean {
-  return event.nativeEvent.isComposing || event.keyCode === 229;
 }
 
 /**

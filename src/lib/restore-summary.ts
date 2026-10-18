@@ -33,7 +33,7 @@ function isStructuralRestoreError(entry: RestoreResult['errors'][number]): boole
   return STRUCTURAL_ERROR_PREFIXES.some((prefix) => entry.url.startsWith(prefix));
 }
 
-export interface SplitRestoreErrors {
+interface SplitRestoreErrors {
   /** Real tabs that failed to open. */
   tabErrors: RestoreResult['errors'];
   /** Synthetic group/activation/window-state failures — see `isStructuralRestoreError`. */

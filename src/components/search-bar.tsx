@@ -3,23 +3,14 @@ import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState }
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { isEditableTarget } from '@/lib/search-nav';
 
 /** Spec §7: the query is committed 100 ms after the last keystroke, not on every one. */
-export const SEARCH_DEBOUNCE_MS = 100;
+const SEARCH_DEBOUNCE_MS = 100;
 
-export interface SearchBarProps {
+interface SearchBarProps {
   /** Called with the debounced query; '' means "show the normal dashboard again". */
   onQueryChange(query: string): void;
-  includeHistory: boolean;
-  onIncludeHistoryChange(value: boolean): void;
-  /**
-   * Whether to offer the "Include history" checkbox here. The app leaves it off and asks only
-   * when a search found nothing: snapshots hold near-copies of the same tabs, so searching them
-   * by default buries a real hit under twenty versions of itself.
-   */
-  showIncludeHistory?: boolean;
   /** ArrowDown / ArrowUp: move the highlighted result. */
   onMove(direction: 'next' | 'prev'): void;
   /**
@@ -38,14 +29,7 @@ export interface SearchBarProps {
  * Keyboard: `/` focuses it from anywhere on the page, Escape clears and leaves it, the arrows move
  * the highlight and Enter activates it — the last three only while the box has focus.
  */
-export function SearchBar({
-  onQueryChange,
-  includeHistory,
-  onIncludeHistoryChange,
-  showIncludeHistory = true,
-  onMove,
-  onActivate,
-}: SearchBarProps) {
+export function SearchBar({ onQueryChange, onMove, onActivate }: SearchBarProps) {
   const [text, setText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -177,21 +161,6 @@ export function SearchBar({
           </Button>
         )}
       </div>
-      {/* Wrapping label: the checkbox needs no id to be named by the text next to it. */}
-      {showIncludeHistory && (
-        <Label
-          className="gap-1.5 text-xs font-normal text-muted-foreground"
-          title="Also search automatic snapshots"
-        >
-          <input
-            type="checkbox"
-            checked={includeHistory}
-            onChange={(event) => onIncludeHistoryChange(event.target.checked)}
-            className="size-3.5 accent-primary"
-          />
-          Include history
-        </Label>
-      )}
     </search>
   );
 }

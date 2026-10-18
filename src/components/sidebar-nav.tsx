@@ -10,7 +10,7 @@ import { HISTORY_OPEN_KEY, readUiState, writeUiState } from '@/lib/ui-state';
 import { cn } from '@/lib/utils';
 import type { SessionSummary } from '@/types';
 
-export interface SidebarNavProps {
+interface SidebarNavProps {
   route: Route;
   /** Saved sessions, newest first. */
   saved: SessionSummary[];
@@ -27,10 +27,10 @@ export interface SidebarNavProps {
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;
-  sub?: string;
+  sub: string;
   /** A second, quieter line: when this record was saved or taken. */
   time?: string;
-  meta?: React.ReactNode;
+  meta: React.ReactNode;
   current: boolean;
   /** The route this row leads to. Rendered as a real `href` — see the comment on NavItem. */
   route: Route;
@@ -82,9 +82,7 @@ function NavItem({ icon, label, sub, time, meta, current, route, onClick }: NavI
           {/* Two lines rather than one truncated one: a default name carries the date and time,
               and cutting it off is exactly what makes the list unreadable at narrow widths. */}
           <span className="line-clamp-2 break-words">{label}</span>
-          {sub !== undefined && (
-            <span className="block truncate text-xs font-normal text-muted-foreground">{sub}</span>
-          )}
+          <span className="block truncate text-xs font-normal text-muted-foreground">{sub}</span>
           {time !== undefined && (
             <span className="block truncate text-[11px] font-normal text-muted-foreground/80">
               {time}

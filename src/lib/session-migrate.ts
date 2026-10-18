@@ -1,3 +1,4 @@
+import { isRecord } from '@/lib/import-guards';
 import type { Session, SessionIndex, SessionSummary, UnreadableSession } from '@/types';
 import { SESSION_SCHEMA_VERSION } from '@/types';
 
@@ -23,10 +24,6 @@ export function futureSchemaVersion(err: unknown): number | undefined {
     return undefined;
   }
   return version > SESSION_SCHEMA_VERSION ? version : undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function assertSchemaVersion(record: Record<string, unknown>): void {

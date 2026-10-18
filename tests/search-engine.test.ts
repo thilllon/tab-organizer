@@ -36,7 +36,6 @@ function entry(overrides: Partial<SearchEntry> = {}): SearchEntry {
     title: 'Example',
     url,
     hostname: hostOf(url),
-    pinned: false,
     ...overrides,
   };
 }
@@ -89,18 +88,6 @@ function makeWindow(overrides: Partial<chrome.windows.Window> = {}): chrome.wind
   };
 }
 
-function makeGroup(overrides: Partial<chrome.tabGroups.TabGroup> = {}): chrome.tabGroups.TabGroup {
-  return {
-    id: 100,
-    windowId: 1,
-    collapsed: false,
-    shared: false,
-    color: 'blue',
-    title: 'Group',
-    ...overrides,
-  };
-}
-
 describe('tokenize', () => {
   it('lowercases, splits on any whitespace and de-duplicates in first-seen order', () => {
     expect(tokenize('  GitHub\treact\n React github  ')).toEqual(['github', 'react']);
@@ -140,7 +127,7 @@ describe('entriesFromSession', () => {
     ],
   });
 
-  it('flattens windows and tabs with indices, session meta, hostname and group title', () => {
+  it('flattens windows and tabs with indices, session meta and hostname', () => {
     expect(entriesFromSession(session, 'saved')).toEqual([
       {
         source: 'saved',
@@ -152,7 +139,6 @@ describe('entriesFromSession', () => {
         title: 'Pinned',
         url: 'https://pinned.example/',
         hostname: 'pinned.example',
-        pinned: true,
       },
       {
         source: 'saved',
@@ -164,8 +150,6 @@ describe('entriesFromSession', () => {
         title: 'A',
         url: 'https://a.example/x',
         hostname: 'a.example',
-        pinned: false,
-        groupTitle: 'Docs',
       },
       {
         source: 'saved',
@@ -177,7 +161,6 @@ describe('entriesFromSession', () => {
         title: 'B',
         url: 'https://b.example/',
         hostname: 'b.example',
-        pinned: false,
       },
     ]);
   });
@@ -220,7 +203,7 @@ describe('entriesFromSession', () => {
 });
 
 describe('entriesFromOpenWindows', () => {
-  it('maps live tabs in strip order with runtime ids, group titles and pendingUrl', () => {
+  it('maps live tabs in strip order with runtime ids and pendingUrl', () => {
     const windows = [
       makeWindow({
         id: 7,
@@ -240,9 +223,7 @@ describe('entriesFromOpenWindows', () => {
         tabs: [makeTab({ id: 21, index: 0, url: 'https://c.example/', title: 'C', pinned: true })],
       }),
     ];
-    const groups = [makeGroup({ id: 100, title: 'Work' })];
-
-    const entries = entriesFromOpenWindows(windows, groups);
+    const entries = entriesFromOpenWindows(windows);
 
     expect(entries).toHaveLength(3);
     expect(entries.map((e) => [e.windowIndex, e.tabIndex, e.windowId, e.tabId])).toEqual([
@@ -256,20 +237,15 @@ describe('entriesFromOpenWindows', () => {
       title: 'A',
       url: 'https://new.example/',
       hostname: 'new.example',
-      pinned: false,
     });
     expect(entries[0]).not.toHaveProperty('sessionId');
-    expect(entries[0]).not.toHaveProperty('groupTitle');
-    expect(entries[1].groupTitle).toBe('Work');
-    expect(entries[2].pinned).toBe(true);
   });
 
   it('stamps every entry with the same build-time recency', () => {
     const before = Date.now();
-    const entries = entriesFromOpenWindows(
-      [makeWindow({ tabs: [makeTab({ id: 1, index: 0 }), makeTab({ id: 2, index: 1 })] })],
-      [],
-    );
+    const entries = entriesFromOpenWindows([
+      makeWindow({ tabs: [makeTab({ id: 1, index: 0 }), makeTab({ id: 2, index: 1 })] }),
+    ]);
     const after = Date.now();
     expect(entries[0].sessionUpdatedAt).toBe(entries[1].sessionUpdatedAt);
     expect(entries[0].sessionUpdatedAt).toBeGreaterThanOrEqual(before);
@@ -286,7 +262,7 @@ describe('entriesFromOpenWindows', () => {
         ],
       }),
     ];
-    expect(entriesFromOpenWindows(windows, []).map((e) => e.title)).toEqual(['Kept']);
+    expect(entriesFromOpenWindows(windows).map((e) => e.title)).toEqual(['Kept']);
   });
 
   it('drops own extension pages only when excludeUrlPrefix is given', () => {
@@ -299,34 +275,18 @@ describe('entriesFromOpenWindows', () => {
         ],
       }),
     ];
-    expect(entriesFromOpenWindows(windows, []).map((e) => e.title)).toEqual(['Dashboard', 'Kept']);
-    expect(
-      entriesFromOpenWindows(windows, [], { excludeUrlPrefix: own }).map((e) => e.title),
-    ).toEqual(['Kept']);
+    expect(entriesFromOpenWindows(windows).map((e) => e.title)).toEqual(['Dashboard', 'Kept']);
+    expect(entriesFromOpenWindows(windows, { excludeUrlPrefix: own }).map((e) => e.title)).toEqual([
+      'Kept',
+    ]);
     // An empty prefix would match every url; treat it as "not given".
-    expect(entriesFromOpenWindows(windows, [], { excludeUrlPrefix: '' })).toHaveLength(2);
-  });
-
-  it('ignores groupId on pinned tabs and unknown or ungrouped ids', () => {
-    const windows = [
-      makeWindow({
-        tabs: [
-          makeTab({ id: 1, index: 0, pinned: true, groupId: 100 }),
-          makeTab({ id: 2, index: 1, groupId: 999 }),
-          makeTab({ id: 3, index: 2, groupId: -1 }),
-          makeTab({ id: 4, index: 3, groupId: 100 }),
-        ],
-      }),
-    ];
-    const entries = entriesFromOpenWindows(windows, [makeGroup({ id: 100, title: undefined })]);
-    expect(entries.map((e) => e.groupTitle)).toEqual([undefined, undefined, undefined, '']);
+    expect(entriesFromOpenWindows(windows, { excludeUrlPrefix: '' })).toHaveLength(2);
   });
 
   it('omits windowId/tabId when Chrome reports none', () => {
-    const entries = entriesFromOpenWindows(
-      [makeWindow({ id: undefined, tabs: [makeTab({ id: undefined, index: 0 })] })],
-      [],
-    );
+    const entries = entriesFromOpenWindows([
+      makeWindow({ id: undefined, tabs: [makeTab({ id: undefined, index: 0 })] }),
+    ]);
     expect(entries[0]).not.toHaveProperty('windowId');
     expect(entries[0]).not.toHaveProperty('tabId');
   });
@@ -340,7 +300,7 @@ describe('entriesFromOpenWindows', () => {
         tabs: [makeTab({ id: 90, index: 0, url: 'https://secret.example/', title: 'Secret' })],
       }),
     ];
-    expect(entriesFromOpenWindows(windows, [])).toEqual([]);
+    expect(entriesFromOpenWindows(windows)).toEqual([]);
   });
 
   it('keeps a normal window standing beside an incognito one, and numbers it as window 1', () => {
@@ -356,7 +316,7 @@ describe('entriesFromOpenWindows', () => {
       }),
     ];
 
-    const entries = entriesFromOpenWindows(windows, []);
+    const entries = entriesFromOpenWindows(windows);
 
     expect(entries.map((e) => e.title)).toEqual(['Kept']);
     expect(entries.map((e) => [e.windowIndex, e.windowId, e.tabId])).toEqual([[0, 7, 70]]);

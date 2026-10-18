@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { formatBytes, pluralize } from '@/lib/display-format';
 
-export interface DeleteAllDataDialogProps {
+interface DeleteAllDataDialogProps {
   open: boolean;
   savedCount: number;
   snapshotCount: number;

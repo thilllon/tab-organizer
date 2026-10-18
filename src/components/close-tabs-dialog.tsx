@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { pluralize } from '@/lib/display-format';
 
-export interface CloseTabsDialogProps {
+interface CloseTabsDialogProps {
   tabCount: number;
   open: boolean;
   onOpenChange(open: boolean): void;

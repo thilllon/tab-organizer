@@ -13,7 +13,7 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-export interface DemoPage {
+interface DemoPage {
   /** Path served, e.g. `/p/1`. */
   path: string;
   /** `<title>` — also the tab title Chrome reports. */

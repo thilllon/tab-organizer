@@ -1,5 +1,5 @@
 /**
- * Per-tab UI state (`sessionStorage`): which disclosure is open, which banner was dismissed.
+ * Per-tab UI state (`sessionStorage`): which disclosure is open.
  * Deliberately not `chrome.storage` — none of this is user data, it must not travel between
  * devices or outlive the dashboard tab, and it must never go through `sessionRepo` (AGENTS.md:
  * every session-key write goes through the repo under the Web Lock; these keys are not session
@@ -8,8 +8,6 @@
 
 /** Open/closed state of the dashboard's History disclosure. */
 export const HISTORY_OPEN_KEY = 'tab-organizer:history-open';
-/** Id of the recovered snapshot whose banner was dismissed in this tab (spec §12 Phase 3). */
-export const RECOVERED_DISMISSED_KEY = 'tab-organizer:recovered-dismissed';
 /** Width of the app's sidebar, in pixels — a preference, so it outlives the tab. */
 export const SIDEBAR_WIDTH_KEY = 'tab-organizer:sidebar-width';
 

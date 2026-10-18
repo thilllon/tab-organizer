@@ -21,7 +21,7 @@ export const PREVIEW_SESSION_LIMIT = 10;
 export const PREVIEW_WINDOW_LIMIT = 5;
 export const PREVIEW_TITLE_LIMIT = 3;
 
-export type SizeCheck = { ok: true } | { ok: false; error: string };
+type SizeCheck = { ok: true } | { ok: false; error: string };
 
 /** UTF-8 bytes, matching `File.size` — a pasted emoji is not one byte. */
 export function utf8ByteLength(text: string): number {
@@ -63,7 +63,7 @@ export function importedNotice(count: number): string {
   return `Imported ${pluralize(count, 'session')}.`;
 }
 
-export interface ImportPreviewWindow {
+interface ImportPreviewWindow {
   /** 1-based, as in "Window 2" everywhere else in the dashboard. */
   number: number;
   tabCount: number;
@@ -73,7 +73,7 @@ export interface ImportPreviewWindow {
   moreTabs: number;
 }
 
-export interface ImportPreviewSession {
+interface ImportPreviewSession {
   name: string;
   windowCount: number;
   tabCount: number;

@@ -20,7 +20,7 @@ const DEFAULT_CHROMIUM = '/opt/pw-browsers/chromium';
  * own pinned build. `PW_CHROMIUM` wins; otherwise the well-known sandbox path is used when it
  * exists.
  */
-export function resolveChromiumExecutable(): string | undefined {
+function resolveChromiumExecutable(): string | undefined {
   const fromEnv = process.env.PW_CHROMIUM;
   if (fromEnv !== undefined && fromEnv !== '') {
     return fromEnv;
@@ -29,7 +29,7 @@ export function resolveChromiumExecutable(): string | undefined {
 }
 
 /** Headless unless `HEADLESS=0`, or unless a display is available on Linux and `HEADLESS=1` is unset. */
-export function resolveHeadless(preferHeaded: boolean): boolean {
+function resolveHeadless(preferHeaded: boolean): boolean {
   const flag = process.env.HEADLESS;
   if (flag === '0' || flag === 'false') {
     return false;
@@ -44,7 +44,7 @@ export function resolveHeadless(preferHeaded: boolean): boolean {
   return process.platform === 'linux' && (process.env.DISPLAY ?? '') === '';
 }
 
-export interface LaunchOptions {
+interface LaunchOptions {
   /** Absolute path to the built extension (the `dist/` directory). */
   dist: string;
   /** Extra Chrome switches, appended after the extension-loading ones. */
@@ -54,9 +54,10 @@ export interface LaunchOptions {
    * Ignored when there is no display — see {@link resolveHeadless}.
    */
   preferHeaded?: boolean;
-  /** How long to wait for the extension service worker to register. Default 15 s. */
-  serviceWorkerTimeout?: number;
 }
+
+/** How long to wait for the extension service worker to register. */
+const SERVICE_WORKER_TIMEOUT_MS = 15_000;
 
 export interface ExtensionSession {
   context: BrowserContext;
@@ -136,7 +137,7 @@ async function workerWithApis(context: BrowserContext, timeout: number): Promise
 
 /** Launches a persistent context with `dist/` loaded as an unpacked extension. */
 export async function launchExtension(options: LaunchOptions): Promise<ExtensionSession> {
-  const { dist, args = [], preferHeaded = false, serviceWorkerTimeout = 15_000 } = options;
+  const { dist, args = [], preferHeaded = false } = options;
   const executablePath = resolveChromiumExecutable();
 
   const context = await chromium.launchPersistentContext('', {
@@ -152,7 +153,7 @@ export async function launchExtension(options: LaunchOptions): Promise<Extension
     ],
   });
 
-  const serviceWorker = await workerWithApis(context, serviceWorkerTimeout);
+  const serviceWorker = await workerWithApis(context, SERVICE_WORKER_TIMEOUT_MS);
   const extensionId = serviceWorker.url().split('/')[2];
 
   return {
@@ -160,7 +161,7 @@ export async function launchExtension(options: LaunchOptions): Promise<Extension
     serviceWorker,
     extensionId,
     async worker(): Promise<Worker> {
-      return workerWithApis(context, serviceWorkerTimeout);
+      return workerWithApis(context, SERVICE_WORKER_TIMEOUT_MS);
     },
     pageUrl: (page: string) => `chrome-extension://${extensionId}/${page}`,
     close: () => context.close(),

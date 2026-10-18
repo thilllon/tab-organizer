@@ -15,18 +15,12 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { UnreadableSessionRow } from '@/components/unreadable-session-row';
 import { useOpenWindows } from '@/hooks/use-open-windows';
 import { useRestore } from '@/hooks/use-restore';
+import { useRoute } from '@/hooks/use-route';
 import { useSavedToasts } from '@/hooks/use-saved-toasts';
 import { useSearchCorpus } from '@/hooks/use-search-corpus';
 import { useSessionIndex } from '@/hooks/use-session-index';
 import { useSessionSettings } from '@/hooks/use-session-settings';
-import {
-  formatRoute,
-  HOME,
-  parseRoute,
-  type Route,
-  routeSessionId,
-  viewBehind,
-} from '@/lib/app-route';
+import { formatRoute, HOME, type Route, routeSessionId } from '@/lib/app-route';
 import { assembleOutcome } from '@/lib/assemble-notice';
 import { assembleTabs } from '@/lib/assemble-tabs';
 import { downloadExport } from '@/lib/download-and-copy';
@@ -44,6 +38,7 @@ import { importedNotice } from '@/lib/import-preview';
 import { openTabInBackground } from '@/lib/open-in-background';
 import { needsRestoreConfirm } from '@/lib/restore-summary';
 import { browserHandlesClick } from '@/lib/row-link';
+import { nothingToSaveNotice } from '@/lib/save-notice';
 import { DEFAULT_LIMIT_PER_SOURCE, search } from '@/lib/search-engine';
 import {
   buildSearchGroups,
@@ -60,13 +55,13 @@ import { toJson } from '@/lib/session-export';
 import { pickWindow, recoveredSnapshot, splitByKind } from '@/lib/session-list';
 import { ensureUniqueName } from '@/lib/session-naming';
 import { sessionRepo } from '@/lib/session-repo';
-import type { RestoreTarget } from '@/lib/session-restore';
+import type { OpenScope, RestoreTarget } from '@/lib/session-restore';
 import { readSidebarWidth, writeSidebarWidth } from '@/lib/sidebar-width';
 import { isQuotaError } from '@/lib/storage-quota';
 import { NOTICE_MS } from '@/lib/toast-queue';
 import { currentWindowTarget, goToTab } from '@/lib/window-actions';
 import { OpenTabsView } from '@/pages/open-tabs-view';
-import { type OpenScope, SessionDetail } from '@/pages/session-detail';
+import { SessionDetail } from '@/pages/session-detail';
 import { SettingsView } from '@/pages/settings-view';
 import { SnapshotDetail } from '@/pages/snapshot-detail';
 import type { Session, SessionSettings } from '@/types';
@@ -75,109 +70,6 @@ const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
 
 /** The running count and the final line of "Export everything" are one toast that changes. */
 const EXPORT_ALL_TOAST = 'export-all';
-
-const NOTHING_TO_SAVE = {
-  window: 'Nothing to save: this window only holds Tab Organizer.',
-  all: 'Nothing to save: no open window holds anything besides Tab Organizer.',
-  tabs: 'Nothing to save: the selected tabs are no longer open.',
-} as const;
-
-function nothingToSave(scope: CaptureScope): string {
-  if (typeof scope === 'object' && 'tabIds' in scope) {
-    return NOTHING_TO_SAVE.tabs;
-  }
-  return scope === 'all' ? NOTHING_TO_SAVE.all : NOTHING_TO_SAVE.window;
-}
-
-/**
- * The view on the history entry right below this one, when that entry is this page showing
- * something other than Settings — which is the view the dialog was opened over, whether the click
- * came from inside the page or `#settings` was typed into the address bar. Read from the
- * Navigation API (Chrome 102+) rather than remembered, so it is still right after a reload, a
- * duplicated tab or a restored browser session. `undefined` when Settings is the first thing this
- * tab showed (Chrome's "Options", a bookmark).
- */
-function viewBelow(): Route | undefined {
-  const index = window.navigation.currentEntry?.index;
-  const below = index === undefined ? undefined : window.navigation.entries()[index - 1];
-  if (below?.url === undefined || below.url === null) {
-    return undefined;
-  }
-  const url = new URL(below.url);
-  if (url.pathname !== window.location.pathname) {
-    return undefined;
-  }
-  const route = parseRoute(url.hash);
-  return route.view === 'settings' ? undefined : route;
-}
-
-interface RouteState {
-  route: Route;
-  /** The view the page itself shows — `route`, or what was showing before Settings opened. */
-  page: Route;
-}
-
-function advance(previous: RouteState, route: Route): RouteState {
-  return { route, page: viewBehind(route, previous.page) };
-}
-
-interface RouteControls extends RouteState {
-  navigate(route: Route, replace?: boolean): void;
-  /** Leaves `#settings` for `page`, the view behind it, without growing the Back stack. */
-  closeSettings(page: Route): void;
-  /** Swaps the view behind Settings while it stays open (the session it showed is gone). */
-  resetPage(page: Route): void;
-}
-
-/** The hash route, kept in step with the address bar and the Back button. */
-function useRoute(): RouteControls {
-  const [state, setState] = useState<RouteState>(() => {
-    // Loaded with Settings already open: the pane behind it is the entry it was opened over.
-    const behind = viewBelow() ?? HOME;
-    return advance({ route: behind, page: behind }, parseRoute(window.location.hash));
-  });
-
-  useEffect(() => {
-    const onHashChange = () =>
-      setState((previous) => advance(previous, parseRoute(window.location.hash)));
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
-
-  const navigate = useCallback((next: Route, replace = false) => {
-    const hash = formatRoute(next);
-    if (replace) {
-      // Typing in the search box must not stack one history entry per keystroke.
-      window.history.replaceState(null, '', hash);
-      setState((previous) => advance(previous, next));
-      return;
-    }
-    if (window.location.hash === hash) {
-      setState((previous) => advance(previous, next));
-      return;
-    }
-    window.location.hash = hash;
-  }, []);
-
-  const closeSettings = useCallback((page: Route) => {
-    if (viewBelow() !== undefined) {
-      // Opened over an entry of ours: step back onto it, so closing leaves no dead "Back" press
-      // behind. `hashchange` then updates the route.
-      window.history.back();
-      return;
-    }
-    // Arrived at #settings directly (Chrome's "Options", a bookmark): nothing of ours to go back
-    // to, so this entry becomes the view that was showing behind the dialog.
-    window.history.replaceState(null, '', formatRoute(page));
-    setState({ route: page, page });
-  }, []);
-
-  const resetPage = useCallback((page: Route) => {
-    setState((previous) => ({ ...previous, page }));
-  }, []);
-
-  return { ...state, navigate, closeSettings, resetPage };
-}
 
 /**
  * Tab Organizer's one page: the sidebar lists what you have, the main pane shows what you picked,
@@ -287,7 +179,7 @@ export function App() {
     try {
       const { session, tabIds } = await captureSessionWithTabIds(scope);
       if (session.windows.length === 0) {
-        setNotice(nothingToSave(scope));
+        setNotice(nothingToSaveNotice(scope));
         return undefined;
       }
       // Two saves in the same minute would otherwise share the default name.
@@ -424,7 +316,7 @@ export function App() {
   const items = useMemo(() => flattenSearchItems(groups), [groups]);
 
   // Tier 2 is lazy (spec §7): bodies the idle pre-warm did not reach are read on the first query
-  // that needs them, and history bodies only once "Include history" is on.
+  // that needs them, and history bodies only once "Also search auto-saved" is chosen.
   useEffect(() => {
     if (!searching) {
       return;
@@ -653,18 +545,12 @@ export function App() {
         <div className="mx-auto flex max-w-xl flex-1 justify-center">
           <SearchBar
             key={searchEpoch}
-            includeHistory={includeHistory}
-            showIncludeHistory={false}
             onQueryChange={(next) => {
               if (next === query) {
                 return;
               }
               resetResults();
               navigate(next === '' ? HOME : { view: 'search', query: next }, true);
-            }}
-            onIncludeHistoryChange={(value) => {
-              setIncludeHistory(value);
-              resetResults();
             }}
             onMove={(direction) =>
               setHighlight((current) =>

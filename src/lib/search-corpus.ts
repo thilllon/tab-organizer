@@ -11,7 +11,7 @@ import type { SessionId, SessionSummary } from '@/types';
 export const PREWARM_BYTE_BUDGET = 5 * 1024 * 1024;
 
 /** Deadline handed to `requestIdleCallback` so the pre-warm still runs on a busy page. */
-export const IDLE_TIMEOUT_MS = 2_000;
+const IDLE_TIMEOUT_MS = 2_000;
 
 /** Derived from the repo's own key builder so the two can never drift apart. */
 const SESSION_KEY_PREFIX = sessionKey('');
@@ -20,7 +20,7 @@ const SESSION_KEY_PREFIX = sessionKey('');
  * The saved sessions the pre-warm should read, newest first (`listSummaries()` order), until the
  * budget is spent. The session that crosses the budget is still included — one body over is
  * cheaper than leaving the newest session, the most likely search target, unloaded — and nothing
- * after it is. History bodies are never pre-warmed: they are opt-in ("Include history") and there
+ * after it is. History bodies are never pre-warmed: they are opt-in ("Also search auto-saved") and there
  * are up to `historyMaxSnapshots` of them.
  */
 export function selectPrewarmIds(

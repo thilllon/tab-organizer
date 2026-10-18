@@ -258,7 +258,7 @@ async function readSettings(): Promise<SessionSettings> {
 }
 
 /** What `sessionRepo.getMany` read: the bodies it could migrate, and why the rest failed. */
-export interface BatchedBodies {
+interface BatchedBodies {
   bodies: Map<SessionId, Session>;
   /** Ids whose stored record could not be migrated, keyed to the error `migrateSession` threw. */
   failed: Map<SessionId, unknown>;
@@ -688,7 +688,7 @@ export const sessionRepo = {
 // ---------------------------------------------------------------------------
 
 /** `chrome.storage.local` key `historyMeta` (spec §4). */
-export interface HistoryMeta {
+interface HistoryMeta {
   /** `contentHash` of the newest history snapshot; identical captures are skipped. */
   lastHash: string;
   /** Epoch ms of that snapshot's write. */

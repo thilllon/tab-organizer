@@ -12,7 +12,7 @@ import type { ExportFormat } from '@/types';
  * new format is added in one place.
  */
 
-export interface DownloadDescriptor {
+interface DownloadDescriptor {
   filename: string;
   mimeType: string;
 }
@@ -31,10 +31,10 @@ export function downloadDescriptor(
  * later task — revoking it in the same one cancels the download before it begins. The delay is
  * generous on purpose: the URL costs a few bytes, a cancelled download costs the user their data.
  */
-export const REVOKE_DELAY_MS = 60_000;
+const REVOKE_DELAY_MS = 60_000;
 
 /** Saves `text` as `filename`. No-ops outside a DOM (vitest runs in Node). */
-export function downloadText(filename: string, mimeType: string, text: string): void {
+function downloadText(filename: string, mimeType: string, text: string): void {
   if (typeof document === 'undefined' || typeof URL.createObjectURL !== 'function') {
     return;
   }
@@ -65,7 +65,7 @@ export function downloadExport(
   return descriptor;
 }
 
-export type CopyResult = { ok: true } | { ok: false; error: string };
+type CopyResult = { ok: true } | { ok: false; error: string };
 
 export const CLIPBOARD_UNAVAILABLE =
   'Could not copy: this browser did not allow clipboard access from this page.';

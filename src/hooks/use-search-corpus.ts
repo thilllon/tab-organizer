@@ -6,7 +6,7 @@ import { SearchCorpusCache, scheduleIdle, selectPrewarmIds } from '@/lib/search-
 import { entriesFromOpenWindows, type SearchEntry } from '@/lib/search-engine';
 import type { SessionId, SessionSummary } from '@/types';
 
-export interface UseSearchCorpusOptions {
+interface UseSearchCorpusOptions {
   /** The session index (`useSessionIndex`), newest first: what to pre-warm and what to keep. */
   summaries: readonly SessionSummary[];
   /**
@@ -17,7 +17,7 @@ export interface UseSearchCorpusOptions {
   openWindows: Pick<OpenWindowsState, 'windows' | 'loading'>;
 }
 
-export interface SearchCorpusState {
+interface SearchCorpusState {
   /** Open tabs first, then the cached saved / history entries in index order. */
   corpus: SearchEntry[];
   /** True while the idle pre-warm is still reading bodies — the result counts are not final. */
@@ -127,7 +127,7 @@ export function useSearchCorpus({
 
   // Open tabs. The pane's snapshot only says *that* the live tabs changed; the entries are built
   // from a fresh populated read, because `SearchEntry` needs what `OpenWindowView` drops (the
-  // pending url of a navigating tab, the group titles, the tab ids results are focused by).
+  // pending url of a navigating tab, the tab ids results are focused by).
   useEffect(() => {
     if (openWindows.loading) {
       return;
@@ -139,16 +139,13 @@ export function useSearchCorpus({
     let disposed = false;
     void (async () => {
       try {
-        const [windows, groups] = await Promise.all([
-          chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }),
-          chrome.tabGroups.query({}),
-        ]);
+        const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
         if (disposed) {
           return;
         }
         setOpenEntries(
-          entriesFromOpenWindows(windows, groups, {
-            // Our own pages (this dashboard, the options page) are never search results.
+          entriesFromOpenWindows(windows, {
+            // Our own pages (the app page) are never search results.
             excludeUrlPrefix: chrome.runtime.getURL(''),
           }),
         );

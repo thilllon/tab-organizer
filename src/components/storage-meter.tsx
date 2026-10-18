@@ -18,7 +18,7 @@ import {
 } from '@/lib/storage-meter';
 import type { SessionSummary } from '@/types';
 
-export interface StorageMeterProps {
+interface StorageMeterProps {
   /** The index, straight from `useSessionIndex`: the saved/snapshot split and the refresh cue. */
   summaries: SessionSummary[];
   /** "Deleted all session data." — shown as a toast by the app. */
@@ -33,8 +33,8 @@ export interface StorageMeterProps {
  * Two remedies sit below it, bottom-left, because this is where a quota notice sends the user
  * (spec §4: the toast links to the meter *and* to "Delete old history"): "Delete all unprotected", the one that
  * actually frees the space and keeps every saved session, and only then the all-or-nothing
- * "Delete all session data". The first is the same action the History section offers, behind the
- * same confirm — the quota path never points at that collapsed section, so it is repeated here.
+ * "Delete all session data". The first clears every snapshot that is not protected, behind its own
+ * confirm (`DeleteAllHistoryDialog`).
  *
  * The total is re-read whenever the index changes — every write goes through `sessionRepo`, which
  * rewrites `sessionIndex`, and `useSessionIndex` turns that `storage.onChanged` into a new

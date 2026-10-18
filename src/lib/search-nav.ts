@@ -8,9 +8,9 @@ import {
 import type { SessionSummary } from '@/types';
 
 /** The tier-1 (session name) block plus the tier-2 sources, in the order they are rendered. */
-export type SearchGroupSource = 'sessions' | SearchSource;
+type SearchGroupSource = 'sessions' | SearchSource;
 
-export const SEARCH_GROUP_HEADINGS: Record<SearchGroupSource, string> = {
+const SEARCH_GROUP_HEADINGS: Record<SearchGroupSource, string> = {
   sessions: 'Matching sessions',
   open: 'Open tabs',
   saved: 'Saved sessions',
@@ -35,7 +35,7 @@ export interface SearchGroup {
 
 /**
  * Tier-1 matches: sessions whose *name* contains every token, answered from the index alone (no
- * body reads). History snapshots only take part while "Include history" is checked, exactly like
+ * body reads). History snapshots only take part once "Also search auto-saved" is chosen, exactly like
  * the tier-2 entries. Order is the index's (newest first).
  *
  * A session this build cannot read (spec §3) is never a result: activating a tier-1 row restores
@@ -157,7 +157,7 @@ export function prevIndex(current: number, length: number): number {
 }
 
 /** What Enter should do with the row list on screen. */
-export type ActivationDecision =
+type ActivationDecision =
   | { action: 'activate'; index: number }
   /** The list on screen still describes an older query; activate nothing until it catches up. */
   | { action: 'wait' }
@@ -200,7 +200,7 @@ export function resolveActivation(state: {
 }
 
 /** The shape of an event target this module needs; `HTMLElement` satisfies it structurally. */
-export interface EditableTargetLike {
+interface EditableTargetLike {
   tagName?: string;
   isContentEditable?: boolean;
 }

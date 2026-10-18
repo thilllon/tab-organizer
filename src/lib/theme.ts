@@ -3,7 +3,7 @@
  * `@custom-variant dark (&:is(.dark *))`, so the only thing needed at runtime is the `dark`
  * class on `<html>` — there is no theme *setting*, the extension simply follows the OS.
  *
- * Both extension pages call `followSystemTheme()` once at startup; everything that decides what
+ * The app page calls `followSystemTheme()` once at startup; everything that decides what
  * the class list should look like lives in `withDarkClass`, which is pure and unit-tested (the
  * DOM half cannot be: vitest runs in Node without a DOM).
  */
@@ -27,29 +27,19 @@ export function withDarkClass(className: string, dark: boolean): string {
 
 /**
  * Applies `matchMedia('(prefers-color-scheme: dark)')` to `<html>` and keeps following it.
- * Returns an unsubscribe function; a runtime without `matchMedia` (or without a document, i.e.
- * the service worker) is left in the light default rather than throwing.
  *
  * `color-scheme` is set alongside the class so Chrome's own widgets — form controls, scrollbars,
  * the canvas behind the page — switch with it.
  */
-export function followSystemTheme(doc: Document = document): () => void {
-  const root = doc.documentElement;
-  const view = doc.defaultView;
+export function followSystemTheme(): void {
+  const root = document.documentElement;
   const apply = (dark: boolean): void => {
     root.className = withDarkClass(root.className, dark);
     root.style.colorScheme = dark ? 'dark' : 'light';
   };
-  if (view === null || typeof view.matchMedia !== 'function') {
-    return () => undefined;
-  }
-  const media = view.matchMedia(DARK_MEDIA_QUERY);
+  const media = window.matchMedia(DARK_MEDIA_QUERY);
   apply(media.matches);
-  const listener = (event: MediaQueryListEvent): void => {
+  media.addEventListener('change', (event) => {
     apply(event.matches);
-  };
-  media.addEventListener('change', listener);
-  return () => {
-    media.removeEventListener('change', listener);
-  };
+  });
 }

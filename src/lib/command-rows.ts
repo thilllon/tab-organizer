@@ -15,7 +15,7 @@
 import { ASSEMBLE_NAME, DEFAULT_SHORTCUTS } from '@/constants';
 import { shortcutKeys, shortcutText } from '@/lib/shortcut-keys';
 
-export const EXECUTE_ACTION = '_execute_action';
+const EXECUTE_ACTION = '_execute_action';
 
 export const SORT_COMMAND_LABEL = 'Sort the tabs in this window (same as clicking the icon)';
 
