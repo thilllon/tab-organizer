@@ -156,7 +156,12 @@ async function main(): Promise<void> {
         .catch(() => undefined);
       await barButton(page, 'Copy').click({ timeout: UI_TIMEOUT });
       await page.getByText('Copied 4 links.', { exact: true }).waitFor({ timeout: UI_TIMEOUT });
-      const text = await page.evaluate(() => navigator.clipboard.readText()).catch(() => null);
+      // readText() can wait forever on a permission prompt nobody answers (the grant above is
+      // refused for extension origins by some Playwright builds), so it gets a deadline.
+      const text = await Promise.race([
+        page.evaluate(() => navigator.clipboard.readText()),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2_000)),
+      ]).catch(() => null);
       if (text === null) {
         return 'notice shown; the clipboard could not be read back here';
       }
