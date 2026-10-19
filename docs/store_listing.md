@@ -65,8 +65,8 @@ Tab Organizer fully supports Chrome's native tab groups. It sorts your existing 
 
 ▸ Duplicate Tab Detection
 How many times have you opened the same page in multiple tabs? Tab Organizer can help:
+• Keep one (the default): Close the extra copies, keeping the active one (or the first one).
 • Keep all: Leave duplicates as they are.
-• Keep one: Close the extra copies, keeping the active one (or the first one).
 • Group them: Move duplicates into a labeled Chrome tab group so you can review them before closing.
 
 ▸ Gather All Windows Into One
@@ -123,8 +123,8 @@ Press ⚙ Settings on the Tab Organizer page (Chrome's own "Options" item opens 
   - Tab groups: by full hostname (mail.google.com ≠ drive.google.com) or by domain (all *.google.com together)
   - Grouping direction and whether each site keeps its own tab order
 • Duplicate tabs
+  - Keep one (the default): Close the extra copies
   - Keep all: Leave duplicate tabs as they are
-  - Keep one: Close the extra copies
   - Group them: Collect duplicates into a labeled group for review
 • Sessions
   - Automatic snapshots: on or off; interval, how many to keep and lazy restore under Advanced

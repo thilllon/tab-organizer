@@ -20,7 +20,7 @@ export const DEFAULT_SORT_SETTINGS: SortSettings = {
   groupSuspendedTabs: false,
   tabSuspenderExtensionId: THE_MARVELLOUS_SUSPENDER_EXTENSION_ID,
   sortPinnedTabs: false,
-  duplicateTabHandling: 'none',
+  duplicateTabHandling: 'closeAllButOne',
   groupingMode: 'subdomain',
 };
 
@@ -70,8 +70,8 @@ export const SORT_BY_OPTIONS: readonly SortOption<SortBy>[] = [
 ];
 
 export const DUPLICATE_TAB_OPTIONS: readonly SortOption<DuplicateTabHandling>[] = [
-  { value: 'none', label: 'Keep all' },
   { value: 'closeAllButOne', label: 'Keep one' },
+  { value: 'none', label: 'Keep all' },
   { value: 'group', label: 'Group them' },
 ];
 

@@ -45,7 +45,7 @@ describe('DEFAULT_SORT_SETTINGS', () => {
       groupSuspendedTabs: false,
       tabSuspenderExtensionId: THE_MARVELLOUS_SUSPENDER_EXTENSION_ID,
       sortPinnedTabs: false,
-      duplicateTabHandling: 'none',
+      duplicateTabHandling: 'closeAllButOne',
       groupingMode: 'subdomain',
     });
   });
@@ -275,8 +275,8 @@ describe('dropdown options', () => {
   it('keeps the wording the radio buttons had', () => {
     expect(SORT_BY_OPTIONS.map((option) => option.label)).toEqual(['By URL', 'By title', 'Custom']);
     expect(DUPLICATE_TAB_OPTIONS.map((option) => option.label)).toEqual([
-      'Keep all',
       'Keep one',
+      'Keep all',
       'Group them',
     ]);
   });
