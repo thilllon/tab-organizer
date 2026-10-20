@@ -1,7 +1,7 @@
 {
   "name": "tab-organizer",
   "displayName": "Tab Organizer",
-  "version": "7.13.3",
+  "version": "7.14.0",
   "description": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
   "keywords": [
     "chrome-extension",
