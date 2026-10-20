@@ -47,7 +47,7 @@ function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
 
-/** Local-time "2026-08-29 14:03" — the same stamp `defaultSessionName()` (session-naming.ts) uses. */
+/** Local-time "2026-08-29 14:03" - the same stamp `defaultSessionName()` (session-naming.ts) uses. */
 function formatStamp(date: Date): string {
   return (
     `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ` +
@@ -60,7 +60,7 @@ export function defaultHistoryName(date: Date, windowCount: number, tabCount: nu
   return `Snapshot ${formatStamp(date)} · ${plural(windowCount, 'window')} · ${plural(tabCount, 'tab')}`;
 }
 
-/** "Previous session (recovered) 2026-08-29 14:03" — `date` is the snapshot's capture time. */
+/** "Previous session (recovered) 2026-08-29 14:03" - `date` is the snapshot's capture time. */
 export function recoveredSnapshotName(date: Date): string {
   return `Previous session (recovered) ${formatStamp(date)}`;
 }
@@ -72,7 +72,7 @@ function tabCountOf(session: Session): number {
 /**
  * Capture every normal window and store it as a `kind: 'history'` session, unless history is
  * off, nothing is capturable, or the layout is identical to the last snapshot (`contentHash`
- * vs `historyMeta.lastHash` — titles are excluded from the hash, see session-hash.ts). After a save the
+ * vs `historyMeta.lastHash` - titles are excluded from the hash, see session-hash.ts). After a save the
  * ring buffer is trimmed to `historyMaxSnapshots` unprotected snapshots (saved sessions and
  * protected snapshots are never touched) and `historyMeta` is advanced.
  *
@@ -128,7 +128,7 @@ function isPromotable(summary: SessionSummary): boolean {
  * How many crash-recovery pins stay protected: the one this start made, plus the previous
  * browser session's, so the entry the dashboard points at (and the one before it, for a user who
  * only notices the loss on the next launch) is always there. Older auto-pins are demoted back to
- * ordinary snapshots — see `sessionRepo.demoteAutoProtected`.
+ * ordinary snapshots - see `sessionRepo.demoteAutoProtected`.
  */
 const RECOVERED_AUTO_PIN_LIMIT = 2;
 
@@ -139,13 +139,13 @@ const RECOVERED_AUTO_PIN_LIMIT = 2;
  * "Previous session (recovered) <capture time>". Returns its id, or `null` when nothing qualifies.
  *
  * Idempotent: a recovered snapshot is never re-promoted, and only snapshots captured *after* the
- * newest existing recovered one are candidates — otherwise every restart with no new snapshots
+ * newest existing recovered one are candidates - otherwise every restart with no new snapshots
  * in between (history off, or an unchanged layout) would promote one more stale snapshot and
  * slowly turn the whole ring into protected entries.
  *
  * That guard bounds one startup, not the sequence of them: with new snapshots arriving between
  * restarts, each start still pins one more, and the ring buffer skips every one of them. So the
- * pins are capped here too — the newest `RECOVERED_AUTO_PIN_LIMIT` stay protected and the rest
+ * pins are capped here too - the newest `RECOVERED_AUTO_PIN_LIMIT` stay protected and the rest
  * are demoted (never deleted) back into the ring. A snapshot the user protected is never
  * demoted: only pins this function made carry the `autoProtected` marker, and any use of the
  * Protect switch clears it.

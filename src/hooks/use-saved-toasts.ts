@@ -21,7 +21,7 @@ interface SavedToasts {
 }
 
 /**
- * Timer half of the toasts — the queue rules themselves are pure, in ./toast-queue.ts.
+ * Timer half of the toasts - the queue rules themselves are pure, in ./toast-queue.ts.
  *
  * Every toast owns its own timeout rather than the stack sharing one: with a shared timer a second
  * change would either cut the first toast short or hold all three up for a full second past the
@@ -58,7 +58,7 @@ export function useSavedToasts(): SavedToasts {
       id,
       setTimeout(() => {
         timers.current.delete(id);
-        // Harmless if the cap already evicted this one — dropToast is a no-op then.
+        // Harmless if the cap already evicted this one - dropToast is a no-op then.
         setToasts((list) => dropToast(list, id));
       }, ms),
     );

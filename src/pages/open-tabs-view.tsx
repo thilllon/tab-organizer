@@ -31,26 +31,26 @@ interface OpenTabsViewProps {
   /** How many sessions are already saved: the first-run hint only shows while there are none. */
   savedCount: number;
   onSaveAll(): void;
-  /** Moves every other window's tabs into this one — the icon menu's "Assemble!". */
+  /** Moves every other window's tabs into this one - the icon menu's "Assemble!". */
   onAssemble(): void;
   /** An assemble run is under way. */
   assembling: boolean;
   onSaveWindow(windowId: number): void;
   /**
-   * Saves these live tabs as a session. Resolves with the ids of the tabs that were stored —
-   * fewer than asked for when one closed or stopped being saveable in the meantime — or undefined
+   * Saves these live tabs as a session. Resolves with the ids of the tabs that were stored -
+   * fewer than asked for when one closed or stopped being saveable in the meantime - or undefined
    * when nothing was saved.
    */
   onSaveTabs(tabIds: number[]): Promise<number[] | undefined>;
   onOpenSettings(): void;
-  /** "Copied …" / "Closed …" — a toast, shown by the app. */
+  /** "Copied …" / "Closed …" - a toast, shown by the app. */
   onNotice(message: string): void;
   onError(message: string): void;
 }
 
 /**
  * The default view: what is open right now, and one button that saves it. The button says what it
- * will take — "Save all windows" is a different promise from "Save this window", and the user
+ * will take - "Save all windows" is a different promise from "Save this window", and the user
  * should not have to count their windows to know which one they are pressing. Saving a single
  * window stays on that window's row, where it belongs. With more than one window open, a second
  * button gathers them all into this one.
@@ -100,7 +100,7 @@ export function OpenTabsView({
 
   const toggleTab = (tabId: number, shiftKey: boolean) => {
     // Read now, not inside the updater: React may run the updater later, during render, and by
-    // then the anchor below has already moved to this very tab — a range of one.
+    // then the anchor below has already moved to this very tab - a range of one.
     const from = anchor.current;
     anchor.current = tabId;
     setSelection((current) =>

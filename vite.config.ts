@@ -42,7 +42,7 @@ const manifest = defineManifest((env) => {
       // nobody that the right-click menu exists.
       default_title: 'Tab Organizer: click to sort tabs, right-click for sessions',
     },
-    // Chrome's own "Options" item opens the app's Settings view — one page, one place for
+    // Chrome's own "Options" item opens the app's Settings view - one page, one place for
     // everything (a fragment is allowed here; verified in Chrome for Testing 151).
     options_page: 'app.html#settings',
     background: {
@@ -56,7 +56,7 @@ const manifest = defineManifest((env) => {
       },
     ],
     // `alarms` is touched at module-evaluation time (`chrome.alarms.onAlarm.addListener` in
-    // src/service-worker.ts), so it must ship with that listener — see AGENTS.md.
+    // src/service-worker.ts), so it must ship with that listener - see AGENTS.md.
     permissions: [
       'tabs',
       'tabGroups',
@@ -68,12 +68,12 @@ const manifest = defineManifest((env) => {
     ],
     // Sorting and assembling suggest a key (DEFAULT_SHORTCUTS in src/constants.ts); the other two
     // ship unbound. Chrome silently drops a suggested_key that conflicts with another extension,
-    // so the UI must not promise a key — Settings shows what Chrome actually assigned. Users bind
+    // so the UI must not promise a key - Settings shows what Chrome actually assigned. Users bind
     // and rebind them at chrome://extensions/shortcuts.
     commands: {
       // Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked`
       // exactly as a click does, so the shortcut sorts (and snapshots) through the very same
-      // listeners — there is no second code path to keep in step. Chrome ignores a description
+      // listeners - there is no second code path to keep in step. Chrome ignores a description
       // here; Settings supplies the name (src/lib/command-rows.ts).
       _execute_action: { suggested_key: { default: DEFAULT_SHORTCUTS._execute_action } },
       'save-session': { description: 'Save the current window as a session' },
@@ -92,7 +92,7 @@ export default defineConfig(() => {
     build: {
       emptyOutDir: true,
       // Chrome has supported `<link rel="modulepreload">` natively since long before the
-      // `minimum_chrome_version` this extension declares, so the polyfill is dead code — and it
+      // `minimum_chrome_version` this extension declares, so the polyfill is dead code - and it
       // ships a bare `fetch()` that a store reviewer auditing our "no network requests" claim
       // would have to rule out by hand. Drop it.
       modulePreload: { polyfill: false },
@@ -115,7 +115,7 @@ export default defineConfig(() => {
       // which port to dial, and it infers one from `location` when nothing says otherwise. On a
       // `chrome-extension://` page `location.port` is the empty string, so the first attempt went
       // to `ws://localhost:/` and always failed. Vite then retried its "direct" target and HMR did
-      // come up, so this is not the difference between working and broken — it is the difference
+      // come up, so this is not the difference between working and broken - it is the difference
       // between connecting and connecting after a websocket error on every single page load.
       // `clientPort` rewrites only the client's URL; `ws.port` would instead move the socket onto
       // a second listener, which nothing here wants (crxjs builds its own service-worker client

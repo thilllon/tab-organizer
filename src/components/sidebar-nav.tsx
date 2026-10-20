@@ -32,7 +32,7 @@ interface NavItemProps {
   time?: string;
   meta: React.ReactNode;
   current: boolean;
-  /** The route this row leads to. Rendered as a real `href` — see the comment on NavItem. */
+  /** The route this row leads to. Rendered as a real `href` - see the comment on NavItem. */
   route: Route;
   onClick(): void;
 }
@@ -40,14 +40,14 @@ interface NavItemProps {
 /**
  * One row of the sidebar, as an anchor rather than a button.
  *
- * These rows are navigation — each one has an address (`#saved/<id>`, `#settings`) — so the
+ * These rows are navigation - each one has an address (`#saved/<id>`, `#settings`) - so the
  * browser should treat them as such: ⌘-click opens a session in its own tab, the context menu
  * offers "Copy link address", and the status bar previews the destination. A button can offer
  * none of that.
  *
  * A plain click is still handled in JS. Letting the hash change on its own would reach `useRoute`
- * through `hashchange` and look right, but it would skip everything else `go()` does — clearing a
- * stale notice, retiring the current search — so the two paths would drift apart.
+ * through `hashchange` and look right, but it would skip everything else `go()` does - clearing a
+ * stale notice, retiring the current search - so the two paths would drift apart.
  */
 function NavItem({ icon, label, sub, time, meta, current, route, onClick }: NavItemProps) {
   return (
@@ -105,8 +105,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 /**
  * The left column: what you have (open tabs, saved sessions, automatic snapshots) as one list, so
- * the main pane only ever shows what is selected. Snapshots stay folded away — they are a safety
- * net, not something to browse — except right after a restart, when the recovered one is called
+ * the main pane only ever shows what is selected. Snapshots stay folded away - they are a safety
+ * net, not something to browse - except right after a restart, when the recovered one is called
  * out here instead of in a banner over the page.
  */
 export function SidebarNav({

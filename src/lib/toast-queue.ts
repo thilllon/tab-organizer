@@ -6,7 +6,7 @@
  * three confirmations, not one flickering box, and must not grow without end either.
  *
  * Kept pure and separate from the component so the capping and expiry rules can be tested without
- * a DOM — the timers themselves live in `useSavedToasts` (src/hooks/use-saved-toasts.ts).
+ * a DOM - the timers themselves live in `useSavedToasts` (src/hooks/use-saved-toasts.ts).
  */
 
 /** How long a one-word confirmation stays up. */
@@ -40,7 +40,7 @@ export function pushToast(list: readonly Toast[], toast: Toast, max: number = MA
 
 /**
  * Rewrites the toast with `toast.id` where it stands, or appends it when it is not (or no longer)
- * on screen. A running count — "Collecting sessions… 30 of 200" — is one toast that changes, not
+ * on screen. A running count - "Collecting sessions… 30 of 200" - is one toast that changes, not
  * a new one per tick, and keeping the id keeps React from animating it in again each time.
  */
 export function upsertToast(

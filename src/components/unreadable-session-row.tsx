@@ -22,7 +22,7 @@ interface UnreadableSessionRowProps {
  * body is on disk and intact, this build simply cannot migrate it, so the row says so instead of
  * pretending the session is gone.
  *
- * Everything that would have to read the body — restore, rename, export, expanding the tree — is
+ * Everything that would have to read the body - restore, rename, export, expanding the tree - is
  * absent rather than disabled-looking: there is nothing to click. Delete stays, because it only
  * needs the index entry and the key, and a user who does not want to update must still be able to
  * clear the entry. `remove()` never reads the body, so it works here exactly as it does elsewhere.

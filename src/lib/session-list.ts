@@ -14,7 +14,7 @@ export function pickWindow(session: Session, windowIndex: number): Session {
  * saved sessions list, `kind: 'history'` in the folded snapshots list. History snapshots share the
  * index with saved sessions, so the saved list must filter rather than render everything.
  *
- * Order is preserved from the input — `sessionRepo.listSummaries()` returns newest first, and a
+ * Order is preserved from the input - `sessionRepo.listSummaries()` returns newest first, and a
  * snapshot's `updatedAt` is not moved by protect/rename, so the snapshots list gets newest-first
  * capture order for free.
  */
@@ -55,7 +55,7 @@ function newestFirst(a: SessionSummary, b: SessionSummary): number {
 }
 
 /**
- * The snapshot the worker promoted after a restart, while it is still the newest one — the app's
+ * The snapshot the worker promoted after a restart, while it is still the newest one - the app's
  * sidebar marks it "recovered" instead of putting a banner over the page. An ordinary snapshot
  * taken after it means the user has been browsing since the restart, so the marker goes away on
  * its own.

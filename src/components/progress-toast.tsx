@@ -36,10 +36,10 @@ export function ProgressToast({
 
   const { tabErrors, structuralProblems } =
     result === undefined ? { tabErrors: [], structuralProblems: [] } : splitRestoreErrors(result);
-  // M counts attempted tabs only — see the comment on formatRestoreSummary.
+  // M counts attempted tabs only - see the comment on formatRestoreSummary.
   const total =
     result === undefined ? 0 : result.restored + result.skipped.length + tabErrors.length;
-  // Which window, and how fast — both undefined until they would say something true (a
+  // Which window, and how fast - both undefined until they would say something true (a
   // single-window restore, or too short a sample to measure).
   const windowLine =
     progress === undefined

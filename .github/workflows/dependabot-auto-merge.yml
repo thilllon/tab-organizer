@@ -48,7 +48,7 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BODY: |-
-            **Not auto-merged** — this is a `${{ steps.metadata.outputs.update-type || 'unclassified' }}` update.
+            **Not auto-merged** - this is a `${{ steps.metadata.outputs.update-type || 'unclassified' }}` update.
 
             Only minor and patch updates merge themselves. A maintainer has to read the changelog
             for breaking changes, check that `ci` is green (admins can merge past a red check),

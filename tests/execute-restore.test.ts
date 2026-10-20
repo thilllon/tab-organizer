@@ -897,7 +897,7 @@ describe('executeRestore', () => {
 /**
  * Spec §12 Phase 6 acceptance: "a 1,000-tab restore completes without freezing, cancel works".
  * The multi-chunk path is covered at ~26 tabs elsewhere; this pins the shape of a restore two
- * orders of magnitude larger — the chunk count, that every single tab is created, and that a
+ * orders of magnitude larger - the chunk count, that every single tab is created, and that a
  * cancel lands on a chunk boundary with the tabs already created kept.
  */
 describe('executeRestore at 1,000 tabs', () => {

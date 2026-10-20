@@ -9,7 +9,7 @@ const UNSUPPORTED_REASON = 'This tab cannot be opened (unsupported URL).';
 /**
  * Opens one saved tab in a background tab, through the same spec §6 sanitiser a restore uses:
  * a snapshot url is whatever the page had at capture time (`data:`, `javascript:`, `blob:`, a
- * foreign extension page), so it must never reach `chrome.tabs.create` unchecked. Never throws —
+ * foreign extension page), so it must never reach `chrome.tabs.create` unchecked. Never throws -
  * a refused url and a rejected `tabs.create` both come back as `{ ok: false, reason }` for the
  * caller to show inline.
  */

@@ -17,7 +17,7 @@ import { sortTabGroups } from '@/lib/sort-tabs';
 /**
  * The service worker: the manifest's `background.service_worker`, and the one file that is only
  * ever loaded there. It wires Chrome events to the functions in `src/lib/` and holds nothing
- * else. Every listener is registered synchronously at module top level (MV3 requirement). No tab/window listeners here —
+ * else. Every listener is registered synchronously at module top level (MV3 requirement). No tab/window listeners here -
  * ever (see AGENTS.md). History snapshots are driven by `chrome.alarms` only (spec §5), which is
  * why `'alarms'` sits in the manifest permissions: `chrome.alarms.onAlarm.addListener` below runs
  * while this module evaluates, and a missing permission would take the whole worker down.
@@ -30,7 +30,7 @@ export const MENU_IDS = {
 
 /**
  * Keyboard-command ids. These must stay in lockstep with the `commands` block of
- * `defineManifest()` in `vite.config.ts` — Chrome delivers exactly those strings to
+ * `defineManifest()` in `vite.config.ts` - Chrome delivers exactly those strings to
  * `commands.onCommand`, and a rename on one side silently stops the shortcut working.
  * `assembleTabs` deliberately shares its id with `MENU_IDS.assembleTabs`. `openDashboard` has no
  * menu item: Chrome adds its own "Options" entry (it opens `app.html#settings`), and a second
@@ -173,7 +173,7 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
  * Every step that runs before the alarms are armed is caught locally (not left to the listener's
  * outer .catch): the alarms are what keeps history running, so nothing upstream of them may
  * abort the handler. `registerContextMenus` touches the menus API, and `migrateAll`/`reconcile`
- * read the stored index — a `sessionIndex` from a future schema (or plain garbage) makes
+ * read the stored index - a `sessionIndex` from a future schema (or plain garbage) makes
  * `migrateIndex` throw, and without this the alarms would never be armed again. `reconcile()`
  * itself tolerates such an index and rebuilds it from the bodies (see session-repo.ts), so the two
  * halves together mean a damaged index is both survivable and repaired.
@@ -181,7 +181,7 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
 async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<void> {
   // Spec §2: every handler clears the badge first. An install/update starts a brand-new worker,
   // so the 2 s `setTimeout` that would have cleared a ✓ or ! from the previous one is gone while
-  // the badge text — browser state — survives on the icon.
+  // the badge text - browser state - survives on the icon.
   clearBadge();
   await registerContextMenus().catch(report);
   if (details.reason === 'update') {
@@ -201,7 +201,7 @@ async function onStartup(): Promise<void> {
   // so a failed promotion still lets the alarms below be armed.
   await promoteRecoveredSnapshot().catch(report);
   // Not caught: unlike the steps above this one is not a repair pass but the alarm arming's own
-  // input, and a rejection here means the storage read itself failed — `ensureHistoryAlarm()`
+  // input, and a rejection here means the storage read itself failed - `ensureHistoryAlarm()`
   // would fail on its internal read too, so there is nothing to salvage and the listener's outer
   // .catch reports it.
   const settings = await sessionRepo.getSettings();
@@ -229,10 +229,10 @@ function onAlarm(alarm: chrome.alarms.Alarm): void {
 }
 
 /**
- * Second `action.onClicked` listener (the other, further down this file, is the sort — untouched). Runs
+ * Second `action.onClicked` listener (the other, further down this file, is the sort - untouched). Runs
  * concurrently with the sort and is never awaited by it: the snapshot only needs the URLs, which
  * it captures before a `closeAllButOne` duplicate pass closes any (tab order may reflect an
- * in-progress sort — acceptable, recovery is about URLs). `takeHistorySnapshot` gates on
+ * in-progress sort - acceptable, recovery is about URLs). `takeHistorySnapshot` gates on
  * `historyEnabled` before touching any window, so a click costs one storage read while history is
  * off. Errors are reported, never thrown: the click must keep sorting no matter what.
  */
@@ -299,7 +299,7 @@ chrome.storage.onChanged.addListener(onStorageChanged);
  */
 
 // One sort at a time. A move plan (move-plan.ts) is only right for the order it was made from, so
-// a second click waits for the first and then sorts whatever the strip looks like by then — which
+// a second click waits for the first and then sorts whatever the strip looks like by then - which
 // is usually nothing left to do.
 let sortQueue: Promise<void> = Promise.resolve();
 

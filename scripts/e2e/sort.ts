@@ -7,7 +7,7 @@
  *     pnpm build && pnpm e2e:sort
  *
  * The click is delivered with `chrome.action.onClicked.dispatch()` inside the service worker, so
- * the ordinary `dist/` build is enough — no e2e hook. `sortTabGroups()` is not awaited by its
+ * the ordinary `dist/` build is enough - no e2e hook. `sortTabGroups()` is not awaited by its
  * listener, so each scenario waits for the strip to stop changing.
  *
  * Environment: `E2E_DIST` (default `dist/`), `E2E_KEEP_OPEN=1`, plus `PW_CHROMIUM` / `HEADLESS`
@@ -37,7 +37,7 @@ const checks: Check[] = [];
 
 function check(name: string, ok: boolean, detail: string): void {
   checks.push({ name, ok, detail });
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${name} — ${detail}`);
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${name} - ${detail}`);
 }
 
 function same(a: unknown, b: unknown): boolean {
@@ -124,7 +124,7 @@ const idsOf = (run: SortRun): number[] => run.strip.map((tab) => tab.id);
 
 async function main(): Promise<void> {
   if (!existsSync(path.join(DIST, 'manifest.json'))) {
-    throw new Error(`${DIST} has no manifest.json — run: pnpm build`);
+    throw new Error(`${DIST} has no manifest.json - run: pnpm build`);
   }
   const server = await startDemoServer();
   const ext = await launchExtension({
@@ -237,12 +237,12 @@ async function main(): Promise<void> {
 
   const failed = checks.filter((entry) => !entry.ok).length;
   console.log(
-    `\n${failed === 0 ? 'OK' : 'FAILED'} — ${checks.length - failed}/${checks.length} checks`,
+    `\n${failed === 0 ? 'OK' : 'FAILED'} - ${checks.length - failed}/${checks.length} checks`,
   );
   process.exit(failed === 0 ? 0 : 1);
 }
 
 main().catch((err: unknown) => {
-  console.error('FAIL  sort e2e crashed —', err);
+  console.error('FAIL  sort e2e crashed - ', err);
   process.exit(1);
 });

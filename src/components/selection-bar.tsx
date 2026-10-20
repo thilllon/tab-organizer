@@ -28,7 +28,7 @@ interface SelectionBarProps {
 /**
  * What the Open tabs view shows in place of its heading while tabs are ticked: how many, and what
  * can be done with exactly those. The three things done most are buttons; the rest is behind the
- * menu. It is presentational — the view holds the selection and does the work.
+ * menu. It is presentational - the view holds the selection and does the work.
  */
 export function SelectionBar({
   count,

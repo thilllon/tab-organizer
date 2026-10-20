@@ -5,7 +5,7 @@ import { unwrapSuspendedUrl } from '@/lib/suspended-url';
 import type { GroupSnapshot, Session, TabSnapshot, WindowSnapshot } from '@/types';
 
 export interface CaptureOptions {
-  /** `chrome.runtime.getURL('')` — tabs whose url starts with this are our own pages. */
+  /** `chrome.runtime.getURL('')` - tabs whose url starts with this are our own pages. */
   ownUrlPrefix: string;
   /** Suspender wrapper prefix (`chrome-extension://<id>/suspended.html#`), or '' when none. */
   suspendedPrefix: string;
@@ -58,8 +58,8 @@ function isOwnPage(url: string, options: CaptureOptions): boolean {
 
 /**
  * A captured window that still carries the Chrome runtime ids of its window, groups and tabs.
- * In-memory only, for the dashboard's live open-windows pane: `captureWindows()` — the only path
- * into a stored `Session` — strips every id first (spec §3: runtime ids are never persisted).
+ * In-memory only, for the dashboard's live open-windows pane: `captureWindows()` - the only path
+ * into a stored `Session` - strips every id first (spec §3: runtime ids are never persisted).
  */
 interface IdentifiedWindowSnapshot extends WindowSnapshot {
   windowId: number;
@@ -72,7 +72,7 @@ interface CapturedWindow extends Omit<IdentifiedWindowSnapshot, 'windowId'> {
   windowId?: number;
 }
 
-/** `chrome.tabs.TAB_ID_NONE` — a tab that is not a browser tab (devtools, ...) has no usable id. */
+/** `chrome.tabs.TAB_ID_NONE` - a tab that is not a browser tab (devtools, ...) has no usable id. */
 const NO_TAB_ID = -1;
 
 function captureWindow(
@@ -169,7 +169,7 @@ function captureAll(
   return result;
 }
 
-/** Drops `tabId`/`groupId` field by field — nothing that reaches storage may carry a runtime id. */
+/** Drops `tabId`/`groupId` field by field - nothing that reaches storage may carry a runtime id. */
 function stripRuntimeIds(captured: CapturedWindow): WindowSnapshot {
   const snapshot: WindowSnapshot = {
     state: captured.state,
@@ -220,7 +220,7 @@ export function captureWindows(
  * `captureWindows` with the runtime ids kept, for the dashboard's live pane (spec §12 Phase 2).
  *
  * Two deliberate differences from `captureWindows`:
- * - windows left with no capturable tabs are KEPT — for a capture there is nothing to save, but
+ * - windows left with no capturable tabs are KEPT - for a capture there is nothing to save, but
  *   the pane must still show the window the dashboard itself lives in (all of whose tabs may be
  *   own extension pages) so it can be marked and acted on;
  * - a tab with no id is dropped: `populate: true` always supplies one, and a tab that has none
@@ -269,7 +269,7 @@ async function loadCaptureOptions(): Promise<CaptureOptions> {
 export type CaptureScope = 'window' | 'all' | { windowId: number } | { tabIds: readonly number[] };
 
 /**
- * The one window `scope` selects, or undefined when it selects none — which for a single-window
+ * The one window `scope` selects, or undefined when it selects none - which for a single-window
  * scope means "capture nothing", never "capture everything" (`getLastFocused()` without an id).
  */
 function scopeWindowId(
@@ -305,7 +305,7 @@ export async function captureSession(scope: CaptureScope): Promise<Session> {
 }
 
 /**
- * `captureSession`, plus the runtime ids of exactly the tabs that went into the session — from the
+ * `captureSession`, plus the runtime ids of exactly the tabs that went into the session - from the
  * same read of the browser, so the two cannot disagree. For "Save & close": the tabs asked for
  * and the tabs captured can differ (one closed, or became a page that is not captured, between
  * the tick and the save), and only what was captured may be closed. The ids are returned beside

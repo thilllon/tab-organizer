@@ -1,7 +1,7 @@
 import type { TabGroupColor } from '@/types';
 
 /*
- * Chrome's own tab-group colours — the one file in the app allowed to name a colour literally.
+ * Chrome's own tab-group colours - the one file in the app allowed to name a colour literally.
  * These are *Chrome's* values, shown so a group reads the same here as it does in the tab strip,
  * and they must not follow the app theme: swap the design system and a blue group is still blue.
  * Everything else in the UI resolves through the tokens in src/styles/index.css.
@@ -12,13 +12,13 @@ import type { TabGroupColor } from '@/types';
  * saturated fill.
  *
  * The saturated version is what the design mockup drew, and it cannot be made accessible. Measured
- * against Chrome's nine colours at Tailwind's `-500`, **five of them** — blue, red, pink, purple
- * and orange — clear 4.5:1 with neither white nor near-black text; blue tops out at 3.76:1. Small
+ * against Chrome's nine colours at Tailwind's `-500`, **five of them** - blue, red, pink, purple
+ * and orange - clear 4.5:1 with neither white nor near-black text; blue tops out at 3.76:1. Small
  * bold text on a coloured fill is simply the wrong shape for this palette.
  *
  * These pairings were measured instead of guessed, compositing the tint over `--card` in each
  * scheme: the weakest is 4.54:1 (green, light) and 4.99:1 (yellow, dark). `-200` rather than `-300`
- * for dark text because yellow and cyan land at 4.39 and 4.47 with `-300` — just under.
+ * for dark text because yellow and cyan land at 4.39 and 4.47 with `-300` - just under.
  */
 export const GROUP_CHIP_CLASS: Record<TabGroupColor, string> = {
   grey: 'bg-gray-500/15 text-gray-700 dark:bg-gray-400/20 dark:text-gray-200',
@@ -33,8 +33,8 @@ export const GROUP_CHIP_CLASS: Record<TabGroupColor, string> = {
 };
 
 /**
- * The rail down the left of a group's rows, tying them to the chip above. Decorative — the chip
- * already names the group in text — so it carries no contrast requirement of its own.
+ * The rail down the left of a group's rows, tying them to the chip above. Decorative - the chip
+ * already names the group in text - so it carries no contrast requirement of its own.
  */
 export const GROUP_RAIL_CLASS: Record<TabGroupColor, string> = {
   grey: 'border-gray-500/40',

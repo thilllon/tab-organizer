@@ -1,6 +1,6 @@
 /**
  * Per-tab UI state (`sessionStorage`): which disclosure is open.
- * Deliberately not `chrome.storage` — none of this is user data, it must not travel between
+ * Deliberately not `chrome.storage` - none of this is user data, it must not travel between
  * devices or outlive the dashboard tab, and it must never go through `sessionRepo` (AGENTS.md:
  * every session-key write goes through the repo under the Web Lock; these keys are not session
  * keys at all).
@@ -8,7 +8,7 @@
 
 /** Open/closed state of the dashboard's History disclosure. */
 export const HISTORY_OPEN_KEY = 'tab-organizer:history-open';
-/** Width of the app's sidebar, in pixels — a preference, so it outlives the tab. */
+/** Width of the app's sidebar, in pixels - a preference, so it outlives the tab. */
 export const SIDEBAR_WIDTH_KEY = 'tab-organizer:sidebar-width';
 
 /**
@@ -34,7 +34,7 @@ export function writeUiState(key: string, value: string): void {
   try {
     sessionStorage.setItem(key, value);
   } catch {
-    // ignored — see readUiState
+    // ignored - see readUiState
   }
 }
 
@@ -60,6 +60,6 @@ export function writeLocalUiState(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch {
-    // ignored — see readLocalUiState
+    // ignored - see readLocalUiState
   }
 }

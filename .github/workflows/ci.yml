@@ -65,7 +65,7 @@ jobs:
       #    suite already covers in shape.
       #  - `continue-on-error` keeps a runner-image or browser-download change from turning CI red
       #    for a reason unrelated to the diff. The step still shows up as failed in the run, which
-      #    is what stops the script rotting unnoticed — the point of wiring it up at all.
+      #    is what stops the script rotting unnoticed - the point of wiring it up at all.
       # Revisit both decisions once the runner image is pinned and a Chromium is cached.
       - name: Install Chromium for the QA smoke test
         if: github.event_name != 'pull_request'

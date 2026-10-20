@@ -183,7 +183,7 @@ describe('formatRestoreSummary', () => {
   });
 });
 
-describe('formatRestoreSummary — cancelled with nothing opened', () => {
+describe('formatRestoreSummary - cancelled with nothing opened', () => {
   it('does not claim tabs were kept when the cancel landed before the first tab', () => {
     expect(
       formatRestoreSummary({ restored: 0, discarded: 0, skipped: [], errors: [] }, 0, {

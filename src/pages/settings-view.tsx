@@ -56,7 +56,7 @@ interface SettingsViewProps {
   onNotice(message: string): void;
   /** A setting was written; the app shows the confirmation toast. */
   onSaved(message: string): void;
-  /** A setting could not be written — shown in the app's error line, which stays up. */
+  /** A setting could not be written - shown in the app's error line, which stays up. */
   onError(message: string): void;
   onExportAll(): void;
   onImport(): void;
@@ -67,11 +67,11 @@ interface SettingsViewProps {
 
 /**
  * Everything configurable, in one place inside the app: Chrome's own "Options" entry opens this
- * very view (`app.html#settings`). It is the content of the Settings dialog in `app.tsx` — a
- * fixed title row over a scrolling body — so it must be rendered inside a `DialogContent`. Sort by and Duplicate tabs are visible because they change what a
+ * very view (`app.html#settings`). It is the content of the Settings dialog in `app.tsx` - a
+ * fixed title row over a scrolling body - so it must be rendered inside a `DialogContent`. Sort by and Duplicate tabs are visible because they change what a
  * click on the icon visibly does, with the three Custom-only choices indented under Sort by while
  * Custom is chosen; the other three sit under "Advanced". Nothing has a Save button
- * — a setting is written the moment it changes, as it already was for the session settings.
+ * - a setting is written the moment it changes, as it already was for the session settings.
  */
 export function SettingsView({
   summaries,
@@ -301,7 +301,7 @@ export function SettingsView({
                   }}
                 />
                 {suspenderStatus === 'invalid' && (
-                  <span className="text-xs text-destructive">32 letters a–p</span>
+                  <span className="text-xs text-destructive">32 letters a-p</span>
                 )}
               </div>
             </SettingsField>

@@ -514,7 +514,7 @@ describe('sorting tabs that have no committed url', () => {
         sortByTitleOrUrl(tabs, 'url', groupSuspendedTabs, false, noSuspend, noSuspendLen),
       ).not.toThrow();
 
-      // Real urls first, then the unknown tabs — in their original relative order (stable sort).
+      // Real urls first, then the unknown tabs - in their original relative order (stable sort).
       expect(tabs.map((t) => t.id)).toEqual([4, 2, 1, 3]);
     });
   }

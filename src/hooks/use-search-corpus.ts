@@ -20,7 +20,7 @@ interface UseSearchCorpusOptions {
 interface SearchCorpusState {
   /** Open tabs first, then the cached saved / history entries in index order. */
   corpus: SearchEntry[];
-  /** True while the idle pre-warm is still reading bodies — the result counts are not final. */
+  /** True while the idle pre-warm is still reading bodies - the result counts are not final. */
   warming: boolean;
   /** Loads the bodies a query needs that the pre-warm did not reach (spec §7: lazy on first use). */
   ensureLoaded(ids: readonly SessionId[]): Promise<void>;
@@ -29,7 +29,7 @@ interface SearchCorpusState {
 /**
  * Assembles the corpus the dashboard's unified search runs over (spec §7 / §12 Phase 4):
  * `entriesFromOpenWindows()` over the live tabs plus one cached `SearchEntry[]` per session body.
- * Everything expensive happens here — a keystroke only re-runs `search()` over `corpus`.
+ * Everything expensive happens here - a keystroke only re-runs `search()` over `corpus`.
  *
  * Bodies are read through `SearchCorpusCache` (i.e. `sessionRepo`), pre-warmed on idle within a
  * byte budget, invalidated per `session:<id>` key by `chrome.storage.onChanged` and dropped when
@@ -58,7 +58,7 @@ export function useSearchCorpus({
   }, []);
 
   // What the last `setBodyEntries` was built from. Re-assembling the list is only worth a render
-  // when the cache actually changed or the index did — a query that needed no new body must not
+  // when the cache actually changed or the index did - a query that needed no new body must not
   // hand the dashboard a new corpus array and make `search()` run twice.
   const syncedRef = useRef<{ mutations: number; ids: SessionId[] }>({ mutations: -1, ids: [] });
 

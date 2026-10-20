@@ -13,7 +13,7 @@
  * Environment flags:
  *   PW_CHROMIUM=/path/to/chrome   Chromium binary to drive. Defaults to `/opt/pw-browsers/chromium`
  *                                 when that exists, otherwise Playwright's own pinned build.
- *   HEADLESS=0                    Run headed (needs a display). Default is headless — extensions
+ *   HEADLESS=0                    Run headed (needs a display). Default is headless - extensions
  *                                 do load in headless Chrome.
  *   SMOKE_TIMEOUT_MS=85000        Watchdog for the whole run; the process exits 1 when it fires.
  *   SMOKE_KEEP_OPEN=1             Leave the browser open after the run (debugging).
@@ -41,7 +41,7 @@ const DIST = path.join(ROOT, 'dist');
 
 const WATCHDOG_MS = Number(process.env.SMOKE_TIMEOUT_MS ?? 85_000);
 const UI_TIMEOUT = 15_000;
-const RENAMED = 'QA smoke — renamed session';
+const RENAMED = 'QA smoke - renamed session';
 
 /* ------------------------------------------------------------------ fixtures */
 
@@ -196,11 +196,11 @@ const STEPS: Step[] = [
     async run(): Promise<string> {
       assert(
         existsSync(DIST) && existsSync(path.join(DIST, 'manifest.json')),
-        `no built extension at ${DIST} — run \`pnpm build\` first`,
+        `no built extension at ${DIST} - run \`pnpm build\` first`,
       );
       assert(
         existsSync(path.join(DIST, 'app.html')),
-        `${DIST} has no app.html — rebuild with \`pnpm build\``,
+        `${DIST} has no app.html - rebuild with \`pnpm build\``,
       );
       return path.relative(ROOT, DIST);
     },
@@ -527,7 +527,7 @@ const STEPS: Step[] = [
 
 async function main(): Promise<void> {
   const watchdog = setTimeout(() => {
-    console.error(`\nFAIL  watchdog — the run exceeded ${WATCHDOG_MS} ms`);
+    console.error(`\nFAIL  watchdog - the run exceeded ${WATCHDOG_MS} ms`);
     process.exit(1);
   }, WATCHDOG_MS);
   watchdog.unref();
@@ -536,7 +536,7 @@ async function main(): Promise<void> {
   const started = Date.now();
   let failed = false;
 
-  console.log(`Tab Organizer — sessions smoke test (${STEPS.length} steps)\n`);
+  console.log(`Tab Organizer - sessions smoke test (${STEPS.length} steps)\n`);
 
   for (const [index, step] of STEPS.entries()) {
     const label = `${String(index + 1).padStart(2, ' ')}/${STEPS.length} ${step.name}`;
@@ -547,11 +547,11 @@ async function main(): Promise<void> {
     const stepStarted = Date.now();
     try {
       const detail = await step.run(ctx);
-      console.log(`PASS  ${label} (${Date.now() - stepStarted} ms) — ${detail}`);
+      console.log(`PASS  ${label} (${Date.now() - stepStarted} ms) - ${detail}`);
     } catch (err) {
       failed = true;
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`FAIL  ${label} (${Date.now() - stepStarted} ms) — ${message}`);
+      console.error(`FAIL  ${label} (${Date.now() - stepStarted} ms) - ${message}`);
     }
   }
 
@@ -561,11 +561,11 @@ async function main(): Promise<void> {
   await ctx.server?.close().catch(() => undefined);
 
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
-  console.log(`\n${failed ? 'FAILED' : 'OK'} — ${STEPS.length} steps in ${seconds}s`);
+  console.log(`\n${failed ? 'FAILED' : 'OK'} - ${STEPS.length} steps in ${seconds}s`);
   process.exit(failed ? 1 : 0);
 }
 
 main().catch((err: unknown) => {
-  console.error('FAIL  smoke test crashed —', err);
+  console.error('FAIL  smoke test crashed - ', err);
   process.exit(1);
 });

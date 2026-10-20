@@ -43,7 +43,7 @@ export function applyMoves(order: readonly number[], batches: readonly MoveBatch
 }
 
 /**
- * Positions (into `values`) of one longest strictly increasing subsequence — patience sorting,
+ * Positions (into `values`) of one longest strictly increasing subsequence - patience sorting,
  * O(n log n). Applied to "where each tab should end up, read in the order the tabs are in now",
  * it names the largest set of tabs that are already in the right order relative to one another:
  * the ones that can stay put while the rest move around them.
@@ -90,7 +90,7 @@ function coalesce(moves: readonly { tabId: number; index: number }[]): MoveBatch
 /**
  * The fewest tabs displaced: everything in the longest already-ordered run stays, and each other
  * tab is put right after the tab that precedes it in `desired`. Best when a few tabs are out of
- * place — one tab that belongs at the far end is one move here, where the block move below would
+ * place - one tab that belongs at the far end is one move here, where the block move below would
  * shift every tab in between.
  */
 function fewestDisplaced(current: readonly number[], desired: readonly number[]): Costed {
@@ -114,7 +114,7 @@ function fewestDisplaced(current: readonly number[], desired: readonly number[])
 
 /**
  * The whole block in one call, as the sorter always did. Chrome leaves a tab alone when it is
- * already where the call wants it, so the cost is the tabs that are *not* — counted here by
+ * already where the call wants it, so the cost is the tabs that are *not* - counted here by
  * replaying the call. Best when the order is thoroughly shuffled: one call, however many tabs.
  */
 function wholeBlock(current: readonly number[], desired: readonly number[]): Costed {
@@ -149,7 +149,7 @@ export function planMoves(current: readonly number[], desired: readonly number[]
   return cost(minimal) <= cost(block) ? minimal.batches : block.batches;
 }
 
-/** Whether the tabs sit on consecutive strip indices — what a relative plan takes for granted. */
+/** Whether the tabs sit on consecutive strip indices - what a relative plan takes for granted. */
 export function isContiguous(indices: readonly number[]): boolean {
   return indices.every((index, position) => position === 0 || index === indices[position - 1] + 1);
 }

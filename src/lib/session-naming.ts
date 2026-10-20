@@ -18,7 +18,7 @@ export function defaultSessionName(date: Date, windowCount: number, tabCount: nu
 }
 
 /**
- * `name`, or `name (2)`, `name (3)`, ... — the first that is not in `existingNames`. Two saves in
+ * `name`, or `name (2)`, `name (3)`, ... - the first that is not in `existingNames`. Two saves in
  * the same minute get the same default name otherwise.
  */
 export function ensureUniqueName(name: string, existingNames: Iterable<string>): string {

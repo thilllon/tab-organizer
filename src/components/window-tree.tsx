@@ -11,7 +11,7 @@ import type { WindowSnapshot } from '@/types';
 
 interface WindowTreeProps {
   /**
-   * A saved `WindowSnapshot` or a live `OpenWindowView` — the live one is the same shape with
+   * A saved `WindowSnapshot` or a live `OpenWindowView` - the live one is the same shape with
    * runtime ids added, so the tree renders both without knowing which it has.
    */
   window: Pick<WindowSnapshot, 'state' | 'groups' | 'tabs'>;

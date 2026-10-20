@@ -3,23 +3,23 @@
  * last-focused one with `chrome.tabs.move` / `chrome.tabGroups.move`.
  *
  * It needs a e2e build, the only build that exposes the worker's command handler (as
- * `globalThis.__tabOrganizerE2e`, see src/service-worker.ts) — the command is otherwise only
+ * `globalThis.__tabOrganizerE2e`, see src/service-worker.ts) - the command is otherwise only
  * reachable through a keyboard shortcut:
  *
  *     pnpm e2e:assemble        # vite build --mode e2e --outDir node_modules/.cache/tab-organizer/e2e && tsx scripts/e2e/assemble.ts
  *
- * Builds five windows — a source with two pinned tabs and a tab with back/forward history; a
+ * Builds five windows - a source with two pinned tabs and a tab with back/forward history; a
  * source whose active tab sits in a collapsed titled group next to a tab carrying page state (a JS
  * value, scroll position and typed input); a source that is nothing but a collapsed three-tab
  * group with its middle tab active; a source that is a single-tab group; and the focused target
- * whose active tab is not its first — runs the command through the right-click menu's id, then
+ * whose active tab is not its first - runs the command through the right-click menu's id, then
  * checks: one normal window left, every tab id kept, the exact tab order, pinned tabs re-pinned,
  * every group kept (id, title, colour, collapsed, members) or rebuilt with the same look,
  * `Page.getNavigationHistory` unchanged, page state unchanged (no reload), **no tab activation in
  * the target at any moment**, and the ✓ badge. It also reports what this Chromium exposes for
  * split view.
  *
- * Environment: `E2E_DIST` (default `node_modules/.cache/tab-organizer/e2e/` — under node_modules,
+ * Environment: `E2E_DIST` (default `node_modules/.cache/tab-organizer/e2e/` - under node_modules,
  * so the build never shows up in the project root; it is rebuilt on every run, so losing it costs
  * nothing), plus `PW_CHROMIUM` / `HEADLESS` (see ./browser.ts).
  * On macOS point `PW_CHROMIUM` at a Chromium or Chrome for Testing binary: branded Chrome 137+
@@ -52,7 +52,7 @@ const checks: Check[] = [];
 
 function check(name: string, ok: boolean, detail: string): void {
   checks.push({ name, ok, detail });
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${name} — ${detail}`);
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${name} - ${detail}`);
 }
 
 function same(a: unknown, b: unknown): boolean {
@@ -131,7 +131,7 @@ async function createWindow(worker: Worker, urls: string[], focused: boolean): P
 
 async function main(): Promise<void> {
   if (!existsSync(path.join(DIST, 'manifest.json'))) {
-    throw new Error(`${DIST} has no manifest.json — run: pnpm e2e:assemble`);
+    throw new Error(`${DIST} has no manifest.json - run: pnpm e2e:assemble`);
   }
   const server = await startDemoServer();
   const ext = await launchExtension({
@@ -396,12 +396,12 @@ async function main(): Promise<void> {
 
   const failed = checks.filter((entry) => !entry.ok).length;
   console.log(
-    `\n${failed === 0 ? 'OK' : 'FAILED'} — ${checks.length - failed}/${checks.length} checks`,
+    `\n${failed === 0 ? 'OK' : 'FAILED'} - ${checks.length - failed}/${checks.length} checks`,
   );
   process.exit(failed === 0 ? 0 : 1);
 }
 
 main().catch((err: unknown) => {
-  console.error('FAIL  assemble QA crashed —', err);
+  console.error('FAIL  assemble QA crashed - ', err);
   process.exit(1);
 });

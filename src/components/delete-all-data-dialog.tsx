@@ -24,7 +24,7 @@ interface DeleteAllDataDialogProps {
 /**
  * Two-step confirm for `sessionRepo.removeAll()` (spec §4 "Delete all data"). Step one says what
  * goes and what stays; step two is the point of no return and is the only place the destructive
- * button appears — a single mis-click can never reach it.
+ * button appears - a single mis-click can never reach it.
  */
 export function DeleteAllDataDialog({
   open,

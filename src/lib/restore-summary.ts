@@ -26,7 +26,7 @@ export function formatRestoreDestination(session: Session, target: RestoreTarget
 
 // executeRestore records group/activation/window-state failures as `errors` entries whose `url`
 // is a synthetic `group:<title>` / `activate:<url>` / `window-state:<state>` marker rather than a
-// real tab url — these are structural restore problems, not tabs that failed to open.
+// real tab url - these are structural restore problems, not tabs that failed to open.
 const STRUCTURAL_ERROR_PREFIXES = ['group:', 'activate:', 'window-state:'];
 
 function isStructuralRestoreError(entry: RestoreResult['errors'][number]): boolean {
@@ -36,7 +36,7 @@ function isStructuralRestoreError(entry: RestoreResult['errors'][number]): boole
 interface SplitRestoreErrors {
   /** Real tabs that failed to open. */
   tabErrors: RestoreResult['errors'];
-  /** Synthetic group/activation/window-state failures — see `isStructuralRestoreError`. */
+  /** Synthetic group/activation/window-state failures - see `isStructuralRestoreError`. */
   structuralProblems: RestoreResult['errors'];
 }
 
@@ -51,7 +51,7 @@ export function splitRestoreErrors(result: RestoreResult): SplitRestoreErrors {
 }
 
 /**
- * `total` (aka M) must count attempted tabs only — restored + skipped + tab errors — never
+ * `total` (aka M) must count attempted tabs only - restored + skipped + tab errors - never
  * structural (group/window) problems; the caller computes it that way (see ProgressToast, which
  * uses `splitRestoreErrors`). That keeps "of total" meaningful whether the run finished in full or
  * broke off early (e.g. a window failed to open partway through): both read as a fraction of tabs

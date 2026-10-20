@@ -4,7 +4,7 @@ import type { ExportFormat } from '@/types';
 
 /**
  * The two local sinks the dashboard's export / copy actions write to: a Blob-URL download and
- * the clipboard (spec §8). Neither leaves the device and neither needs a permission — an
+ * the clipboard (spec §8). Neither leaves the device and neither needs a permission - an
  * extension page may create an `<a download>` on a Blob URL and click it itself, so the
  * `downloads` permission is deliberately NOT requested.
  *
@@ -28,7 +28,7 @@ export function downloadDescriptor(
 
 /**
  * Chrome starts the download asynchronously after the click, so the object URL is revoked on a
- * later task — revoking it in the same one cancels the download before it begins. The delay is
+ * later task - revoking it in the same one cancels the download before it begins. The delay is
  * generous on purpose: the URL costs a few bytes, a cancelled download costs the user their data.
  */
 const REVOKE_DELAY_MS = 60_000;

@@ -7,7 +7,7 @@ interface SavedToastsProps {
 }
 
 /**
- * The stack of toasts — "Setting saved" confirmations and the app's notices — pinned to the bottom
+ * The stack of toasts - "Setting saved" confirmations and the app's notices - pinned to the bottom
  * centre of the viewport, or of the Settings dialog when `app.tsx` renders it in there (the dialog
  * is translated into place, which makes it the containing block for `fixed` children).
  *
@@ -16,7 +16,7 @@ interface SavedToastsProps {
  * control you just touched is off-screen as soon as you scroll. Newest
  * sits at the bottom, nearest the eye.
  *
- * `pointer-events-none` on the stack — it floats over the page and must never swallow a click
+ * `pointer-events-none` on the stack - it floats over the page and must never swallow a click
  * meant for the control underneath, which matters precisely because it appears while you are still
  * clicking things.
  *

@@ -1,5 +1,5 @@
 /**
- * Turning a row into a real `<a href>` — the two rules every such row needs.
+ * Turning a row into a real `<a href>` - the two rules every such row needs.
  *
  * The point of the anchor is the browser's own affordances: the destination in the status bar at
  * the bottom left, ⌘/Ctrl-click and middle-click for a new tab, and "Copy link address" in the
@@ -22,7 +22,7 @@
  *   an anchor pointing there looks clickable, previews in the status bar, and then does nothing on
  *   ⌘-click. A row that stays a button is better than a link that lies.
  *
- * Rows whose url is not linkable keep working exactly as before — `hrefFor` returns undefined and
+ * Rows whose url is not linkable keep working exactly as before - `hrefFor` returns undefined and
  * the caller renders a button.
  */
 const LINKABLE_PROTOCOLS = new Set(['http:', 'https:']);
@@ -49,13 +49,13 @@ interface ClickModifiers {
 /**
  * True when the browser should be left to handle the click itself.
  *
- * A plain left click keeps the app's own behaviour — jump to the live tab, or open the saved url
- * in a background tab — because that is what a tab manager is for, and letting the anchor navigate
+ * A plain left click keeps the app's own behaviour - jump to the live tab, or open the saved url
+ * in a background tab - because that is what a tab manager is for, and letting the anchor navigate
  * would replace the app with the site. Every *modified* click is the user explicitly asking for
  * the browser's behaviour instead, so it is passed through: ⌘/Ctrl for a new tab, Shift for a new
  * window, Alt for whatever the platform maps it to.
  *
- * Middle-click needs no entry here in practice — Chrome raises `auxclick`, not `click`, so React's
+ * Middle-click needs no entry here in practice - Chrome raises `auxclick`, not `click`, so React's
  * `onClick` never sees it and the browser opens its new tab unimpeded. `button` is still checked so
  * the rule does not depend on that.
  */

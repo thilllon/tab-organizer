@@ -33,7 +33,7 @@ export interface SearchEntry {
 }
 
 interface OpenEntriesOptions {
-  /** `chrome.runtime.getURL('')` — tabs whose url starts with this (our own pages) are dropped. */
+  /** `chrome.runtime.getURL('')` - tabs whose url starts with this (our own pages) are dropped. */
   excludeUrlPrefix?: string;
 }
 
@@ -115,7 +115,7 @@ export function entriesFromOpenWindows(
     // Same rule as `captureWindow` (src/lib/session-capture.ts): an incognito window is never read.
     // `windows.getAll({ windowTypes: ['normal'] })` filters the window *type*, not incognito-ness,
     // so without this an incognito title or url would surface in search once the user allows the
-    // extension in incognito — which PRIVACY_POLICY.md rules out without qualification.
+    // extension in incognito - which PRIVACY_POLICY.md rules out without qualification.
     if (win.incognito) {
       continue;
     }
