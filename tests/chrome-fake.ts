@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 /**
  * In-memory fake of the subset of `chrome.*` used by this extension.
  *
@@ -132,6 +134,8 @@ interface ChromeFake {
   state: FakeState;
   fire: FakeFire;
   failNext(api: FailableApi, times: number, message: string): void;
+  /** What `chrome.i18n.getUILanguage()` reports, and so which `_locales` folder `getMessage` reads. */
+  setUiLanguage(language: string): void;
   /** Moves `pendingUrl` -> `url` and sets `status: 'complete'`, as Chrome does on commit. */
   commitNavigation(tabId: number): void;
 }
@@ -1071,8 +1075,28 @@ export function createChromeFake(): ChromeFake {
     },
   };
 
+  let uiLanguage = 'en';
+  const i18n = {
+    getUILanguage(): string {
+      return uiLanguage;
+    },
+    // Real Chrome: the UI language's message, else the default locale's (en), else an empty string;
+    // $1..$9 are replaced and $$ becomes $.
+    getMessage(name: string, substitutions?: string | string[]): string {
+      const entry = localeMessages(uiLanguage)[name] ?? localeMessages('en')[name];
+      if (entry === undefined) {
+        return '';
+      }
+      const subs = substitutions === undefined ? [] : [substitutions].flat();
+      return entry.message.replace(/\$(\$|[1-9])/g, (_match, ref: string) =>
+        ref === '$' ? '$' : (subs[Number(ref) - 1] ?? ''),
+      );
+    },
+  };
+
   const api = {
     storage: { local, sync, onChanged: storageChanged },
+    i18n,
     tabs,
     windows,
     tabGroups,
@@ -1124,6 +1148,9 @@ export function createChromeFake(): ChromeFake {
     failNext(apiName, times, message) {
       failures.set(apiName, { remaining: times, message });
     },
+    setUiLanguage(language) {
+      uiLanguage = language;
+    },
     commitNavigation(tabId) {
       const tab = requireTab(tabId);
       if (tab.pendingUrl !== undefined) {
@@ -1159,4 +1186,31 @@ export function getChromeFake(): ChromeFake {
     throw new Error('Chrome fake not installed; is tests/setup.ts in vitest setupFiles?');
   }
   return fake;
+}
+
+interface LocaleMessage {
+  message: string;
+  description?: string;
+}
+
+const messageCache = new Map<string, Record<string, LocaleMessage>>();
+
+/** `public/_locales/<lang>/messages.json` (region dropped, as Chrome falls back), or nothing. */
+function localeMessages(language: string): Record<string, LocaleMessage> {
+  const folder = language.replace('-', '_');
+  for (const candidate of [folder, folder.split('_')[0]]) {
+    const cached = messageCache.get(candidate);
+    if (cached !== undefined) {
+      return cached;
+    }
+    try {
+      const file = new URL(`../public/_locales/${candidate}/messages.json`, import.meta.url);
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as Record<string, LocaleMessage>;
+      messageCache.set(candidate, parsed);
+      return parsed;
+    } catch {
+      // no such locale: try the language without its region, then give up
+    }
+  }
+  return {};
 }

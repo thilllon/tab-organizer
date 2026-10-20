@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 import packageJson from './package.json';
-import { ASSEMBLE_LABEL, DEFAULT_SHORTCUTS } from './src/constants';
+import { DEFAULT_SHORTCUTS } from './src/constants';
 
 interface PackageJson {
   name?: string;
@@ -21,8 +21,11 @@ const manifest = defineManifest((env) => {
   const isDev = env.mode === 'development';
 
   return {
-    name: `${pkg.displayName ?? pkg.name ?? ''}${isDev ? ' Dev' : ''}`,
-    description: pkg.description ?? '',
+    // The user-visible text comes from public/_locales/<lang>/messages.json (English is the
+    // default and the fallback); tests/i18n.test.ts keeps every language complete.
+    default_locale: 'en',
+    name: isDev ? '__MSG_extName__ Dev' : '__MSG_extName__',
+    description: '__MSG_extDescription__',
     version: pkg.version ?? '0.0.0',
     manifest_version: 3,
     // Floor for the APIs used without a runtime guard:
@@ -40,7 +43,7 @@ const manifest = defineManifest((env) => {
       default_icon: 'img/logo-48.png',
       // Hovering the icon is the cheapest way to learn the two gestures; the name alone taught
       // nobody that the right-click menu exists.
-      default_title: 'Tab Organizer: click to sort tabs, right-click for sessions',
+      default_title: '__MSG_actionTitle__',
     },
     // Chrome's own "Options" item opens the app's Settings view - one page, one place for
     // everything (a fragment is allowed here; verified in Chrome for Testing 151).
@@ -76,11 +79,11 @@ const manifest = defineManifest((env) => {
       // listeners - there is no second code path to keep in step. Chrome ignores a description
       // here; Settings supplies the name (src/lib/command-rows.ts).
       _execute_action: { suggested_key: { default: DEFAULT_SHORTCUTS._execute_action } },
-      'save-session': { description: 'Save the current window as a session' },
-      'open-dashboard': { description: 'Open Tab Organizer' },
+      'save-session': { description: '__MSG_cmdSaveSession__' },
+      'open-dashboard': { description: '__MSG_cmdOpenDashboard__' },
       'assemble-tabs': {
         suggested_key: { default: DEFAULT_SHORTCUTS['assemble-tabs'] },
-        description: ASSEMBLE_LABEL,
+        description: '__MSG_cmdAssembleTabs__',
       },
     },
   };

@@ -1,0 +1,58 @@
+{
+  "extName": {
+    "message": "Tab Organizer",
+    "description": "The extension name in Chrome and the Chrome Web Store. Keep the brand name; at most 75 characters."
+  },
+  "extDescription": {
+    "message": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
+    "description": "The store summary and the line under the name at chrome://extensions. At most 132 characters."
+  },
+  "actionTitle": {
+    "message": "Tab Organizer: click to sort tabs, right-click for sessions",
+    "description": "Tooltip of the toolbar icon. Teaches the two gestures."
+  },
+  "cmdSaveSession": {
+    "message": "Save the current window as a session",
+    "description": "Keyboard command, listed at chrome://extensions/shortcuts."
+  },
+  "cmdOpenDashboard": {
+    "message": "Open Tab Organizer",
+    "description": "Keyboard command that opens the app page."
+  },
+  "cmdAssembleTabs": {
+    "message": "Assemble! (move every window's tabs into this one)",
+    "description": "Keyboard command and right-click menu item: the action name, then what it does in brackets."
+  },
+  "assembleName": {
+    "message": "Assemble!",
+    "description": "Short name of the action that moves every window's tabs into the current one. Shown on a button."
+  },
+  "commonCancel": {
+    "message": "Cancel",
+    "description": "Button that closes a dialog without doing anything."
+  },
+  "commonClose": {
+    "message": "Close",
+    "description": "Button or label that closes a dialog or panel."
+  },
+  "commonDelete": {
+    "message": "Delete",
+    "description": "Button that deletes something."
+  },
+  "commonSave": {
+    "message": "Save",
+    "description": "Button that saves."
+  },
+  "commonOpen": {
+    "message": "Open",
+    "description": "Button that opens something."
+  },
+  "tabCount_other": {
+    "message": "$1 tabs",
+    "description": "A number of browser tabs. $1 is the formatted count."
+  },
+  "windowCount_other": {
+    "message": "$1 windows",
+    "description": "A number of browser windows. $1 is the formatted count."
+  }
+}
