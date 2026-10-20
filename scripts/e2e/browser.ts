@@ -9,6 +9,7 @@
  *    display. `HEADLESS=0` forces a headed run (needed for native screen capture / recording).
  */
 
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
 import { type BrowserContext, chromium, type Worker } from '@playwright/test';
@@ -72,21 +73,59 @@ const POSIX_LOCALES: Record<string, string> = {
 
 /**
  * Chrome switches that make `chrome.i18n` answer in `locale`. Linux and Windows read `--lang`
- * (Linux also LANGUAGE/LANG, see {@link setLanguageEnv}); macOS ignores both and takes the Cocoa
- * `AppleLanguages` default, which a process accepts as a `-AppleLanguages (<code>)` argument pair.
+ * (Linux also LANGUAGE/LANG, see {@link setLanguageEnv}); macOS ignores both (verified: Chrome for
+ * Testing 156 still reports en-US) and takes the Cocoa `AppleLanguages` default instead, see
+ * {@link pinMacLanguage}. Playwright refuses the `-AppleLanguages (ko)` argument pair outright.
  */
 export function languageArgs(locale: string): string[] {
-  const args = [`--lang=${locale}`];
-  if (process.platform === 'darwin') {
-    args.push('-AppleLanguages', `(${locale})`);
-  }
-  return args;
+  return [`--lang=${locale}`];
 }
 
 /** Sets LANGUAGE/LANG for `locale`; Playwright hands the browser this process's environment. */
 export function setLanguageEnv(locale: string): void {
   process.env.LANGUAGE = locale;
   process.env.LANG = `${POSIX_LOCALES[locale] ?? locale}.UTF-8`;
+}
+
+/** The Chrome for Testing bundle Playwright launches on macOS; its defaults domain is its own. */
+const TEST_BROWSER_DOMAIN = 'com.google.chrome.for.testing';
+
+/**
+ * On macOS, sets the test browser's own `AppleLanguages` default to `locale` (never the owner's
+ * Chrome: only the Chrome for Testing domain is written) and returns how to put it back. Elsewhere
+ * it does nothing. Called around the launch only: Chrome reads the default once, at startup.
+ */
+function pinMacLanguage(locale: string): () => void {
+  if (process.platform !== 'darwin') {
+    return () => undefined;
+  }
+  let previous: string[] | undefined;
+  try {
+    // `defaults read` prints an array as "(\n    ko,\n    en\n)"; it fails when the key is unset.
+    previous = execFileSync('defaults', ['read', TEST_BROWSER_DOMAIN, 'AppleLanguages'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .replace(/[()",]/g, ' ')
+      .split(/\s+/)
+      .filter((item) => item !== '');
+  } catch {
+    previous = undefined;
+  }
+  execFileSync('defaults', ['write', TEST_BROWSER_DOMAIN, 'AppleLanguages', '-array', locale]);
+  return () => {
+    if (previous === undefined) {
+      execFileSync('defaults', ['delete', TEST_BROWSER_DOMAIN, 'AppleLanguages']);
+    } else {
+      execFileSync('defaults', [
+        'write',
+        TEST_BROWSER_DOMAIN,
+        'AppleLanguages',
+        '-array',
+        ...previous,
+      ]);
+    }
+  };
 }
 
 /** How long to wait for the extension service worker to register. */
@@ -173,20 +212,23 @@ export async function launchExtension(options: LaunchOptions): Promise<Extension
   const { dist, args = [], preferHeaded = false, locale = 'en' } = options;
   const executablePath = resolveChromiumExecutable();
   setLanguageEnv(locale);
-
-  const context = await chromium.launchPersistentContext('', {
-    ...(executablePath === undefined ? {} : { executablePath }),
-    headless: resolveHeadless(preferHeaded),
-    args: [
-      `--disable-extensions-except=${dist}`,
-      `--load-extension=${dist}`,
-      '--no-first-run',
-      '--no-default-browser-check',
-      '--disable-default-apps',
-      ...languageArgs(locale),
-      ...args,
-    ],
-  });
+  // Chrome reads AppleLanguages once, at startup, so the default is put back as soon as it is up.
+  const restoreMacLanguage = pinMacLanguage(locale);
+  const context = await chromium
+    .launchPersistentContext('', {
+      ...(executablePath === undefined ? {} : { executablePath }),
+      headless: resolveHeadless(preferHeaded),
+      args: [
+        `--disable-extensions-except=${dist}`,
+        `--load-extension=${dist}`,
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--disable-default-apps',
+        ...languageArgs(locale),
+        ...args,
+      ],
+    })
+    .finally(restoreMacLanguage);
 
   const serviceWorker = await workerWithApis(context, SERVICE_WORKER_TIMEOUT_MS);
   const extensionId = serviceWorker.url().split('/')[2];

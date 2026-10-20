@@ -36,8 +36,16 @@
     "description": "Button that closes a dialog without doing anything."
   },
   "commonSentenceJoin": {
-    "message": "$1$2",
-    "description": "How two complete sentences stand side by side in one text. $1 and $2 are full sentences. Most languages put a space between them; languages written without spaces (Japanese) put nothing."
+    "message": "$FIRST$$SECOND$",
+    "description": "How two complete sentences stand side by side in one text. $1 and $2 are full sentences. Most languages put a space between them; languages written without spaces (Japanese) put nothing. Japanese joins with no space; written with placeholders because Chrome reads \"$1$\" in \"$1$2\" as an undefined named placeholder and refuses to load the extension.",
+    "placeholders": {
+      "first": {
+        "content": "$1"
+      },
+      "second": {
+        "content": "$2"
+      }
+    }
   },
   "commonFactJoin": {
     "message": "$1 · $2",

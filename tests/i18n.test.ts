@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { formatNumber, joinFacts, joinSentences, t, tp, uiLocale } from '@/lib/i18n';
 
-import { getChromeFake } from './chrome-fake';
+import { getChromeFake, expandPlaceholders } from './chrome-fake';
 
 /** The languages the extension ships in. English is `default_locale` and must have every key. */
 const LOCALES = ['en', 'es', 'ja', 'ko'] as const;
@@ -12,6 +12,7 @@ const LOCALES = ['en', 'es', 'ja', 'ko'] as const;
 interface LocaleMessage {
   message: string;
   description?: string;
+  placeholders?: Record<string, { content: string }>;
 }
 
 const LOCALES_DIR = new URL('../public/_locales/', import.meta.url);
@@ -25,6 +26,33 @@ function load(locale: string): Record<string, LocaleMessage> {
 /** The `$1`..`$9` a message substitutes, sorted, so word order may differ between languages. */
 function substitutions(message: string): string[] {
   return [...message.replace(/\$\$/g, '').matchAll(/\$([1-9])/g)].map((m) => m[1]).sort();
+}
+
+/**
+ * The named placeholders Chrome finds in `message`, scanning left to right as its message bundle
+ * does: `$$` is an escaped dollar, otherwise text up to the next `$` is a placeholder name. That is
+ * why "$1$2" fails (it reads a placeholder called "1") while "$FIRST$$SECOND$" is two names.
+ */
+function namedPlaceholders(message: string): string[] {
+  const names: string[] = [];
+  let at = message.indexOf('$');
+  while (at !== -1) {
+    if (message[at + 1] === '$') {
+      at = message.indexOf('$', at + 2);
+      continue;
+    }
+    if (/[1-9]/.test(message[at + 1] ?? '') && message[at + 2] !== '$') {
+      at = message.indexOf('$', at + 2);
+      continue;
+    }
+    const end = message.indexOf('$', at + 1);
+    if (end === -1) {
+      break;
+    }
+    names.push(message.slice(at + 1, end));
+    at = message.indexOf('$', end + 1);
+  }
+  return names;
 }
 
 const en = load('en');
@@ -71,9 +99,20 @@ describe('_locales', () => {
         for (const [name, entry] of Object.entries(messages)) {
           expect(entry.message.trim(), `${locale}/${name}`).not.toBe('');
           const english = en[name] ?? en[name.replace(/_[a-z]+$/, '_other')];
-          expect(substitutions(entry.message), `${locale}/${name}`).toEqual(
-            substitutions(english.message),
+          expect(substitutions(expandPlaceholders(entry)), `${locale}/${name}`).toEqual(
+            substitutions(expandPlaceholders(english)),
           );
+        }
+      });
+
+      it('defines every named placeholder, or Chrome refuses to load the extension', () => {
+        for (const [name, entry] of Object.entries(messages)) {
+          const defined = Object.keys(entry.placeholders ?? {}).map((key) => key.toLowerCase());
+          const used = namedPlaceholders(entry.message).map((key) => key.toLowerCase());
+          expect(
+            used.filter((key) => !defined.includes(key)),
+            `${locale}/${name}`,
+          ).toEqual([]);
         }
       });
 

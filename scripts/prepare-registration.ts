@@ -760,15 +760,12 @@ class Preparation {
     });
 
     await shot('history', async () => {
-      // The snapshots live folded in the sidebar; open them and show the newest one.
+      // The snapshots live folded in the sidebar; open them and show the newest one. The fold is
+      // the sidebar's only button with aria-expanded; its name is its count ("3 snapshots") and
+      // show/hide is only its title, so it is found by the attribute, the same in every language.
       const toggle = page
         .getByRole('navigation', { name: text('appNavLabel') })
-        .getByRole('button', {
-          name: new RegExp(
-            `${escapeRegExp(text('appNavShowSnapshots'))}|${escapeRegExp(text('appNavHideSnapshots'))}`,
-            'i',
-          ),
-        });
+        .locator('button[aria-expanded]');
       if (!(await Preparation.isVisible(toggle))) {
         return 'no snapshots control in the sidebar yet';
       }

@@ -1088,7 +1088,7 @@ export function createChromeFake(): ChromeFake {
         return '';
       }
       const subs = substitutions === undefined ? [] : [substitutions].flat();
-      return entry.message.replace(/\$(\$|[1-9])/g, (_match, ref: string) =>
+      return expandPlaceholders(entry).replace(/\$(\$|[1-9])/g, (_match, ref: string) =>
         ref === '$' ? '$' : (subs[Number(ref) - 1] ?? ''),
       );
     },
@@ -1191,6 +1191,21 @@ export function getChromeFake(): ChromeFake {
 interface LocaleMessage {
   message: string;
   description?: string;
+  placeholders?: Record<string, { content: string }>;
+}
+
+/**
+ * Chrome replaces each named placeholder (`$NAME$`, case-insensitive) with its `content` when it
+ * loads the file, before `$1`..`$9` are filled in at `getMessage` time; an undefined one makes the
+ * whole extension fail to load (tests/i18n.test.ts checks that none is).
+ */
+export function expandPlaceholders(entry: LocaleMessage): string {
+  return entry.message.replace(/\$([A-Za-z0-9_@]+)\$/g, (match, name: string) => {
+    const placeholder = Object.entries(entry.placeholders ?? {}).find(
+      ([key]) => key.toLowerCase() === name.toLowerCase(),
+    );
+    return placeholder === undefined ? match : placeholder[1].content;
+  });
 }
 
 const messageCache = new Map<string, Record<string, LocaleMessage>>();
