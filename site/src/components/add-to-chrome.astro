@@ -1,0 +1,15 @@
+---
+import { STORE_URL } from '../i18n/locales';
+import Icon from './icon.astro';
+
+interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<a class="button button-primary" href={STORE_URL} rel="noopener">
+  <Icon name="puzzle" size={18} />
+  {label}
+</a>

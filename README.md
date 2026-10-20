@@ -21,6 +21,8 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><strong>➜ Install from the Chrome Web Store</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://thilllon.github.io/tab-organizer/"><strong>Website</strong></a>
 </p>
 
 ## See it in action
@@ -87,7 +89,7 @@ Everything lives in `chrome.storage.local` on the device, never synced, never up
 - **Zero network requests**: works entirely offline, no analytics, no telemetry.
 - **Seven permissions, no host permissions**: `tabs`, `tabGroups`, `storage` (settings via Chrome sync; sessions in local storage on this device only), `contextMenus` (icon menu), `unlimitedStorage` (large sessions), `favicon` (site icons from Chrome's local cache), `alarms` (snapshot timer; none exists when snapshots are off). Requires Chrome 123 or newer.
 - **No content scripts**: nothing is ever injected into a web page.
-- Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
+- Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md), also on the [website](https://thilllon.github.io/tab-organizer/privacy/) in English, Korean, Spanish and Japanese.
 
 Everything shown on the store page (the complete description, every asset, the privacy answers) is kept in [`docs/store_listing.md`](docs/store_listing.md), with the description already in the plain text the store takes.
 
@@ -116,6 +118,10 @@ pnpm format                 # oxfmt over the whole repository (format:check in C
 pnpm lint                   # oxlint
 pnpm test                   # Run tests (vitest)
 pnpm release                # release-it: regenerate CWS assets, bump version, build, ZIP, GitHub release
+pnpm site:dev               # The project website (site/, Astro) on a dev server
+pnpm site:build             # Build the website into site/dist/
 ```
+
+The website at [thilllon.github.io/tab-organizer](https://thilllon.github.io/tab-organizer/) lives in `site/` and is deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main` that changes it.
 
 The `dist` folder will contain the production-ready extension.

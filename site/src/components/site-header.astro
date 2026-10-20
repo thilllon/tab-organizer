@@ -1,0 +1,129 @@
+---
+import logoUrl from '../../../public/img/logo.svg?url';
+import { pageUrl, type Locale, type Page } from '../i18n/locales';
+import { copyFor } from '../i18n/site-copy';
+import LanguageSwitch from './language-switch.astro';
+
+interface Props {
+  locale: Locale;
+  page: Page;
+}
+
+const { locale, page } = Astro.props;
+const copy = copyFor(locale);
+const links: { page: Page; label: string }[] = [
+  { page: 'support', label: copy.nav.support },
+  { page: 'privacy', label: copy.nav.privacy },
+];
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href={pageUrl(locale, 'home')} aria-current={page === 'home' ? 'page' : undefined}>
+      <img src={logoUrl} alt="" width="28" height="28" />
+      <span>Tab Organizer</span>
+    </a>
+    <nav class="header-nav" aria-label={copy.nav.main}>
+      <ul>
+        {
+          links.map((link) => (
+            <li>
+              <a
+                href={pageUrl(locale, link.page)}
+                aria-current={page === link.page ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <LanguageSwitch locale={locale} page={page} variant="menu" />
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in oklch, var(--background) 85%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 3.75rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--foreground);
+    text-decoration: none;
+    font-weight: 650;
+    font-size: 1.0625rem;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .brand:hover {
+    color: var(--foreground);
+  }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .header-nav ul {
+    display: flex;
+    gap: 0.125rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .header-nav ul a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0.375rem 0.625rem;
+    border-radius: var(--radius);
+    color: var(--muted-foreground);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .header-nav ul a:hover {
+    color: var(--foreground);
+    background: var(--muted);
+  }
+
+  .header-nav ul a[aria-current='page'] {
+    color: var(--foreground);
+  }
+
+  @media (max-width: 26rem) {
+    /* Hidden visually only, so the home link keeps its accessible name. */
+    .brand span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+</style>

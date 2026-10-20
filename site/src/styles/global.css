@@ -1,0 +1,432 @@
+/*
+ * The site's one stylesheet. Colours, radius and type are the extension's own
+ * (src/styles/index.css at the repository root), so the site and the app read as one product.
+ * Keep the two palettes in step when either changes.
+ *
+ * Inter is bundled and served from this site, never fetched from a font CDN: the product
+ * promises zero network requests and its website should not be the exception. Only the latin
+ * subset is declared; Korean and Japanese text falls through to the system fonts in --font-sans.
+ */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2')
+    format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+
+  --font-sans:
+    'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    'Apple SD Gothic Neo', 'Malgun Gothic', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Yu Gothic UI', Meiryo, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radius: 0.625rem;
+  --radius-lg: 1rem;
+  --page-width: 72rem;
+  --gutter: 1.25rem;
+
+  --background: oklch(0.9876 0.0017 247.84); /* #FAFBFC */
+  --foreground: oklch(0.2091 0.0104 268.19); /* #16181D */
+  --card: oklch(1 0 0); /* #FFFFFF */
+  --primary: oklch(0.5552 0.1914 258.46); /* #1A6DE0 */
+  /* Text in the primary colour: a shade darker than --primary so links and kickers keep
+     4.5:1 on --muted (#F1F4F8) as well as on --background. */
+  --primary-text: #1764d0;
+  --primary-hover: oklch(0.5 0.19 258.46);
+  --primary-foreground: oklch(1 0 0); /* #FFFFFF */
+  --muted: oklch(0.966 0.0062 255.48); /* #F1F4F8 */
+  --muted-foreground: oklch(0.5064 0.0275 256.18); /* #5B6675 */
+  --accent: oklch(0.9522 0.02 257.47); /* #E7F0FD */
+  --accent-foreground: oklch(0.4244 0.1441 258.77); /* #124A9B */
+  --border: oklch(0.9148 0.0104 261.79); /* #DFE3EA */
+  --ring: oklch(0.5552 0.1914 258.46); /* #1A6DE0 */
+  --shadow: 0 1px 2px oklch(0.2 0.02 260 / 0.06), 0 12px 32px -12px oklch(0.2 0.02 260 / 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.1763 0.014 258.36); /* #0D1117 */
+    --foreground: oklch(0.94 0.0071 268.55); /* #E9EBF0 */
+    --card: oklch(0.2033 0.0178 259.72); /* #12171F */
+    --primary: oklch(0.7162 0.1325 256.69); /* #6BA5F5 */
+    --primary-text: var(--primary);
+    --primary-hover: oklch(0.77 0.12 256.69);
+    --primary-foreground: oklch(0.1831 0.0309 263.38); /* #0B1220 */
+    --muted: oklch(0.2298 0.0149 261.64); /* #191D24 */
+    --muted-foreground: oklch(0.7098 0.0273 261.12); /* #98A2B3 */
+    --accent: oklch(0.2864 0.0416 257.31); /* #1D2B3F */
+    --accent-foreground: oklch(0.8417 0.0711 258.35); /* #AFCDFA */
+    --border: oklch(0.3081 0.0177 262.24); /* #2B3039 */
+    --ring: oklch(0.7162 0.1325 256.69); /* #6BA5F5 */
+    --shadow: 0 1px 2px oklch(0 0 0 / 0.3), 0 16px 40px -16px oklch(0 0 0 / 0.6);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+
+html:lang(ko) body {
+  word-break: keep-all;
+}
+
+html:lang(ja) body {
+  line-break: strict;
+}
+
+main {
+  flex: 1;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: var(--primary-text);
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Plain text links get a softly rounded ring; every other control keeps its own corners. */
+a:not(.button):focus-visible {
+  border-radius: 4px;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.container {
+  width: 100%;
+  max-width: calc(var(--page-width) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.narrow {
+  max-width: calc(46rem + 2 * var(--gutter));
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Buttons */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.975rem;
+  line-height: 1.2;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.button-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.button-primary:hover {
+  background: var(--primary-hover);
+  color: var(--primary-foreground);
+}
+
+.button-secondary {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.button-secondary:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.button svg {
+  flex: none;
+}
+
+/* Section scaffolding */
+
+.section {
+  padding-block: 4.5rem;
+}
+
+.section-muted {
+  background: var(--muted);
+  border-block: 1px solid var(--border);
+}
+
+/* Two plain sections in a row would leave a double gap with no edge between them. */
+.section:not(.section-muted) + .section:not(.section-muted) {
+  padding-top: 0;
+}
+
+.kicker {
+  display: inline-block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary-text);
+  margin-bottom: 0.75rem;
+}
+
+:lang(ko) .kicker,
+:lang(ja) .kicker {
+  letter-spacing: 0;
+}
+
+.section-title {
+  font-size: clamp(1.625rem, 1.2rem + 1.6vw, 2.25rem);
+  font-weight: 700;
+}
+
+.section-lead {
+  margin-top: 0.875rem;
+  font-size: 1.0625rem;
+  color: var(--muted-foreground);
+  max-width: 40rem;
+}
+
+.section-head {
+  margin-bottom: 2.5rem;
+}
+
+.section-head.centered {
+  text-align: center;
+}
+
+.section-head.centered .section-lead {
+  margin-inline: auto;
+}
+
+/* Screenshot frame: a quiet browser-window border around the app's screenshots */
+
+.shot {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.shot-bar {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.shot-bar span {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.shot img {
+  width: 100%;
+}
+
+/* The captures are light-mode windows: in dark mode the frame keeps their colours, so a dark bar
+   never sits on a white window, and the image is dimmed a little against the dark page. */
+@media (prefers-color-scheme: dark) {
+  .shot {
+    --card: #ffffff;
+    --muted: #f1f4f8;
+    --border: #dfe3ea;
+  }
+
+  .shot img {
+    filter: brightness(0.92);
+  }
+}
+
+/* Check list */
+
+.checks {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.625rem;
+}
+
+.checks li {
+  position: relative;
+  padding-left: 1.75rem;
+}
+
+.checks li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231A6DE0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-size: 0.7rem;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+@media (prefers-color-scheme: dark) {
+  .checks li::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236BA5F5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  }
+}
+
+/* Prose: the privacy policy */
+
+.prose {
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.prose h1 {
+  font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.prose h1 + p {
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+}
+
+.prose h2 {
+  font-size: 1.375rem;
+  font-weight: 650;
+  margin-top: 2.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.prose h3 {
+  font-size: 1.125rem;
+  font-weight: 650;
+  margin-top: 2rem;
+}
+
+.prose p,
+.prose ul {
+  margin-top: 1rem;
+}
+
+.prose ul {
+  padding-left: 1.25rem;
+}
+
+.prose li + li {
+  margin-top: 0.5rem;
+}
+
+.prose li::marker {
+  color: var(--muted-foreground);
+}

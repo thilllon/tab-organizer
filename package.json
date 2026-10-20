@@ -16,6 +16,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "site:dev": "pnpm --filter tab-organizer-site dev",
+    "site:build": "pnpm --filter tab-organizer-site build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
     "format": "oxfmt",
     "format:check": "oxfmt --check",

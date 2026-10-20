@@ -1,0 +1,197 @@
+---
+import packageJson from '../../../../package.json';
+import AddToChrome from '../../components/add-to-chrome.astro';
+import Icon from '../../components/icon.astro';
+import {
+  ISSUES_URL,
+  localePaths,
+  NEW_ISSUE_URL,
+  RELEASES_URL,
+  type Locale,
+} from '../../i18n/locales';
+import { copyFor } from '../../i18n/site-copy';
+import BaseLayout from '../../layouts/base-layout.astro';
+
+export function getStaticPaths() {
+  return localePaths();
+}
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = copyFor(locale);
+const support = copy.support;
+// The extension's own version, read from the repository's package.json at build time.
+const version = packageJson.version;
+---
+
+<BaseLayout
+  locale={locale}
+  page="support"
+  title={copy.meta.supportTitle}
+  description={copy.meta.supportDescription}
+>
+  <div class="container narrow page">
+    <header class="page-head">
+      <h1>{support.title}</h1>
+      <p class="section-lead">{support.lead}</p>
+    </header>
+
+    <section class="panel" aria-labelledby="start">
+      <h2 id="start">{support.startTitle}</h2>
+      <ol class="steps">
+        {support.startSteps.map((step) => <li>{step}</li>)}
+      </ol>
+      <div class="panel-actions">
+        <AddToChrome label={copy.cta.addToChrome} />
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="report">
+      <h2 id="report">{support.reportTitle}</h2>
+      <p>{support.reportLead}</p>
+      <ul class="checks">
+        {support.reportItems.map((item) => <li>{item}</li>)}
+      </ul>
+      <div class="panel-actions">
+        <a class="button button-primary" href={NEW_ISSUE_URL} rel="noopener">
+          <Icon name="github" size={18} />
+          {support.reportButton}
+        </a>
+        <a class="button button-secondary" href={ISSUES_URL} rel="noopener">
+          {support.openIssues}
+        </a>
+      </div>
+    </section>
+
+    <section class="panel version" aria-labelledby="version">
+      <h2 id="version">{support.versionTitle}</h2>
+      <p>
+        {support.versionText.replace('{version}', version)}
+        {' '}{support.requirement}
+      </p>
+      <p>
+        <a href={RELEASES_URL} rel="noopener">
+          {support.releases}
+          <Icon name="external" size={14} />
+        </a>
+      </p>
+    </section>
+
+    <section class="faq" aria-labelledby="faq">
+      <h2 id="faq">{support.faqTitle}</h2>
+      <div class="faq-list">
+        {
+          support.faq.map((item) => (
+            <details>
+              <summary>
+                <span>{item.q}</span>
+                <Icon name="chevron-down" size={18} class="faq-chevron" />
+              </summary>
+              <p>{item.a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-block: 3.5rem 4.5rem;
+  }
+
+  .page-head h1 {
+    font-size: clamp(2rem, 1.5rem + 2vw, 2.75rem);
+    font-weight: 750;
+  }
+
+  .panel {
+    margin-top: 2rem;
+    padding: 1.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+  }
+
+  .panel h2,
+  .faq h2 {
+    font-size: 1.25rem;
+    font-weight: 650;
+    margin-bottom: 0.875rem;
+  }
+
+  .steps {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .steps li::marker {
+    color: var(--primary);
+    font-weight: 650;
+  }
+
+  .panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .version p + p {
+    margin-top: 0.5rem;
+  }
+
+  .version a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .faq {
+    margin-top: 3rem;
+  }
+
+  .faq-list {
+    border-top: 1px solid var(--border);
+  }
+
+  .faq details {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .faq summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.125rem 0;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq summary :global(.faq-chevron) {
+    flex: none;
+    color: var(--muted-foreground);
+    transition: transform 0.15s ease;
+  }
+
+  .faq details[open] summary :global(.faq-chevron) {
+    transform: rotate(180deg);
+  }
+
+  .faq details p {
+    padding-bottom: 1.25rem;
+    color: var(--muted-foreground);
+  }
+</style>
