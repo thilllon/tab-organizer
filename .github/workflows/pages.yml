@@ -1,0 +1,70 @@
+name: Website
+
+# Builds the project website in site/ (Astro) and publishes it to GitHub Pages at
+# https://thilllon.github.io/tab-organizer/. The repository's Pages source must be set to
+# "GitHub Actions" (Settings > Pages) for the deploy job to succeed.
+
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'site/**'
+      - 'screenshots/**'
+      - 'public/img/**'
+      - 'PRIVACY_POLICY.md'
+      - 'docs/store_listing.md'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'mise.toml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time; a newer push waits rather than cancelling one already publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ['ubuntu-latest']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: jdx/mise-action@v5.1.2
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm site:build
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ['ubuntu-latest']
+    # Only the deploy step needs these; the build job (which runs third-party code) does not.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

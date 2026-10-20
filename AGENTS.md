@@ -199,6 +199,17 @@ tab-organizer/
 │   ├── promo-template.html    # HTML template for CWS promotional images
 │   └── tab-bar-template.html  # HTML template for tab bar mockup screenshots
 ├── screenshots/               # Generated CWS assets (sort + dashboard-*.png screenshots, promo images, demo video)
+├── site/                      # The project website (Astro, static), its own pnpm workspace package
+│   │                          #   `tab-organizer-site`; see "Project website" below
+│   ├── astro.config.ts        # site + base (/tab-organizer), i18n (en default, ko, es, ja), sitemap
+│   └── src/
+│       ├── pages/[...locale]/ # index, support, privacy, once per language (en has no prefix); robots.txt.ts, 404
+│       ├── i18n/              # locales.ts (URLs, store/repo links), site-copy.ts (the SiteCopy type),
+│       │                      #   copy-en/ko/es/ja.ts (every string of the site, per language)
+│       ├── privacy/           # ko.md, es.md, ja.md: translations of PRIVACY_POLICY.md (English is rendered from it)
+│       ├── components/        # header, footer, language switch, Add to Chrome button, icons
+│       ├── layouts/           # base-layout.astro: head (canonical, hreflang, Open Graph), header, footer
+│       └── styles/global.css  # the extension's colour tokens, light and dark by prefers-color-scheme
 ├── docs/
 │   └── store_listing.md       # Chrome Web Store listing - single source of truth (text, assets, privacy answers);
 │                              #   the description sits in a plain-text code block, pasted into the store as it is
@@ -206,6 +217,7 @@ tab-organizer/
 │   ├── workflows/
 │   │   ├── ci.yml             # CI pipeline (typecheck, format, build; tools via mise)
 │   │   ├── codeql.yml         # CodeQL security scanning
+│   │   ├── pages.yml          # Builds site/ and deploys it to GitHub Pages
 │   │   └── dependabot-auto-merge.yml # Turns auto-merge on for Dependabot's minor/patch PRs
 │   └── dependabot.yml         # Weekly npm + GitHub Actions updates (minor/patch grouped)
 ├── app.html                   # The extension page (the only real HTML entry)
@@ -396,6 +408,9 @@ pnpm e2e:assemble                    # e2e build (in node_modules/.cache) + real
 pnpm e2e:sort                        # Real-Chrome sort checks against dist/ (run `pnpm build` first; headed)
 pnpm e2e:selection                   # Real-Chrome checks of the Open tabs selection (run `pnpm build` first; headed)
 pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/<name>-<version>.zip
+
+pnpm site:dev                        # The project website on a local dev server (http://localhost:4321/tab-organizer/)
+pnpm site:build                      # astro check + astro build -> site/dist/
 ```
 
 ### Local Development Workflow
@@ -504,6 +519,18 @@ Write order is body → index (put) and body → index (delete). `sessionRepo.re
 
 ---
 
+## Project website
+
+`site/` is the public website at https://thilllon.github.io/tab-organizer/: a static Astro site, its own workspace package (`tab-organizer-site`, listed in `pnpm-workspace.yaml`) sharing the root lockfile. It is not part of the extension: the root `tsconfig.json` includes `src` only, vitest finds no tests there, and oxlint/oxfmt skip `site/dist` and `site/.astro`.
+
+- **Run it**: `pnpm site:dev` (dev server) or `pnpm site:build` (`astro check && astro build` into `site/dist/`), then `pnpm --filter tab-organizer-site preview` to serve the build.
+- **Pages**: home, support (FAQ, how to report a problem, the current version read from the root `package.json`) and privacy, in English (no prefix), Korean (`/ko/`), Spanish (`/es/`) and Japanese (`/ja/`) through Astro's i18n routing. Every page has a language switch that keeps the page, `hreflang` alternates, a canonical URL and Open Graph tags; `@astrojs/sitemap` writes the sitemap and `robots.txt` points at it.
+- **Copy stays in step with the product.** The strings are in `site/src/i18n/copy-*.ts`, one file per language, each written natively with Chrome's own terms (탭, 창, 탭 그룹, 고정 탭 / タブ, ウィンドウ, タブグループ, 固定タブ / pestaña, ventana, grupo de pestañas, pestañas fijadas). When a feature, default or FAQ answer changes in `docs/store_listing.md`, change all four. The English privacy page renders `PRIVACY_POLICY.md` itself and says it is the authoritative version; `site/src/privacy/{ko,es,ja}.md` are translations of it and must be updated whenever it changes.
+- **Screenshots** are imported from `screenshots/` through `astro:assets` (optimized to WebP at build time, never copied into `site/`); the favicon is `public/img/logo.svg`. Same zero-network rule as the extension: no external fonts, CDNs, analytics, cookies or trackers (Inter comes from `@fontsource-variable/inter`, served by the site itself).
+- **Chrome Web Store dashboard URLs**: Homepage URL https://thilllon.github.io/tab-organizer/ , Support URL https://thilllon.github.io/tab-organizer/support/ , Privacy policy URL https://thilllon.github.io/tab-organizer/privacy/ .
+
+---
+
 ## CI/CD
 
 ### GitHub Actions (`ci.yml`)
@@ -519,8 +546,13 @@ Runs on push to `main`, PRs to `main`, and manual dispatch:
 7. `pnpm format:check` (oxfmt; fails when any file is not formatted)
 8. `pnpm lint` (oxlint; fails on any warning or error)
 9. `pnpm build`
+10. `pnpm site:build` (the project website; `astro check` fails on any type error)
 
 Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates, grouping minor/patch bumps. Auto-merge is opt-in per pull request and Dependabot never opts its own in, so `dependabot-auto-merge.yml` runs `gh pr merge --auto --squash` on a Dependabot PR whose `update-type` (from `dependabot/fetch-metadata`) is minor or patch - and only when Dependabot itself caused the run, so a commit a person pushes onto its branch is not auto-merged; GitHub then merges it once the required `ci` check passes. Major updates stay open for a person. A merge made with the workflow's `GITHUB_TOKEN` does not start the `push` run of `ci.yml` on `main` - the PR's own run is the evidence.
+
+### Website (`pages.yml`)
+
+Builds `site/` with `pnpm site:build` and deploys `site/dist` to GitHub Pages (`actions/configure-pages`, `actions/upload-pages-artifact`, `actions/deploy-pages`; concurrency group `pages`). Runs on a push to `main` that touches `site/**`, `screenshots/**`, `public/img/**`, `PRIVACY_POLICY.md`, `docs/store_listing.md`, `package.json` (the version the support page shows), the lockfile, `pnpm-workspace.yaml`, `mise.toml` or the workflow itself, and on manual dispatch. The repository's Pages source must be "GitHub Actions" (Settings > Pages).
 
 ### CodeQL (`codeql.yml`)
 
@@ -637,7 +669,7 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 - **Suspender prefix**: `tabSuspenderExtensionId`, `suspendedPrefix`, and `suspendedPrefixLen` are locals of `sortTabs()` in `src/lib/sort-tabs.ts`, derived from the settings on every sort. Sort functions in `sort-order.ts` receive these as parameters rather than accessing globals, keeping them pure and testable.
 - **Tab ID arrays**: Chrome's `tabs.move()` and `tabs.group()` require `[number, ...number[]]` tuple type for non-empty arrays.
 - **`scripts/zip.ts` and archiver 8**: archiver 8 is ESM and exports no callable default - the archive classes come by name (`import { ZipArchive } from 'archiver'`). `finalize()` resolves before the file is complete, so the script also waits for the write stream's `close` event; don't "simplify" either back.
-- **`pnpm-workspace.yaml`**: Exists but this is not a monorepo - it holds pnpm's install policy: `allowBuilds` (only `esbuild` may run install scripts) and `minimumReleaseAge: 10080` (minutes - only versions published at least 7 days ago are installed; pnpm's default is 1 day). A lockfile entry younger than that makes `pnpm install --frozen-lockfile` fail, in CI too, so `dependabot.yml` carries the matching `cooldown: default-days: 7` for npm. `minimumReleaseAgeExclude` is the escape hatch (exact `name@version`) for a release that must be installed sooner; there is none at the moment.
+- **`pnpm-workspace.yaml`**: Lists one workspace package, `site` (the project website); the extension is the root package. It also holds pnpm's install policy: `allowBuilds` (only `esbuild` may run install scripts) and `minimumReleaseAge: 10080` (minutes - only versions published at least 7 days ago are installed; pnpm's default is 1 day). A lockfile entry younger than that makes `pnpm install --frozen-lockfile` fail, in CI too, so `dependabot.yml` carries the matching `cooldown: default-days: 7` for npm. `minimumReleaseAgeExclude` is the escape hatch (exact `name@version`) for a release that must be installed sooner; there is none at the moment.
 - **The store description is plain text, by hand**: the code block under `### Description` in `docs/store_listing.md` is pasted into the store as it is - no Markdown inside it, and nothing is generated from it. `tests/store-listing.test.ts` holds the 16,000 / 132 character limits.
 - **No Python**: every script is TypeScript run with `tsx`. The one macOS call that needed pyobjc (the Chrome window's id and bounds) goes through `osascript -l JavaScript` in `scripts/window-bounds.ts`.
 - **Pre-push `update-docs` hook amends commits**: on feature branches push with `LEFTHOOK_EXCLUDE=update-docs git push …` and do one manual docs pass per phase.

@@ -1,0 +1,188 @@
+---
+import { LOCALE_NAMES, LOCALES, pageUrl, type Locale, type Page } from '../i18n/locales';
+import { copyFor } from '../i18n/site-copy';
+import Icon from './icon.astro';
+
+interface Props {
+  locale: Locale;
+  page: Page;
+  /** `menu`: the header's drop-down. `list`: every language spelled out, for the footer. */
+  variant: 'menu' | 'list';
+}
+
+const { locale, page, variant } = Astro.props;
+const copy = copyFor(locale);
+const links = LOCALES.map((target) => ({
+  target,
+  href: pageUrl(target, page),
+  name: LOCALE_NAMES[target],
+  current: target === locale,
+}));
+---
+
+{
+  variant === 'menu' ? (
+    <details class="lang-menu" data-lang-menu>
+      <summary aria-label={`${copy.nav.language}: ${LOCALE_NAMES[locale]}`}>
+        <Icon name="globe" size={18} />
+        <span class="lang-current">{LOCALE_NAMES[locale]}</span>
+        <Icon name="chevron-down" size={16} class="lang-chevron" />
+      </summary>
+      <ul class="lang-options">
+        {links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              hreflang={link.target}
+              lang={link.target}
+              aria-current={link.current ? 'page' : undefined}
+            >
+              {link.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  ) : (
+    <nav class="lang-list" aria-label={copy.footer.languages}>
+      <ul>
+        {links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              hreflang={link.target}
+              lang={link.target}
+              aria-current={link.current ? 'page' : undefined}
+            >
+              {link.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<script>
+  // Close the header's language menu on a click elsewhere, on Escape, or when focus leaves it,
+  // as a menu should.
+  for (const menu of document.querySelectorAll<HTMLDetailsElement>('[data-lang-menu]')) {
+    document.addEventListener('click', (event) => {
+      if (menu.open && event.target instanceof Node && !menu.contains(event.target)) {
+        menu.open = false;
+      }
+    });
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) {
+        menu.open = false;
+        menu.querySelector('summary')?.focus();
+      }
+    });
+    menu.addEventListener('focusout', (event) => {
+      const next = event.relatedTarget;
+      if (menu.open && !(next instanceof Node && menu.contains(next))) {
+        menu.open = false;
+      }
+    });
+  }
+</script>
+
+<style>
+  .lang-menu {
+    position: relative;
+  }
+
+  .lang-menu summary {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    padding: 0.375rem 0.625rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+
+  .lang-menu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .lang-menu summary:hover {
+    background: var(--muted);
+  }
+
+  .lang-menu[open] :global(.lang-chevron) {
+    transform: rotate(180deg);
+  }
+
+  .lang-options {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.375rem);
+    z-index: 30;
+    min-width: 10rem;
+    margin: 0;
+    padding: 0.375rem;
+    list-style: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .lang-options a {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: calc(var(--radius) - 4px);
+    color: var(--foreground);
+    text-decoration: none;
+    font-size: 0.9375rem;
+  }
+
+  .lang-options a:hover {
+    background: var(--muted);
+  }
+
+  .lang-options a[aria-current='page'] {
+    background: var(--accent);
+    color: var(--accent-foreground);
+    font-weight: 600;
+  }
+
+  .lang-list ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .lang-list a {
+    color: var(--muted-foreground);
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+
+  .lang-list a:hover {
+    color: var(--foreground);
+    text-decoration: underline;
+  }
+
+  .lang-list a[aria-current='page'] {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+
+  @media (max-width: 30rem) {
+    .lang-current {
+      display: none;
+    }
+  }
+</style>
