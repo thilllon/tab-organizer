@@ -5,7 +5,7 @@
  * ERR_TUNNEL_CONNECTION_FAILED), so every page a fixture window opens has to come from here:
  * a `node:http` server bound to 127.0.0.1 on an ephemeral port.
  *
- * Pages are deliberately boring — a title, a heading, a solid accent colour — but each one is
+ * Pages are deliberately boring - a title, a heading, a solid accent colour - but each one is
  * distinct, so an assertion over restored tab URLs/titles is meaningful and a screenshot of a
  * restored window is readable.
  */
@@ -16,21 +16,21 @@ import type { AddressInfo } from 'node:net';
 interface DemoPage {
   /** Path served, e.g. `/p/1`. */
   path: string;
-  /** `<title>` — also the tab title Chrome reports. */
+  /** `<title>` - also the tab title Chrome reports. */
   title: string;
   /** CSS colour for the page's banner. */
   accent: string;
 }
 
 export const DEMO_PAGES: DemoPage[] = [
-  { path: '/p/1', title: 'Inbox — Mail', accent: '#2563eb' },
+  { path: '/p/1', title: 'Inbox - Mail', accent: '#2563eb' },
   { path: '/p/2', title: 'Team calendar', accent: '#0891b2' },
   { path: '/p/3', title: 'Design review notes', accent: '#7c3aed' },
-  { path: '/p/4', title: 'Spec — sessions', accent: '#c026d3' },
-  { path: '/p/5', title: 'Issue 412 — restore order', accent: '#dc2626' },
-  { path: '/p/6', title: 'Issue 418 — group colours', accent: '#ea580c' },
+  { path: '/p/4', title: 'Spec - sessions', accent: '#c026d3' },
+  { path: '/p/5', title: 'Issue 412 - restore order', accent: '#dc2626' },
+  { path: '/p/6', title: 'Issue 418 - group colours', accent: '#ea580c' },
   { path: '/p/7', title: 'Release checklist', accent: '#16a34a' },
-  { path: '/p/8', title: 'Docs — keyboard shortcuts', accent: '#ca8a04' },
+  { path: '/p/8', title: 'Docs - keyboard shortcuts', accent: '#ca8a04' },
 ];
 
 export interface DemoServer {

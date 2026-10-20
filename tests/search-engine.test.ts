@@ -324,7 +324,7 @@ describe('entriesFromOpenWindows', () => {
 });
 
 describe('matchEntry', () => {
-  const e = entry({ title: 'React – A JavaScript library', url: 'https://react.dev/learn' });
+  const e = entry({ title: 'React - A JavaScript library', url: 'https://react.dev/learn' });
 
   it('requires every token to match somewhere (AND)', () => {
     expect(matchEntry(e, tokenize('react learn'))).toBe(true);
@@ -361,8 +361,8 @@ describe('matchEntry', () => {
 
 describe('matchSessionName', () => {
   it('ANDs tokens case-insensitively over the name', () => {
-    expect(matchSessionName('Work – Sprint 12', tokenize('sprint work'))).toBe(true);
-    expect(matchSessionName('Work – Sprint 12', tokenize('sprint 13'))).toBe(false);
+    expect(matchSessionName('Work - Sprint 12', tokenize('sprint work'))).toBe(true);
+    expect(matchSessionName('Work - Sprint 12', tokenize('sprint 13'))).toBe(false);
     expect(matchSessionName('Проект Альфа', tokenize('альфа'))).toBe(true);
   });
 
@@ -552,8 +552,8 @@ describe('search', () => {
      *   cold (first call, JIT still warming): 5.2  6.1  7.6  8.7
      *   warm (calls 2-12):                    1.0 - 3.5, median ~1.8
      *
-     * So the spec's 20 ms is met roughly 2x over even cold. The bound here is 40 ms — ~4.6x the
-     * worst cold run — because this is the only figure CI has to hit on a shared runner that can
+     * So the spec's 20 ms is met roughly 2x over even cold. The bound here is 40 ms - ~4.6x the
+     * worst cold run - because this is the only figure CI has to hit on a shared runner that can
      * be several times slower than a dev machine, and a flaky perf test gets deleted rather than
      * investigated. It is still tight enough to catch what it is for: an accidental O(n²) or a
      * per-entry `new URL()` creeping back in would cost hundreds of ms, not tens.
@@ -673,7 +673,7 @@ describe('splitOnMatches', () => {
 
 /**
  * Spec §12 Phase 4 / §7: result highlighting goes through `splitOnMatches()` and there is no
- * `dangerouslySetInnerHTML` anywhere — true by construction today, and this is what keeps it true.
+ * `dangerouslySetInnerHTML` anywhere - true by construction today, and this is what keeps it true.
  *
  * oxlint's `react/no-danger` (an error in `pnpm lint`) covers the JSX-attribute form; this catches
  * the two ways round it that a lint rule cannot, an `oxlint-disable` comment and the prop passed

@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Inter, bundled — never fetched.
+ * Inter, bundled - never fetched.
  *
  * The extension promises "zero network requests" (PRIVACY_POLICY.md, README.md, docs/store_listing.md),
  * so the usual `@import url('https://fonts.googleapis.com/...')` is not available to us: it would
@@ -18,7 +18,7 @@
  * label the UI itself draws. It is also a *variable* font, so one file serves every weight from
  * 100 to 900 instead of one request per weight.
  *
- * Hangul is deliberately not covered — Inter has no Korean glyphs in any subset — so a session
+ * Hangul is deliberately not covered - Inter has no Korean glyphs in any subset - so a session
  * named in Korean falls through to the system stack in `--font-sans`. That is the intended
  * behaviour, not a gap to fill: a Korean webfont would cost megabytes.
  */
@@ -48,7 +48,7 @@
    * `card` and `popover` were missing here until v7.3.2, while `dropdown-menu.tsx` styles itself
    * `bg-popover text-popover-foreground`. Tailwind only emits a utility for a token it knows, so
    * `.bg-popover` was never generated at all and every "⋯" menu in the app rendered with a
-   * transparent background. Adding the mapping is the whole fix — the component is stock shadcn
+   * transparent background. Adding the mapping is the whole fix - the component is stock shadcn
    * and stays untouched.
    */
   --color-card: var(--card);
@@ -69,7 +69,7 @@
 }
 
 /*
- * The palette. Every colour in the app resolves through these two blocks — no component under
+ * The palette. Every colour in the app resolves through these two blocks - no component under
  * `src/components/` or `src/pages/` names a colour of its own, so swapping the design system
  * later means editing this file and nothing else. (The one deliberate exception is
  * `src/lib/group-colors.ts`, which mirrors Chrome's own tab-group colours: those are
@@ -141,12 +141,12 @@
    * Tailwind's preflight sets `font-family` only on `html` and lets `body` inherit. On the open
    * web that is enough. On a `chrome-extension://` page it is not: Chrome pushes its own
    * stylesheet into extension pages carrying `body { font-family: system-ui, sans-serif }`, and
-   * Blink cascades that *injected* origin above ordinary author rules — confirmed with
+   * Blink cascades that *injected* origin above ordinary author rules - confirmed with
    * `CSS.getMatchedStylesForNode`, which reports both our `origin=regular` rule and Chrome's
    * `origin=injected` one matching `body`, with theirs winning. Raising specificity (`html body`)
    * does not help, because origin is decided before specificity. Until this line existed the app
    * silently used the browser's font and the bundled `@font-face` above stayed at status
-   * "unloaded" — registered, matched by nothing, downloaded never.
+   * "unloaded" - registered, matched by nothing, downloaded never.
    *
    * `--default-font-family` rather than `--font-sans`: the `@theme inline` block above inlines its
    * values into utilities instead of emitting them as custom properties, so `var(--font-sans)`
@@ -177,7 +177,7 @@
  *
  * Tailwind v3's preflight carried `button { cursor: pointer }`; v4 dropped it to match the bare
  * browser default, which is `cursor: default`. Nothing in this project ever put it back, so every
- * button in the app — sidebar rows, Save, Open, the "⋯" menus, every tab row — showed an arrow.
+ * button in the app - sidebar rows, Save, Open, the "⋯" menus, every tab row - showed an arrow.
  * The whole stylesheet contained exactly one `cursor: pointer`, and that was the `.cursor-pointer`
  * utility class.
  *
@@ -199,7 +199,7 @@ select:not(:disabled),
  * Large sessions (spec §12 Phase 6). A session can hold thousands of tabs, and even with the
  * row paging in `tab-paging.ts` a few hundred rows are mounted at once. `content-visibility:
  * auto` lets Chrome skip layout, paint and style work for the ones scrolled out of view, while
- * keeping them in the DOM — so find-in-page, the tab order and the accessibility tree still see
+ * keeping them in the DOM - so find-in-page, the tab order and the accessibility tree still see
  * them (unlike `content-visibility: hidden`).
  *
  * `contain-intrinsic-size: auto <size>` is the placeholder size used while a subtree is skipped:

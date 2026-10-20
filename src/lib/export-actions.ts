@@ -58,7 +58,7 @@ export function buildExportScope(
 
 /**
  * What the export is called in the filename and in the confirmation: the session name, narrowed
- * by "Window N" or by the group's title. An out-of-range index falls back to the session name —
+ * by "Window N" or by the group's title. An out-of-range index falls back to the session name -
  * a stale click must not throw on the way to a notice.
  */
 export function exportScopeName(
@@ -97,7 +97,7 @@ export function copiedMarkdownNotice(count: number): string {
  */
 export const COPIED_LINK = 'Copied link.';
 
-/** Nothing was in scope — an empty group, or a window whose tabs were all removed. */
+/** Nothing was in scope - an empty group, or a window whose tabs were all removed. */
 export const NOTHING_TO_EXPORT = 'Nothing to export: this selection has no tabs.';
 
 // ---------------------------------------------------------------------------
@@ -144,8 +144,8 @@ export function exportAllNotice(exported: number, skipped: number): string {
 export const NOTHING_TO_EXPORT_ALL = 'Nothing to export: there are no saved sessions yet.';
 
 /**
- * Reads every body in `summaries` through `sessionRepo.get()` — saved sessions and history
- * snapshots alike — so Settings' "Export everything" can put them in one `ExportBundle`.
+ * Reads every body in `summaries` through `sessionRepo.get()` - saved sessions and history
+ * snapshots alike - so Settings' "Export everything" can put them in one `ExportBundle`.
  *
  * Sequential on purpose: a backup of hundreds of sessions is read one body at a time so the page
  * never holds a burst of parallel reads, and `onProgress` can drive an honest counter. A body

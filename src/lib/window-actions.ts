@@ -13,7 +13,7 @@ async function run(action: () => Promise<unknown>): Promise<ActionResult> {
 }
 
 /**
- * "Go to tab": activates a live tab and brings its window forward. Two calls, in that order — a
+ * "Go to tab": activates a live tab and brings its window forward. Two calls, in that order - a
  * `windows.update({ focused: true })` on a window whose active tab has not changed yet would show
  * the wrong tab for a frame. Never throws; a tab closed between render and click comes back as
  * `{ ok: false }` for the row to show inline.
@@ -60,7 +60,7 @@ export async function closeTabs(tabIds: readonly number[]): Promise<ActionResult
   return failure;
 }
 
-/** "Close window" — every tab in it goes with it, which is why the UI confirms first. */
+/** "Close window" - every tab in it goes with it, which is why the UI confirms first. */
 export function closeWindow(windowId: number): Promise<ActionResult> {
   return run(() => chrome.windows.remove(windowId));
 }

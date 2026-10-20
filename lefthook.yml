@@ -13,6 +13,9 @@ pre-commit:
       priority: 3
       glob: '*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}'
       run: pnpm exec oxlint --deny-warnings {staged_files}
+    dashes:
+      priority: 4
+      run: pnpm check:dashes
 
 pre-push:
   parallel: true
@@ -27,8 +30,8 @@ pre-push:
       run: |
         CHANGED=$(git diff --name-only HEAD~1 -- 'src/**' 'scripts/**' 'package.json' 'vite.config.ts')
         if [ -n "$CHANGED" ]; then
-          echo "📝 Source files changed — updating AGENTS.md and README.md with Claude..."
-          claude -p "Source files have changed. Review the current codebase and update AGENTS.md and README.md to reflect the latest state. Only update what's necessary — don't rewrite from scratch. Keep the existing structure and style. Changed files: $CHANGED" --allowedTools Edit,Read,Glob,Grep
+          echo "📝 Source files changed - updating AGENTS.md and README.md with Claude..."
+          claude -p "Source files have changed. Review the current codebase and update AGENTS.md and README.md to reflect the latest state. Only update what's necessary - don't rewrite from scratch. Keep the existing structure and style. Changed files: $CHANGED" --allowedTools Edit,Read,Glob,Grep
           git add AGENTS.md README.md
           git diff --cached --quiet AGENTS.md README.md || git commit --amend --no-edit
         fi

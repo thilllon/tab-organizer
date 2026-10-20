@@ -3,8 +3,8 @@ import type { DuplicateTabHandling, GroupFrom, GroupingMode, SortBy, SortSetting
 
 /**
  * Pure rules behind the Settings dialog's sort settings (`chrome.storage.sync`). The component
- * stays thin: everything that decides what a stored or typed-in value means — and therefore what a
- * change writes — is decided here and unit-tested (AGENTS.md "Testing": vitest runs without a DOM,
+ * stays thin: everything that decides what a stored or typed-in value means - and therefore what a
+ * change writes - is decided here and unit-tested (AGENTS.md "Testing": vitest runs without a DOM,
  * so the React components themselves are not tested).
  */
 
@@ -24,7 +24,7 @@ export const DEFAULT_SORT_SETTINGS: SortSettings = {
   groupingMode: 'subdomain',
 };
 
-/** Every key the page reads on mount and writes back on a change — the whole of `SortSettings`. */
+/** Every key the page reads on mount and writes back on a change - the whole of `SortSettings`. */
 export const SORT_SETTING_KEYS: readonly (keyof SortSettings)[] = [
   'sortBy',
   'groupFrom',
@@ -85,7 +85,7 @@ export const GROUP_FROM_OPTIONS: readonly SortOption<GroupFrom>[] = [
   { value: 'rightToLeft', label: 'Right to left' },
 ];
 
-/** A Chrome extension id: exactly 32 characters from the alphabet a–p, lower case. */
+/** A Chrome extension id: exactly 32 characters from the alphabet a-p, lower case. */
 const EXTENSION_ID_PATTERN = /^[a-p]{32}$/;
 
 export function isExtensionId(value: string): boolean {
@@ -94,9 +94,9 @@ export function isExtensionId(value: string): boolean {
 
 /**
  * What the suspender-id input currently holds:
- * - `'default'` — empty, i.e. "use the built-in default" (see `normalizeSuspenderId`);
- * - `'valid'` — a well-formed extension id;
- * - `'invalid'` — anything else; the page shows an error and writes nothing instead of
+ * - `'default'` - empty, i.e. "use the built-in default" (see `normalizeSuspenderId`);
+ * - `'valid'` - a well-formed extension id;
+ * - `'invalid'` - anything else; the page shows an error and writes nothing instead of
  *   storing an id that could never match a tab.
  */
 type SuspenderIdStatus = 'default' | 'valid' | 'invalid';
@@ -167,7 +167,7 @@ export function parseSortSettings(raw: unknown): SortSettings {
 
 /**
  * The exact object a change writes. Only the suspender id needs resolving; the custom-only settings
- * are stored as they are even under "By URL"/"By title" — the engine ignores them there, and
+ * are stored as they are even under "By URL"/"By title" - the engine ignores them there, and
  * keeping them means switching back to "Custom grouping" restores the user's own choice.
  */
 export function toStoredSortSettings(draft: SortSettings): SortSettings {

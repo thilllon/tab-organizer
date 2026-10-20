@@ -177,7 +177,7 @@ describe('toCsv', () => {
     const rows = parseCsv(toCsv([hostile]));
     // Round trip: a CSV parser gives back exactly the original text with the one guard apostrophe
     // in front of it (a spreadsheet consumes that apostrophe and shows the text as the page wrote
-    // it, but as text — never as a formula).
+    // it, but as text - never as a formula).
     expect(rows[1]).toEqual([
       "'@Session",
       '1',

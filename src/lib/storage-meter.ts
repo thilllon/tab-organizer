@@ -8,7 +8,7 @@ import type { SessionSummary } from '@/types';
  * the split between saved sessions and automatic snapshots comes from the index's per-session
  * `bytes` field, which `sessionRepo` derives from the body it actually wrote. The two are
  * measured differently (Chrome counts the key too, `bytes` is the body's JSON length), so
- * `other` absorbs the difference along with the settings and `historyMeta` — it is never
+ * `other` absorbs the difference along with the settings and `historyMeta` - it is never
  * negative and is never presented as "unknown data".
  *
  * Everything here is pure so it can be unit-tested without a DOM (AGENTS.md "Testing").
@@ -27,7 +27,7 @@ export interface StorageBreakdown {
   snapshotCount: number;
   /**
    * Snapshots "Delete all unprotected" would actually remove (spec §4: the quota path must offer
-   * more than "delete everything"). Zero disables that button — the meter never offers an action
+   * more than "delete everything"). Zero disables that button - the meter never offers an action
    * that would free nothing.
    */
   unprotectedSnapshotCount: number;
@@ -42,7 +42,7 @@ interface StorageSegments {
 
 /**
  * Snapshots are only called out once they are both the bulk of the store and big enough to be
- * worth acting on — a 40 KB store where snapshots happen to be 90% of it is not a problem.
+ * worth acting on - a 40 KB store where snapshots happen to be 90% of it is not a problem.
  */
 export const SNAPSHOT_HINT_MIN_BYTES = 1024 * 1024;
 
@@ -80,12 +80,12 @@ export function summarizeStorage(
   };
 }
 
-/** "4.6 MB stored on this device" — the meter's headline. */
+/** "4.6 MB stored on this device" - the meter's headline. */
 export function storageTotalLine(breakdown: StorageBreakdown): string {
   return `${formatBytes(breakdown.total)} stored on this device`;
 }
 
-/** "1.2 MB in 3 saved sessions · 3.4 MB in 12 snapshots" — the split under the headline. */
+/** "1.2 MB in 3 saved sessions · 3.4 MB in 12 snapshots" - the split under the headline. */
 export function storageDetailLine(breakdown: StorageBreakdown): string {
   return [
     `${formatBytes(breakdown.saved)} in ${pluralize(breakdown.savedCount, 'saved session')}`,
@@ -128,7 +128,7 @@ export const STORAGE_METER_ID = 'storage-meter';
 
 /**
  * Scrolls the storage meter into view and parks focus on it, for the "Show storage use" button
- * on a quota notice. It always waits `delayMs` first, to let a dialog's close animation finish —
+ * on a quota notice. It always waits `delayMs` first, to let a dialog's close animation finish -
  * Radix locks body scrolling while a dialog is open, so scrolling immediately would do nothing.
  *
  * DOM-only, hence untested: the rules that decide *what* the meter says are the pure functions

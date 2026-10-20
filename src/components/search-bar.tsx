@@ -16,7 +16,7 @@ interface SearchBarProps {
   /**
    * Enter: activate the highlighted result, or the first one when none is highlighted. Called
    * with the text the press was made against, because the query committed just above it lands
-   * asynchronously — the parent resolves the activation once its results describe this text
+   * asynchronously - the parent resolves the activation once its results describe this text
    * (see `resolveActivation`).
    */
   onActivate(typedQuery: string): void;
@@ -27,7 +27,7 @@ interface SearchBarProps {
  * the debounced query, so a keystroke never re-renders the result list or rebuilds the corpus.
  *
  * Keyboard: `/` focuses it from anywhere on the page, Escape clears and leaves it, the arrows move
- * the highlight and Enter activates it — the last three only while the box has focus.
+ * the highlight and Enter activates it - the last three only while the box has focus.
  */
 export function SearchBar({ onQueryChange, onMove, onActivate }: SearchBarProps) {
   const [text, setText] = useState('');

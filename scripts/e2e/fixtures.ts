@@ -2,7 +2,7 @@
  * Realistic `Session` fixtures for release screenshots and QA, plus the code that writes them
  * straight into `chrome.storage.local` through the extension service worker.
  *
- * The shapes here mirror `src/types.ts` (imported by relative path — these scripts run under
+ * The shapes here mirror `src/types.ts` (imported by relative path - these scripts run under
  * `tsx`, which does not know Vite's `@/` alias). Chrome runtime ids are never part of a snapshot,
  * so nothing in here needs a live browser to be built: the fixtures are plain data.
  */
@@ -29,8 +29,8 @@ interface TabSeed {
 
 /** A pool of plausible, boring, work-day tabs. Nothing here is ever fetched. */
 const TAB_POOL: TabSeed[] = [
-  { url: 'https://mail.google.com/mail/u/0/#inbox', title: 'Inbox (12) — Gmail' },
-  { url: 'https://calendar.google.com/calendar/u/0/r/week', title: 'Team calendar — Week' },
+  { url: 'https://mail.google.com/mail/u/0/#inbox', title: 'Inbox (12) - Gmail' },
+  { url: 'https://calendar.google.com/calendar/u/0/r/week', title: 'Team calendar - Week' },
   {
     url: 'https://github.com/acme/tab-organizer/pulls',
     title: 'Pull requests · acme/tab-organizer',
@@ -42,57 +42,57 @@ const TAB_POOL: TabSeed[] = [
   { url: 'https://github.com/acme/tab-organizer/actions', title: 'Actions · acme/tab-organizer' },
   {
     url: 'https://developer.chrome.com/docs/extensions/reference/api/tabGroups',
-    title: 'chrome.tabGroups — Chrome for Developers',
+    title: 'chrome.tabGroups - Chrome for Developers',
   },
   {
     url: 'https://developer.chrome.com/docs/extensions/reference/api/storage',
-    title: 'chrome.storage — Chrome for Developers',
+    title: 'chrome.storage - Chrome for Developers',
   },
   {
     url: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API',
-    title: 'Web Locks API — MDN',
+    title: 'Web Locks API - MDN',
   },
   {
     url: 'https://stackoverflow.com/questions/tagged/google-chrome-extension',
-    title: 'Newest questions — Stack Overflow',
+    title: 'Newest questions - Stack Overflow',
   },
   { url: 'https://news.ycombinator.com/', title: 'Hacker News' },
-  { url: 'https://www.figma.com/file/sessions-dashboard', title: 'Sessions dashboard — Figma' },
+  { url: 'https://www.figma.com/file/sessions-dashboard', title: 'Sessions dashboard - Figma' },
   {
     url: 'https://linear.app/acme/issue/TAB-118',
-    title: 'TAB-118 Session import preview — Linear',
+    title: 'TAB-118 Session import preview - Linear',
   },
-  { url: 'https://linear.app/acme/team/TAB/cycle/active', title: 'Active cycle — Linear' },
+  { url: 'https://linear.app/acme/team/TAB/cycle/active', title: 'Active cycle - Linear' },
   {
     url: 'https://docs.google.com/document/d/sessions-spec/edit',
-    title: 'Sessions spec — Google Docs',
+    title: 'Sessions spec - Google Docs',
   },
-  { url: 'https://www.notion.so/acme/Release-checklist', title: 'Release checklist — Notion' },
-  { url: 'https://vitejs.dev/guide/build.html', title: 'Building for Production — Vite' },
-  { url: 'https://react.dev/reference/react/useEffect', title: 'useEffect — React' },
-  { url: 'https://tailwindcss.com/docs/upgrade-guide', title: 'Upgrade guide — Tailwind CSS' },
+  { url: 'https://www.notion.so/acme/Release-checklist', title: 'Release checklist - Notion' },
+  { url: 'https://vitejs.dev/guide/build.html', title: 'Building for Production - Vite' },
+  { url: 'https://react.dev/reference/react/useEffect', title: 'useEffect - React' },
+  { url: 'https://tailwindcss.com/docs/upgrade-guide', title: 'Upgrade guide - Tailwind CSS' },
   {
     url: 'https://www.typescriptlang.org/docs/handbook/2/narrowing.html',
-    title: 'Narrowing — TypeScript',
+    title: 'Narrowing - TypeScript',
   },
-  { url: 'https://oxc.rs/docs/guide/usage/linter/rules', title: 'Rules — Oxlint' },
-  { url: 'https://vitest.dev/api/expect.html', title: 'expect — Vitest' },
-  { url: 'https://playwright.dev/docs/chrome-extensions', title: 'Chrome extensions — Playwright' },
+  { url: 'https://oxc.rs/docs/guide/usage/linter/rules', title: 'Rules - Oxlint' },
+  { url: 'https://vitest.dev/api/expect.html', title: 'expect - Vitest' },
+  { url: 'https://playwright.dev/docs/chrome-extensions', title: 'Chrome extensions - Playwright' },
   {
     url: 'https://chromewebstore.google.com/category/extensions/productivity',
-    title: 'Productivity — Chrome Web Store',
+    title: 'Productivity - Chrome Web Store',
   },
-  { url: 'https://www.youtube.com/watch?v=extension-deep-dive', title: 'MV3 deep dive — YouTube' },
-  { url: 'https://en.wikipedia.org/wiki/Tab_(interface)', title: 'Tab (interface) — Wikipedia' },
+  { url: 'https://www.youtube.com/watch?v=extension-deep-dive', title: 'MV3 deep dive - YouTube' },
+  { url: 'https://en.wikipedia.org/wiki/Tab_(interface)', title: 'Tab (interface) - Wikipedia' },
   {
     url: 'https://www.google.com/search?q=chrome+session+manager',
-    title: 'chrome session manager — Google Search',
+    title: 'chrome session manager - Google Search',
   },
-  { url: 'https://excalidraw.com/#room=restore-flow', title: 'Restore flow — Excalidraw' },
-  { url: 'https://sentry.io/organizations/acme/issues/?query=restore', title: 'Issues — Sentry' },
+  { url: 'https://excalidraw.com/#room=restore-flow', title: 'Restore flow - Excalidraw' },
+  { url: 'https://sentry.io/organizations/acme/issues/?query=restore', title: 'Issues - Sentry' },
   {
     url: 'https://analytics.google.com/analytics/web/#/report-home',
-    title: 'Reports snapshot — Analytics',
+    title: 'Reports snapshot - Analytics',
   },
   { url: 'https://www.reddit.com/r/chrome_extensions/', title: 'r/chrome_extensions' },
 ];
@@ -126,7 +126,7 @@ interface WindowPlan {
 /**
  * Builds one window: pinned tabs first (a Chrome invariant the snapshot keeps), then each group's
  * tabs contiguously, then the ungrouped ones. Exactly one tab is active, and it is never inside a
- * collapsed group — the same invariants `planRestore` enforces.
+ * collapsed group - the same invariants `planRestore` enforces.
  */
 function buildWindow(plan: WindowPlan, cursor: { index: number }): WindowSnapshot {
   const tabs: TabSnapshot[] = [];
@@ -205,7 +205,7 @@ function buildSession(plan: SessionPlan, now: number): Session {
 
 /**
  * The dashboard screenshot fixture: two saved sessions (one small enough to read when expanded,
- * one large enough — over 100 tabs — to trigger the restore confirm dialog) and three automatic
+ * one large enough - over 100 tabs - to trigger the restore confirm dialog) and three automatic
  * history snapshots.
  */
 export function buildDashboardFixtures(): Session[] {
@@ -213,7 +213,7 @@ export function buildDashboardFixtures(): Session[] {
   const plans: SessionPlan[] = [
     {
       id: 'ffffffff-0000-4000-8000-000000000001',
-      name: 'Work — Monday morning',
+      name: 'Work - Monday morning',
       kind: 'saved',
       origin: 'manual',
       ago: 4 * MINUTE,
@@ -238,7 +238,7 @@ export function buildDashboardFixtures(): Session[] {
     },
     {
       id: 'ffffffff-0000-4000-8000-000000000002',
-      name: 'Research — everything open',
+      name: 'Research - everything open',
       kind: 'saved',
       origin: 'manual',
       ago: 25 * MINUTE,
@@ -268,7 +268,7 @@ export function buildDashboardFixtures(): Session[] {
     },
     {
       id: 'ffffffff-0000-4000-8000-000000000003',
-      name: 'Snapshot — 40 minutes ago',
+      name: 'Snapshot - 40 minutes ago',
       kind: 'history',
       origin: 'alarm',
       ago: 40 * MINUTE,
@@ -284,7 +284,7 @@ export function buildDashboardFixtures(): Session[] {
     },
     {
       id: 'ffffffff-0000-4000-8000-000000000004',
-      name: 'Snapshot — 2 hours ago',
+      name: 'Snapshot - 2 hours ago',
       kind: 'history',
       origin: 'alarm',
       ago: 2 * HOUR,
@@ -298,7 +298,7 @@ export function buildDashboardFixtures(): Session[] {
     },
     {
       id: 'ffffffff-0000-4000-8000-000000000005',
-      name: 'Recovered — before the crash',
+      name: 'Recovered - before the crash',
       kind: 'history',
       origin: 'recovered',
       ago: 26 * HOUR,

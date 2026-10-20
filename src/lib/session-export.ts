@@ -152,7 +152,7 @@ function markdownTab(tab: TabSnapshot): string {
 }
 
 /**
- * Tabs as a bare Markdown list, one `- [title](url)` per line — a copied selection, which has no
+ * Tabs as a bare Markdown list, one `- [title](url)` per line - a copied selection, which has no
  * session or window to put a heading on.
  */
 export function toMarkdownLinks(tabs: readonly TabSnapshot[]): string {
@@ -302,7 +302,7 @@ export function csvEscape(field: string): string {
  * apostrophe makes the cell literal text; spreadsheets hide it, a plain CSV parser returns the
  * original text with that one apostrophe in front.
  *
- * Text columns only (session name, group title, tab title, url) — never the numeric or boolean
+ * Text columns only (session name, group title, tab title, url) - never the numeric or boolean
  * ones, whose values are generated here and would only be corrupted by a prefix.
  */
 export function csvGuardFormula(field: string): string {

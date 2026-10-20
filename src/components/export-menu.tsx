@@ -55,19 +55,19 @@ interface ExportMenuProps {
   /** Narrows it further to one group of that window; needs `windowIndex`. */
   groupIndex?: number;
   size?: 'icon-xs' | 'icon-sm';
-  /** "Exported …" / "Copied …" — shown as a toast by the app. */
+  /** "Exported …" / "Copied …" - shown as a toast by the app. */
   onNotice(message: string): void;
-  /** A failed read, a refused clipboard write — shown wherever the host puts its errors. */
+  /** A failed read, a refused clipboard write - shown wherever the host puts its errors. */
   onError(message: string): void;
 }
 
 /**
  * Export / copy menu (spec §8), reused on saved-session rows, saved window rows, group headers
- * and history rows — the scope is whatever `windowIndex` / `groupIndex` narrow it to.
+ * and history rows - the scope is whatever `windowIndex` / `groupIndex` narrow it to.
  *
  * Everything it does is local: `serialize()` builds the text, a Blob URL downloads it and
  * `navigator.clipboard` takes the copies. No network request, no `downloads` permission, and no
- * write of any kind — this menu only reads through `sessionRepo`.
+ * write of any kind - this menu only reads through `sessionRepo`.
  */
 export function ExportMenu({
   summary,
@@ -80,8 +80,8 @@ export function ExportMenu({
 }: ExportMenuProps) {
   /**
    * Resolves the body (loading it when the host has none), narrows it to this menu's scope and
-   * hands both the scoped session and its display name to `run`. A stale index — a window or
-   * group removed since the render — makes `scopeToSession` throw, which lands in `onError`
+   * hands both the scoped session and its display name to `run`. A stale index - a window or
+   * group removed since the render - makes `scopeToSession` throw, which lands in `onError`
    * rather than escaping the click handler.
    */
   const withScope = async (run: (scoped: Session, name: string) => void | Promise<void>) => {

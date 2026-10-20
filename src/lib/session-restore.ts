@@ -6,7 +6,7 @@ export const LAZY_AUTO_THRESHOLD = 50;
 const MIN_WINDOW_SIDE = 200;
 
 export interface SanitizeOptions {
-  /** `chrome.runtime.id` — only our own chrome-extension:// pages may be restored. */
+  /** `chrome.runtime.id` - only our own chrome-extension:// pages may be restored. */
   ownExtensionId: string;
   /** Result of `chrome.extension.isAllowedFileSchemeAccess()`. */
   fileAccessAllowed: boolean;

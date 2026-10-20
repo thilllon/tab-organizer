@@ -9,7 +9,7 @@ import {
 
 interface SidebarResizerProps {
   width: number;
-  /** Called on every drag frame and on every arrow key — already clamped. */
+  /** Called on every drag frame and on every arrow key - already clamped. */
   onResize(width: number): void;
   /** Called when the drag or key press ends, so the width can be stored once. */
   onCommit(width: number): void;
@@ -19,7 +19,7 @@ interface SidebarResizerProps {
  * The grab bar between the sidebar and the main pane. Pointer capture rather than window-level
  * listeners: the pointer keeps reporting to this element even when the drag runs past the window,
  * and the browser cleans up if the button is released somewhere we never see. Arrow keys move it
- * too — a drag handle nobody can reach from the keyboard is a control only some people have.
+ * too - a drag handle nobody can reach from the keyboard is a control only some people have.
  */
 export function SidebarResizer({ width, onResize, onCommit }: SidebarResizerProps) {
   const dragRef = useRef<{ startX: number; startWidth: number } | undefined>(undefined);

@@ -22,7 +22,7 @@ export function useSessionIndex(): SessionIndexState {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
   // Generation counter: guards listSummaries() *results* that settle out of order (e.g. a rapid
-  // storage.onChanged burst racing the initial load) — whichever refresh() call started last
+  // storage.onChanged burst racing the initial load) - whichever refresh() call started last
   // wins, and a stale one is dropped instead of overwriting a fresher result.
   const genRef = useRef(0);
 
@@ -49,7 +49,7 @@ export function useSessionIndex(): SessionIndexState {
 
   useEffect(() => {
     // Separate from genRef above: this guards *starting* the post-reconcile refresh() call at
-    // all. genRef alone can't do that job too — a refresh() triggered by storage.onChanged while
+    // all. genRef alone can't do that job too - a refresh() triggered by storage.onChanged while
     // reconcile() is still pending legitimately bumps genRef, which would make a mount-generation
     // comparison against genRef misfire even though the component is still mounted. `disposed` is
     // local to this effect instance and is only ever set by this effect's own cleanup, so it

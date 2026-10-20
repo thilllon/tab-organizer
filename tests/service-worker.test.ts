@@ -461,7 +461,7 @@ describe('listener wiring', () => {
 /**
  * Spec §12 Phase 1 / §14: "plain click still only sorts". The whole feature was added on the
  * promise that the icon click keeps doing exactly what it always did, so the invariant gets a
- * test of its own — against `./index`, the module Chrome actually loads, with both
+ * test of its own - against `./index`, the module Chrome actually loads, with both
  * `action.onClicked` listeners registered (the sorter's and the snapshot one this file adds).
  */
 describe('the icon click', () => {

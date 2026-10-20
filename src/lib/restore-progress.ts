@@ -1,14 +1,14 @@
 /**
  * The extra lines the restore toast shows while `executeRestore` runs (spec §12 Phase 6:
  * "lazy restore 'auto' UX + progress/cancel polish"). The tab counter itself stays where it was
- * — this is the per-window line, the throughput and the lazy-restore explanation, all pure so
+ * - this is the per-window line, the throughput and the lazy-restore explanation, all pure so
  * they can be tested without a DOM.
  */
 
 import { pluralize } from '@/lib/display-format';
 
 /**
- * "Window 2 of 3" — which window of the plan is being filled. `index` is 0-based, as
+ * "Window 2 of 3" - which window of the plan is being filled. `index` is 0-based, as
  * `executeRestore` reports it. A single-window restore returns undefined: "Window 1 of 1" tells
  * the user nothing the tab counter has not already said.
  */
@@ -24,7 +24,7 @@ export function formatWindowLine(index: number, count: number): string | undefin
 const MIN_SAMPLE_MS = 750;
 
 /**
- * "~45 tabs/s" — measured over the whole run so far, not the last chunk, so the number settles
+ * "~45 tabs/s" - measured over the whole run so far, not the last chunk, so the number settles
  * instead of flickering. Undefined until there is enough of a sample to be honest about.
  */
 export function formatRate(done: number, elapsedMs: number): string | undefined {
@@ -40,7 +40,7 @@ export function formatRate(done: number, elapsedMs: number): string | undefined 
   return `~${rounded === 1 ? '1 tab' : `${rounded} tabs`}/s`;
 }
 
-/** Shown while a lazy restore runs — the tabs appear immediately but stay unloaded. */
+/** Shown while a lazy restore runs - the tabs appear immediately but stay unloaded. */
 export const LAZY_RESTORE_HINT =
   'Tabs are opened unloaded to save memory; each one loads when you click it.';
 

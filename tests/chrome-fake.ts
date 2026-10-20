@@ -137,7 +137,7 @@ interface ChromeFake {
 }
 
 const NO_GROUP = -1;
-/** `chrome.windows.WINDOW_ID_NONE` — reported by `onFocusChanged` when no window has focus. */
+/** `chrome.windows.WINDOW_ID_NONE` - reported by `onFocusChanged` when no window has focus. */
 const WINDOW_ID_NONE = -1;
 
 // ---------------------------------------------------------------------------
@@ -411,7 +411,7 @@ export function createChromeFake(): ChromeFake {
    * Takes `tab` out of its window for a cross-window move, the way Chrome does: the tab arrives
    * inactive, a still-populated source window activates a neighbour, and a window the move
    * empties is closed. Verified in Chrome 152: a cross-window `tabs.move` also drops `pinned`
-   * (the caller decides — `tabGroups.move` never carries pinned tabs).
+   * (the caller decides - `tabGroups.move` never carries pinned tabs).
    */
   function detachForMove(tab: FakeTab, targetWindowId: number): () => void {
     const sourceWindowId = tab.windowId;
@@ -1149,7 +1149,7 @@ declare global {
  *
  * A module imported statically (at the top of a test file) evaluates before any
  * `beforeEach`, so listeners it registers at import time land on setup.ts's
- * throw-away module-level fake, not the one this function returns — load such a
+ * throw-away module-level fake, not the one this function returns - load such a
  * module per test instead (`vi.resetModules(); await import(...)`) if its listeners
  * need to be reachable via `fire.*`. See the comment in setup.ts.
  */

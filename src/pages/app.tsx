@@ -73,9 +73,9 @@ const EXPORT_ALL_TOAST = 'export-all';
 
 /**
  * Tab Organizer's one page: the sidebar lists what you have, the main pane shows what you picked,
- * and Settings is a dialog over it rather than a second page — still an address of its own
+ * and Settings is a dialog over it rather than a second page - still an address of its own
  * (Chrome's "Options" opens `app.html#settings`), drawn on top of the view you were in.
- * Everything below is wiring — the session logic lives in `src/lib/`
+ * Everything below is wiring - the session logic lives in `src/lib/`
  * and the reusable pieces in `src/components/` and `src/hooks/`.
  */
 export function App() {
@@ -169,7 +169,7 @@ export function App() {
   };
 
   /**
-   * Resolves with the ids of the tabs that are now stored, or undefined when nothing was saved —
+   * Resolves with the ids of the tabs that are now stored, or undefined when nothing was saved -
    * the selection's "Save & close" closes those tabs and no others.
    */
   const save = async (scope: CaptureScope): Promise<number[] | undefined> => {
@@ -492,7 +492,7 @@ export function App() {
 
   // The error lines belong to whatever the user is looking at: the main pane, or the Settings
   // dialog while it covers that pane (where a line behind the overlay would go unread). They stay
-  // in the flow on purpose — an error has to remain until it is dealt with, a toast would not.
+  // in the flow on purpose - an error has to remain until it is dealt with, a toast would not.
   const banners = (
     <>
       {quotaFull && <QuotaNotice onShowStorage={() => go({ view: 'settings' })} />}
@@ -615,7 +615,7 @@ export function App() {
       </div>
 
       {/* Settings: an address (`#settings`) drawn as a dialog over the view behind it. Closing it
-          — Escape, the ×, a click outside — leaves that address. The width and the scrolling body
+ - Escape, the ×, a click outside - leaves that address. The width and the scrolling body
           are set here by class, not in src/components/ui/dialog.tsx. */}
       <Dialog
         open={settingsOpen}

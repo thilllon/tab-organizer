@@ -13,7 +13,7 @@ export interface OpenWindowsState {
 
 /**
  * Live view of the open windows (spec §12 Phase 2). The tab/window/group listeners are registered
- * **in this page** — never in the service worker (AGENTS.md) — so they die with the dashboard tab
+ * **in this page** - never in the service worker (AGENTS.md) - so they die with the dashboard tab
  * and the worker stays idle while the pane updates.
  */
 export function useOpenWindows(): OpenWindowsState {
@@ -21,7 +21,7 @@ export function useOpenWindows(): OpenWindowsState {
   const [currentWindowId, setCurrentWindowId] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
-  // Generation counter: guards snapshotOpenWindows() *results* that settle out of order — a burst
+  // Generation counter: guards snapshotOpenWindows() *results* that settle out of order - a burst
   // of tab events can start several refreshes, and whichever started last must win. Same pattern
   // (and same reasoning) as useSessionIndex's genRef.
   const genRef = useRef(0);
@@ -52,7 +52,7 @@ export function useOpenWindows(): OpenWindowsState {
     // all. A refresh() triggered by a tab event while windows.getCurrent() is still pending
     // legitimately bumps genRef, so a mount-generation comparison against it would misfire even
     // though the component is still mounted. `disposed` is local to this effect instance and is
-    // only ever set by its own cleanup — see useSessionIndex for the same split.
+    // only ever set by its own cleanup - see useSessionIndex for the same split.
     let disposed = false;
 
     const unsubscribe = subscribeOpenWindows(() => {

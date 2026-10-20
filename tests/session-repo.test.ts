@@ -352,7 +352,7 @@ describe('sessionRepo.getMany', () => {
     ]);
 
     expect([...bodies.keys()]).toEqual(['ok-1', 'ok-2']);
-    // A body that is simply absent is not a failure — it was deleted, not broken.
+    // A body that is simply absent is not a failure - it was deleted, not broken.
     expect([...failed.keys()]).toEqual(['future', 'junk']);
     expect(failed.get('future')).toBeInstanceOf(UnknownSchemaVersionError);
     expect(failed.get('junk')).toBeInstanceOf(TypeError);

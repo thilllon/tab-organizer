@@ -18,7 +18,7 @@ interface DeleteAllHistoryDialogProps {
 }
 
 /**
- * Confirm for the storage meter's "Delete all unprotected" — `removeAllHistory` never touches
+ * Confirm for the storage meter's "Delete all unprotected" - `removeAllHistory` never touches
  * saved sessions or protected snapshots, and the copy says so.
  */
 export function DeleteAllHistoryDialog({

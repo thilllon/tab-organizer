@@ -19,7 +19,7 @@ async function main(): Promise<void> {
   const archive = new ZipArchive({ zlib: { level: 9 } });
 
   // `finalize()` resolves once the archive is written, but the file is only complete when the
-  // write stream closes — wait for that before reporting the size (and before the process exits).
+  // write stream closes - wait for that before reporting the size (and before the process exits).
   const closed = new Promise<void>((resolve, reject) => {
     output.on('close', resolve);
     output.on('error', reject);

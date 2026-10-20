@@ -7,7 +7,7 @@ import {
 /**
  * Pure rules behind the session-settings controls (the Settings dialog's "Sessions"
  * section). The components stay thin: everything that can be wrong about a typed-in value is
- * decided here and unit-tested (AGENTS.md "Testing" — vitest runs without a DOM).
+ * decided here and unit-tested (AGENTS.md "Testing" - vitest runs without a DOM).
  */
 
 type RestoreLazy = SessionSettings['restoreLazy'];
@@ -70,8 +70,8 @@ export function isRestoreLazy(value: string): value is RestoreLazy {
 
 /**
  * Reads the "Keep last N snapshots" input. Returns `undefined` for anything that is not a number
- * — including the empty string mid-edit, which must leave the stored value alone rather than
- * writing a 0 — and clamps everything else into [1, 200]. `Number.parseInt` also swallows the
+ * - including the empty string mid-edit, which must leave the stored value alone rather than
+ * writing a 0 - and clamps everything else into [1, 200]. `Number.parseInt` also swallows the
  * decimal part of "20.7", which is what the ring buffer wants (whole snapshots only).
  */
 export function parseSnapshotLimit(raw: string): number | undefined {
@@ -82,7 +82,7 @@ export function parseSnapshotLimit(raw: string): number | undefined {
   return Math.min(HISTORY_MAX_MAX, Math.max(HISTORY_MAX_MIN, parsed));
 }
 
-/** "Every 5 minutes" — the interval select's option text. */
+/** "Every 5 minutes" - the interval select's option text. */
 export function intervalLabel(minutes: number): string {
   return minutes === 1 ? 'Every minute' : `Every ${minutes} minutes`;
 }

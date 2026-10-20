@@ -22,7 +22,7 @@ interface SessionBodyState {
 /** Loads the full Session body for `id`, and reloads it whenever that body changes in storage. */
 export function useSessionBody(id: SessionId): SessionBodyState {
   const [state, setState] = useState<SessionBodyState>({ loading: false });
-  // Generation counter: guards sessionRepo.get() *results* that settle out of order — e.g. the
+  // Generation counter: guards sessionRepo.get() *results* that settle out of order - e.g. the
   // initial load racing a chrome.storage.onChanged-triggered reload (sessionRepo.rename() writes
   // the body key too, so a rename while the card is expanded fires the listener). Whichever
   // load() call started last wins; a stale one is dropped instead of overwriting a fresher
@@ -31,7 +31,7 @@ export function useSessionBody(id: SessionId): SessionBodyState {
 
   useEffect(() => {
     // Separate from genRef above: this guards the id-change/unmount case specifically. genRef
-    // alone can't do that job too — bumping it on cleanup already invalidates any load() still in
+    // alone can't do that job too - bumping it on cleanup already invalidates any load() still in
     // flight for this effect instance, but `disposed` also short-circuits state updates before
     // load() even calls sessionRepo.get(), so a load kicked off right as this effect is torn down
     // doesn't touch state at all.

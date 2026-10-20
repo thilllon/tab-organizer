@@ -26,7 +26,7 @@ interface SessionSettingsFieldsProps {
   settings: SessionSettings;
   /** True while the settings are still being read, or a write is in flight. */
   disabled: boolean;
-  /** Every change writes straight through `useSessionSettings().update` — there is no Save button. */
+  /** Every change writes straight through `useSessionSettings().update` - there is no Save button. */
   onChange(patch: Partial<SessionSettings>): void;
   /** Distinguishes the control ids of the two instances the Settings view renders. */
   idPrefix: string;

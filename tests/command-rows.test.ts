@@ -51,7 +51,7 @@ describe('commandRows', () => {
     expect(row?.keys).toEqual([]);
     expect(row?.hint).toContain('Option + Shift + A');
     expect(row?.hint).toContain("Chrome's shortcut page");
-    expect(row?.hint).not.toContain('—');
+    expect(row?.hint).not.toContain(' - ');
   });
 
   it('gives no hint to a command that ships without a suggestion', () => {
@@ -83,7 +83,7 @@ describe('shortcutsDescription', () => {
     expect(mac).toContain('Option + Shift + S');
     expect(mac).toContain('Option + Shift + A');
     expect(mac).not.toContain('Alt');
-    expect(mac).not.toContain('—');
+    expect(mac).not.toContain(' - ');
     const other = shortcutsDescription(false);
     expect(other).toContain('Alt + Shift + S');
     expect(other).not.toContain('Option');
@@ -93,6 +93,6 @@ describe('shortcutsDescription', () => {
 describe('CHANGE_ONLY_IN_CHROME', () => {
   it("says the keys are changed in Chrome's settings, without an em dash", () => {
     expect(CHANGE_ONLY_IN_CHROME).toContain('Chrome');
-    expect(CHANGE_ONLY_IN_CHROME).not.toContain('—');
+    expect(CHANGE_ONLY_IN_CHROME).not.toContain(' - ');
   });
 });

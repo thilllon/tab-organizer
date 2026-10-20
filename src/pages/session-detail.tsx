@@ -172,7 +172,7 @@ export function SessionDetail({
   /**
    * Applies a pure edit (src/lib/session-edit.ts) to the stored body under the lock.
    * `mutate` runs twice on purpose: once here on the loaded body to find out whether the edit
-   * would empty the session — that asks for confirmation instead of deleting silently — and once
+   * would empty the session - that asks for confirmation instead of deleting silently - and once
    * inside `sessionRepo.update`, on the body as it actually is on disk.
    */
   const editSession = async (mutate: (session: Session) => Session | null) => {

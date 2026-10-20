@@ -261,7 +261,7 @@ async function main(): Promise<void> {
   }
 
   for (const result of results) {
-    console.log(`${result.ok ? 'PASS' : 'FAIL'}  ${result.name} — ${result.detail}`);
+    console.log(`${result.ok ? 'PASS' : 'FAIL'}  ${result.name} - ${result.detail}`);
   }
   const failed = results.filter((result) => !result.ok).length;
   console.log(`\n${results.length - failed}/${results.length} passed`);

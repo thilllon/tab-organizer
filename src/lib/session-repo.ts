@@ -83,7 +83,7 @@ function sortNewestFirst(sessions: SessionSummary[]): SessionSummary[] {
   return [...sessions].sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
-/** Byte length (not UTF-16 code units) — matches Chrome's quota accounting. */
+/** Byte length (not UTF-16 code units) - matches Chrome's quota accounting. */
 function byteLength(json: string): number {
   return new TextEncoder().encode(json).length;
 }
@@ -191,7 +191,7 @@ function unreadableSummary(
   return { ...base, bytes, unreadable: { reason: 'unknown-schema', version } };
 }
 
-/** A stored epoch-ms field, or 0 — an unreadable row sorts to the end rather than throwing. */
+/** A stored epoch-ms field, or 0 - an unreadable row sorts to the end rather than throwing. */
 function readTimestamp(record: unknown, field: string): number {
   if (!isRecord(record)) {
     return 0;
@@ -326,7 +326,7 @@ export const sessionRepo = {
   },
 
   /**
-   * Read-modify-write of one session under the lock (spec §12 Phase 2 — editing a saved session).
+   * Read-modify-write of one session under the lock (spec §12 Phase 2 - editing a saved session).
    * `mutate` receives the stored body and returns the replacement, or `null` to delete the session
    * (removing the last window of a session is a delete). The body is rewritten first and the index
    * entry re-derived from it, so counts and `bytes` always describe what is stored.
@@ -462,7 +462,7 @@ export const sessionRepo = {
    * Eager migration pass over every stored session body (e.g. on extension update). For schema
    * v1 `migrateSession` is the identity, so nothing is rewritten today; this is forward-looking
    * for a future schema bump. A body that fails migration (unknown schema version, or malformed)
-   * is left untouched and not counted — reconcile()/read-time migration handle it from there.
+   * is left untouched and not counted - reconcile()/read-time migration handle it from there.
    */
   migrateAll(): Promise<{ migrated: number }> {
     return withLock(async () => {
@@ -521,7 +521,7 @@ export const sessionRepo = {
 
   // ---- Phase 3: history snapshots (spec §4 `historyMeta`, §12 Phase 3) -------------------
 
-  /** `historyMeta` — dedupe baseline for `takeHistorySnapshot()`; `undefined` until the first snapshot. */
+  /** `historyMeta` - dedupe baseline for `takeHistorySnapshot()`; `undefined` until the first snapshot. */
   getHistoryMeta(): Promise<HistoryMeta | undefined> {
     return readHistoryMeta();
   },
@@ -740,7 +740,7 @@ function updateBody(id: SessionId, update: (existing: Session) => Session): Prom
 
 /**
  * Delete order: bodies first, then the index (spec §4), then drop `historyMeta` when the
- * snapshot it fingerprints is gone — otherwise the next `takeHistorySnapshot()` would skip a
+ * snapshot it fingerprints is gone - otherwise the next `takeHistorySnapshot()` would skip a
  * state that no stored snapshot holds any more. Must be called inside withLock.
  */
 async function removeBodiesAndIndex(index: SessionIndex, ids: SessionId[]): Promise<void> {

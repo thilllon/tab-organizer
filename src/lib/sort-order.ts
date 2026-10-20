@@ -22,7 +22,7 @@ export function hashStringToColor(str: string): `${chrome.tabGroups.Color}` {
 
 /**
  * One collator for every text comparison in a sort. `collator.compare(a, b)` is by definition what
- * `a.localeCompare(b)` returns with no arguments — the same default locale and options — without
+ * `a.localeCompare(b)` returns with no arguments - the same default locale and options - without
  * resolving them again on each of the n·log n comparisons.
  */
 const collator = new Intl.Collator();
@@ -103,14 +103,14 @@ export function isSuspended(tab: chrome.tabs.Tab, suspendedPrefix: string): bool
 
 /**
  * Where a tab with no usable url sorts. Chrome hands us `url: ''` with no `pendingUrl` for a tab
- * that has not committed a navigation yet, and `new URL('')` throws — which would abort the whole
+ * that has not committed a navigation yet, and `new URL('')` throws - which would abort the whole
  * sort. Every real key `compareByUrlComponents` builds is lowercase ASCII (Chrome punycodes
  * hostnames and percent-encodes the rest), so a host of `z`s collates after all of them: unknown
  * tabs land together at the end, and `.invalid` (RFC 6761) can never be a real host.
  */
 const UNKNOWN_TAB_URL = 'https://zzzzzzzzzzzzzzzz.invalid/';
 
-/** `new URL(raw)`, or the sentinel when `raw` is empty/absent — `tabToUrl` must never throw. */
+/** `new URL(raw)`, or the sentinel when `raw` is empty/absent - `tabToUrl` must never throw. */
 function toUrlOrUnknown(raw: string | undefined): URL {
   if (raw === undefined || raw === '') {
     return new URL(UNKNOWN_TAB_URL);

@@ -18,8 +18,8 @@ const SESSION_KEY_PREFIX = sessionKey('');
 
 /**
  * The saved sessions the pre-warm should read, newest first (`listSummaries()` order), until the
- * budget is spent. The session that crosses the budget is still included — one body over is
- * cheaper than leaving the newest session, the most likely search target, unloaded — and nothing
+ * budget is spent. The session that crosses the budget is still included - one body over is
+ * cheaper than leaving the newest session, the most likely search target, unloaded - and nothing
  * after it is. History bodies are never pre-warmed: they are opt-in ("Also search auto-saved") and there
  * are up to `historyMaxSnapshots` of them.
  */
@@ -89,7 +89,7 @@ export function scheduleIdle(callback: () => void, timeout: number = IDLE_TIMEOU
  * Reads go through `sessionRepo.getMany()` (never `chrome.storage` directly) and nothing here
  * writes: every id a call needs is fetched in ONE `chrome.storage.local.get([...keys])`, so the
  * idle pre-warm costs one round trip rather than one per session (spec §4). A body that cannot be
- * read at all — a record from a newer schema version — is cached as an empty list rather than
+ * read at all - a record from a newer schema version - is cached as an empty list rather than
  * retried on every query: the session stays listed, it is just not searchable.
  */
 export class SearchCorpusCache {
@@ -98,7 +98,7 @@ export class SearchCorpusCache {
   /**
    * Per-id generation counter, bumped by `invalidate()` / `retain()` / `clear()`. A load that
    * started before the bump drops its result instead of re-caching a body that has since changed
-   * or vanished — the same "whichever started last wins" rule the dashboard hooks use.
+   * or vanished - the same "whichever started last wins" rule the dashboard hooks use.
    */
   private readonly revisions = new Map<SessionId, number>();
   private mutationCount = 0;
@@ -169,7 +169,7 @@ export class SearchCorpusCache {
 
   /**
    * Drops one session's entries (its body changed, or it was deleted). Returns true when there
-   * was something to drop — a cached list or a load in flight — so the caller can decide whether
+   * was something to drop - a cached list or a load in flight - so the caller can decide whether
    * a reload is worth starting.
    */
   invalidate(id: SessionId): boolean {
@@ -182,8 +182,8 @@ export class SearchCorpusCache {
   }
 
   /**
-   * Keeps only the given ids (the session index). Sessions deleted elsewhere — a pruned snapshot,
-   * "Delete all session data" — leave the corpus here. Returns the ids that were dropped.
+   * Keeps only the given ids (the session index). Sessions deleted elsewhere - a pruned snapshot,
+   * "Delete all session data" - leave the corpus here. Returns the ids that were dropped.
    */
   retain(ids: Iterable<SessionId>): SessionId[] {
     const keep = new Set(ids);
@@ -211,7 +211,7 @@ export class SearchCorpusCache {
   /**
    * Invalidates a session whenever its `session:<id>` body key changes in `chrome.storage.local`
    * (a rename, an edit, a delete, an import). `onInvalidated` receives the ids that had something
-   * to drop. The returned function removes the listener — call it from an effect cleanup,
+   * to drop. The returned function removes the listener - call it from an effect cleanup,
    * these listeners live in the page only.
    */
   subscribe(onInvalidated?: (ids: SessionId[]) => void): () => void {
@@ -235,7 +235,7 @@ export class SearchCorpusCache {
   }
 
   /**
-   * One `sessionRepo.getMany()` for the whole batch. Every id is cached either way — a session
+   * One `sessionRepo.getMany()` for the whole batch. Every id is cached either way - a session
    * deleted between the index read and this load, and a body that cannot be migrated, both cache
    * an empty list, which is what stops the next query re-reading them. A failed read of the batch
    * itself (storage unavailable) is the only case that caches nothing, so a later call retries.

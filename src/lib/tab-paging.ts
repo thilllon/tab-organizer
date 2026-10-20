@@ -3,7 +3,7 @@ import { pluralize } from '@/lib/display-format';
 /**
  * Paging for very large windows (spec §12 Phase 6: "a 10,000-tab session never mounts 10,000
  * rows at once"). `content-visibility: auto` keeps off-screen rows cheap to *render*, but React
- * still has to create and diff every row it mounts — so a window over the threshold starts
+ * still has to create and diff every row it mounts - so a window over the threshold starts
  * clipped and grows a page at a time behind a "Show 200 more tabs" button.
  *
  * The threshold is deliberately well above a realistic window (a 300-tab window renders in full,
@@ -39,7 +39,7 @@ export function hiddenTabCount(visible: number, total: number): number {
 }
 
 /**
- * "Show 200 more tabs" — or the exact remainder on the last page ("Show 43 more tabs"), so the
+ * "Show 200 more tabs" - or the exact remainder on the last page ("Show 43 more tabs"), so the
  * button never promises rows that do not exist.
  */
 export function showMoreLabel(visible: number, total: number): string {

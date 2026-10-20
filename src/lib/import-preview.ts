@@ -10,8 +10,8 @@ import type { Session } from '@/types';
  */
 
 /**
- * Largest input the dialog accepts. A session body is JSON of urls and titles — 20 MB is far
- * past any real backup — and the parsers are regex passes over the whole string, so a
+ * Largest input the dialog accepts. A session body is JSON of urls and titles - 20 MB is far
+ * past any real backup - and the parsers are regex passes over the whole string, so a
  * hundred-megabyte paste would freeze the page instead of failing politely.
  */
 export const MAX_IMPORT_BYTES = 20 * 1024 * 1024;
@@ -23,7 +23,7 @@ export const PREVIEW_TITLE_LIMIT = 3;
 
 type SizeCheck = { ok: true } | { ok: false; error: string };
 
-/** UTF-8 bytes, matching `File.size` — a pasted emoji is not one byte. */
+/** UTF-8 bytes, matching `File.size` - a pasted emoji is not one byte. */
 export function utf8ByteLength(text: string): number {
   return new TextEncoder().encode(text).length;
 }
@@ -140,7 +140,7 @@ export function buildImportPreview(sessions: readonly Session[]): ImportPreview 
   return preview;
 }
 
-/** "3 sessions · 5 windows · 87 tabs" — the same shape as a session card's meta line. */
+/** "3 sessions · 5 windows · 87 tabs" - the same shape as a session card's meta line. */
 export function formatImportTotals(preview: ImportPreview): string {
   return [
     pluralize(preview.sessionCount, 'session'),

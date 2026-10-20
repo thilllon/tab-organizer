@@ -39,7 +39,7 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
   /**
    * An `href` only so the browser will show where the row goes (status bar, "Copy link address",
    * ⌘-click). `hrefFor` returns undefined for anything that must not be a live link, and the row
-   * falls back to the button it has always been — behaviour on a plain click is identical either
+   * falls back to the button it has always been - behaviour on a plain click is identical either
    * way, so nothing is lost by a url that cannot be linked.
    */
   const href = hrefFor(tab.url);
@@ -49,7 +49,7 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
       // ⌘/Ctrl/Shift-click: the user asked for the browser's behaviour, so leave the anchor alone.
       return;
     }
-    // A plain click must not navigate this page to the site — that would close the app.
+    // A plain click must not navigate this page to the site - that would close the app.
     event.preventDefault();
     open();
   };
@@ -71,7 +71,7 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
     'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
 
   return (
-    // `cv-tab-row` (index.css) lets Chrome skip layout for rows scrolled out of view — the one
+    // `cv-tab-row` (index.css) lets Chrome skip layout for rows scrolled out of view - the one
     // thing that keeps a 10,000-tab session scrolling smoothly.
     <li role="treeitem" tabIndex={-1} className="cv-tab-row">
       {/* The actions sit beside the row button, never inside it: a button may not nest buttons. */}
@@ -81,7 +81,7 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
         {/*
          * Beside the row link, never inside it, for the same reason as the actions. Clicking the
          * row still goes to the tab; only the box selects. It waits for the pointer like the
-         * actions do, until something is ticked — from then on every row shows its box, because
+         * actions do, until something is ticked - from then on every row shows its box, because
          * a list in which only one row admits to being selectable looks broken.
          */}
         {selection !== undefined && (
@@ -109,7 +109,7 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
         )}
         {/*
          * Two or three icon buttons on every row, times a few hundred rows, is most of what makes
-         * a long session look like noise — so they wait until the pointer is on the row.
+         * a long session look like noise - so they wait until the pointer is on the row.
          *
          * Hidden with opacity, not `display`, for three reasons: the row does not reflow when
          * they appear, they stay in the tab order, and `group-focus-within` brings them back the

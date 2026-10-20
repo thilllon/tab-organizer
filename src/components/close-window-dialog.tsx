@@ -13,7 +13,7 @@ interface CloseWindowDialogProps {
   /** Window number as shown in the pane (1-based), or undefined while the dialog fades out. */
   windowNumber?: number;
   tabCount: number;
-  /** True when it is the window the dashboard itself is in — closing it closes the dashboard. */
+  /** True when it is the window the dashboard itself is in - closing it closes the dashboard. */
   isCurrent: boolean;
   open: boolean;
   onOpenChange(open: boolean): void;

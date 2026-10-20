@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "lint": "oxlint --deny-warnings",
+    "lint": "oxlint --deny-warnings && tsx scripts/check-dashes.ts",
     "lint:fix": "oxlint --fix --deny-warnings",
     "store:bundle": "tsx ./scripts/store-bundle.ts",
     "test": "vitest run",
@@ -27,7 +27,8 @@
     "e2e:sort": "tsx scripts/e2e/sort.ts",
     "e2e:selection": "tsx scripts/e2e/selection.ts",
     "e2e:assemble": "vite build --mode e2e --outDir node_modules/.cache/tab-organizer/e2e && tsx scripts/e2e/assemble.ts",
-    "release": "release-it"
+    "release": "release-it",
+    "check:dashes": "tsx scripts/check-dashes.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

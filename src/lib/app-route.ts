@@ -85,7 +85,7 @@ export function viewBehind(route: Route, previous: Route): Route {
 /** The address and the view under it, as the page keeps them. */
 export interface RouteState {
   route: Route;
-  /** The view the page itself shows — `route`, or what was showing before Settings opened. */
+  /** The view the page itself shows - `route`, or what was showing before Settings opened. */
   page: Route;
 }
 
@@ -115,7 +115,7 @@ export function routeOfEntryBelow(
 
 /**
  * The view on the history entry right below this one, when that entry is this page showing
- * something other than Settings — which is the view the dialog was opened over, whether the click
+ * something other than Settings - which is the view the dialog was opened over, whether the click
  * came from inside the page or `#settings` was typed into the address bar. Read from the
  * Navigation API (Chrome 102+) rather than remembered, so it is still right after a reload, a
  * duplicated tab or a restored browser session. `undefined` when Settings is the first thing this

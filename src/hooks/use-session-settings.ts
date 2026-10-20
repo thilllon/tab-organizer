@@ -12,7 +12,7 @@ interface SessionSettingsState {
   error?: string;
   /**
    * Writes a partial update through `sessionRepo.setSettings()` (which normalises it). Resolves
-   * `true` when the write landed — a failure is reported through `error` rather than thrown, so
+   * `true` when the write landed - a failure is reported through `error` rather than thrown, so
    * callers that confirm a save to the user need this to tell the two apart.
    */
   update(patch: Partial<SessionSettings>): Promise<boolean>;
@@ -22,14 +22,14 @@ interface SessionSettingsState {
  * `sessionSettings` for an extension page (spec §12 Phase 3). The Settings dialog uses this; another
  * app tab can write while it is open, so the hook re-reads on every `chrome.storage.onChanged`
  * for the settings key. The service worker
- * watches the same key and re-arms the history alarm itself — this hook must never touch
+ * watches the same key and re-arms the history alarm itself - this hook must never touch
  * `chrome.alarms`, and never writes storage except through `sessionRepo`.
  */
 export function useSessionSettings(): SessionSettingsState {
   const [settings, setSettings] = useState<SessionSettings>(DEFAULT_SESSION_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
-  // Generation counter: guards getSettings() *results* that settle out of order — an update()
+  // Generation counter: guards getSettings() *results* that settle out of order - an update()
   // and the storage.onChanged it triggers start two reads, and whichever started last must win.
   // Same pattern (and same reasoning) as useSessionIndex's genRef.
   const genRef = useRef(0);

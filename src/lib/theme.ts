@@ -1,7 +1,7 @@
 /**
  * Dark mode (spec §12 Phase 6). The stylesheet ships a `.dark` palette behind
  * `@custom-variant dark (&:is(.dark *))`, so the only thing needed at runtime is the `dark`
- * class on `<html>` — there is no theme *setting*, the extension simply follows the OS.
+ * class on `<html>` - there is no theme *setting*, the extension simply follows the OS.
  *
  * The app page calls `followSystemTheme()` once at startup; everything that decides what
  * the class list should look like lives in `withDarkClass`, which is pure and unit-tested (the
@@ -28,8 +28,8 @@ export function withDarkClass(className: string, dark: boolean): string {
 /**
  * Applies `matchMedia('(prefers-color-scheme: dark)')` to `<html>` and keeps following it.
  *
- * `color-scheme` is set alongside the class so Chrome's own widgets — form controls, scrollbars,
- * the canvas behind the page — switch with it.
+ * `color-scheme` is set alongside the class so Chrome's own widgets - form controls, scrollbars,
+ * the canvas behind the page - switch with it.
  */
 export function followSystemTheme(): void {
   const root = document.documentElement;

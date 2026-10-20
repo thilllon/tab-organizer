@@ -32,7 +32,7 @@ export function toggleSelected(selection: TabSelection, tabId: number): TabSelec
 /**
  * Shift-click: ticks every tab from `anchorId` (the tab ticked last) to `tabId`, in list order and
  * across windows, on top of what is already ticked. Without a usable anchor it ticks just the one
- * tab — a range needs two ends.
+ * tab - a range needs two ends.
  */
 export function selectRange(
   windows: readonly OpenWindowView[],
@@ -90,7 +90,7 @@ function siteOf(url: string): string {
 
 /**
  * "Select all tabs like this" / "… not like this": every open tab on the same sites as the ticked
- * ones, or every tab on any other site. The result replaces the selection — "not like this" is how
+ * ones, or every tab on any other site. The result replaces the selection - "not like this" is how
  * you keep the three tabs you are reading and sweep away the rest.
  */
 export function selectBySite(

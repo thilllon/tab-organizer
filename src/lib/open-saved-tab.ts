@@ -4,7 +4,7 @@ import { goToTab } from '@/lib/window-actions';
 /**
  * Clicking a tab in a saved session or a snapshot: a tab manager must not make tabs multiply, so
  * a page that is already open is brought forward instead of opened a second time. Matching is on
- * the exact stored URL — a saved `…/issues?page=2` is a different page from `…/issues`, and
+ * the exact stored URL - a saved `…/issues?page=2` is a different page from `…/issues`, and
  * guessing which query strings are "the same page" would surprise more often than it would help.
  */
 

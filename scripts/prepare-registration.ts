@@ -191,12 +191,12 @@ class Preparation {
 
   private skip(step: string, reason: string): void {
     this.skipped.push({ step, reason });
-    console.warn(`  SKIPPED — ${step}: ${reason}`);
+    console.warn(`  SKIPPED - ${step}: ${reason}`);
   }
 
   private fail(step: string, reason: string): void {
     this.failed.push({ step, reason });
-    console.error(`  FAILED — ${step}: ${reason}`);
+    console.error(`  FAILED - ${step}: ${reason}`);
   }
 
   private report(): void {
@@ -829,10 +829,10 @@ class Preparation {
       groupColor: t.groupColor ? GROUP_COLORS[t.groupColor] || t.groupColor : null,
     }));
 
-    const beforeHtml = this.buildTabBarHtml(beforeTabs, 'Before — Tabs in random order');
+    const beforeHtml = this.buildTabBarHtml(beforeTabs, 'Before - Tabs in random order');
     const afterHtml = this.buildTabBarHtml(
       afterTabsWithColors,
-      'After — Sorted and grouped by domain',
+      'After - Sorted and grouped by domain',
     );
 
     const beforePath = path.join(SCREENSHOTS_DIR, 'before-sort.html');

@@ -51,7 +51,7 @@ interface LaunchOptions {
   args?: string[];
   /**
    * `true` when the caller would rather have a visible window (screen recording, native capture).
-   * Ignored when there is no display — see {@link resolveHeadless}.
+   * Ignored when there is no display - see {@link resolveHeadless}.
    */
   preferHeaded?: boolean;
 }
@@ -61,7 +61,7 @@ const SERVICE_WORKER_TIMEOUT_MS = 15_000;
 
 export interface ExtensionSession {
   context: BrowserContext;
-  /** The extension's MV3 service worker as it was at launch — prefer {@link worker}. */
+  /** The extension's MV3 service worker as it was at launch - prefer {@link worker}. */
   serviceWorker: Worker;
   extensionId: string;
   /**

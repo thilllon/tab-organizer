@@ -13,7 +13,7 @@ interface SearchResultsProps {
   groups: SearchGroup[];
   /** The query as typed, for the "no matches" line. */
   query: string;
-  /** `tokenize()` output — what `splitOnMatches` highlights. */
+  /** `tokenize()` output - what `splitOnMatches` highlights. */
   tokens: string[];
   /** Matches across every source, including the ones beyond the per-source cap. */
   total: number;
@@ -27,7 +27,7 @@ interface SearchResultsProps {
   warming: boolean;
 }
 
-/** Highlighted text, as `<mark>` elements — never `dangerouslySetInnerHTML` (spec §7). */
+/** Highlighted text, as `<mark>` elements - never `dangerouslySetInnerHTML` (spec §7). */
 function Highlighted({ text, tokens }: { text: string; tokens: string[] }) {
   return (
     <>

@@ -2,7 +2,7 @@ import { readLocalUiState, SIDEBAR_WIDTH_KEY, writeLocalUiState } from '@/lib/ui
 
 /**
  * The sidebar can be dragged wider: session names are long ("Session 2026-09-22 14:13 · …") and a
- * fixed column cut them off. Bounds rather than a free-for-all — narrower than `MIN` hides the
+ * fixed column cut them off. Bounds rather than a free-for-all - narrower than `MIN` hides the
  * names it exists to show, wider than `MAX` starves the pane the sidebar is there to drive.
  */
 export const MIN_SIDEBAR_WIDTH = 180;

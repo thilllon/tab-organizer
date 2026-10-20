@@ -3,8 +3,8 @@ import { isTabsCannotBeEditedError, withRetryOnce } from '@/lib/session-restore'
 /**
  * "Assemble tabs": pull every tab of the other normal windows into the last-focused one.
  *
- * Tabs are relocated with `chrome.tabs.move` / `chrome.tabGroups.move` only — never reopened by
- * URL and closed — so tab ids, back/forward history and page state survive, and a failed call
+ * Tabs are relocated with `chrome.tabs.move` / `chrome.tabGroups.move` only - never reopened by
+ * URL and closed - so tab ids, back/forward history and page state survive, and a failed call
  * leaves a tab where it was instead of losing it. Verified in Chrome 152: a cross-window
  * `tabs.move` keeps the id and history but drops `pinned`, and pinning again in the original
  * order appends each tab to the target's pinned area; `tabGroups.move` keeps the group's id,
@@ -17,7 +17,7 @@ import { isTabsCannotBeEditedError, withRetryOnce } from '@/lib/session-restore'
  * tab is parked on an ungrouped "anchor" tab, and the anchor moves last:
  *  - the active tab itself when it is not in a group;
  *  - otherwise a pinned tab, or the last ungrouped tab, activated first (activating an ungrouped
- *    tab expands nothing — activating a tab inside a collapsed group would expand it);
+ *    tab expands nothing - activating a tab inside a collapsed group would expand it);
  *  - in a window of groups only, the active tab is taken out of its group first (re-collapsing the
  *    group when Chrome expands it on the way) and put back into the same group, at the same
  *    offset, once it is in the target. A single-tab group disappears when emptied, so that one
@@ -109,8 +109,8 @@ function unpinnedSteps(tabs: IdTab[]): AssembleStep[] {
 
 /**
  * One source window's steps (see the module comment). Replaying them in order rebuilds the
- * window's strip at the end of the target — pinned tabs in the pinned area, everything else in
- * order — while no group that moves ever holds the source window's active tab.
+ * window's strip at the end of the target - pinned tabs in the pinned area, everything else in
+ * order - while no group that moves ever holds the source window's active tab.
  */
 export function planWindowMoves(
   tabs: chrome.tabs.Tab[],

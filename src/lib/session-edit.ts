@@ -3,7 +3,7 @@ import type { Session, TabSnapshot, WindowSnapshot } from '@/types';
 
 /**
  * Rebuilds a window after tabs were removed: groups no tab references any more are dropped and the
- * remaining `groupIndex` values are remapped. Filtering alone cannot do it — `groupIndex` is a
+ * remaining `groupIndex` values are remapped. Filtering alone cannot do it - `groupIndex` is a
  * position in `groups`, so removing the last tab of group 0 would leave every other tab pointing at
  * the wrong group. Relative order is preserved, so the surviving groups stay in first-appearance
  * order (spec §3).
@@ -48,7 +48,7 @@ function withTabs(window: WindowSnapshot, tabs: TabSnapshot[]): WindowSnapshot {
   return next;
 }
 
-/** `session` with `windows`, or `null` when nothing is left — the caller then deletes it. */
+/** `session` with `windows`, or `null` when nothing is left - the caller then deletes it. */
 function withWindows(session: Session, windows: WindowSnapshot[]): Session | null {
   if (windows.length === 0) {
     return null;
@@ -70,7 +70,7 @@ function requireWindow(session: Session, windowIndex: number): WindowSnapshot {
  * Removes one tab from a saved session (spec §12 Phase 2, "Remove from session").
  *
  * Removing the last tab of a window removes the window; removing the last window returns `null`,
- * which `sessionRepo.update` turns into a delete — the dashboard asks first.
+ * which `sessionRepo.update` turns into a delete - the dashboard asks first.
  */
 export function removeTabFromSession(
   session: Session,

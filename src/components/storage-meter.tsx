@@ -21,7 +21,7 @@ import type { SessionSummary } from '@/types';
 interface StorageMeterProps {
   /** The index, straight from `useSessionIndex`: the saved/snapshot split and the refresh cue. */
   summaries: SessionSummary[];
-  /** "Deleted all session data." — shown as a toast by the app. */
+  /** "Deleted all session data." - shown as a toast by the app. */
   onNotice(message: string): void;
 }
 
@@ -36,9 +36,9 @@ interface StorageMeterProps {
  * "Delete all session data". The first clears every snapshot that is not protected, behind its own
  * confirm (`DeleteAllHistoryDialog`).
  *
- * The total is re-read whenever the index changes — every write goes through `sessionRepo`, which
+ * The total is re-read whenever the index changes - every write goes through `sessionRepo`, which
  * rewrites `sessionIndex`, and `useSessionIndex` turns that `storage.onChanged` into a new
- * `summaries` array — so saving, deleting, importing or pruning all move the bar.
+ * `summaries` array - so saving, deleting, importing or pruning all move the bar.
  */
 export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
   const [bytes, setBytes] = useState<number | undefined>(undefined);
@@ -56,7 +56,7 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
     }
   }, []);
 
-  // Measured once on mount and again on every `sessionIndex` write — which is every save,
+  // Measured once on mount and again on every `sessionIndex` write - which is every save,
   // delete, import, prune and "Delete all session data", since `sessionRepo` rewrites the index
   // with each of them. (The saved/snapshot split needs no listener: `summaries` is a prop.)
   useEffect(() => {

@@ -76,7 +76,7 @@ describe('type guards', () => {
 });
 
 describe('isExtensionId', () => {
-  it('accepts 32 characters from a–p', () => {
+  it('accepts 32 characters from a-p', () => {
     expect(isExtensionId(THE_MARVELLOUS_SUSPENDER_EXTENSION_ID)).toBe(true);
     expect(isExtensionId(VALID_ID)).toBe(true);
     expect(isExtensionId('a'.repeat(32))).toBe(true);
@@ -89,7 +89,7 @@ describe('isExtensionId', () => {
     expect(isExtensionId('a'.repeat(33))).toBe(false);
   });
 
-  it('rejects characters outside a–p, upper case, digits and whitespace', () => {
+  it('rejects characters outside a-p, upper case, digits and whitespace', () => {
     expect(isExtensionId(`${'a'.repeat(31)}q`)).toBe(false);
     expect(isExtensionId(`${'a'.repeat(31)}z`)).toBe(false);
     expect(isExtensionId(VALID_ID.toUpperCase())).toBe(false);

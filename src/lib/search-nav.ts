@@ -29,7 +29,7 @@ export interface SearchGroup {
   count: number;
   hasMore: boolean;
   items: SearchItem[];
-  /** Index of this group's first item in the flattened list — the keyboard highlight's index. */
+  /** Index of this group's first item in the flattened list - the keyboard highlight's index. */
   startIndex: number;
 }
 
@@ -40,7 +40,7 @@ export interface SearchGroup {
  *
  * A session this build cannot read (spec §3) is never a result: activating a tier-1 row restores
  * it, and the whole point of the read-only row in the saved list is that this build cannot. Its
- * tier-2 entries do not exist either — nothing could read the body to build them.
+ * tier-2 entries do not exist either - nothing could read the body to build them.
  */
 export function sessionNameMatches(
   summaries: readonly SessionSummary[],
@@ -125,7 +125,7 @@ export function buildSearchGroups(
   return groups;
 }
 
-/** The groups' rows as one ordered list — the order ArrowDown / ArrowUp walk. */
+/** The groups' rows as one ordered list - the order ArrowDown / ArrowUp walk. */
 export function flattenSearchItems(groups: readonly SearchGroup[]): SearchItem[] {
   return groups.flatMap((group) => group.items);
 }
@@ -172,7 +172,7 @@ type ActivationDecision =
  *   and those state updates are batched, so the rows on screen can still be the previous query's.
  *   `typedQuery !== committedQuery` therefore means "wait", never "activate something".
  * - `highlight` is an index into a list that is rebuilt on every tab event. Once it points past
- *   the end, the row the user highlighted is gone — which is *not* the same as having highlighted
+ *   the end, the row the user highlighted is gone - which is *not* the same as having highlighted
  *   nothing, and must not silently activate row 0 (for a tier-1 row: restoring a whole session).
  *
  * Only `NO_HIGHLIGHT` (nothing highlighted at all) falls back to the first row, which is what a
