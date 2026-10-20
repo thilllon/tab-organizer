@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { isMacPlatform, shortcutKeys, shortcutText } from '@/lib/shortcut-keys';
 
+import { getChromeFake } from './chrome-fake';
+
 describe('shortcutKeys', () => {
   it('names the glyphs Chrome reports on a Mac', () => {
     expect(shortcutKeys('⌥⇧S', true)).toEqual(['Option', 'Shift', 'S']);
@@ -11,6 +13,7 @@ describe('shortcutKeys', () => {
 
   it('keeps a named key after the glyphs whole', () => {
     expect(shortcutKeys('⌥Comma', true)).toEqual(['Option', 'Comma']);
+    expect(shortcutKeys('⌘⇧PageDown', true)).toEqual(['Command', 'Shift', 'Page Down']);
     expect(shortcutKeys('⌘↑', true)).toEqual(['Command', '↑']);
   });
 
@@ -32,6 +35,37 @@ describe('shortcutKeys', () => {
     expect(shortcutKeys('', true)).toEqual([]);
     expect(shortcutKeys('   ', false)).toEqual([]);
     expect(shortcutKeys(undefined, false)).toEqual([]);
+  });
+});
+
+describe('named keys', () => {
+  it("names every key Chrome reports by name, in both of Chrome's spellings", () => {
+    expect(shortcutKeys('Ctrl+Shift+Comma', false)).toEqual(['Ctrl', 'Shift', 'Comma']);
+    expect(shortcutKeys('Alt+Period', false)).toEqual(['Alt', 'Period']);
+    expect(shortcutKeys('Alt+Space', false)).toEqual(['Alt', 'Space']);
+    expect(shortcutKeys('Alt+Up', false)).toEqual(['Alt', 'Up Arrow']);
+    expect(shortcutKeys('Alt+Down Arrow', false)).toEqual(['Alt', 'Down Arrow']);
+    expect(shortcutKeys('Alt+PageUp', false)).toEqual(['Alt', 'Page Up']);
+    expect(shortcutKeys('Alt+Page Up', false)).toEqual(['Alt', 'Page Up']);
+    expect(shortcutKeys('MediaPlayPause', false)).toEqual(['Play/Pause']);
+    expect(shortcutKeys('Media Play/Pause', false)).toEqual(['Play/Pause']);
+    expect(shortcutKeys('MediaNextTrack', false)).toEqual(['Next Track']);
+    expect(shortcutKeys('MediaPrevTrack', false)).toEqual(['Previous Track']);
+    expect(shortcutKeys('MediaStop', false)).toEqual(['Stop']);
+    for (const key of ['Left', 'Right', 'Home', 'End', 'Insert', 'Delete', 'Tab']) {
+      expect(shortcutKeys(`Ctrl+${key}`, false)).toHaveLength(2);
+    }
+    // Letters, digits, glyphs and anything Chrome already wrote in its own language pass through.
+    expect(shortcutKeys('Ctrl+Shift+7', false)).toEqual(['Ctrl', 'Shift', '7']);
+    expect(shortcutKeys('Alt+쉼표', false)).toEqual(['Alt', '쉼표']);
+  });
+
+  it('translates the names into the UI language', () => {
+    getChromeFake().setUiLanguage('es');
+    expect(shortcutKeys('Ctrl+Shift+Comma', false)).toEqual(['Ctrl', 'Mayús', 'Coma']);
+    expect(shortcutKeys('Alt+PageDown', false)).toEqual(['Alt', 'Av Pág']);
+    getChromeFake().setUiLanguage('ja');
+    expect(shortcutKeys('MediaPlayPause', false)).toEqual(['再生/一時停止']);
   });
 });
 

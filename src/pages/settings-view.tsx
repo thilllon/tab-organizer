@@ -14,39 +14,33 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useSessionSettings } from '@/hooks/use-session-settings';
 import {
-  CHANGE_ONLY_IN_CHROME,
-  COMMANDS_FAILED,
-  COMMANDS_LOADING,
+  changeOnlyInChrome,
   type CommandRow,
   commandRows,
+  commandsFailed,
+  commandsLoading,
   shortcutsDescription,
 } from '@/lib/command-rows';
+import { t } from '@/lib/i18n';
 import { openShortcutSettings } from '@/lib/open-shortcut-settings';
 import { isMacPlatform } from '@/lib/shortcut-keys';
 import {
   DEFAULT_SORT_SETTINGS,
-  DUPLICATE_TAB_OPTIONS,
-  GROUP_FROM_OPTIONS,
-  GROUPING_MODE_OPTIONS,
+  duplicateTabOptions,
+  groupFromOptions,
+  groupingModeOptions,
   isDuplicateTabHandling,
   isGroupFrom,
   isGroupingMode,
   isSortBy,
   parseSortSettings,
-  SORT_BY_OPTIONS,
+  sortByOptions,
   SORT_SETTING_KEYS,
   showsCustomSortOptions,
   suspenderIdStatus,
   toStoredSortSettings,
 } from '@/lib/sort-settings';
 import type { SessionSettings, SessionSummary, SortSettings } from '@/types';
-
-/**
- * What every save says. One wording for both halves of this page: the sort settings live in
- * `chrome.storage.sync` and the session settings in `chrome.storage.local`, but that split is our
- * problem, not something to explain in a toast.
- */
-const SAVED_MESSAGE = 'Setting saved';
 
 /** Chrome names keys differently on a Mac (Option, Command), so the page asks once. */
 const IS_MAC = isMacPlatform(navigator.userAgent);
@@ -106,7 +100,9 @@ export function SettingsView({
   }, []);
 
   /**
-   * Writes one changed key straight through and confirms it. The confirmation is raised in the
+   * Writes one changed key straight through and confirms it. One wording, "Setting saved", for both
+   * halves of this page: sort settings live in `chrome.storage.sync` and session settings in
+   * `chrome.storage.local`, but that split is not something to explain in a toast. The confirmation is raised in the
    * storage callback, not beside the `setSort` above it: the control moves optimistically so it
    * never feels laggy, but "Saved" must mean the write actually landed.
    */
@@ -115,10 +111,12 @@ export function SettingsView({
     setSort(next);
     chrome.storage.sync.set(toStoredSortSettings(next), () => {
       if (chrome.runtime.lastError !== undefined) {
-        onError(`Could not save that setting: ${chrome.runtime.lastError.message ?? 'unknown'}`);
+        onError(
+          t('settingsSaveFailed', chrome.runtime.lastError.message ?? t('settingsUnknownError')),
+        );
         return;
       }
-      onSaved(SAVED_MESSAGE);
+      onSaved(t('settingsSaved'));
     });
   };
 
@@ -126,7 +124,7 @@ export function SettingsView({
   const writeSession = (patch: Partial<SessionSettings>) => {
     void sessionSettings.update(patch).then((ok) => {
       if (ok) {
-        onSaved(SAVED_MESSAGE);
+        onSaved(t('settingsSaved'));
       }
     });
   };
@@ -137,17 +135,20 @@ export function SettingsView({
   return (
     <>
       <DialogHeader className="border-b px-6 py-4">
-        <DialogTitle>Settings</DialogTitle>
-        <DialogDescription className="text-xs">Changes save as you make them.</DialogDescription>
+        <DialogTitle>{t('settingsTitle')}</DialogTitle>
+        <DialogDescription className="text-xs">{t('settingsSubtitle')}</DialogDescription>
       </DialogHeader>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/30 px-6 py-4">
         {children}
 
-        <SettingsSection title="Sorting" description="What clicking the toolbar icon does.">
-          <SettingsField label="Sort by" htmlFor="sort-by">
+        <SettingsSection
+          title={t('settingsSortingTitle')}
+          description={t('settingsSortingDescription')}
+        >
+          <SettingsField label={t('settingsSortBy')} htmlFor="sort-by">
             <NativeSelect
               id="sort-by"
-              title="How tabs are ordered when you click the toolbar icon"
+              title={t('settingsSortByTitle')}
               value={sort.sortBy}
               onChange={(event) => {
                 const value = event.target.value;
@@ -156,7 +157,7 @@ export function SettingsView({
                 }
               }}
             >
-              {SORT_BY_OPTIONS.map((option) => (
+              {sortByOptions().map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -169,8 +170,8 @@ export function SettingsView({
           {showCustomOptions && (
             <div className="space-y-5 border-l-2 border-border pl-4">
               <SettingsField
-                label="Tab groups"
-                hint="What counts as the same site."
+                label={t('settingsTabGroups')}
+                hint={t('settingsTabGroupsHint')}
                 htmlFor="grouping-mode"
               >
                 <NativeSelect
@@ -183,7 +184,7 @@ export function SettingsView({
                     }
                   }}
                 >
-                  {GROUPING_MODE_OPTIONS.map((option) => (
+                  {groupingModeOptions().map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -192,8 +193,8 @@ export function SettingsView({
               </SettingsField>
 
               <SettingsField
-                label="Grouping direction"
-                hint="Which end of the tab strip decides the order of the sites."
+                label={t('settingsGroupingDirection')}
+                hint={t('settingsGroupingDirectionHint')}
                 htmlFor="group-from"
               >
                 <NativeSelect
@@ -206,7 +207,7 @@ export function SettingsView({
                     }
                   }}
                 >
-                  {GROUP_FROM_OPTIONS.map((option) => (
+                  {groupFromOptions().map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -215,8 +216,8 @@ export function SettingsView({
               </SettingsField>
 
               <SettingsField
-                label="Preserve order within groups"
-                hint="Keep each site’s tabs in the order you opened them."
+                label={t('settingsPreserveOrder')}
+                hint={t('settingsPreserveOrderHint')}
                 htmlFor="preserve-order"
               >
                 <Switch
@@ -229,8 +230,8 @@ export function SettingsView({
           )}
 
           <SettingsField
-            label="Duplicate tabs"
-            hint="When the same address is open more than once."
+            label={t('settingsDuplicateTabs')}
+            hint={t('settingsDuplicateTabsHint')}
             htmlFor="duplicate-tabs"
           >
             <NativeSelect
@@ -243,7 +244,7 @@ export function SettingsView({
                 }
               }}
             >
-              {DUPLICATE_TAB_OPTIONS.map((option) => (
+              {duplicateTabOptions().map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -251,11 +252,14 @@ export function SettingsView({
             </NativeSelect>
           </SettingsField>
 
-          <AdvancedFold label="Advanced" description="Pinned tabs, suspended tabs">
+          <AdvancedFold
+            label={t('settingsAdvanced')}
+            description={t('settingsSortingAdvancedDescription')}
+          >
             <SettingsField
-              label="Sort pinned tabs"
+              label={t('settingsSortPinned')}
               htmlFor="sort-pinned"
-              hint="Off: pinned tabs stay exactly where they are."
+              hint={t('settingsSortPinnedHint')}
             >
               <Switch
                 id="sort-pinned"
@@ -265,9 +269,9 @@ export function SettingsView({
             </SettingsField>
 
             <SettingsField
-              label="Group suspended tabs together"
+              label={t('settingsGroupSuspended')}
               htmlFor="group-suspended"
-              hint="On: suspended tabs move to the front as one block."
+              hint={t('settingsGroupSuspendedHint')}
             >
               <Switch
                 id="group-suspended"
@@ -277,9 +281,9 @@ export function SettingsView({
             </SettingsField>
 
             <SettingsField
-              label="Tab suspender extension ID"
+              label={t('settingsSuspenderId')}
               htmlFor="suspender-id"
-              hint="Which extension’s suspended pages to recognise. Empty uses The Marvellous Suspender."
+              hint={t('settingsSuspenderIdHint')}
             >
               <div className="flex items-center gap-2">
                 <Input
@@ -301,7 +305,9 @@ export function SettingsView({
                   }}
                 />
                 {suspenderStatus === 'invalid' && (
-                  <span className="text-xs text-destructive">32 letters a-p</span>
+                  <span className="text-xs text-destructive">
+                    {t('settingsSuspenderIdInvalid')}
+                  </span>
                 )}
               </div>
             </SettingsField>
@@ -309,8 +315,8 @@ export function SettingsView({
         </SettingsSection>
 
         <SettingsSection
-          title="Sessions"
-          description="Automatic snapshots are the safety net behind a crash or a closed window. They stay on this device."
+          title={t('settingsSessionsTitle')}
+          description={t('settingsSessionsDescription')}
         >
           <SessionSettingsFields
             settings={sessionSettings.settings}
@@ -319,7 +325,10 @@ export function SettingsView({
             subset="basic"
             idPrefix="settings-sessions"
           />
-          <AdvancedFold label="Advanced" description="Interval, how many to keep, loading">
+          <AdvancedFold
+            label={t('settingsAdvanced')}
+            description={t('settingsSessionsAdvancedDescription')}
+          >
             <SessionSettingsFields
               settings={sessionSettings.settings}
               disabled={sessionSettings.loading}
@@ -336,33 +345,41 @@ export function SettingsView({
         </SettingsSection>
 
         <SettingsSection
-          title="Backup"
-          description="Sessions live on this device only. Export a file to move them somewhere else."
+          title={t('settingsBackupTitle')}
+          description={t('settingsBackupDescription')}
         >
           <SettingsField
-            label="Export everything"
-            hint="Saved sessions and snapshots, as one JSON file."
+            label={t('settingsExportEverything')}
+            hint={t('settingsExportEverythingHint')}
           >
             <Button variant="outline" size="sm" onClick={onExportAll} disabled={exporting}>
               <Download />
-              Export…
+              {t('settingsExportButton')}
             </Button>
           </SettingsField>
-          <SettingsField label="Import" hint="JSON, bookmark HTML, a Markdown list or plain URLs.">
+          <SettingsField label={t('settingsImport')} hint={t('settingsImportHint')}>
             <Button variant="outline" size="sm" onClick={onImport}>
               <Upload />
-              Import…
+              {t('settingsImportButton')}
             </Button>
           </SettingsField>
-          <AdvancedFold label="Advanced" description="Storage used, delete everything">
+          <AdvancedFold
+            label={t('settingsAdvanced')}
+            description={t('settingsBackupAdvancedDescription')}
+          >
             <StorageMeter summaries={summaries} onNotice={onNotice} />
           </AdvancedFold>
         </SettingsSection>
 
-        <SettingsSection title="Keyboard shortcuts" description={shortcutsDescription(IS_MAC)}>
-          {commands === null && <p className="text-xs text-muted-foreground">{COMMANDS_LOADING}</p>}
+        <SettingsSection
+          title={t('settingsShortcutsTitle')}
+          description={shortcutsDescription(IS_MAC)}
+        >
+          {commands === null && (
+            <p className="text-xs text-muted-foreground">{commandsLoading()}</p>
+          )}
           {commands === 'failed' && (
-            <p className="text-xs text-muted-foreground">{COMMANDS_FAILED}</p>
+            <p className="text-xs text-muted-foreground">{commandsFailed()}</p>
           )}
           {Array.isArray(commands) &&
             commands.map((command) => (
@@ -375,12 +392,12 @@ export function SettingsView({
               variant="outline"
               size="sm"
               onClick={() => void openShortcutSettings()}
-              title="Open Chrome's keyboard shortcuts page"
+              title={t('settingsChangeInChromeTitle')}
             >
               <Keyboard />
-              Change in Chrome
+              {t('settingsChangeInChrome')}
             </Button>
-            <p className="text-xs text-muted-foreground">{CHANGE_ONLY_IN_CHROME}</p>
+            <p className="text-xs text-muted-foreground">{changeOnlyInChrome()}</p>
           </div>
         </SettingsSection>
       </div>

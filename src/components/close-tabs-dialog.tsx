@@ -1,3 +1,4 @@
+import { DialogCloseButton } from '@/components/dialog-close-button';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { pluralize } from '@/lib/display-format';
+import { t, tp } from '@/lib/i18n';
 
 interface CloseTabsDialogProps {
   tabCount: number;
@@ -25,23 +26,20 @@ interface CloseTabsDialogProps {
 export function CloseTabsDialog({ tabCount, open, onOpenChange, onConfirm }: CloseTabsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Close {pluralize(tabCount, 'tab')}?</DialogTitle>
-          <DialogDescription>
-            Every selected tab will be closed, including any inside a collapsed group or further
-            down a long window than the list shows. Use Save &amp; close instead if you want them
-            back.
-          </DialogDescription>
+          <DialogTitle>{tp('openCloseTabsQuestion', tabCount)}</DialogTitle>
+          <DialogDescription>{t('openCloseTabsBody')}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('commonCancel')}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Close tabs
+            {t('openCloseTabs')}
           </Button>
         </DialogFooter>
+        <DialogCloseButton />
       </DialogContent>
     </Dialog>
   );

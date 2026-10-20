@@ -84,6 +84,10 @@ Restores run in batches with progress and Cancel; more than 50 tabs load lazily,
 
 Everything lives in `chrome.storage.local` on the device, never synced, never uploaded.
 
+## Languages
+
+English, Korean (한국어), Spanish (Español) and Japanese (日本語). There is no setting: Tab Organizer follows the language Chrome is displayed in, and uses English for any other. The Chrome Web Store listing is localized the same way. Text you saved (session names, group titles) stays as you wrote it, and exports open and import back the same in every language.
+
 ## Privacy
 
 - **Zero network requests**: works entirely offline, no analytics, no telemetry.
@@ -91,7 +95,7 @@ Everything lives in `chrome.storage.local` on the device, never synced, never up
 - **No content scripts**: nothing is ever injected into a web page.
 - Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md), also on the [website](https://thilllon.github.io/tab-organizer/privacy/) in English, Korean, Spanish and Japanese.
 
-Everything shown on the store page (the complete description, every asset, the privacy answers) is kept in [`docs/store_listing.md`](docs/store_listing.md), with the description already in the plain text the store takes.
+Everything shown on the store page (the complete description, every asset, the privacy answers) is kept in [`docs/store_listing.md`](docs/store_listing.md), with the summary and description of every language already in the plain text the store takes.
 
 ## Development
 

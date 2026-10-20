@@ -34,6 +34,8 @@ export const en: SiteCopy = {
     lead: 'Tab Organizer sorts and groups the tabs in your window, clears out duplicates, and saves whole windows as sessions you can bring back later. Everything stays on your computer.',
     imageAlt:
       'The Tab Organizer page: saved sessions in the left column, and a session of two windows with its pinned tabs and tab groups on the right',
+    languages:
+      'The extension itself comes in English, 한국어, Español and 日本語, and follows Chrome’s language.',
   },
   sort: {
     kicker: 'Sorting',
@@ -46,7 +48,7 @@ export const en: SiteCopy = {
     afterAlt:
       'The same tab strip after one click: the tabs sorted by site, with the GitHub and Google tabs side by side in tab groups',
     points: [
-      'Sort by address, by title, or group by site in the order you first opened them',
+      'Choose By URL, By title, or Custom, which groups by site in the order you first opened them',
       'Group by full hostname, or by domain so every Google service lands together',
       'Existing tab groups are sorted by name and tidied inside; pinned tabs stay put',
     ],
@@ -92,13 +94,13 @@ export const en: SiteCopy = {
       shot: 'settings',
       kicker: 'Duplicates and settings',
       title: 'Duplicate tabs, handled the way you like',
-      body: 'Keep one is the default: extra copies of the same page are closed, keeping the one you are looking at. You can also keep them all, or collect them into a tab group to review first.',
+      body: 'Keep one is the default: extra copies of the same page are closed, keeping the one you are looking at. You can also choose Keep all, or Group them to collect the copies in a tab group to review first.',
       points: [
         'Every setting saves as you change it, no Save button',
         'Advanced options for pinned and suspended tabs stay out of the way',
         'Closed a duplicate by mistake? Ctrl+Shift+T brings it back',
       ],
-      alt: 'The Tab Organizer settings dialog: Sort by set to By URL, Duplicate tabs set to Keep one, and automatic snapshots switched on',
+      alt: 'The Tab Organizer settings dialog: Sort by set to By URL, Duplicate tabs set to Keep one, and Automatic snapshots switched on',
     },
   ],
   more: {
@@ -118,7 +120,7 @@ export const en: SiteCopy = {
       {
         icon: 'keyboard',
         title: 'Keyboard shortcuts',
-        body: 'Sort with Alt+Shift+S and gather every window with Alt+Shift+A (Option on a Mac). Saving a session and opening Tab Organizer can have keys of their own.',
+        body: 'Sort with Alt+Shift+S and Assemble! with Alt+Shift+A (Option on a Mac). Saving a session and opening Tab Organizer can have keys of their own.',
       },
       {
         icon: 'grouping',

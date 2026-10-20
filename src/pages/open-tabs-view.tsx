@@ -5,10 +5,9 @@ import { CloseTabsDialog } from '@/components/close-tabs-dialog';
 import { OpenWindowsPane } from '@/components/open-windows-pane';
 import { SelectionBar } from '@/components/selection-bar';
 import { Button } from '@/components/ui/button';
-import { ASSEMBLE_LABEL, ASSEMBLE_NAME } from '@/constants';
 import type { OpenWindowsState } from '@/hooks/use-open-windows';
-import { pluralize } from '@/lib/display-format';
 import { copyText } from '@/lib/download-and-copy';
+import { t, tp } from '@/lib/i18n';
 import {
   type CopyFormat,
   closedTabsNotice,
@@ -152,10 +151,10 @@ export function OpenTabsView({
 
   const windowCount = openWindows.windows.length;
   const tabCount = openWindows.windows.reduce((count, win) => count + win.tabs.length, 0);
-  const saveLabel = windowCount > 1 ? 'Save all windows' : 'Save this window';
+  const saveLabel = windowCount > 1 ? t('openSaveAllWindows') : t('openSaveThisWindow');
 
   return (
-    <section aria-label="Open tabs" className="min-w-0">
+    <section aria-label={t('openHeading')} className="min-w-0">
       {selecting ? (
         // `--app-header-h` is the page header's measured height (app.tsx), so the bar sits flush
         // under it whatever that header wraps to.
@@ -177,10 +176,10 @@ export function OpenTabsView({
         <header className="-my-2 flex min-h-16 flex-wrap items-center gap-3 py-2">
           <div className="min-w-0 flex-1">
             <h1 ref={heading} tabIndex={-1} className="text-lg font-semibold outline-none">
-              Open tabs
+              {t('openHeading')}
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              {pluralize(windowCount, 'window')} · {pluralize(tabCount, 'tab')}
+              {t('commonWindowsAndTabs', tp('windowCount', windowCount), tp('tabCount', tabCount))}
             </p>
           </div>
           {/* Only where there is something to gather. Same name as the icon's right-click item, so
@@ -191,20 +190,16 @@ export function OpenTabsView({
               variant="outline"
               onClick={onAssemble}
               disabled={busy || assembling}
-              title={ASSEMBLE_LABEL}
+              title={t('cmdAssembleTabs')}
             >
               <Combine />
-              {ASSEMBLE_NAME}
+              {t('assembleName')}
             </Button>
           )}
           <Button
             onClick={onSaveAll}
             disabled={busy || windowCount === 0}
-            title={
-              windowCount > 1
-                ? 'Save every open window as one session'
-                : 'Save this window as a session'
-            }
+            title={windowCount > 1 ? t('openSaveAllWindowsTitle') : t('openSaveWindowTitle')}
           >
             <Save />
             {saveLabel}
@@ -214,18 +209,34 @@ export function OpenTabsView({
 
       {savedCount === 0 && (
         <p className="mt-4 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-          Nothing saved yet. Press <strong>{saveLabel}</strong>, or right-click the Tab Organizer
-          icon and choose <strong>Save all windows as session</strong>. To use a keyboard shortcut,{' '}
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            title="Open Settings"
-            className="inline-flex items-center gap-1 rounded-sm underline outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          >
-            <Keyboard className="size-3.5" />
-            set one in Settings
-          </button>
-          .
+          {/* One sentence per language, with the bold names and the link dropped in where that
+            language puts them: the message carries {1} {2} {3} markers that are split out here. */}
+          {t('openFirstRunHint', '{1}', '{2}', '{3}')
+            .split(/(\{[123]\})/)
+            .map((part, index) => {
+              switch (part) {
+                case '{1}':
+                  return <strong key="save">{saveLabel}</strong>;
+                case '{2}':
+                  return <strong key="menu">{t('workerMenuSaveAll')}</strong>;
+                case '{3}':
+                  return (
+                    <button
+                      key="settings"
+                      type="button"
+                      onClick={onOpenSettings}
+                      title={t('commonOpenSettingsTitle')}
+                      className="inline-flex items-center gap-1 rounded-sm underline outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    >
+                      <Keyboard className="size-3.5" />
+                      {t('openFirstRunHintSettingsLink')}
+                    </button>
+                  );
+                default:
+                  // oxlint-disable-next-line react/no-array-index-key -- the parts of one fixed sentence never reorder
+                  return <span key={index}>{part}</span>;
+              }
+            })}
         </p>
       )}
 

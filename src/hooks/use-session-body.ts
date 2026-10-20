@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { errorMessage } from '@/lib/error-message';
+import { reportError } from '@/lib/error-message';
+import { t } from '@/lib/i18n';
 import { UnknownSchemaVersionError } from '@/lib/session-migrate';
 import { sessionKey, sessionRepo } from '@/lib/session-repo';
 import type { Session, SessionId } from '@/types';
@@ -46,7 +47,7 @@ export function useSessionBody(id: SessionId): SessionBodyState {
           return;
         }
         if (session === undefined) {
-          setState({ loading: false, error: 'This session no longer exists.' });
+          setState({ loading: false, error: t('sessionGone') });
         } else {
           setState({ loading: false, session });
         }
@@ -56,8 +57,8 @@ export function useSessionBody(id: SessionId): SessionBodyState {
         }
         const error =
           err instanceof UnknownSchemaVersionError
-            ? 'This session was saved by a newer version of Tab Organizer and cannot be shown.'
-            : errorMessage(err);
+            ? t('restoreSessionTooNew')
+            : reportError('session body', err);
         setState({ loading: false, error });
       }
     };

@@ -1,5 +1,7 @@
+import { t, tp } from '@/lib/i18n';
 import { captureSession } from '@/lib/session-capture';
 import { contentHash } from '@/lib/session-hash';
+import { formatNameStamp } from '@/lib/session-naming';
 import { sessionRepo } from '@/lib/session-repo';
 import type { Session, SessionId, SessionOrigin, SessionSettings, SessionSummary } from '@/types';
 
@@ -39,30 +41,22 @@ const PROMOTABLE_ORIGINS: ReadonlySet<SessionOrigin> = new Set<SessionOrigin>([
   'startup',
 ]);
 
-function pad2(value: number): string {
-  return String(value).padStart(2, '0');
-}
-
-function plural(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
-}
-
-/** Local-time "2026-08-29 14:03" - the same stamp `defaultSessionName()` (session-naming.ts) uses. */
-function formatStamp(date: Date): string {
-  return (
-    `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ` +
-    `${pad2(date.getHours())}:${pad2(date.getMinutes())}`
-  );
-}
-
-/** "Snapshot 2026-08-29 14:03 · 3 windows · 87 tabs" (history counterpart of `defaultSessionName`). */
+/**
+ * "Snapshot 2026-08-29 14:03 · 3 windows · 87 tabs" (history counterpart of `defaultSessionName`),
+ * in the UI language at capture time.
+ */
 export function defaultHistoryName(date: Date, windowCount: number, tabCount: number): string {
-  return `Snapshot ${formatStamp(date)} · ${plural(windowCount, 'window')} · ${plural(tabCount, 'tab')}`;
+  return t(
+    'sessionSnapshotDefaultName',
+    formatNameStamp(date),
+    tp('windowCount', windowCount),
+    tp('tabCount', tabCount),
+  );
 }
 
 /** "Previous session (recovered) 2026-08-29 14:03" - `date` is the snapshot's capture time. */
 export function recoveredSnapshotName(date: Date): string {
-  return `Previous session (recovered) ${formatStamp(date)}`;
+  return t('sessionRecoveredName', formatNameStamp(date));
 }
 
 function tabCountOf(session: Session): number {

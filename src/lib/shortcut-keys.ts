@@ -7,6 +7,8 @@
  * can draw one small chip per key. The glyphs are hard to read at a glance, which is the point.
  */
 
+import { type MessageKey, t } from '@/lib/i18n';
+
 type Modifier = 'command' | 'control' | 'alt' | 'shift' | 'search';
 
 const GLYPHS: Readonly<Record<string, Modifier>> = {
@@ -16,21 +18,73 @@ const GLYPHS: Readonly<Record<string, Modifier>> = {
   '⇧': 'shift',
 };
 
-const MAC_NAMES: Readonly<Record<Modifier, string>> = {
-  command: 'Command',
-  control: 'Control',
-  alt: 'Option',
-  shift: 'Shift',
-  search: 'Search',
+/** The modifier names a Mac keyboard prints, in the UI language (read when drawn, not at load). */
+function macNames(): Readonly<Record<Modifier, string>> {
+  return {
+    command: t('settingsKeyCommand'),
+    control: t('settingsKeyControl'),
+    alt: t('settingsKeyOption'),
+    shift: t('settingsKeyShift'),
+    search: t('settingsKeySearch'),
+  };
+}
+
+/** The same for every other platform: Command does not exist there, Ctrl stands in. */
+function otherNames(): Readonly<Record<Modifier, string>> {
+  return {
+    command: t('settingsKeyCtrl'),
+    control: t('settingsKeyCtrl'),
+    alt: t('settingsKeyAlt'),
+    shift: t('settingsKeyShift'),
+    search: t('settingsKeySearch'),
+  };
+}
+
+/**
+ * Chrome's names for the keys that are not a letter or a digit, as the manifest spells them
+ * ("Comma", "PageUp", "MediaPlayPause") and as Chrome's own shortcut text spells some of them
+ * ("Page Up", "Up Arrow", "Media Play/Pause"), compared without spaces and case. A key that is not
+ * here (a letter, a digit, an arrow glyph, a name in Chrome's UI language) is shown as Chrome wrote it.
+ */
+const NAMED_KEYS: Readonly<Record<string, MessageKey>> = {
+  comma: 'settingsKeyNameComma',
+  period: 'settingsKeyNamePeriod',
+  space: 'settingsKeyNameSpace',
+  up: 'settingsKeyNameUp',
+  uparrow: 'settingsKeyNameUp',
+  down: 'settingsKeyNameDown',
+  downarrow: 'settingsKeyNameDown',
+  left: 'settingsKeyNameLeft',
+  leftarrow: 'settingsKeyNameLeft',
+  right: 'settingsKeyNameRight',
+  rightarrow: 'settingsKeyNameRight',
+  home: 'settingsKeyNameHome',
+  end: 'settingsKeyNameEnd',
+  pageup: 'settingsKeyNamePageUp',
+  pagedown: 'settingsKeyNamePageDown',
+  insert: 'settingsKeyNameInsert',
+  ins: 'settingsKeyNameInsert',
+  delete: 'settingsKeyNameDelete',
+  del: 'settingsKeyNameDelete',
+  tab: 'settingsKeyNameTab',
+  esc: 'settingsKeyNameEscape',
+  escape: 'settingsKeyNameEscape',
+  enter: 'settingsKeyNameEnter',
+  return: 'settingsKeyNameEnter',
+  backspace: 'settingsKeyNameBackspace',
+  medianexttrack: 'settingsKeyNameMediaNextTrack',
+  mediaplaypause: 'settingsKeyNameMediaPlayPause',
+  'mediaplay/pause': 'settingsKeyNameMediaPlayPause',
+  mediaprevtrack: 'settingsKeyNameMediaPrevTrack',
+  mediaprevioustrack: 'settingsKeyNameMediaPrevTrack',
+  mediastop: 'settingsKeyNameMediaStop',
 };
 
-const OTHER_NAMES: Readonly<Record<Modifier, string>> = {
-  command: 'Ctrl',
-  control: 'Ctrl',
-  alt: 'Alt',
-  shift: 'Shift',
-  search: 'Search',
-};
+/** The key itself (not a modifier) in the UI language when it has a name, else as written. */
+function keyName(key: string): string {
+  const named = NAMED_KEYS[key.replace(/\s+/g, '').toLowerCase()];
+  return named === undefined ? key : t(named);
+}
 
 /**
  * One word of the "+" spelling as a modifier, or `null` for the key itself. In a manifest "Ctrl"
@@ -64,7 +118,7 @@ export function shortcutKeys(shortcut: string | undefined, isMac: boolean): stri
   if (text === '') {
     return [];
   }
-  const names = isMac ? MAC_NAMES : OTHER_NAMES;
+  const names = isMac ? macNames() : otherNames();
 
   if (text.includes('+') && text.length > 1) {
     // "Ctrl++" would be the Plus key; keep a trailing "+" as the key rather than losing it.
@@ -74,7 +128,7 @@ export function shortcutKeys(shortcut: string | undefined, isMac: boolean): stri
       .filter((word) => word !== '')
       .map((word) => {
         const modifier = wordModifier(word, isMac);
-        return modifier === null ? word : names[modifier];
+        return modifier === null ? keyName(word) : names[modifier];
       });
   }
 
@@ -92,7 +146,7 @@ export function shortcutKeys(shortcut: string | undefined, isMac: boolean): stri
   }
   const key = chars.slice(index).join('').trim();
   if (key !== '') {
-    keys.push(key);
+    keys.push(keyName(key));
   }
   return keys;
 }

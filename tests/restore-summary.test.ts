@@ -6,6 +6,7 @@ import {
   formatRestoreSummary,
   needsRestoreConfirm,
   RESTORE_CONFIRM_THRESHOLD,
+  restoreErrorLine,
   splitRestoreErrors,
 } from '@/lib/restore-summary';
 import type { Session } from '@/types';
@@ -48,16 +49,16 @@ describe('countTabs / needsRestoreConfirm', () => {
 describe('formatRestoreDestination', () => {
   it('counts the windows a newWindows restore opens', () => {
     expect(formatRestoreDestination(sessionWithTabs(1, 2), { kind: 'newWindows' })).toBe(
-      'n will open 2 windows.',
+      '“n” will open 2 windows.',
     );
     expect(formatRestoreDestination(sessionWithTabs(1), { kind: 'newWindows' })).toBe(
-      'n will open 1 window.',
+      '“n” will open 1 window.',
     );
   });
 
   it('says nothing about windows when restoring into an existing one', () => {
     expect(formatRestoreDestination(sessionWithTabs(1, 2), { kind: 'window', windowId: 7 })).toBe(
-      'n will be added to this window.',
+      '“n” will be added to this window.',
     );
   });
 });
@@ -190,5 +191,36 @@ describe('formatRestoreSummary - cancelled with nothing opened', () => {
         cancelled: true,
       }),
     ).toBe('Restore cancelled: 0 tabs opened');
+  });
+});
+
+describe('restoreErrorLine', () => {
+  it('words each failure in the UI language and never shows an untranslated Chrome message', () => {
+    expect(restoreErrorLine({ url: 'https://a.test/', message: 'No tab with id: 5.' })).toBe(
+      'Failed: https://a.test/ (That tab or window is no longer open.)',
+    );
+    expect(
+      restoreErrorLine({ url: 'https://a.test/', message: 'Cannot access a chrome:// URL' }),
+    ).toBe('Failed: https://a.test/');
+    expect(restoreErrorLine({ url: 'group:Work', message: 'boom' })).toBe(
+      'Group “Work” could not be recreated.',
+    );
+    expect(restoreErrorLine({ url: 'group:', message: 'boom' })).toBe(
+      'Group “Untitled group” could not be recreated.',
+    );
+    expect(
+      restoreErrorLine({
+        url: 'activate:https://b.test/',
+        message: 'Tabs cannot be edited right now',
+      }),
+    ).toBe(
+      'Could not switch to https://b.test/ (Chrome is busy with the tabs, perhaps because one is being dragged. Try again.)',
+    );
+    expect(
+      restoreErrorLine({ url: 'window-state:maximized', message: 'Invalid value for state' }),
+    ).toBe('Could not restore the window size.');
+    expect(
+      restoreErrorLine({ url: 'https://c.test/', message: 'windows.create returned no window' }),
+    ).toBe('Failed: https://c.test/ (Chrome did not open a window to restore into.)');
   });
 });

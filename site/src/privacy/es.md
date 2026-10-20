@@ -35,8 +35,8 @@ Para desactivarlas, abre Tab Organizer (clic con el botón derecho en el icono �
 ## Conservación de datos
 
 - Las sesiones guardadas se conservan hasta que las borras en la página de Tab Organizer.
-- Las instantáneas automáticas se conservan en un conjunto rotativo: solo se mantienen las instantáneas no protegidas más recientes (20 por defecto; eliges cuántas en la configuración de la página de Tab Organizer) y las más antiguas se eliminan automáticamente. Una instantánea que marques como protegida se conserva hasta que la borres. La instantánea "Previous session (recovered)" que se crea tras reiniciar el navegador se protege automáticamente, igual que la anterior; las instantáneas recuperadas más antiguas vuelven al conjunto rotativo y caducan como cualquier otra. Las que protejas tú se conservan mientras quieras. Las instantáneas se pueden borrar una a una o todas a la vez.
-- "Delete all session data" en la página de Tab Organizer elimina de inmediato todas las sesiones guardadas e instantáneas; tus ajustes se conservan.
+- Las instantáneas automáticas se conservan en un conjunto rotativo: solo se mantienen las instantáneas no protegidas más recientes (20 por defecto; eliges cuántas en la configuración de la página de Tab Organizer) y las más antiguas se eliminan automáticamente. Una instantánea que marques como protegida se conserva hasta que la borres. La instantánea «Sesión anterior (recuperada)» que se crea tras reiniciar el navegador se protege automáticamente, igual que la anterior; las instantáneas recuperadas más antiguas vuelven al conjunto rotativo y caducan como cualquier otra. Las que protejas tú se conservan mientras quieras. Las instantáneas se pueden borrar una a una o todas a la vez.
+- «Eliminar todos los datos de sesiones» en la página de Tab Organizer elimina de inmediato todas las sesiones guardadas e instantáneas; tus ajustes se conservan.
 - Al desinstalar la extensión, Chrome elimina todos sus datos guardados.
 
 ## Permisos
@@ -46,9 +46,9 @@ Esta extensión necesita los siguientes permisos:
 - **tabs**: para leer las URL y los títulos de las pestañas al ordenarlas, al guardar sesiones y para la lista de ventanas abiertas de la página de Tab Organizer, y para crear pestañas al restaurar una sesión.
 - **tabGroups**: para ordenar y organizar los grupos de pestañas de la ventana actual y para volver a crearlos al restaurar una sesión.
 - **storage**: para guardar tus preferencias de ordenación en el almacenamiento sincronizado de Chrome, y para guardar las sesiones, instantáneas y ajustes de sesiones en el almacenamiento local, solo en este dispositivo.
-- **contextMenus**: para agregar "Assemble!" y "Save all windows as session" al menú contextual del icono de la extensión. No se agrega ningún elemento de menú a las páginas web.
+- **contextMenus**: para agregar «¡Reunir!» y «Guardar todas las ventanas como sesión» al menú contextual del icono de la extensión. No se agrega ningún elemento de menú a las páginas web.
 - **unlimitedStorage**: permite que las sesiones grandes superen la cuota predeterminada del almacenamiento local de Chrome. No cambia dónde se guardan los datos: todo se queda en tu dispositivo.
-- **favicon**: para mostrar, junto a las pestañas dla página de Tab Organizer, los iconos de los sitios desde la caché local de favicons de Chrome. No se descarga ningún icono de la red y la extensión no guarda datos de iconos.
+- **favicon**: para mostrar, junto a las pestañas de la página de Tab Organizer, los iconos de los sitios desde la caché local de favicons de Chrome. No se descarga ningún icono de la red y la extensión no guarda datos de iconos.
 - **alarms**: se usa como temporizador de las instantáneas automáticas, con el intervalo que elijas. Cuando las instantáneas automáticas están desactivadas, no existe ningún temporizador.
 
 La extensión no solicita permisos de host ni usa scripts de contenido. Necesita Chrome 123 o posterior.

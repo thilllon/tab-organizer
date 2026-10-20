@@ -3,14 +3,10 @@ import { Image } from 'astro:assets';
 
 import afterSort from '../../../../screenshots/after-sort.png';
 import beforeSort from '../../../../screenshots/before-sort.png';
-import shotHistory from '../../../../screenshots/dashboard-history.png';
-import shotRestore from '../../../../screenshots/dashboard-restore.png';
-import shotSearch from '../../../../screenshots/dashboard-search.png';
-import shotSessions from '../../../../screenshots/dashboard-sessions.png';
-import shotSettings from '../../../../screenshots/screenshot-1280x800.png';
 import AddToChrome from '../../components/add-to-chrome.astro';
 import Icon from '../../components/icon.astro';
 import { localePaths, pageUrl, type Locale } from '../../i18n/locales';
+import { screenshot } from '../../i18n/screenshots';
 import { copyFor, type FeatureShot } from '../../i18n/site-copy';
 import BaseLayout from '../../layouts/base-layout.astro';
 
@@ -25,11 +21,13 @@ interface Props {
 const { locale } = Astro.props;
 const copy = copyFor(locale);
 
+// The extension in this page's language (screenshots/<code>/), English where none was taken.
+const shotSessions = screenshot(locale, 'dashboard-sessions');
 const SHOTS: Record<FeatureShot, ImageMetadata> = {
-  restore: shotRestore,
-  history: shotHistory,
-  search: shotSearch,
-  settings: shotSettings,
+  restore: screenshot(locale, 'dashboard-restore'),
+  history: screenshot(locale, 'dashboard-history'),
+  search: screenshot(locale, 'dashboard-search'),
+  settings: screenshot(locale, 'screenshot-1280x800'),
 };
 
 /**
@@ -65,6 +63,7 @@ const SHOT_SIZES = '(min-width: 60rem) 36rem, calc(100vw - 2.5rem)';
         <a class="button button-secondary" href="#features">{copy.cta.seeFeatures}</a>
       </div>
       <p class="hero-note">{copy.cta.note}</p>
+      <p class="hero-languages">{copy.hero.languages}</p>
     </div>
     <div class="container hero-shot">
       <figure class="shot">
@@ -276,6 +275,12 @@ const SHOT_SIZES = '(min-width: 60rem) 36rem, calc(100vw - 2.5rem)';
 
   .hero-note {
     margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+
+  .hero-languages {
+    margin-top: 0.375rem;
     font-size: 0.875rem;
     color: var(--muted-foreground);
   }

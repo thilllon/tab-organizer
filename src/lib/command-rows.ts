@@ -12,25 +12,40 @@
  * must read well with no key at all, and say where the suggested key can be set.
  */
 
-import { ASSEMBLE_NAME, DEFAULT_SHORTCUTS } from '@/constants';
+import { DEFAULT_SHORTCUTS } from '@/constants';
+import { t } from '@/lib/i18n';
 import { shortcutKeys, shortcutText } from '@/lib/shortcut-keys';
 
 const EXECUTE_ACTION = '_execute_action';
 
-export const SORT_COMMAND_LABEL = 'Sort the tabs in this window (same as clicking the icon)';
+/**
+ * The fixed wording of the section, read in the UI language when drawn. Functions rather than
+ * constants because `chrome.i18n` is only there at run time.
+ */
+export function sortCommandLabel(): string {
+  return t('settingsSortCommand');
+}
 
-export const UNNAMED_COMMAND = 'Unnamed command';
+export function unnamedCommand(): string {
+  return t('settingsUnnamedCommand');
+}
 
-export const NOT_SET = 'Not set';
+export function notSetLabel(): string {
+  return t('settingsShortcutNotSet');
+}
 
 /** Extensions cannot bind keys themselves; only Chrome's own page can. */
-export const CHANGE_ONLY_IN_CHROME =
-  "These shortcuts can only be changed in Chrome's own shortcut settings.";
+export function changeOnlyInChrome(): string {
+  return t('settingsShortcutsChangeOnlyInChrome');
+}
 
-export const COMMANDS_LOADING = 'Reading the shortcuts from Chrome…';
+export function commandsLoading(): string {
+  return t('settingsShortcutsLoading');
+}
 
-export const COMMANDS_FAILED =
-  'Chrome did not report the shortcuts. Open its shortcut page to see them.';
+export function commandsFailed(): string {
+  return t('settingsShortcutsFailed');
+}
 
 export interface CommandRow {
   /** The command id, stable across renders; the React key. */
@@ -44,7 +59,7 @@ export interface CommandRow {
 
 function labelOf(command: chrome.commands.Command): string {
   if (command.name === EXECUTE_ACTION) {
-    return SORT_COMMAND_LABEL;
+    return sortCommandLabel();
   }
   if (command.description !== undefined && command.description.trim() !== '') {
     return command.description;
@@ -52,7 +67,7 @@ function labelOf(command: chrome.commands.Command): string {
   if (command.name !== undefined && command.name.trim() !== '') {
     return command.name;
   }
-  return UNNAMED_COMMAND;
+  return unnamedCommand();
 }
 
 /** The manifest's suggested key for a command id, or `undefined` when it ships without one. */
@@ -68,7 +83,7 @@ function hintFor(id: string | undefined, keys: readonly string[], isMac: boolean
   if (keys.length > 0 || suggested === undefined) {
     return undefined;
   }
-  return `Suggested key: ${shortcutText(suggested, isMac)}. Chrome has not assigned it here; you can set it on Chrome's shortcut page.`;
+  return t('settingsShortcutSuggestedHint', shortcutText(suggested, isMac));
 }
 
 /** Sorting first, as it is the one thing the extension is for, then the rest in manifest order. */
@@ -96,5 +111,5 @@ export function commandRows(
 export function shortcutsDescription(isMac: boolean): string {
   const sort = shortcutText(DEFAULT_SHORTCUTS._execute_action, isMac);
   const assemble = shortcutText(DEFAULT_SHORTCUTS['assemble-tabs'], isMac);
-  return `On a new install Chrome sets sorting to ${sort} and ${ASSEMBLE_NAME} to ${assemble} when no other extension holds those keys. The other commands start without a key.`;
+  return t('settingsShortcutsDescription', sort, t('assembleName'), assemble);
 }

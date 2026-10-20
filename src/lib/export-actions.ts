@@ -1,5 +1,5 @@
-import { pluralize } from '@/lib/display-format';
-import { errorMessage } from '@/lib/error-message';
+import { errorDetail } from '@/lib/error-message';
+import { formatNumber, joinSentences, type MessageKey, t, tp } from '@/lib/i18n';
 import type { ExportScope } from '@/lib/session-export';
 import { sessionRepo } from '@/lib/session-repo';
 import type { ExportFormat, Session, SessionId, SessionSummary } from '@/types';
@@ -16,26 +16,42 @@ interface ExportFormatItem {
   label: string;
 }
 
-export const EXPORT_FORMAT_ITEMS: readonly ExportFormatItem[] = [
-  { format: 'json', label: 'Export as JSON' },
-  { format: 'markdown', label: 'Export as Markdown' },
-  { format: 'text', label: 'Export as text' },
-  { format: 'html', label: 'Export as HTML bookmarks' },
-  { format: 'csv', label: 'Export as CSV' },
-];
+const EXPORT_FORMATS: readonly ExportFormat[] = ['json', 'markdown', 'text', 'html', 'csv'];
 
-/** How a format is named inside a sentence ("Exported “Work” as HTML bookmarks."). */
-const FORMAT_NAMES: Record<ExportFormat, string> = {
-  json: 'JSON',
-  markdown: 'Markdown',
-  text: 'text',
-  html: 'HTML bookmarks',
-  csv: 'CSV',
+const FORMAT_ITEM_KEYS: Record<ExportFormat, MessageKey> = {
+  json: 'expMenuJson',
+  markdown: 'expMenuMarkdown',
+  text: 'expMenuText',
+  html: 'expMenuHtml',
+  csv: 'expMenuCsv',
+};
+
+/** The export menu's items in menu order, labelled in the UI language at call time. */
+export function exportFormatItems(): ExportFormatItem[] {
+  return EXPORT_FORMATS.map((format) => ({ format, label: t(FORMAT_ITEM_KEYS[format]) }));
+}
+
+/** How a format is named on its own ("HTML bookmarks"). */
+const FORMAT_NAME_KEYS: Record<ExportFormat, MessageKey> = {
+  json: 'expFormatJson',
+  markdown: 'expFormatMarkdown',
+  text: 'expFormatText',
+  html: 'expFormatHtml',
+  csv: 'expFormatCsv',
 };
 
 export function formatName(format: ExportFormat): string {
-  return FORMAT_NAMES[format];
+  return t(FORMAT_NAME_KEYS[format]);
 }
+
+/** One whole sentence per format, so a translation can put the name where its grammar wants. */
+const EXPORTED_NOTICE_KEYS: Record<ExportFormat, MessageKey> = {
+  json: 'expExportedJson',
+  markdown: 'expExportedMarkdown',
+  text: 'expExportedText',
+  html: 'expExportedHtml',
+  csv: 'expExportedCsv',
+};
 
 /**
  * The optional indices the menu carries as props, as the discriminated `ExportScope` union
@@ -70,35 +86,39 @@ export function exportScopeName(
     return session.name;
   }
   if (groupIndex === undefined) {
-    return `${session.name} (Window ${windowIndex + 1})`;
+    return t('expScopeWindow', session.name, formatNumber(windowIndex + 1));
   }
   const group = session.windows[windowIndex].groups[groupIndex];
   if (group === undefined) {
-    return `${session.name} (Window ${windowIndex + 1})`;
+    return t('expScopeWindow', session.name, formatNumber(windowIndex + 1));
   }
-  return `${session.name} (${group.title === '' ? 'Untitled group' : group.title})`;
+  return t('expScopeGroup', session.name, group.title === '' ? t('expUntitledGroup') : group.title);
 }
 
 export function exportedNotice(name: string, format: ExportFormat): string {
-  return `Exported “${name}” as ${formatName(format)}.`;
+  return t(EXPORTED_NOTICE_KEYS[format], name);
 }
 
 export function copiedLinksNotice(count: number): string {
-  return `Copied ${pluralize(count, 'link')}.`;
+  return tp('commonCopiedLinks', count);
 }
 
 export function copiedMarkdownNotice(count: number): string {
-  return `Copied ${pluralize(count, 'link')} as Markdown.`;
+  return tp('expCopiedMarkdown', count);
 }
 
 /**
- * The tab row's own "Copy link" (spec §8): one url, so it is a sentence rather than a count --
+ * The tab row's own "Copy link" (spec §8): one url, so it is a sentence rather than a count -
  * "Copied 1 link." would be counting to one. The multi-link notices above stay as they are.
  */
-export const COPIED_LINK = 'Copied link.';
+export function copiedLinkNotice(): string {
+  return t('expCopiedLink');
+}
 
 /** Nothing was in scope - an empty group, or a window whose tabs were all removed. */
-export const NOTHING_TO_EXPORT = 'Nothing to export: this selection has no tabs.';
+export function nothingToExportNotice(): string {
+  return t('expNothingToExport');
+}
 
 // ---------------------------------------------------------------------------
 // Export all (JSON backup)
@@ -124,7 +144,7 @@ export function shouldReportProgress(total: number): boolean {
 }
 
 export function collectProgressNotice(progress: CollectProgress): string {
-  return `Collecting sessions… ${progress.loaded} of ${progress.total}.`;
+  return t('expCollecting', formatNumber(progress.loaded), formatNumber(progress.total));
 }
 
 /** A notice per body would re-render the whole dashboard for every read; tick in batches. */
@@ -135,13 +155,13 @@ export function shouldTickProgress(progress: CollectProgress): boolean {
 }
 
 export function exportAllNotice(exported: number, skipped: number): string {
-  const sentence = `Exported ${pluralize(exported, 'session')} as JSON.`;
-  return skipped === 0
-    ? sentence
-    : `${sentence} ${pluralize(skipped, 'session')} could not be read.`;
+  const sentence = tp('expExportedAll', exported);
+  return skipped === 0 ? sentence : joinSentences(sentence, tp('expUnreadable', skipped));
 }
 
-export const NOTHING_TO_EXPORT_ALL = 'Nothing to export: there are no saved sessions yet.';
+export function nothingToExportAllNotice(): string {
+  return t('expNothingToExportAll');
+}
 
 /**
  * Reads every body in `summaries` through `sessionRepo.get()` - saved sessions and history
@@ -169,7 +189,7 @@ export async function collectSessionBodies(
         sessions.push(session);
       }
     } catch (err) {
-      console.warn('[tab-organizer:sessions] export skipped', summary.id, errorMessage(err));
+      console.warn('[tab-organizer:sessions] export skipped', summary.id, errorDetail(err));
       skipped.push(summary.id);
     }
     loaded += 1;

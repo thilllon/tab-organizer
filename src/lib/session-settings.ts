@@ -1,3 +1,5 @@
+import { formatNumber, t, tp } from '@/lib/i18n';
+import { LAZY_AUTO_THRESHOLD } from '@/lib/session-restore';
 import {
   HISTORY_INTERVAL_MAX_MINUTES,
   HISTORY_INTERVAL_MIN_MINUTES,
@@ -84,17 +86,26 @@ export function parseSnapshotLimit(raw: string): number | undefined {
 
 /** "Every 5 minutes" - the interval select's option text. */
 export function intervalLabel(minutes: number): string {
-  return minutes === 1 ? 'Every minute' : `Every ${minutes} minutes`;
+  return tp('settingsIntervalEvery', minutes);
 }
 
 /** The lazy-restore select's option text; 'auto' names the threshold `planRestore` applies. */
 export function lazyLabel(mode: RestoreLazy): string {
   switch (mode) {
     case 'auto':
-      return 'Automatic (over 50 tabs)';
+      return t('settingsLazyAuto', formatNumber(LAZY_AUTO_THRESHOLD));
     case 'always':
-      return 'Always';
+      return t('settingsLazyAlways');
     default:
-      return 'Never';
+      return t('settingsLazyNever');
   }
+}
+
+/** The grey hint under the interval select: the range a typed-in interval may take. */
+export function intervalRangeHint(): string {
+  return t(
+    'settingsSnapshotIntervalHint',
+    formatNumber(HISTORY_INTERVAL_MIN_MINUTES),
+    formatNumber(HISTORY_INTERVAL_MAX_MINUTES),
+  );
 }

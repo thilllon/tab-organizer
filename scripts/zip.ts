@@ -4,14 +4,16 @@ import path from 'node:path';
 // archiver 8 is ESM and exports the archive classes by name; there is no callable default.
 import { ZipArchive } from 'archiver';
 
+import { readDisplayName, zipFileName } from './zip-name';
+
 /*
  * Entry point
  */
 
 async function main(): Promise<void> {
   const manifest: Manifest = JSON.parse(readFileSync('./dist/manifest.json', 'utf-8'));
-  const name = manifest.name.replaceAll(' ', '-');
-  const filename = `${name}-${manifest.version}.zip`;
+  // Not `manifest.name`: that is `__MSG_extName__` now that the name is translated.
+  const filename = zipFileName(readDisplayName('./package.json'), manifest.version);
 
   mkdirSync('package', { recursive: true });
 
@@ -42,7 +44,6 @@ async function main(): Promise<void> {
  */
 
 interface Manifest {
-  name: string;
   version: string;
 }
 

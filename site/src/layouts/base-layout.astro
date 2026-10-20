@@ -4,7 +4,6 @@ import { getImage } from 'astro:assets';
 import favicon32 from '../../../public/img/logo-32.png?url';
 import touchIcon from '../../../public/img/logo-128.png?url';
 import faviconSvg from '../../../public/img/logo.svg?url';
-import ogSource from '../../../screenshots/dashboard-sessions.png';
 import SiteFooter from '../components/site-footer.astro';
 import SiteHeader from '../components/site-header.astro';
 import {
@@ -15,6 +14,7 @@ import {
   type Locale,
   type Page,
 } from '../i18n/locales';
+import { screenshot } from '../i18n/screenshots';
 import { copyFor } from '../i18n/site-copy';
 import '../styles/global.css';
 
@@ -30,7 +30,7 @@ interface Props {
 const { locale, page, title, description, noindex = false } = Astro.props;
 const copy = copyFor(locale);
 const canonical = absolutePageUrl(locale, page);
-const ogImage = await getImage({ src: ogSource, width: 1200, format: 'jpg', quality: 85 });
+const ogImage = await getImage({ src: screenshot(locale, 'dashboard-sessions'), width: 1200, format: 'jpg', quality: 85 });
 const ogImageUrl = new URL(ogImage.src, Astro.site).href;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---

@@ -1,4 +1,4 @@
-import { errorMessage } from '@/lib/error-message';
+import { errorDetail } from '@/lib/error-message';
 import { entriesFromSession, type SearchEntry } from '@/lib/search-engine';
 import { sessionKey, sessionRepo } from '@/lib/session-repo';
 import type { SessionId, SessionSummary } from '@/types';
@@ -246,7 +246,7 @@ export class SearchCorpusCache {
     try {
       loaded = await sessionRepo.getMany(ids);
     } catch (err) {
-      console.warn('[tab-organizer:sessions] search corpus load failed', ids, errorMessage(err));
+      console.warn('[tab-organizer:sessions] search corpus load failed', ids, errorDetail(err));
       return;
     }
     for (const id of ids) {
@@ -255,7 +255,7 @@ export class SearchCorpusCache {
         console.warn(
           '[tab-organizer:sessions] search corpus load failed',
           id,
-          errorMessage(failure),
+          errorDetail(failure),
         );
       }
       // A load that started before an invalidation drops its result rather than re-caching a body

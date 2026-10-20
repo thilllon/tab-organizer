@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { errorMessage } from '@/lib/error-message';
+import { reportError } from '@/lib/error-message';
 import { sessionRepo } from '@/lib/session-repo';
 import { isSettingsChange } from '@/lib/settings-change-event';
 import { DEFAULT_SESSION_SETTINGS, type SessionSettings } from '@/types';
@@ -47,7 +47,7 @@ export function useSessionSettings(): SessionSettingsState {
       if (gen !== genRef.current) {
         return;
       }
-      setError(errorMessage(err));
+      setError(reportError('session settings', err));
     } finally {
       if (gen === genRef.current) {
         setLoading(false);
@@ -79,7 +79,7 @@ export function useSessionSettings(): SessionSettingsState {
       try {
         await sessionRepo.setSettings(patch);
       } catch (err) {
-        setError(errorMessage(err));
+        setError(reportError('session settings', err));
         return false;
       }
       // Re-read rather than merging the patch locally: setSettings() normalises what it stores

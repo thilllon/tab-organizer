@@ -5,8 +5,8 @@ import {
   pickWindow,
   recoveredSnapshot,
   splitByKind,
-  UNREADABLE_SESSION_MESSAGE,
   unreadableSchemaLabel,
+  unreadableSessionMessage,
 } from '@/lib/session-list';
 import type { Session, SessionSummary, WindowSnapshot } from '@/types';
 
@@ -135,7 +135,7 @@ describe('recoveredSnapshot', () => {
 
 describe('unreadable sessions (spec §3)', () => {
   it('explains that the fix is an update, not a repair', () => {
-    expect(UNREADABLE_SESSION_MESSAGE).toBe(
+    expect(unreadableSessionMessage()).toBe(
       'Saved by a newer version of Tab Organizer. Update to open it.',
     );
   });

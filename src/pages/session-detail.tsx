@@ -16,8 +16,9 @@ import { WindowTree } from '@/components/window-tree';
 import { useSessionBody } from '@/hooks/use-session-body';
 import { formatDateTime, formatSessionMeta } from '@/lib/display-format';
 import { copyText } from '@/lib/download-and-copy';
-import { errorMessage } from '@/lib/error-message';
-import { COPIED_LINK } from '@/lib/export-actions';
+import { reportError } from '@/lib/error-message';
+import { copiedLinkNotice } from '@/lib/export-actions';
+import { joinFacts, t } from '@/lib/i18n';
 import { isComposingEnter } from '@/lib/ime-composition';
 import { openSavedTab } from '@/lib/open-saved-tab';
 import { removeTabFromSession, removeWindowFromSession } from '@/lib/session-edit';
@@ -112,7 +113,7 @@ export function SessionDetail({
       await sessionRepo.rename(summary.id, name);
       setError(undefined);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('session', err));
     }
   };
 
@@ -140,7 +141,7 @@ export function SessionDetail({
       await sessionRepo.remove(summary.id);
       onDeleted();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('session', err));
     }
   };
 
@@ -149,13 +150,13 @@ export function SessionDetail({
     try {
       const session = body.session ?? (await sessionRepo.get(summary.id));
       if (session === undefined) {
-        setError('This session no longer exists.');
+        setError(t('sessionGone'));
         return;
       }
       setError(undefined);
       await onOpen(session, scope);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('session', err));
     } finally {
       setBusy(false);
     }
@@ -188,7 +189,7 @@ export function SessionDetail({
       await sessionRepo.update(summary.id, mutate);
       setError(undefined);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('session', err));
     }
   };
 
@@ -196,7 +197,7 @@ export function SessionDetail({
     void copyText(url).then((result) => {
       if (result.ok) {
         setError(undefined);
-        onNotice(COPIED_LINK);
+        onNotice(copiedLinkNotice());
         return;
       }
       setError(result.error);
@@ -210,7 +211,7 @@ export function SessionDetail({
       return result.reason;
     }
     if (result.switched) {
-      onNotice('Switched to that tab, which was already open.');
+      onNotice(t('sessionSwitchedToOpenTab'));
     }
     return undefined;
   };
@@ -225,8 +226,8 @@ export function SessionDetail({
               autoFocus
               ref={inputRef}
               value={draft}
-              aria-label="Session name"
-              title="Enter to save, Escape to cancel"
+              aria-label={t('sessionNameLabel')}
+              title={t('sessionRenameHint')}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={handleRenameKey}
               onBlur={() => {
@@ -241,7 +242,7 @@ export function SessionDetail({
               <button
                 ref={nameButtonRef}
                 type="button"
-                title="Rename"
+                title={t('sessionRename')}
                 onClick={startRename}
                 className="min-w-0 truncate rounded-sm text-left text-lg font-semibold outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
@@ -250,8 +251,8 @@ export function SessionDetail({
               <Button
                 size="icon-xs"
                 variant="ghost"
-                aria-label="Rename session"
-                title="Rename session"
+                aria-label={t('sessionRenameLabel')}
+                title={t('sessionRenameLabel')}
                 onClick={startRename}
               >
                 <Pencil />
@@ -259,7 +260,10 @@ export function SessionDetail({
             </div>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
-            {formatSessionMeta(summary)} · saved {formatDateTime(summary.updatedAt)}
+            {joinFacts([
+              formatSessionMeta(summary),
+              t('sessionSavedAt', formatDateTime(summary.updatedAt)),
+            ])}
           </p>
         </div>
 
@@ -267,14 +271,19 @@ export function SessionDetail({
           <Button
             onClick={() => void handleOpen('newWindows')}
             disabled={busy || restoring}
-            title="Open this session in new windows"
+            title={t('sessionOpenTitle')}
           >
             <ExternalLink />
-            Open
+            {t('commonOpen')}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon-sm" variant="ghost" aria-label="More actions" title="More actions">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={t('sessionMoreActions')}
+                title={t('sessionMoreActions')}
+              >
                 <Ellipsis />
               </Button>
             </DropdownMenuTrigger>
@@ -295,7 +304,7 @@ export function SessionDetail({
                 }}
               >
                 <ExternalLink />
-                Open in this window
+                {t('sessionOpenHere')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {
@@ -303,12 +312,12 @@ export function SessionDetail({
                 }}
               >
                 <Pencil />
-                Rename
+                {t('sessionRename')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={() => setConfirmingDelete(true)}>
                 <Trash2 />
-                Delete
+                {t('commonDelete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -329,12 +338,12 @@ export function SessionDetail({
 
       <div className="mt-4">
         {body.loading && body.session === undefined && (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t('commonLoading')}</p>
         )}
         {body.error !== undefined && <p className="text-sm text-destructive">{body.error}</p>}
         {body.session !== undefined && (
           // The ARIA group holding this session's window nodes; no HTML element carries it.
-          <div role="tree" aria-label={`Windows in ${summary.name}`} className="space-y-2">
+          <div role="tree" aria-label={t('sessionWindowsIn', summary.name)} className="space-y-2">
             {body.session.windows.map((window, index) => (
               <WindowTree
                 // oxlint-disable-next-line react/no-array-index-key -- no stable window id
@@ -349,27 +358,27 @@ export function SessionDetail({
                       variant="outline"
                       onClick={() => handleOpenWindow(index, 'newWindows')}
                       disabled={busy || restoring}
-                      title="Open this window's tabs in a new window"
+                      title={t('sessionOpenWindowTitle')}
                     >
-                      Open window
+                      {t('sessionOpenWindow')}
                     </Button>
                     <Button
                       size="xs"
                       variant="ghost"
                       onClick={() => handleOpenWindow(index, 'here')}
                       disabled={busy || restoring}
-                      title="Open this window's tabs in the current window"
+                      title={t('sessionOpenWindowHereTitle')}
                     >
-                      Open here
+                      {t('sessionOpenWindowHere')}
                     </Button>
                     <Button
                       size="xs"
                       variant="ghost"
                       onClick={() => void editSession((s) => removeWindowFromSession(s, index))}
-                      title="Remove this window from the session"
+                      title={t('sessionRemoveWindowTitle')}
                     >
                       <X />
-                      Remove
+                      {t('sessionRemoveWindow')}
                     </Button>
                     <ExportMenu
                       summary={summary}
@@ -397,8 +406,8 @@ export function SessionDetail({
                     <Button
                       size="icon-xs"
                       variant="ghost"
-                      aria-label="Copy link"
-                      title="Copy link"
+                      aria-label={t('sessionCopyLink')}
+                      title={t('sessionCopyLink')}
                       onClick={() => handleCopyTabLink(window.tabs[tabIndex].url)}
                     >
                       <Link />
@@ -406,8 +415,8 @@ export function SessionDetail({
                     <Button
                       size="icon-xs"
                       variant="ghost"
-                      aria-label="Remove from session"
-                      title="Remove from session"
+                      aria-label={t('sessionRemoveTab')}
+                      title={t('sessionRemoveTab')}
                       onClick={() =>
                         void editSession((s) => removeTabFromSession(s, index, tabIndex))
                       }

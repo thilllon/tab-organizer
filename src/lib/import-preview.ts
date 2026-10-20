@@ -1,5 +1,6 @@
-import { formatBytes, pluralize } from '@/lib/display-format';
-import { errorMessage } from '@/lib/error-message';
+import { formatBytes } from '@/lib/display-format';
+import { errorDetail, knownErrorText } from '@/lib/error-message';
+import { joinFacts, type MessageKey, t, tp } from '@/lib/i18n';
 import type { ImportFormat } from '@/lib/session-import';
 import type { Session } from '@/types';
 
@@ -34,33 +35,35 @@ export function checkImportSize(bytes: number, max: number = MAX_IMPORT_BYTES): 
   }
   return {
     ok: false,
-    error: `That is too large to import (${formatBytes(bytes)}). The limit is ${formatBytes(max)}.`,
+    error: t('expErrorTooLarge', formatBytes(bytes), formatBytes(max)),
   };
 }
 
 /** Every failure that stops the dialog before parsing reads the same way. */
 export function fileReadError(err: unknown): string {
-  return `Could not read this file: ${errorMessage(err)}`;
+  console.warn('[tab-organizer] import file read failed', errorDetail(err));
+  const reason = knownErrorText(err);
+  return reason === undefined ? t('expErrorFileReadPlain') : t('expErrorFileRead', reason);
 }
 
-const FORMAT_LABELS: Record<ImportFormat, string> = {
-  json: 'Tab Organizer JSON',
-  html: 'Bookmarks HTML',
-  markdown: 'Markdown',
-  text: 'Links',
+const FORMAT_LABEL_KEYS: Record<ImportFormat, MessageKey> = {
+  json: 'expDetectedJson',
+  html: 'expDetectedHtml',
+  markdown: 'expDetectedMarkdown',
+  text: 'expDetectedLinks',
 };
 
 export function importFormatLabel(format: ImportFormat): string {
-  return FORMAT_LABELS[format];
+  return t(FORMAT_LABEL_KEYS[format]);
 }
 
 /** The commit button: "Import 1 session" / "Import 3 sessions". */
 export function importButtonLabel(count: number): string {
-  return `Import ${pluralize(count, 'session')}`;
+  return tp('expImportButton', count);
 }
 
 export function importedNotice(count: number): string {
-  return `Imported ${pluralize(count, 'session')}.`;
+  return tp('expImportedNotice', count);
 }
 
 interface ImportPreviewWindow {
@@ -142,9 +145,9 @@ export function buildImportPreview(sessions: readonly Session[]): ImportPreview 
 
 /** "3 sessions · 5 windows · 87 tabs" - the same shape as a session card's meta line. */
 export function formatImportTotals(preview: ImportPreview): string {
-  return [
-    pluralize(preview.sessionCount, 'session'),
-    pluralize(preview.windowCount, 'window'),
-    pluralize(preview.tabCount, 'tab'),
-  ].join(' · ');
+  return joinFacts([
+    tp('expSessionCount', preview.sessionCount),
+    tp('windowCount', preview.windowCount),
+    tp('tabCount', preview.tabCount),
+  ]);
 }

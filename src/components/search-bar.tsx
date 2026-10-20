@@ -3,6 +3,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState }
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { t } from '@/lib/i18n';
 import { isEditableTarget } from '@/lib/search-nav';
 
 /** Spec §7: the query is committed 100 ms after the last keystroke, not on every one. */
@@ -134,9 +135,9 @@ export function SearchBar({ onQueryChange, onMove, onActivate }: SearchBarProps)
           ref={inputRef}
           type="text"
           value={text}
-          aria-label="Search"
-          title="Search open tabs, saved sessions and their addresses"
-          placeholder="Search tabs and sessions (press /)"
+          aria-label={t('searchLabel')}
+          title={t('searchInputTitle')}
+          placeholder={t('searchPlaceholder')}
           // A pill, filled, with its border only showing on focus: the search box is the one
           // control in the top bar, and a rectangle the same shape as every other input made it
           // read as a form field rather than as the way in.
@@ -152,8 +153,8 @@ export function SearchBar({ onQueryChange, onMove, onActivate }: SearchBarProps)
             type="button"
             size="icon-sm"
             variant="ghost"
-            aria-label="Clear search"
-            title="Clear search"
+            aria-label={t('searchClear')}
+            title={t('searchClear')}
             className="absolute top-1/2 right-1 -translate-y-1/2"
             onClick={clear}
           >

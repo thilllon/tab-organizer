@@ -1,4 +1,5 @@
-import { errorMessage } from '@/lib/error-message';
+import { LocalizedError, reportError } from '@/lib/error-message';
+import { t } from '@/lib/i18n';
 import type { RestoreTarget } from '@/lib/session-restore';
 
 type ActionResult = { ok: true } | { ok: false; reason: string };
@@ -8,7 +9,7 @@ async function run(action: () => Promise<unknown>): Promise<ActionResult> {
     await action();
     return { ok: true };
   } catch (err) {
-    return { ok: false, reason: errorMessage(err) };
+    return { ok: false, reason: reportError('tab action', err) };
   }
 }
 
@@ -73,7 +74,7 @@ export function closeWindow(windowId: number): Promise<ActionResult> {
 export async function currentWindowTarget(): Promise<RestoreTarget> {
   const current = await chrome.windows.getCurrent();
   if (current.id === undefined) {
-    throw new Error('Could not identify this window.');
+    throw new LocalizedError(t('openNoCurrentWindow'));
   }
   return { kind: 'window', windowId: current.id };
 }

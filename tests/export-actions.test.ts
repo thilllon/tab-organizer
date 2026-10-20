@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildExportScope,
-  COPIED_LINK,
   collectProgressNotice,
   collectSessionBodies,
+  copiedLinkNotice,
   copiedLinksNotice,
   copiedMarkdownNotice,
-  EXPORT_FORMAT_ITEMS,
   exportAllNotice,
   exportedNotice,
+  exportFormatItems,
   exportScopeName,
   formatName,
   PROGRESS_NOTICE_THRESHOLD,
@@ -64,16 +64,16 @@ function summary(id: string): SessionSummary {
   };
 }
 
-describe('EXPORT_FORMAT_ITEMS', () => {
+describe('exportFormatItems', () => {
   it('lists every format once, in menu order', () => {
-    expect(EXPORT_FORMAT_ITEMS.map((item) => item.format)).toEqual([
+    expect(exportFormatItems().map((item) => item.format)).toEqual([
       'json',
       'markdown',
       'text',
       'html',
       'csv',
     ]);
-    expect(EXPORT_FORMAT_ITEMS.map((item) => item.label)).toEqual([
+    expect(exportFormatItems().map((item) => item.label)).toEqual([
       'Export as JSON',
       'Export as Markdown',
       'Export as text',
@@ -134,8 +134,8 @@ describe('notices', () => {
 
   it('confirms a single tab row copy without counting to one', () => {
     // SessionCard's per-tab "Copy link" button (spec §8 "Copy links ... on tab rows").
-    expect(COPIED_LINK).toBe('Copied link.');
-    expect(COPIED_LINK).not.toBe(copiedLinksNotice(1));
+    expect(copiedLinkNotice()).toBe('Copied link.');
+    expect(copiedLinkNotice()).not.toBe(copiedLinksNotice(1));
   });
 
   it('reports skipped bodies in the export-all confirmation', () => {

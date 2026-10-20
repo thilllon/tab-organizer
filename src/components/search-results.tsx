@@ -3,7 +3,8 @@ import { useEffect } from 'react';
 
 import { Favicon } from '@/components/favicon';
 import { Button } from '@/components/ui/button';
-import { formatSessionMeta, hostnameOf, pluralize } from '@/lib/display-format';
+import { formatSessionMeta, hostnameOf } from '@/lib/display-format';
+import { formatNumber, t, tp } from '@/lib/i18n';
 import { browserHandlesClick, hrefFor } from '@/lib/row-link';
 import { splitOnMatches } from '@/lib/search-engine';
 import type { SearchGroup, SearchItem } from '@/lib/search-nav';
@@ -72,6 +73,7 @@ function TabResultRow({
   onActivate(index: number): void;
 }) {
   const { entry } = item;
+  const place = t('searchResultPlace', entry.sessionName, formatNumber(entry.windowIndex + 1));
   // Same deal as TabRow: the href is there for the status bar, ⌘-click and "Copy link address".
   // Enter on the highlighted row still goes through onActivate, so the keyboard path is unchanged.
   const href = hrefFor(entry.url);
@@ -93,11 +95,8 @@ function TabResultRow({
       <span className="max-w-40 shrink-0 truncate text-xs text-muted-foreground">
         {hostnameOf(entry.url)}
       </span>
-      <span
-        className="max-w-48 shrink-0 truncate text-xs text-muted-foreground"
-        title={`${entry.sessionName} · Window ${entry.windowIndex + 1}`}
-      >
-        {entry.sessionName} · Window {entry.windowIndex + 1}
+      <span className="max-w-48 shrink-0 truncate text-xs text-muted-foreground" title={place}>
+        {place}
       </span>
     </>
   );
@@ -162,7 +161,7 @@ function SessionResultRow({
           onClick={() => onActivate(index)}
         >
           <RotateCcw />
-          Restore session
+          {t('searchRestoreSession')}
         </Button>
       </div>
     </li>
@@ -199,18 +198,20 @@ export function SearchResults({
     <section aria-labelledby="search-results-heading" className="min-w-0">
       <div className="flex items-center gap-2">
         <h2 id="search-results-heading" className="text-sm font-semibold">
-          Search results
+          {t('searchResultsHeading')}
         </h2>
         {/* Nothing but the count lives in the live region, so it announces "12 results". */}
         {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a live region, not a form's <output>. */}
         <p role="status" aria-live="polite" className="text-xs text-muted-foreground">
-          {pluralize(total, 'result')}
+          {tp('searchResultCount', total)}
         </p>
-        {warming && <span className="text-xs text-muted-foreground">Still loading sessions…</span>}
+        {warming && (
+          <span className="text-xs text-muted-foreground">{t('searchStillLoading')}</span>
+        )}
       </div>
 
       {groups.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">No matches for “{query}”.</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t('searchNoMatches', query)}</p>
       ) : (
         <div className="mt-3 space-y-4">
           {groups.map((group) => (
@@ -219,7 +220,7 @@ export function SearchResults({
                 <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   {group.heading}
                 </h3>
-                <span className="text-xs text-muted-foreground">{group.count}</span>
+                <span className="text-xs text-muted-foreground">{formatNumber(group.count)}</span>
               </div>
               <ul className="mt-1">
                 {group.items.map((item, offset) => {
@@ -249,7 +250,7 @@ export function SearchResults({
               </ul>
               {group.hasMore && (
                 <Button size="xs" variant="ghost" className="mt-1" onClick={onShowMore}>
-                  Show more
+                  {t('searchShowMore')}
                 </Button>
               )}
             </div>

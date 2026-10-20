@@ -4,9 +4,9 @@ import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import {
   CUSTOM_ONLY_SETTINGS,
   DEFAULT_SORT_SETTINGS,
-  DUPLICATE_TAB_OPTIONS,
-  GROUP_FROM_OPTIONS,
-  GROUPING_MODE_OPTIONS,
+  duplicateTabOptions,
+  groupFromOptions,
+  groupingModeOptions,
   isDuplicateTabHandling,
   isExtensionId,
   isGroupFrom,
@@ -14,7 +14,7 @@ import {
   isSortBy,
   normalizeSuspenderId,
   parseSortSettings,
-  SORT_BY_OPTIONS,
+  sortByOptions,
   SORT_SETTING_KEYS,
   showsCustomSortOptions,
   suspenderIdStatus,
@@ -247,20 +247,20 @@ describe('showsCustomSortOptions', () => {
 
 describe('dropdown options', () => {
   const cases = [
-    { name: 'SORT_BY_OPTIONS', options: SORT_BY_OPTIONS, guard: isSortBy, count: 3 },
+    { name: 'sortByOptions', options: sortByOptions(), guard: isSortBy, count: 3 },
     {
-      name: 'DUPLICATE_TAB_OPTIONS',
-      options: DUPLICATE_TAB_OPTIONS,
+      name: 'duplicateTabOptions',
+      options: duplicateTabOptions(),
       guard: isDuplicateTabHandling,
       count: 3,
     },
     {
-      name: 'GROUPING_MODE_OPTIONS',
-      options: GROUPING_MODE_OPTIONS,
+      name: 'groupingModeOptions',
+      options: groupingModeOptions(),
       guard: isGroupingMode,
       count: 2,
     },
-    { name: 'GROUP_FROM_OPTIONS', options: GROUP_FROM_OPTIONS, guard: isGroupFrom, count: 2 },
+    { name: 'groupFromOptions', options: groupFromOptions(), guard: isGroupFrom, count: 2 },
   ];
 
   for (const { name, options, guard, count } of cases) {
@@ -273,8 +273,8 @@ describe('dropdown options', () => {
   }
 
   it('keeps the wording the radio buttons had', () => {
-    expect(SORT_BY_OPTIONS.map((option) => option.label)).toEqual(['By URL', 'By title', 'Custom']);
-    expect(DUPLICATE_TAB_OPTIONS.map((option) => option.label)).toEqual([
+    expect(sortByOptions().map((option) => option.label)).toEqual(['By URL', 'By title', 'Custom']);
+    expect(duplicateTabOptions().map((option) => option.label)).toEqual([
       'Keep one',
       'Keep all',
       'Group them',
@@ -282,11 +282,11 @@ describe('dropdown options', () => {
   });
 
   it('offers each default as one of its choices', () => {
-    expect(SORT_BY_OPTIONS.map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.sortBy);
-    expect(DUPLICATE_TAB_OPTIONS.map((o) => o.value)).toContain(
+    expect(sortByOptions().map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.sortBy);
+    expect(duplicateTabOptions().map((o) => o.value)).toContain(
       DEFAULT_SORT_SETTINGS.duplicateTabHandling,
     );
-    expect(GROUPING_MODE_OPTIONS.map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.groupingMode);
-    expect(GROUP_FROM_OPTIONS.map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.groupFrom);
+    expect(groupingModeOptions().map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.groupingMode);
+    expect(groupFromOptions().map((o) => o.value)).toContain(DEFAULT_SORT_SETTINGS.groupFrom);
   });
 });

@@ -4,8 +4,9 @@ import { useRef, useState } from 'react';
 import { DeleteSessionDialog } from '@/components/delete-session-dialog';
 import { Button } from '@/components/ui/button';
 import { formatDateTime } from '@/lib/display-format';
-import { errorMessage } from '@/lib/error-message';
-import { UNREADABLE_SESSION_MESSAGE, unreadableSchemaLabel } from '@/lib/session-list';
+import { reportError } from '@/lib/error-message';
+import { joinFacts, t } from '@/lib/i18n';
+import { unreadableSchemaLabel, unreadableSessionMessage } from '@/lib/session-list';
 import { sessionRepo } from '@/lib/session-repo';
 import type { SessionSummary, UnreadableSession } from '@/types';
 
@@ -46,7 +47,7 @@ export function UnreadableSessionRow({
       onDeleted();
     } catch (err) {
       deletingRef.current = false;
-      setError(errorMessage(err));
+      setError(reportError('unreadable session', err));
     }
   };
 
@@ -69,17 +70,18 @@ export function UnreadableSessionRow({
             {summary.name}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {UNREADABLE_SESSION_MESSAGE}
-            {' · '}
-            {unreadableSchemaLabel(unreadable)}
-            {summary.updatedAt > 0 ? ` · saved ${formatDateTime(summary.updatedAt)}` : ''}
+            {joinFacts([
+              unreadableSessionMessage(),
+              unreadableSchemaLabel(unreadable),
+              summary.updatedAt > 0 ? t('sessionSavedAt', formatDateTime(summary.updatedAt)) : '',
+            ])}
           </p>
         </div>
         <Button
           size="icon-sm"
           variant="ghost"
-          aria-label="Delete session"
-          title="Delete session"
+          aria-label={t('sessionDeleteLabel')}
+          title={t('sessionDeleteLabel')}
           onClick={() => setConfirming(true)}
         >
           <Trash2 />

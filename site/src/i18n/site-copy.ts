@@ -65,6 +65,8 @@ export interface SiteCopy {
     title: string;
     lead: string;
     imageAlt: string;
+    /** Under the hero: the languages the extension itself is available in. */
+    languages: string;
   };
   sort: {
     kicker: string;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { DialogCloseButton } from '@/components/dialog-close-button';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,7 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { formatBytes, pluralize } from '@/lib/display-format';
+import { formatBytes } from '@/lib/display-format';
+import { t, tp } from '@/lib/i18n';
 
 interface DeleteAllDataDialogProps {
   open: boolean;
@@ -45,45 +47,46 @@ export function DeleteAllDataDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         {confirming ? (
           <>
             <DialogHeader>
-              <DialogTitle>This cannot be undone</DialogTitle>
-              <DialogDescription>
-                Every saved session and every automatic snapshot on this device will be deleted.
-                Unless you exported a backup first, they cannot be recovered.
-              </DialogDescription>
+              <DialogTitle>{t('storageDeleteAllFinalTitle')}</DialogTitle>
+              <DialogDescription>{t('storageDeleteAllFinalBody')}</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setConfirming(false)}>
-                Back
+                {t('storageBack')}
               </Button>
               <Button variant="destructive" onClick={onConfirm}>
-                Delete everything
+                {t('storageDeleteEverything')}
               </Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Delete all session data?</DialogTitle>
+              <DialogTitle>{t('storageDeleteAllTitle')}</DialogTitle>
               <DialogDescription>
-                {pluralize(savedCount, 'saved session')} and {pluralize(snapshotCount, 'snapshot')}{' '}
-                ({formatBytes(bytes)}) will be removed from this device. Your snapshot and restore
-                settings are kept, and open windows and tabs are not touched.
+                {t(
+                  'storageDeleteAllBody',
+                  tp('storageSavedSessionCount', savedCount),
+                  tp('storageSnapshotCount', snapshotCount),
+                  formatBytes(bytes),
+                )}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {t('commonCancel')}
               </Button>
               <Button variant="destructive" onClick={() => setConfirming(true)}>
-                Continue
+                {t('storageContinue')}
               </Button>
             </DialogFooter>
           </>
         )}
+        <DialogCloseButton />
       </DialogContent>
     </Dialog>
   );

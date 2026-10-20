@@ -1,4 +1,5 @@
-import { formatBytes, pluralize } from '@/lib/display-format';
+import { formatBytes } from '@/lib/display-format';
+import { t, tp } from '@/lib/i18n';
 import type { SessionSummary } from '@/types';
 
 /**
@@ -82,15 +83,18 @@ export function summarizeStorage(
 
 /** "4.6 MB stored on this device" - the meter's headline. */
 export function storageTotalLine(breakdown: StorageBreakdown): string {
-  return `${formatBytes(breakdown.total)} stored on this device`;
+  return t('storageTotalLine', formatBytes(breakdown.total));
 }
 
 /** "1.2 MB in 3 saved sessions · 3.4 MB in 12 snapshots" - the split under the headline. */
 export function storageDetailLine(breakdown: StorageBreakdown): string {
-  return [
-    `${formatBytes(breakdown.saved)} in ${pluralize(breakdown.savedCount, 'saved session')}`,
-    `${formatBytes(breakdown.snapshots)} in ${pluralize(breakdown.snapshotCount, 'snapshot')}`,
-  ].join(' · ');
+  return t(
+    'storageDetailLine',
+    formatBytes(breakdown.saved),
+    tp('storageSavedSessionCount', breakdown.savedCount),
+    formatBytes(breakdown.snapshots),
+    tp('storageSnapshotCount', breakdown.snapshotCount),
+  );
 }
 
 /**
@@ -105,7 +109,7 @@ export function snapshotHint(breakdown: StorageBreakdown): string | undefined {
   if (breakdown.snapshots <= breakdown.saved + breakdown.other) {
     return undefined;
   }
-  return `Automatic snapshots use ${formatBytes(breakdown.snapshots)}. Lower "Keep last N snapshots" or delete unprotected snapshots.`;
+  return t('storageSnapshotHint', formatBytes(breakdown.snapshots));
 }
 
 /**

@@ -11,7 +11,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { COPY_FORMAT_ITEMS, type CopyFormat, selectionLabel } from '@/lib/tab-selection';
+import { t } from '@/lib/i18n';
+import { type CopyFormat, copyFormatItems, selectionLabel } from '@/lib/tab-selection';
 
 interface SelectionBarProps {
   count: number;
@@ -40,7 +41,7 @@ export function SelectionBar({
   onClose,
   onSelectBySite,
 }: SelectionBarProps) {
-  const others = COPY_FORMAT_ITEMS.filter((item) => item.format !== 'links');
+  const others = copyFormatItems().filter((item) => item.format !== 'links');
 
   return (
     <>
@@ -48,8 +49,8 @@ export function SelectionBar({
         <Button
           size="icon-sm"
           variant="ghost"
-          aria-label="Clear selection"
-          title="Clear selection"
+          aria-label={t('openClearSelection')}
+          title={t('openClearSelection')}
           onClick={onClear}
         >
           <X />
@@ -62,44 +63,35 @@ export function SelectionBar({
           {selectionLabel(count)}
         </p>
       </div>
-      <Button
-        variant="outline"
-        onClick={onSave}
-        disabled={busy}
-        title="Save these tabs as a session"
-      >
+      <Button variant="outline" onClick={onSave} disabled={busy} title={t('openSaveTabsTitle')}>
         <Save />
-        Save
+        {t('commonSave')}
       </Button>
-      <Button
-        variant="outline"
-        onClick={() => onCopy('links')}
-        title="Copy the links of these tabs"
-      >
+      <Button variant="outline" onClick={() => onCopy('links')} title={t('openCopyTitle')}>
         <Copy />
-        Copy
+        {t('openCopy')}
       </Button>
-      <Button variant="outline" onClick={onClose} title="Close these tabs">
+      <Button variant="outline" onClick={onClose} title={t('openCloseTabsTitle')}>
         <X />
-        Close
+        {t('commonClose')}
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             size="icon"
             variant="ghost"
-            aria-label="More actions for the selected tabs"
-            title="More actions for the selected tabs"
+            aria-label={t('openMoreActions')}
+            title={t('openMoreActions')}
           >
             <EllipsisVertical />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={onSaveAndClose} disabled={busy}>
-            Save &amp; close
+            {t('openSaveAndClose')}
           </DropdownMenuItem>
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger>Copy as…</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger>{t('openCopyAs')}</DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               {others.map((item) => (
                 <DropdownMenuItem key={item.format} onSelect={() => onCopy(item.format)}>
@@ -110,10 +102,10 @@ export function SelectionBar({
           </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => onSelectBySite('like')}>
-            Select all tabs like this
+            {t('openSelectLike')}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => onSelectBySite('unlike')}>
-            Select all tabs not like this
+            {t('openSelectUnlike')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

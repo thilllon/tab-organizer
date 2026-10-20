@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { ASSEMBLE_LABEL, ASSEMBLE_NAME, DEFAULT_SHORTCUTS } from '@/constants';
+import { DEFAULT_SHORTCUTS } from '@/constants';
+import { t } from '@/lib/i18n';
 import { COMMAND_IDS } from '@/service-worker';
 
 describe('DEFAULT_SHORTCUTS', () => {
@@ -21,9 +22,9 @@ describe('DEFAULT_SHORTCUTS', () => {
   });
 });
 
-describe('ASSEMBLE_LABEL', () => {
+describe('the Assemble! label', () => {
   it('is the name followed by its explanation in brackets', () => {
-    expect(ASSEMBLE_LABEL).toBe("Assemble! (move every window's tabs into this one)");
-    expect(ASSEMBLE_LABEL.startsWith(`${ASSEMBLE_NAME} (`)).toBe(true);
+    expect(t('cmdAssembleTabs')).toBe("Assemble! (move every window's tabs into this one)");
+    expect(t('cmdAssembleTabs').startsWith(`${t('assembleName')} (`)).toBe(true);
   });
 });

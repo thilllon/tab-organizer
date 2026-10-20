@@ -1,3 +1,4 @@
+import { type MessageKey, t } from '@/lib/i18n';
 import type { Session, SessionOrigin, SessionSummary, UnreadableSession } from '@/types';
 
 /** Returns a copy of `session` that contains only `windows[windowIndex]`. */
@@ -36,17 +37,26 @@ export function splitByKind(summaries: readonly SessionSummary[]): {
  * (no restore / rename / export / expand) but keeps Delete, so the user is never stuck with an
  * entry they can neither open nor get rid of.
  */
-export const UNREADABLE_SESSION_MESSAGE =
-  'Saved by a newer version of Tab Organizer. Update to open it.';
+export function unreadableSessionMessage(): string {
+  return t('sessionUnreadableMessage');
+}
 
 /** The version that wrote it, for the row's second line: "schema v2". */
 export function unreadableSchemaLabel(unreadable: UnreadableSession): string {
-  return `schema v${unreadable.version}`;
+  return t('sessionUnreadableSchema', unreadable.version);
 }
+
+const ORIGIN_LABEL_KEYS: Record<SessionOrigin, MessageKey> = {
+  alarm: 'sessionOriginAlarm',
+  manual: 'sessionOriginManual',
+  startup: 'sessionOriginStartup',
+  recovered: 'sessionOriginRecovered',
+  import: 'sessionOriginImport',
+};
 
 /** Badge text for a snapshot row: the alarm is the "automatic" one users recognise. */
 export function historyOriginLabel(origin: SessionOrigin): string {
-  return origin === 'alarm' ? 'auto' : origin;
+  return t(ORIGIN_LABEL_KEYS[origin]);
 }
 
 /** Capture time decides which snapshot is newest (protect/rename never move `createdAt`). */

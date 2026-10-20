@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { t } from '@/lib/i18n';
 import { openTabInBackground } from '@/lib/open-in-background';
 
 import { getChromeFake } from './chrome-fake';
@@ -52,9 +53,11 @@ describe('openTabInBackground', () => {
 
   it('reports a rejected tabs.create instead of throwing', async () => {
     getChromeFake().failNext('tabs.create', 1, 'Tabs cannot be edited right now');
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const result = await openTabInBackground('https://example.com/a');
 
-    expect(result).toEqual({ ok: false, reason: 'Tabs cannot be edited right now' });
+    // Chrome's English message is shown in the UI language; the original goes to the console.
+    expect(result).toEqual({ ok: false, reason: t('errorTabsBusy') });
   });
 });

@@ -19,16 +19,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { copyText, downloadExport } from '@/lib/download-and-copy';
-import { errorMessage } from '@/lib/error-message';
+import { reportError } from '@/lib/error-message';
 import {
   buildExportScope,
   copiedLinksNotice,
   copiedMarkdownNotice,
-  EXPORT_FORMAT_ITEMS,
   exportedNotice,
+  exportFormatItems,
   exportScopeName,
-  NOTHING_TO_EXPORT,
+  nothingToExportNotice,
 } from '@/lib/export-actions';
+import { t } from '@/lib/i18n';
 import { countTabs } from '@/lib/restore-summary';
 import { scopeToSession, serialize, toMarkdown, toText } from '@/lib/session-export';
 import { sessionRepo } from '@/lib/session-repo';
@@ -88,17 +89,17 @@ export function ExportMenu({
     try {
       const body = session ?? (await sessionRepo.get(summary.id));
       if (body === undefined) {
-        onError('This session no longer exists.');
+        onError(t('sessionGone'));
         return;
       }
       const scoped = scopeToSession(buildExportScope(body, windowIndex, groupIndex));
       if (countTabs(scoped) === 0) {
-        onNotice(NOTHING_TO_EXPORT);
+        onNotice(nothingToExportNotice());
         return;
       }
       await run(scoped, exportScopeName(body, windowIndex, groupIndex));
     } catch (err) {
-      onError(errorMessage(err));
+      onError(reportError('export', err));
     }
   };
 
@@ -130,20 +131,20 @@ export function ExportMenu({
         <Button
           size={size}
           variant="ghost"
-          aria-label="Export"
+          aria-label={t('expMenuButton')}
           title={
             groupIndex !== undefined
-              ? 'Export or copy this group'
+              ? t('expMenuTitleGroup')
               : windowIndex !== undefined
-                ? 'Export or copy this window'
-                : 'Export or copy all of it'
+                ? t('expMenuTitleWindow')
+                : t('expMenuTitleAll')
           }
         >
           <Download />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {EXPORT_FORMAT_ITEMS.map(({ format, label }) => {
+        {exportFormatItems().map(({ format, label }) => {
           const Icon = FORMAT_ICONS[format];
           return (
             <DropdownMenuItem key={format} onSelect={() => handleExport(format)}>
@@ -155,11 +156,11 @@ export function ExportMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => handleCopy('links')}>
           <Link />
-          Copy links
+          {t('expCopyLinks')}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => handleCopy('markdown')}>
           <Copy />
-          Copy as Markdown
+          {t('expCopyMarkdown')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

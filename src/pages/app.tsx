@@ -1,6 +1,7 @@
 import { Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { DialogCloseButton } from '@/components/dialog-close-button';
 import { ImportDialog } from '@/components/import-dialog';
 import { ProgressToast } from '@/components/progress-toast';
 import { QuotaNotice } from '@/components/quota-notice';
@@ -24,16 +25,17 @@ import { formatRoute, HOME, type Route, routeSessionId } from '@/lib/app-route';
 import { assembleOutcome } from '@/lib/assemble-notice';
 import { assembleTabs } from '@/lib/assemble-tabs';
 import { downloadExport } from '@/lib/download-and-copy';
-import { errorMessage } from '@/lib/error-message';
+import { reportError } from '@/lib/error-message';
 import {
   type CollectProgress,
   collectProgressNotice,
   collectSessionBodies,
   exportAllNotice,
-  NOTHING_TO_EXPORT_ALL,
+  nothingToExportAllNotice,
   shouldReportProgress,
   shouldTickProgress,
 } from '@/lib/export-actions';
+import { t } from '@/lib/i18n';
 import { importedNotice } from '@/lib/import-preview';
 import { openTabInBackground } from '@/lib/open-in-background';
 import { needsRestoreConfirm } from '@/lib/restore-summary';
@@ -156,7 +158,7 @@ export function App() {
       setQuotaFull(true);
       return;
     }
-    setError(errorMessage(err));
+    setError(reportError('app', err));
   };
 
   const go = (next: Route) => {
@@ -186,7 +188,7 @@ export function App() {
       const names = (await sessionRepo.listSummaries()).map((summary) => summary.name);
       const named: Session = { ...session, name: ensureUniqueName(session.name, names) };
       await sessionRepo.put(named);
-      setNotice(`Saved “${named.name}”. Rename it from its title.`);
+      setNotice(t('appSavedNotice', named.name));
       navigate({ view: 'saved', id: named.id });
       return tabIds;
     } catch (err) {
@@ -213,7 +215,7 @@ export function App() {
         setNotice(outcome.message);
       }
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('app', err));
     } finally {
       setAssembling(false);
     }
@@ -226,7 +228,7 @@ export function App() {
     try {
       const summaries = await sessionRepo.listSummaries();
       if (summaries.length === 0) {
-        setNotice(NOTHING_TO_EXPORT_ALL);
+        setNotice(nothingToExportAllNotice());
         return;
       }
       const onProgress = shouldReportProgress(summaries.length)
@@ -238,7 +240,7 @@ export function App() {
         : undefined;
       const { sessions: bodies, skipped } = await collectSessionBodies(summaries, onProgress);
       if (bodies.length === 0) {
-        setNotice(NOTHING_TO_EXPORT_ALL);
+        setNotice(nothingToExportAllNotice());
         return;
       }
       downloadExport('backup', 'json', toJson(bodies, Date.now()));
@@ -251,7 +253,7 @@ export function App() {
         setNotice(summary, EXPORT_ALL_TOAST);
       }
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('app', err));
     } finally {
       setExporting(false);
     }
@@ -265,10 +267,10 @@ export function App() {
     try {
       const outcome = await restore(session, target, lazy);
       if (!outcome.ok) {
-        setNotice('An open is already running.');
+        setNotice(t('appOpenAlreadyRunning'));
       }
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('app', err));
     }
   };
 
@@ -288,7 +290,7 @@ export function App() {
       }
       await runRestore(scoped, target);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('app', err));
     }
   };
 
@@ -406,18 +408,18 @@ export function App() {
         <>
           {found === 0 && !includeHistory && (
             <div className="rounded-md border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
-              Nothing in your open tabs or saved sessions.
+              {t('appSearchNothingFound')}
               <Button
                 variant="outline"
                 size="sm"
                 className="ml-3"
-                title="Search automatic snapshots too"
+                title={t('appSearchHistoryTitle')}
                 onClick={() => {
                   setIncludeHistory(true);
                   resetResults();
                 }}
               >
-                Also search auto-saved
+                {t('appSearchHistoryButton')}
               </Button>
             </div>
           )}
@@ -536,11 +538,11 @@ export function App() {
             event.preventDefault();
             go(HOME);
           }}
-          title="Back to open tabs"
+          title={t('appHomeTitle')}
           className="flex items-center gap-2 rounded-md px-1 py-0.5 text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <img src="/img/logo-32.png" alt="" aria-hidden="true" className="size-5 rounded" />
-          Tab Organizer
+          {t('extName')}
         </a>
         <div className="mx-auto flex max-w-xl flex-1 justify-center">
           <SearchBar
@@ -568,7 +570,7 @@ export function App() {
         <Button asChild variant="outline" size="sm">
           <a
             href={formatRoute({ view: 'settings' })}
-            title="Open Settings"
+            title={t('commonOpenSettingsTitle')}
             onClick={(event) => {
               if (browserHandlesClick(event)) {
                 return;
@@ -578,7 +580,7 @@ export function App() {
             }}
           >
             <Settings />
-            Settings
+            {t('appSettings')}
           </a>
         </Button>
       </header>
@@ -634,6 +636,7 @@ export function App() {
         {/* The max-width keeps the stock 1rem side margins on a narrow window, which a bare
             `sm:max-w-3xl` would drop between 640 and 800px. */}
         <DialogContent
+          showCloseButton={false}
           className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 p-0 sm:max-w-[min(48rem,calc(100%-2rem))]"
           onOpenAutoFocus={() => {
             settingsOpener.current = document.activeElement;
@@ -660,6 +663,7 @@ export function App() {
               dimmed, hidden from screen readers, and its Cancel would count as a click outside. */}
           {progressToast}
           {toastStack}
+          <DialogCloseButton />
         </DialogContent>
       </Dialog>
 

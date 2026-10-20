@@ -11,9 +11,12 @@
  * storage meter. Pure and unit-tested; the wiring lives in the save / import / "Save as session"
  * paths.
  */
+import { t } from '@/lib/i18n';
 
-/** The single message every quota failure is reported with. */
-export const QUOTA_NOTICE = 'Storage is full. Delete old snapshots or sessions.';
+/** The single message every quota failure is reported with, in the UI language. */
+export function quotaNotice(): string {
+  return t('storageQuotaNotice');
+}
 
 /** DOMException.QUOTA_EXCEEDED_ERR - the legacy numeric code that still travels with it. */
 const QUOTA_EXCEEDED_CODE = 22;

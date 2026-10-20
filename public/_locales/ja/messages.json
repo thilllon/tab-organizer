@@ -1,0 +1,1670 @@
+{
+  "extName": {
+    "message": "Tab Organizer",
+    "description": "The extension name in Chrome and the Chrome Web Store. Keep the brand name; at most 75 characters."
+  },
+  "extDescription": {
+    "message": "ワンクリックですべてのタブを並べ替えてグループ化し、ウィンドウ全体をセッションとして保存・復元できます。オフライン、アカウント不要、データは端末内に保存。",
+    "description": "The store summary and the line under the name at chrome://extensions. At most 132 characters."
+  },
+  "localeCode": {
+    "message": "ja",
+    "description": "Do not translate. The language code of this file itself (en, ko, es, ja), not a word: it picks the plural rules and number formats that match this file's text, also when Chrome falls back to it for a language the extension does not ship."
+  },
+  "actionTitle": {
+    "message": "Tab Organizer: クリックでタブを並べ替え、右クリックでセッション",
+    "description": "Tooltip of the toolbar icon. Teaches the two gestures."
+  },
+  "cmdSaveSession": {
+    "message": "現在のウィンドウをセッションとして保存",
+    "description": "Keyboard command, listed at chrome://extensions/shortcuts."
+  },
+  "cmdOpenDashboard": {
+    "message": "Tab Organizer を開く",
+    "description": "Keyboard command that opens the app page."
+  },
+  "cmdAssembleTabs": {
+    "message": "集合！（すべてのウィンドウのタブをこのウィンドウに移動）",
+    "description": "Keyboard command and right-click menu item: the action name, then what it does in brackets."
+  },
+  "assembleName": {
+    "message": "集合！",
+    "description": "Short name of the action that moves every window's tabs into the current one. Shown on a button."
+  },
+  "commonCancel": {
+    "message": "キャンセル",
+    "description": "Button that closes a dialog without doing anything."
+  },
+  "commonSentenceJoin": {
+    "message": "$FIRST$$SECOND$",
+    "description": "How two complete sentences stand side by side in one text. $1 and $2 are full sentences. Most languages put a space between them; languages written without spaces (Japanese) put nothing. Japanese joins with no space; written with placeholders because Chrome reads \"$1$\" in \"$1$2\" as an undefined named placeholder and refuses to load the extension.",
+    "placeholders": {
+      "first": {
+        "content": "$1"
+      },
+      "second": {
+        "content": "$2"
+      }
+    }
+  },
+  "commonFactJoin": {
+    "message": "$1 · $2",
+    "description": "How two short facts are separated on one line, such as \"3 windows · 87 tabs\". $1 and $2 are the facts (either may itself be a joined list). Keep the middle dot separator unless your language uses another."
+  },
+  "commonLoading": {
+    "message": "読み込んでいます…",
+    "description": "Shown while something (a session's tabs, the saved sessions, the open windows) is being read."
+  },
+  "commonClose": {
+    "message": "閉じる",
+    "description": "Button or label that closes a dialog or panel."
+  },
+  "commonDelete": {
+    "message": "削除",
+    "description": "Button that deletes something."
+  },
+  "commonSave": {
+    "message": "保存",
+    "description": "Button that saves."
+  },
+  "commonOpen": {
+    "message": "開く",
+    "description": "Button that opens something."
+  },
+  "tabCount_other": {
+    "message": "$1個のタブ",
+    "description": "A number of browser tabs. $1 is the formatted count."
+  },
+  "windowCount_other": {
+    "message": "$1個のウィンドウ",
+    "description": "A number of browser windows. $1 is the formatted count."
+  },
+  "settingsTitle": {
+    "message": "設定",
+    "description": "Title of the Settings dialog."
+  },
+  "settingsSubtitle": {
+    "message": "変更はすぐに保存されます。",
+    "description": "Line under the Settings dialog title: there is no Save button, every change is stored at once."
+  },
+  "settingsSaved": {
+    "message": "設定を保存しました",
+    "description": "Short toast shown after any setting was stored."
+  },
+  "settingsSaveFailed": {
+    "message": "設定を保存できませんでした: $1",
+    "description": "Error line shown when Chrome refused to store a setting. $1 is Chrome's own error message (usually English) or the word for an unknown error."
+  },
+  "settingsUnknownError": {
+    "message": "不明",
+    "description": "Fills the error message of settingsSaveFailed when Chrome gave no reason. One lower-case word."
+  },
+  "settingsAdvanced": {
+    "message": "詳細設定",
+    "description": "Label of a fold in the Settings dialog that hides the settings people rarely change. One short word."
+  },
+  "settingsAdvancedToggle": {
+    "message": "その他の設定を表示または非表示",
+    "description": "Tooltip of the Advanced fold in the Settings dialog."
+  },
+  "settingsSortingTitle": {
+    "message": "並べ替え",
+    "description": "Heading of the Settings section about sorting tabs."
+  },
+  "settingsSortingDescription": {
+    "message": "ツールバーのアイコンをクリックしたときの動作です。",
+    "description": "Explanation under the Sorting heading in Settings."
+  },
+  "settingsSortBy": {
+    "message": "並べ替えの基準",
+    "description": "Label of the dropdown that chooses how tabs are ordered."
+  },
+  "settingsSortByTitle": {
+    "message": "ツールバーのアイコンをクリックしたときのタブの並び順",
+    "description": "Tooltip of the Sort by dropdown in Settings."
+  },
+  "settingsSortByUrl": {
+    "message": "URL 順",
+    "description": "Sort by dropdown option: order tabs by their web address. Short."
+  },
+  "settingsSortByTitleOption": {
+    "message": "タイトル順",
+    "description": "Sort by dropdown option: order tabs alphabetically by page title. Short."
+  },
+  "settingsSortByCustom": {
+    "message": "カスタム",
+    "description": "Sort by dropdown option: group tabs by site with the options shown under it. Short."
+  },
+  "settingsTabGroups": {
+    "message": "タブグループ",
+    "description": "Label of the dropdown that decides which tabs count as the same site when sorting by Custom."
+  },
+  "settingsTabGroupsHint": {
+    "message": "同じサイトとみなす範囲です。",
+    "description": "Grey hint under the Tab groups setting."
+  },
+  "settingsGroupingSubdomain": {
+    "message": "ホスト名全体で",
+    "description": "Tab groups dropdown option: mail.example.com and www.example.com are different sites. Short."
+  },
+  "settingsGroupingDomain": {
+    "message": "ドメインで",
+    "description": "Tab groups dropdown option: every subdomain of example.com is one site. Short."
+  },
+  "settingsGroupingDirection": {
+    "message": "グループ化の方向",
+    "description": "Label of the dropdown that chooses which end of the tab strip decides the order of the site groups."
+  },
+  "settingsGroupingDirectionHint": {
+    "message": "タブバーのどちらの端を基準にサイトの順番を決めるかを選びます。",
+    "description": "Grey hint under the Grouping direction setting."
+  },
+  "settingsGroupFromLeft": {
+    "message": "左から右",
+    "description": "Grouping direction dropdown option. Short."
+  },
+  "settingsGroupFromRight": {
+    "message": "右から左",
+    "description": "Grouping direction dropdown option. Short."
+  },
+  "settingsPreserveOrder": {
+    "message": "グループ内の順序を保持",
+    "description": "Label of a switch: keep each site's tabs in their current order instead of sorting them."
+  },
+  "settingsPreserveOrderHint": {
+    "message": "サイトごとのタブを開いた順のままにします。",
+    "description": "Grey hint under the Preserve order within groups switch."
+  },
+  "settingsDuplicateTabs": {
+    "message": "重複タブ",
+    "description": "Label of the dropdown that chooses what happens to tabs with the same address."
+  },
+  "settingsDuplicateTabsHint": {
+    "message": "同じアドレスが複数開いているときの処理です。",
+    "description": "Grey hint under the Duplicate tabs setting."
+  },
+  "settingsDuplicateKeepOne": {
+    "message": "1つだけ残す",
+    "description": "Duplicate tabs dropdown option: close the extra copies. Short."
+  },
+  "settingsDuplicateKeepAll": {
+    "message": "すべて残す",
+    "description": "Duplicate tabs dropdown option: leave them alone. Short."
+  },
+  "settingsDuplicateGroup": {
+    "message": "グループにまとめる",
+    "description": "Duplicate tabs dropdown option: put the copies in one tab group. Short."
+  },
+  "settingsSortingAdvancedDescription": {
+    "message": "固定タブ、休止中のタブ",
+    "description": "Small grey text beside the Advanced fold of the Sorting section, listing what is inside."
+  },
+  "settingsSortPinned": {
+    "message": "固定タブを並べ替える",
+    "description": "Label of a switch in Settings."
+  },
+  "settingsSortPinnedHint": {
+    "message": "オフ: 固定タブは今の位置から動きません。",
+    "description": "Grey hint under the Sort pinned tabs switch."
+  },
+  "settingsGroupSuspended": {
+    "message": "休止中のタブをまとめる",
+    "description": "Label of a switch in Settings. Suspended tabs are pages unloaded by a tab suspender extension."
+  },
+  "settingsGroupSuspendedHint": {
+    "message": "オン: 休止中のタブを1つのまとまりとして先頭に移動します。",
+    "description": "Grey hint under the Group suspended tabs together switch."
+  },
+  "settingsSuspenderId": {
+    "message": "タブ休止拡張機能の ID",
+    "description": "Label of a text field holding another extension's 32-letter id."
+  },
+  "settingsSuspenderIdHint": {
+    "message": "どの拡張機能で休止されたページを認識するかを指定します。空欄の場合は The Marvellous Suspender を対象にします。",
+    "description": "Grey hint under the Tab suspender extension ID field. Keep the extension name The Marvellous Suspender as it is."
+  },
+  "settingsSuspenderIdInvalid": {
+    "message": "a-p の32文字",
+    "description": "Short red error beside the extension id field: an id is exactly 32 letters from a to p. Keep the letters a and p."
+  },
+  "settingsSessionsTitle": {
+    "message": "セッション",
+    "description": "Heading of the Settings section about saved sessions and automatic snapshots."
+  },
+  "settingsSessionsDescription": {
+    "message": "自動スナップショットは、クラッシュやウィンドウを閉じてしまったときの備えです。この端末内にのみ保存されます。",
+    "description": "Explanation under the Sessions heading in Settings."
+  },
+  "settingsSessionsAdvancedDescription": {
+    "message": "間隔、保持する件数、遅延復元",
+    "description": "Small grey text beside the Advanced fold of the Sessions section, listing what is inside."
+  },
+  "settingsAutoSnapshots": {
+    "message": "自動スナップショット",
+    "description": "Label of the switch that turns timed snapshots of the open windows on or off."
+  },
+  "settingsAutoSnapshotsTitle": {
+    "message": "開いているタブを一定間隔で自動的に保存します",
+    "description": "Tooltip of the Automatic snapshots switch."
+  },
+  "settingsSnapshotInterval": {
+    "message": "スナップショットの間隔",
+    "description": "Label of the dropdown that chooses how often a snapshot is taken."
+  },
+  "settingsSnapshotIntervalHint": {
+    "message": "カスタム: $1～$2分。",
+    "description": "Grey hint under Snapshot interval: the range a typed-in custom interval may take. $1 is the smallest number of minutes, $2 the largest."
+  },
+  "settingsIntervalEvery_other": {
+    "message": "$1分ごと",
+    "description": "Snapshot interval dropdown option. $1 is the formatted number of minutes."
+  },
+  "settingsIntervalCustom": {
+    "message": "カスタム",
+    "description": "Snapshot interval dropdown option that shows a field to type any number of minutes. Short."
+  },
+  "settingsIntervalCustomLabel": {
+    "message": "スナップショットのカスタム間隔（分）",
+    "description": "Screen-reader label of the number field for a custom snapshot interval."
+  },
+  "settingsMinutesUnit": {
+    "message": "分",
+    "description": "Unit shown right after the number field of a custom snapshot interval. One short word."
+  },
+  "settingsKeepLast": {
+    "message": "保持する件数",
+    "description": "Label in front of the number field for how many automatic snapshots are kept; the field is followed by settingsSnapshotsUnit."
+  },
+  "settingsKeepLastHint": {
+    "message": "古いスナップショットから削除されます。保護されたものは数に含まれません。",
+    "description": "Grey hint under the Keep last setting."
+  },
+  "settingsSnapshotsUnit": {
+    "message": "件",
+    "description": "Unit shown right after the number field of the Keep last setting. One short word."
+  },
+  "settingsLazyRestore": {
+    "message": "遅延復元",
+    "description": "Label of the dropdown that chooses whether restored tabs load only when visited."
+  },
+  "settingsLazyRestoreHint": {
+    "message": "タブを開いても、表示するまで読み込みません。",
+    "description": "Grey hint under the Lazy restore setting."
+  },
+  "settingsLazyAuto": {
+    "message": "自動（タブが$1個を超える場合）",
+    "description": "Lazy restore dropdown option: only when a session has more tabs than $1, the formatted threshold (50)."
+  },
+  "settingsLazyAlways": {
+    "message": "常に",
+    "description": "Lazy restore dropdown option. Short."
+  },
+  "settingsLazyNever": {
+    "message": "しない",
+    "description": "Lazy restore dropdown option. Short."
+  },
+  "settingsBackupTitle": {
+    "message": "バックアップ",
+    "description": "Heading of the Settings section about exporting and importing sessions."
+  },
+  "settingsBackupDescription": {
+    "message": "セッションはこの端末内にのみ保存されます。ほかの場所に移すにはファイルにエクスポートしてください。",
+    "description": "Explanation under the Backup heading in Settings."
+  },
+  "settingsExportEverything": {
+    "message": "すべてをエクスポート",
+    "description": "Label of the row with the button that exports every session to a file."
+  },
+  "settingsExportEverythingHint": {
+    "message": "保存したセッションとスナップショットを1つの JSON ファイルにします。",
+    "description": "Grey hint under Export everything. Keep JSON as it is."
+  },
+  "settingsExportButton": {
+    "message": "エクスポート…",
+    "description": "Button that starts the export; the ellipsis means a choice follows. Short."
+  },
+  "settingsImport": {
+    "message": "インポート",
+    "description": "Label of the row with the button that imports sessions from a file or pasted text."
+  },
+  "settingsImportHint": {
+    "message": "JSON、ブックマーク HTML、Markdown のリスト、URL の一覧に対応しています。",
+    "description": "Grey hint under Import: the formats it reads. Keep JSON, HTML, Markdown and URLs as they are."
+  },
+  "settingsImportButton": {
+    "message": "インポート…",
+    "description": "Button that opens the import dialog. Short."
+  },
+  "settingsBackupAdvancedDescription": {
+    "message": "使用容量、すべて削除",
+    "description": "Small grey text beside the Advanced fold of the Backup section, listing what is inside."
+  },
+  "settingsShortcutsTitle": {
+    "message": "キーボードショートカット",
+    "description": "Heading of the Settings section listing the extension's keyboard commands."
+  },
+  "settingsShortcutsDescription": {
+    "message": "新しくインストールすると、ほかの拡張機能がそのキーを使っていなければ、Chrome は並べ替えに $1、$2 に $3 を割り当てます。ほかのコマンドには最初はキーが割り当てられていません。",
+    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A)."
+  },
+  "settingsSortCommand": {
+    "message": "このウィンドウのタブを並べ替える（アイコンのクリックと同じ）",
+    "description": "Name of the keyboard command that sorts, in the shortcuts list."
+  },
+  "settingsUnnamedCommand": {
+    "message": "名前のないコマンド",
+    "description": "Shortcuts list: a command Chrome reported without any name."
+  },
+  "settingsShortcutNotSet": {
+    "message": "未設定",
+    "description": "Shortcuts list: the command has no key. Short."
+  },
+  "settingsShortcutSuggestedHint": {
+    "message": "推奨キー: $1。この環境では Chrome が割り当てていません。Chrome のショートカットページで設定できます。",
+    "description": "Grey hint under an unbound command in the shortcuts list. $1 is the key, e.g. Alt + Shift + A."
+  },
+  "settingsShortcutsChangeOnlyInChrome": {
+    "message": "これらのショートカットは Chrome のショートカット設定でのみ変更できます。",
+    "description": "Note beside the Change in Chrome button."
+  },
+  "settingsShortcutsLoading": {
+    "message": "Chrome からショートカットを読み込んでいます…",
+    "description": "Shown while Chrome has not yet reported the keyboard shortcuts."
+  },
+  "settingsShortcutsFailed": {
+    "message": "Chrome からショートカットを取得できませんでした。ショートカットページを開いて確認してください。",
+    "description": "Shown when Chrome could not list the keyboard shortcuts."
+  },
+  "settingsChangeInChrome": {
+    "message": "Chrome で変更",
+    "description": "Button that opens Chrome's keyboard shortcuts page. Short."
+  },
+  "settingsChangeInChromeTitle": {
+    "message": "Chrome のキーボードショートカットページを開く",
+    "description": "Tooltip of the Change in Chrome button."
+  },
+  "settingsKeyCommand": {
+    "message": "Command",
+    "description": "Name of the Mac Command key (⌘) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyControl": {
+    "message": "Control",
+    "description": "Name of the Mac Control key (⌃) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyOption": {
+    "message": "Option",
+    "description": "Name of the Mac Option key (⌥) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyCtrl": {
+    "message": "Ctrl",
+    "description": "Name of the Ctrl key on Windows, Linux and ChromeOS keyboards. Shown in a small key chip."
+  },
+  "settingsKeyAlt": {
+    "message": "Alt",
+    "description": "Name of the Alt key on Windows, Linux and ChromeOS keyboards. Shown in a small key chip."
+  },
+  "settingsKeyShift": {
+    "message": "Shift",
+    "description": "Name of the Shift key as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeySearch": {
+    "message": "検索",
+    "description": "Name of the ChromeOS Search key. Shown in a small key chip."
+  },
+  "settingsKeyNameComma": {
+    "message": "カンマ",
+    "description": "Name of the comma key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePeriod": {
+    "message": "ピリオド",
+    "description": "Name of the period (full stop) key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameSpace": {
+    "message": "スペース",
+    "description": "Name of the space bar as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameUp": {
+    "message": "上矢印",
+    "description": "Name of the up arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameDown": {
+    "message": "下矢印",
+    "description": "Name of the down arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameLeft": {
+    "message": "左矢印",
+    "description": "Name of the left arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameRight": {
+    "message": "右矢印",
+    "description": "Name of the right arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameHome": {
+    "message": "Home",
+    "description": "Name of the Home key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEnd": {
+    "message": "End",
+    "description": "Name of the End key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePageUp": {
+    "message": "Page Up",
+    "description": "Name of the Page Up key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePageDown": {
+    "message": "Page Down",
+    "description": "Name of the Page Down key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameInsert": {
+    "message": "Insert",
+    "description": "Name of the Insert key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameDelete": {
+    "message": "Delete",
+    "description": "Name of the Delete key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameTab": {
+    "message": "Tab",
+    "description": "Name of the Tab key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEscape": {
+    "message": "Esc",
+    "description": "Name of the Escape key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEnter": {
+    "message": "Enter",
+    "description": "Name of the Enter (Return) key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameBackspace": {
+    "message": "Backspace",
+    "description": "Name of the Backspace key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaNextTrack": {
+    "message": "次のトラック",
+    "description": "Name of the media key that skips to the next track as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaPlayPause": {
+    "message": "再生/一時停止",
+    "description": "Name of the media key that plays or pauses as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaPrevTrack": {
+    "message": "前のトラック",
+    "description": "Name of the media key that goes back to the previous track as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaStop": {
+    "message": "停止",
+    "description": "Name of the media key that stops playback as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "sessionDefaultName": {
+    "message": "セッション $1 · $2 · $3",
+    "description": "Default name of a saved session, stored with it. $1 is the capture time as 2026-08-29 14:03 (keep as is), $2 is a window count such as \"3 windows\", $3 a tab count such as \"87 tabs\". Keep the · separators."
+  },
+  "sessionSnapshotDefaultName": {
+    "message": "スナップショット $1 · $2 · $3",
+    "description": "Default name of an automatic snapshot. $1 is the capture time as 2026-08-29 14:03 (keep as is), $2 is a window count such as \"3 windows\", $3 a tab count such as \"87 tabs\". Keep the · separators."
+  },
+  "sessionRecoveredName": {
+    "message": "前回のセッション（復旧） $1",
+    "description": "Name given to the snapshot recovered after a browser restart. $1 is its capture time as 2026-08-29 14:03."
+  },
+  "sessionUnreadableMessage": {
+    "message": "新しいバージョンの Tab Organizer で保存されています。開くにはアップデートしてください。",
+    "description": "Shown in the saved list instead of a session this version cannot read. Tab Organizer is the extension name."
+  },
+  "sessionUnreadableSchema": {
+    "message": "スキーマ v$1",
+    "description": "Short technical label after the unreadable-session message. $1 is the data format version number, e.g. 2."
+  },
+  "sessionOriginAlarm": {
+    "message": "自動",
+    "description": "Small lowercase label on a snapshot taken automatically on a timer. One short word."
+  },
+  "sessionOriginManual": {
+    "message": "手動",
+    "description": "Small lowercase label on a snapshot taken by clicking the toolbar icon. One short word."
+  },
+  "sessionOriginStartup": {
+    "message": "起動時",
+    "description": "Small lowercase label on a snapshot taken when the browser started. One short word."
+  },
+  "sessionOriginRecovered": {
+    "message": "復旧",
+    "description": "Small lowercase label on the snapshot recovered after a browser restart. One short word."
+  },
+  "sessionOriginImport": {
+    "message": "インポート",
+    "description": "Small lowercase label on a session that came from an imported file. One short word."
+  },
+  "sessionSavedAt": {
+    "message": "保存: $1",
+    "description": "Lowercase fragment after the window and tab counts of a session, e.g. \"2 windows · 9 tabs · 4 KB · saved Aug 29, 2026, 14:03\". $1 is the date and time."
+  },
+  "sessionDeleteLabel": {
+    "message": "セッションを削除",
+    "description": "Tooltip and screen reader label of the trash icon button on a session row."
+  },
+  "sessionDeleteTitle": {
+    "message": "セッションを削除しますか？",
+    "description": "Title of the dialog that confirms deleting a saved session."
+  },
+  "sessionSnapshotDeleteTitle": {
+    "message": "スナップショットを削除しますか？",
+    "description": "Title of the dialog that confirms deleting an automatic snapshot."
+  },
+  "sessionDeleteBody": {
+    "message": "「$1」をこの端末から削除します。この操作は元に戻せません。",
+    "description": "Body of the delete confirmation dialog. $1 is the session name or the snapshot's date; use the language's quotation marks around it."
+  },
+  "sessionRestoreTitle_other": {
+    "message": "$1個のタブを復元しますか？",
+    "description": "Title of the dialog that confirms opening a large session. $1 is the formatted tab count."
+  },
+  "sessionRestoreBody": {
+    "message": "大量のタブの復元には時間がかかり、多くのメモリを使用することがあります。",
+    "description": "Body of the restore confirmation dialog, shown after the sentence saying where the tabs will open (restoreDestinationHere / restoreDestinationNewWindows)."
+  },
+  "sessionRestoreLazyLabel": {
+    "message": "タブを遅延読み込みする（推奨: クリックしたときに読み込みます）",
+    "description": "Checkbox label in the restore confirmation dialog: restored tabs stay unloaded until clicked."
+  },
+  "sessionRestoreButton": {
+    "message": "復元",
+    "description": "Confirm button of the restore dialog: opens the session's tabs. Short button text."
+  },
+  "sessionGone": {
+    "message": "このセッションはすでに存在しません。",
+    "description": "Error shown when a session that was deleted meanwhile (for example from another tab) is opened, exported or shown."
+  },
+  "sessionSnapshotGone": {
+    "message": "このスナップショットはすでに存在しません。",
+    "description": "Error shown when opening a snapshot that was deleted meanwhile."
+  },
+  "sessionSwitchedToOpenTab": {
+    "message": "すでに開いていたタブに切り替えました。",
+    "description": "Toast after clicking a saved tab whose page was already open: the open tab was brought forward instead of opening it again."
+  },
+  "sessionNameLabel": {
+    "message": "セッション名",
+    "description": "Screen reader label of the text field for renaming a session."
+  },
+  "sessionRenameHint": {
+    "message": "Enter で保存、Esc でキャンセル",
+    "description": "Tooltip of the rename field. Enter and Escape are keyboard keys."
+  },
+  "sessionRename": {
+    "message": "名前を変更",
+    "description": "Menu item and tooltip on the session title that starts renaming the session. Short."
+  },
+  "sessionRenameLabel": {
+    "message": "セッション名を変更",
+    "description": "Tooltip and screen reader label of the pencil icon button next to the session name."
+  },
+  "sessionOpenTitle": {
+    "message": "このセッションを新しいウィンドウで開く",
+    "description": "Tooltip of the Open button on a saved session."
+  },
+  "sessionMoreActions": {
+    "message": "その他の操作",
+    "description": "Tooltip and screen reader label of the ⋯ menu button on a session or snapshot."
+  },
+  "sessionOpenHere": {
+    "message": "このウィンドウで開く",
+    "description": "Menu item: open the saved session's tabs in the current window. Short menu item."
+  },
+  "sessionWindowsIn": {
+    "message": "$1 のウィンドウ",
+    "description": "Screen reader label of a session's window list. $1 is the session name."
+  },
+  "sessionOpenWindowTitle": {
+    "message": "このウィンドウのタブを新しいウィンドウで開く",
+    "description": "Tooltip of the Open window button on one window of a saved session."
+  },
+  "sessionOpenWindow": {
+    "message": "ウィンドウを開く",
+    "description": "Small button on one window of a saved session: open its tabs in a new window. Short button text."
+  },
+  "sessionOpenWindowHereTitle": {
+    "message": "このウィンドウのタブを現在のウィンドウで開く",
+    "description": "Tooltip of the Open here button on one window of a saved session."
+  },
+  "sessionOpenWindowHere": {
+    "message": "ここで開く",
+    "description": "Small button on one window of a saved session: open its tabs in the current window. Short button text."
+  },
+  "sessionRemoveWindowTitle": {
+    "message": "このウィンドウをセッションから削除",
+    "description": "Tooltip of the Remove button on one window of a saved session."
+  },
+  "sessionRemoveWindow": {
+    "message": "削除",
+    "description": "Small button that removes one window from a saved session. Short button text."
+  },
+  "sessionCopyLink": {
+    "message": "リンクをコピー",
+    "description": "Tooltip and screen reader label of the link icon button on a saved tab: copies its address."
+  },
+  "sessionRemoveTab": {
+    "message": "セッションから削除",
+    "description": "Tooltip and screen reader label of the × icon button on a saved tab."
+  },
+  "sessionSnapshotLabel": {
+    "message": "スナップショット $1",
+    "description": "Screen reader label of the snapshot view. $1 is the snapshot's date and time."
+  },
+  "sessionSnapshotOpenTitle": {
+    "message": "このスナップショットを新しいウィンドウで開く",
+    "description": "Tooltip of the Open button on an automatic snapshot."
+  },
+  "sessionKeep": {
+    "message": "保持",
+    "description": "Button on an automatic snapshot that moves it into the saved sessions. Short button text; also appears in bold inside sessionSnapshotExplainer."
+  },
+  "sessionKeepTitle": {
+    "message": "保存したセッションに移動します。自動で削除されることはありません",
+    "description": "Tooltip of the Keep button on an automatic snapshot."
+  },
+  "sessionKeptNotice": {
+    "message": "「$1」として保持しました。",
+    "description": "Toast after Keep moved a snapshot into the saved sessions. $1 is the new saved session's name; use the language's quotation marks."
+  },
+  "sessionSnapshotExplainer_other": {
+    "message": "スナップショットは自動で作成され、最新の$1件だけが保持されます。$2を押すと、このスナップショットを保存したセッションに移動でき、自動で削除されなくなります。",
+    "description": "Explanation under a snapshot's title. $1 is the formatted number of snapshots kept, $2 is the bold word of the Keep button (sessionKeep); keep $2 exactly once."
+  },
+  "sessionSnapshotWindows": {
+    "message": "このスナップショットのウィンドウ",
+    "description": "Screen reader label of a snapshot's window list."
+  },
+  "expMenuJson": {
+    "message": "JSON でエクスポート",
+    "description": "Downloads the session as a JSON file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuMarkdown": {
+    "message": "Markdown でエクスポート",
+    "description": "Downloads the session as a Markdown file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuText": {
+    "message": "テキストでエクスポート",
+    "description": "Downloads the session as a plain-text list of links. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuHtml": {
+    "message": "HTML ブックマークでエクスポート",
+    "description": "Downloads the session as a bookmarks HTML file that browsers can import. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuCsv": {
+    "message": "CSV でエクスポート",
+    "description": "Downloads the session as a CSV spreadsheet file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expFormatJson": {
+    "message": "JSON",
+    "description": "Name of the JSON export format, used on its own."
+  },
+  "expFormatMarkdown": {
+    "message": "Markdown",
+    "description": "Name of the Markdown export format, used on its own."
+  },
+  "expFormatText": {
+    "message": "テキスト",
+    "description": "Name of the plain-text export format, used on its own (lower case in English)."
+  },
+  "expFormatHtml": {
+    "message": "HTML ブックマーク",
+    "description": "Name of the bookmarks HTML export format, used on its own."
+  },
+  "expFormatCsv": {
+    "message": "CSV",
+    "description": "Name of the CSV export format, used on its own."
+  },
+  "expExportedJson": {
+    "message": "「$1」を JSON でエクスポートしました。",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedMarkdown": {
+    "message": "「$1」を Markdown でエクスポートしました。",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedText": {
+    "message": "「$1」をテキストでエクスポートしました。",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedHtml": {
+    "message": "「$1」を HTML ブックマークでエクスポートしました。",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedCsv": {
+    "message": "「$1」を CSV でエクスポートしました。",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expScopeWindow": {
+    "message": "$1（ウィンドウ $2）",
+    "description": "Name of an export narrowed to one window, used in the file name and the confirmation. $1 is the session name, $2 the window number."
+  },
+  "expScopeGroup": {
+    "message": "$1（$2）",
+    "description": "Name of an export narrowed to one tab group. $1 is the session name, $2 the group title."
+  },
+  "expUntitledGroup": {
+    "message": "名前のないグループ",
+    "description": "Stands in for a tab group without a title, in export names and as a heading in Markdown exports."
+  },
+  "expWindowLabel": {
+    "message": "ウィンドウ $1",
+    "description": "Heading for one window inside Markdown and bookmarks HTML exports. $1 is the window number."
+  },
+  "commonCopiedLinks_other": {
+    "message": "$1件のリンクをコピーしました。",
+    "description": "Toast after copying links (of a session, a window, a group or the selected tabs). $1 is the formatted number of links."
+  },
+  "expCopiedMarkdown_other": {
+    "message": "$1件のリンクを Markdown としてコピーしました。",
+    "description": "Toast after copying links as a Markdown list. $1 is the formatted number of links."
+  },
+  "expCopiedLink": {
+    "message": "リンクをコピーしました。",
+    "description": "Toast after copying the link of a single tab."
+  },
+  "expNothingToExport": {
+    "message": "エクスポートするものがありません。選択した範囲にタブがありません。",
+    "description": "Toast when the chosen window or group holds no tabs."
+  },
+  "expCollecting": {
+    "message": "セッションを収集しています…（$1/$2）",
+    "description": "Progress toast while every session is read for a backup. $1 is how many are read so far, $2 the total."
+  },
+  "expExportedAll_other": {
+    "message": "$1件のセッションを JSON でエクスポートしました。",
+    "description": "Toast after 'Export everything' (a JSON backup). $1 is the formatted number of sessions."
+  },
+  "expUnreadable_other": {
+    "message": "$1件のセッションを読み込めませんでした。",
+    "description": "Sentence added after the export toast when some sessions could not be read. $1 is the formatted number of sessions."
+  },
+  "expImportButton_other": {
+    "message": "$1件のセッションをインポート",
+    "description": "Button that imports the previewed sessions. $1 is the formatted number of sessions. Keep it short."
+  },
+  "expImportedNotice_other": {
+    "message": "$1件のセッションをインポートしました。",
+    "description": "Toast after an import. $1 is the formatted number of sessions imported."
+  },
+  "expSessionCount_other": {
+    "message": "$1件のセッション",
+    "description": "A number of sessions, in the import preview totals. $1 is the formatted count."
+  },
+  "expNothingToExportAll": {
+    "message": "エクスポートするものがありません。保存したセッションがまだありません。",
+    "description": "Toast when 'Export everything' finds no sessions."
+  },
+  "expClipboardUnavailable": {
+    "message": "コピーできませんでした。このページからのクリップボードへのアクセスがブラウザで許可されていません。",
+    "description": "Error when the clipboard cannot be used at all."
+  },
+  "expCopyFailed": {
+    "message": "クリップボードにコピーできませんでした: $1",
+    "description": "Error when copying failed. $1 is the reason, a complete sentence already in your language (one of the error* messages)."
+  },
+  "expCopyFailedPlain": {
+    "message": "クリップボードにコピーできませんでした。",
+    "description": "Error when copying failed and there is no reason that can be shown."
+  },
+  "expMenuButton": {
+    "message": "エクスポート",
+    "description": "Accessible name of the export menu's icon button."
+  },
+  "expMenuTitleGroup": {
+    "message": "このグループをエクスポートまたはコピー",
+    "description": "Tooltip of the export button on a tab group."
+  },
+  "expMenuTitleWindow": {
+    "message": "このウィンドウをエクスポートまたはコピー",
+    "description": "Tooltip of the export button on a window."
+  },
+  "expMenuTitleAll": {
+    "message": "すべてをエクスポートまたはコピー",
+    "description": "Tooltip of the export button on a whole session."
+  },
+  "expCopyLinks": {
+    "message": "リンクをコピー",
+    "description": "Export menu item that copies every link as plain text. Keep it short."
+  },
+  "expCopyMarkdown": {
+    "message": "Markdown としてコピー",
+    "description": "Export menu item that copies every link as a Markdown list. Keep it short."
+  },
+  "expImportedName": {
+    "message": "$1（インポート）",
+    "description": "Name given to a session read from a JSON import. $1 is the session's original name."
+  },
+  "expImportedBookmarks": {
+    "message": "インポートしたブックマーク",
+    "description": "Name of a session made from bookmarks that were not in any folder."
+  },
+  "expImportedLinks": {
+    "message": "インポートしたリンク",
+    "description": "Name of the session made from pasted links or a Markdown/text file."
+  },
+  "expErrorMalformedJson": {
+    "message": "有効な JSON ではありません。",
+    "description": "Import error when the pasted or chosen text starts like JSON but cannot be read as JSON."
+  },
+  "expErrorMalformedJsonAt": {
+    "message": "有効な JSON ではありません（$1行目、$2列目）。",
+    "description": "Import error when the text cannot be read as JSON, with where the reading stopped. $1 is the line number, $2 the column number."
+  },
+  "expErrorNoSessionsList": {
+    "message": "エクスポートファイルに \"sessions\" のリストがありません。",
+    "description": "Import error for a Tab Organizer JSON file without its sessions list. Keep \"sessions\" as is: it is the field name in the file."
+  },
+  "expErrorNoSessions": {
+    "message": "エクスポートにセッションが含まれていません。",
+    "description": "Import error for an empty export."
+  },
+  "expErrorInvalidSession": {
+    "message": "$1番目のセッションは有効な Tab Organizer のセッションデータではありません。",
+    "description": "Import error. $1 is the 1-based position of the bad session in the file."
+  },
+  "expErrorNotExport": {
+    "message": "この JSON は Tab Organizer のエクスポートではありません。",
+    "description": "Import error for JSON from somewhere else."
+  },
+  "expErrorSchemaVersion": {
+    "message": "セッションのスキーマバージョン $1 には対応していません（このバージョンが読み込めるのは $2 です）。",
+    "description": "Import error for a file from another version of the extension. $1 is the file's schema version, $2 the one this build reads."
+  },
+  "expErrorNoBookmarks": {
+    "message": "HTML にブックマークが見つかりませんでした。",
+    "description": "Import error for a bookmarks HTML file without links."
+  },
+  "expErrorNoUrls": {
+    "message": "URL が見つかりませんでした。",
+    "description": "Import error for pasted text or Markdown without links."
+  },
+  "expErrorNothingToImport": {
+    "message": "インポートするものがありません。Tab Organizer の JSON エクスポート、ブックマーク HTML ファイル、Markdown、または URL の一覧を貼り付けてください。",
+    "description": "Import error when the pasted text is not any known format."
+  },
+  "expWarnNoWindows": {
+    "message": "「$1」にウィンドウがありません。",
+    "description": "Import preview warning. $1 is a session name."
+  },
+  "expWarnEmptyWindow": {
+    "message": "「$1」: ウィンドウ $2 にタブがありません。",
+    "description": "Import preview warning. $1 is a session name, $2 a window number."
+  },
+  "expErrorTooLarge": {
+    "message": "サイズが大きすぎるためインポートできません（$1）。上限は $2 です。",
+    "description": "Import error for an oversized file or paste. $1 is its size, $2 the limit (both like '25.0 MB')."
+  },
+  "expErrorFileRead": {
+    "message": "このファイルを読み込めませんでした: $1",
+    "description": "Import error when the chosen file cannot be read. $1 is the reason, a complete sentence already in your language (one of the error* messages)."
+  },
+  "expErrorFileReadPlain": {
+    "message": "このファイルを読み込めませんでした。",
+    "description": "Import error when the chosen file cannot be read and there is no reason that can be shown."
+  },
+  "expDetectedJson": {
+    "message": "Tab Organizer JSON",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedHtml": {
+    "message": "ブックマーク HTML",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedMarkdown": {
+    "message": "Markdown",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedLinks": {
+    "message": "リンク",
+    "description": "Import format name for a plain list of links, shown after 'Detected'."
+  },
+  "expDetected": {
+    "message": "検出: $1",
+    "description": "Import preview line; the session totals follow it after a ' · '. $1 is the format name (drawn in bold), e.g. 'Bookmarks HTML'."
+  },
+  "expImportTitle": {
+    "message": "セッションをインポート",
+    "description": "Title of the import dialog."
+  },
+  "expImportDescription": {
+    "message": "Tab Organizer の JSON エクスポート、ブックマーク HTML ファイル、Markdown、またはリンクの一覧を読み込めます。インポートしたセッションはこの端末の保存済みリストに追加されます。アップロードされることはありません。",
+    "description": "Explanation under the import dialog's title."
+  },
+  "expChooseFile": {
+    "message": "ファイルを選択",
+    "description": "Label of the import dialog's file picker."
+  },
+  "expPasteLabel": {
+    "message": "セッション、ブックマーク、リンクを貼り付け",
+    "description": "Label of the import dialog's paste box."
+  },
+  "expPastePlaceholder": {
+    "message": "https://example.com/\n- [ドキュメント](https://example.com/docs)",
+    "description": "Placeholder of the paste box: an example bare link, a line break, then a Markdown link. Only translate the word 'Docs'; keep the URLs and the '- [..](..)' syntax."
+  },
+  "expPreviewWindow_other": {
+    "message": "ウィンドウ $2 · $1個のタブ",
+    "description": "Import preview line for one window. $2 is the window number, $1 the formatted number of tabs in it."
+  },
+  "expMoreTabs_other": {
+    "message": "ほか$1個のタブ",
+    "description": "Import preview: tabs of a window not listed. $1 is the formatted count."
+  },
+  "expMoreWindows_other": {
+    "message": "ほか$1個のウィンドウ",
+    "description": "Import preview: windows of a session not listed. $1 is the formatted count."
+  },
+  "expMoreSessions_other": {
+    "message": "ほか$1件のセッション",
+    "description": "Import preview: sessions not listed. $1 is the formatted count."
+  },
+  "expImport": {
+    "message": "インポート",
+    "description": "Import button while nothing importable has been chosen yet. Keep it short."
+  },
+  "appNothingToSaveWindow": {
+    "message": "保存するものがありません。このウィンドウには Tab Organizer しかありません。",
+    "description": "Notice toast after Save when the current window holds nothing but the extension's own page. 'Tab Organizer' is the extension name."
+  },
+  "appNothingToSaveAll": {
+    "message": "保存するものがありません。Tab Organizer 以外を開いているウィンドウがありません。",
+    "description": "Notice toast after 'Save all windows' when no window holds anything but the extension's own page. 'Tab Organizer' is the extension name."
+  },
+  "appNothingToSaveTabs": {
+    "message": "保存するものがありません。選択したタブはすでに閉じられています。",
+    "description": "Notice toast after saving selected tabs when every selected tab has been closed meanwhile."
+  },
+  "appSavedNotice": {
+    "message": "「$1」を保存しました。タイトルをクリックすると名前を変更できます。",
+    "description": "Notice toast after a session is saved. $1 is the session's name. The second sentence tells the user that clicking the session's title renames it."
+  },
+  "appOpenAlreadyRunning": {
+    "message": "別のセッションを開いている途中です。",
+    "description": "Notice toast when the user opens a saved session while another one is still being opened (restored)."
+  },
+  "appSearchNothingFound": {
+    "message": "開いているタブにも保存したセッションにも見つかりません。",
+    "description": "Shown in the search results when nothing matches; a button offering to search automatic snapshots follows it."
+  },
+  "appSearchHistoryTitle": {
+    "message": "自動スナップショットも検索します",
+    "description": "Tooltip of the button that extends the search to automatic snapshots (auto-saved sessions)."
+  },
+  "appSearchHistoryButton": {
+    "message": "スナップショットも検索",
+    "description": "Small button under empty search results that extends the search to automatic snapshots. Keep short (button). Use the same word for snapshots as everywhere else."
+  },
+  "appHomeTitle": {
+    "message": "開いているタブに戻る",
+    "description": "Tooltip of the extension name at the top left of the page, which is a link back to the open tabs view."
+  },
+  "commonOpenSettingsTitle": {
+    "message": "設定を開く",
+    "description": "Tooltip of the Settings button in the page header and of the link that opens the Settings dialog."
+  },
+  "appSettings": {
+    "message": "設定",
+    "description": "Label of the Settings button in the page header. Keep short (button)."
+  },
+  "appResizeSidebarLabel": {
+    "message": "サイドバーのサイズを変更",
+    "description": "Screen-reader label of the draggable handle between the sidebar and the main pane."
+  },
+  "appResizeSidebarTitle": {
+    "message": "ドラッグでサイドバーのサイズを変更、ダブルクリックで元に戻す",
+    "description": "Tooltip of the draggable handle between the sidebar and the main pane."
+  },
+  "appNavLabel": {
+    "message": "セッション",
+    "description": "Screen-reader label of the sidebar navigation (open tabs, saved sessions, snapshots)."
+  },
+  "appNavOpenTabs": {
+    "message": "開いているタブ",
+    "description": "Sidebar row that shows the browser's currently open tabs. Keep short (menu item)."
+  },
+  "appNavTabsOpen_other": {
+    "message": "$1個のタブを開いています",
+    "description": "Tooltip on the tab count of the 'Open tabs' sidebar row. $1 is the formatted number of open tabs."
+  },
+  "appNavSaved": {
+    "message": "保存済み",
+    "description": "Sidebar section heading above the list of saved sessions. Shown in uppercase. Keep short."
+  },
+  "appNavNothingSaved": {
+    "message": "保存したものはまだありません。",
+    "description": "Shown in the sidebar's Saved section when there are no saved sessions."
+  },
+  "commonWindowsAndTabs": {
+    "message": "$1 · $2",
+    "description": "A window count and a tab count on one line: the second line of a sidebar row, the Open tabs heading, the import preview. $1 is a window count phrase such as '2 windows', $2 a tab count phrase such as '14 tabs'. Change the separator or order if your language needs it."
+  },
+  "appNavSavedAt": {
+    "message": "保存: $1",
+    "description": "Third line of a saved session row in the sidebar. $1 is the date and time it was last saved, already formatted."
+  },
+  "appNavNewerTitle": {
+    "message": "新しいバージョンの Tab Organizer で保存されています",
+    "description": "Tooltip of the 'newer' badge on a session this version cannot read. 'Tab Organizer' is the extension name."
+  },
+  "appNavNewerBadge": {
+    "message": "新バージョン",
+    "description": "Small lowercase badge on a session saved by a newer version of the extension. One short word."
+  },
+  "appNavAutoSaved": {
+    "message": "自動スナップショット",
+    "description": "Sidebar section heading above the list of automatic snapshots. Use the same term for snapshots as everywhere else (settingsAutoSnapshots)."
+  },
+  "appNavHideSnapshots": {
+    "message": "スナップショットを隠す",
+    "description": "Tooltip of the toggle that folds away the list of automatic snapshots."
+  },
+  "appNavShowSnapshots": {
+    "message": "スナップショットを表示",
+    "description": "Tooltip of the toggle that unfolds the list of automatic snapshots."
+  },
+  "appNavNoSnapshots": {
+    "message": "スナップショットはまだありません",
+    "description": "Label of the snapshots toggle in the sidebar when no automatic snapshot exists."
+  },
+  "appNavSnapshotCount_other": {
+    "message": "$1件のスナップショット",
+    "description": "Label of the snapshots toggle in the sidebar. $1 is the formatted number of automatic snapshots."
+  },
+  "appNavRecoveredTitle": {
+    "message": "前回ブラウザを再起動する前に作成されました",
+    "description": "Tooltip of the 'recovered' badge on the snapshot taken just before the browser was last restarted."
+  },
+  "appNavRecoveredBadge": {
+    "message": "復旧",
+    "description": "Small lowercase badge on the snapshot taken before the last browser restart. One short word."
+  },
+  "appNavKeptTitle": {
+    "message": "保持: 古いスナップショットの整理で削除されることはありません",
+    "description": "Tooltip of the 'kept' badge on a snapshot that is protected from automatic deletion."
+  },
+  "appNavKeptBadge": {
+    "message": "保持",
+    "description": "Small lowercase badge on a protected snapshot. One short word."
+  },
+  "openHeading": {
+    "message": "開いているタブ",
+    "description": "Heading of the view that lists the browser's open windows and tabs; also the accessible name of that section and its sidebar entry. Short, at most 20 characters."
+  },
+  "openSaveAllWindows": {
+    "message": "すべてのウィンドウを保存",
+    "description": "Button on the Open tabs view when more than one window is open: saves every window as one session. Short button text."
+  },
+  "openSaveThisWindow": {
+    "message": "このウィンドウを保存",
+    "description": "Button on the Open tabs view when only one window is open: saves it as a session. Short button text."
+  },
+  "openSaveAllWindowsTitle": {
+    "message": "開いているすべてのウィンドウを1つのセッションとして保存",
+    "description": "Tooltip of the Save all windows button."
+  },
+  "openSaveWindowTitle": {
+    "message": "このウィンドウをセッションとして保存",
+    "description": "Tooltip of a button that saves one browser window as a session."
+  },
+  "openFirstRunHint": {
+    "message": "保存したものはまだありません。$1を押すか、Tab Organizer のアイコンを右クリックして$2を選んでください。キーボードショートカットを使うには、$3。",
+    "description": "Hint shown on the Open tabs view while no session has been saved. $1 is the Save button's label (e.g. 'Save all windows'), shown in bold. $2 is the right-click menu item 'Save all windows as session', shown in bold. $3 is a link that opens Settings (openFirstRunHintSettingsLink). Keep 'Tab Organizer' as is."
+  },
+  "openFirstRunHintSettingsLink": {
+    "message": "設定で割り当ててください",
+    "description": "Link text inside openFirstRunHint ($3), after 'To use a keyboard shortcut,'. Opens the Settings dialog. Lower case, it continues the sentence."
+  },
+  "openWindowsHeading": {
+    "message": "開いているウィンドウ",
+    "description": "Screen-reader heading of the tree of live browser windows on the Open tabs view."
+  },
+  "openNoWindows": {
+    "message": "表示できるウィンドウがありません。",
+    "description": "Shown in the Open tabs view when there is no browser window to list."
+  },
+  "openThisWindow": {
+    "message": "このウィンドウ",
+    "description": "Badge on the window the app page itself is in. Very short, at most 15 characters."
+  },
+  "openThisWindowTitle": {
+    "message": "このページがあるウィンドウ",
+    "description": "Tooltip of the 'This window' badge."
+  },
+  "openSaveWindow": {
+    "message": "ウィンドウを保存",
+    "description": "Small button on one window of the Open tabs list: saves that window as a session. Short button text."
+  },
+  "openCloseWindow": {
+    "message": "ウィンドウを閉じる",
+    "description": "Small button on one window of the Open tabs list, and the confirm button of the close-window dialog. Short button text."
+  },
+  "openCloseWindowTooltip": {
+    "message": "このウィンドウとすべてのタブを閉じる",
+    "description": "Tooltip of the Close window button."
+  },
+  "openGoToTab": {
+    "message": "タブに移動",
+    "description": "Icon button (label and tooltip) on a tab row: switches to that tab."
+  },
+  "openCloseTab": {
+    "message": "タブを閉じる",
+    "description": "Icon button (label and tooltip) on a tab row: closes that tab."
+  },
+  "openCloseWindowQuestion": {
+    "message": "ウィンドウ $1 を閉じますか？",
+    "description": "Title of the dialog that confirms closing a browser window. $1 is the window's number in the list (1, 2, ...)."
+  },
+  "openCloseWindowBody_other": {
+    "message": "$1個のタブが閉じられます。あとで元に戻したい場合は、先にウィンドウを保存してください。",
+    "description": "Text of the close-window dialog. $1 is the formatted number of tabs in the window."
+  },
+  "openCloseWindowIsCurrent": {
+    "message": "このウィンドウには Tab Organizer が開いています。",
+    "description": "Extra sentence after openCloseWindowBody when the window being closed holds the app page itself, so closing it closes the page too."
+  },
+  "openCloseTabsQuestion_other": {
+    "message": "$1個のタブを閉じますか？",
+    "description": "Title of the dialog that confirms closing the selected tabs. $1 is the formatted number of tabs."
+  },
+  "openCloseTabsBody": {
+    "message": "選択したタブはすべて閉じられます。折りたたまれたグループ内のタブや、一覧に表示されていない長いウィンドウの下の方のタブも含まれます。あとで元に戻したい場合は、代わりに「保存して閉じる」を使ってください。",
+    "description": "Text of the dialog that confirms closing several selected tabs. 'Save & close' is the menu item openSaveAndClose and must read the same."
+  },
+  "openCloseTabs": {
+    "message": "タブを閉じる",
+    "description": "Confirm button of the dialog that closes the selected tabs. Short button text."
+  },
+  "openClearSelection": {
+    "message": "選択を解除",
+    "description": "Icon button (label and tooltip) that unticks every selected tab."
+  },
+  "openSelectedTabs_other": {
+    "message": "$1個のタブを選択中",
+    "description": "Heading of the bar shown while tabs are ticked. $1 is the formatted number of ticked tabs."
+  },
+  "openSaveTabsTitle": {
+    "message": "これらのタブをセッションとして保存",
+    "description": "Tooltip of the Save button in the selection bar."
+  },
+  "openCopy": {
+    "message": "コピー",
+    "description": "Button in the selection bar: copies the links of the selected tabs. Short button text."
+  },
+  "openCopyTitle": {
+    "message": "これらのタブのリンクをコピー",
+    "description": "Tooltip of the Copy button in the selection bar."
+  },
+  "openCloseTabsTitle": {
+    "message": "これらのタブを閉じる",
+    "description": "Tooltip of the Close button in the selection bar."
+  },
+  "openMoreActions": {
+    "message": "選択したタブのその他の操作",
+    "description": "Label and tooltip of the menu button with more actions in the selection bar."
+  },
+  "openSaveAndClose": {
+    "message": "保存して閉じる",
+    "description": "Menu item: saves the selected tabs as a session, then closes them. Short menu item."
+  },
+  "openCopyAs": {
+    "message": "形式を指定してコピー…",
+    "description": "Menu item that opens a submenu of copy formats. Short menu item."
+  },
+  "openSelectLike": {
+    "message": "同じサイトのタブをすべて選択",
+    "description": "Menu item: selects every open tab on the same sites as the selected ones."
+  },
+  "openSelectUnlike": {
+    "message": "ほかのサイトのタブをすべて選択",
+    "description": "Menu item: selects every open tab on any other site than the selected ones."
+  },
+  "openCopyFormatLinks": {
+    "message": "リンク",
+    "description": "Copy format in the 'Copy as…' submenu: one link per line. Short menu item."
+  },
+  "openCopyFormatMarkdown": {
+    "message": "Markdown リンク",
+    "description": "Copy format in the 'Copy as…' submenu: Markdown [title](url) links. Short menu item."
+  },
+  "openCopyFormatTitled": {
+    "message": "タイトルとリンク",
+    "description": "Copy format in the 'Copy as…' submenu: each tab's title on one line and its link on the next. Short menu item."
+  },
+  "openCopiedLinksMarkdown_other": {
+    "message": "$1件のリンクを Markdown としてコピーしました。",
+    "description": "Toast after copying the selected tabs as Markdown links. $1 is the formatted number of links."
+  },
+  "openCopiedLinksTitled_other": {
+    "message": "$1件のリンクをタイトル付きでコピーしました。",
+    "description": "Toast after copying the selected tabs as titles and links. $1 is the formatted number of links."
+  },
+  "openClosedTabs_other": {
+    "message": "$1個のタブを閉じました。",
+    "description": "Toast after closing selected tabs. $1 is the formatted number of tabs."
+  },
+  "openKeptOpen_other": {
+    "message": "$1個のタブは保存できなかったため、開いたままにしました。",
+    "description": "Toast after 'Save & close' when some selected tabs could not be saved and so were not closed. $1 is the formatted number of those tabs."
+  },
+  "openAssembleBusy": {
+    "message": "まだ集めています。しばらくお待ちください。",
+    "description": "Toast when Assemble! is pressed while a previous run is still moving tabs."
+  },
+  "openAssembleNothing": {
+    "message": "集めるものがありません。ほかにタブのあるウィンドウがありません。",
+    "description": "Toast when Assemble! finds no other window to move tabs from."
+  },
+  "openAssembleDone_other": {
+    "message": "$1個のウィンドウをこのウィンドウに集めました。",
+    "description": "Toast after Assemble! moved every other window's tabs into this window. $1 is the formatted number of windows gathered."
+  },
+  "openAssemblePartial_other": {
+    "message": "$2を集めました。$1個のウィンドウは移動できなかったため、そのままにしました。",
+    "description": "Error line after Assemble! when some windows failed. $1 is the formatted number of windows that could not be moved. $2 is how many were gathered, already counted, e.g. '2 windows' (from windowCount)."
+  },
+  "openUnsupportedUrl": {
+    "message": "このタブは開けません（対応していない URL です）。",
+    "description": "Error shown when a saved tab's address is of a kind the extension refuses to open (data:, javascript:, another extension's page)."
+  },
+  "openNoCurrentWindow": {
+    "message": "このウィンドウを特定できませんでした。",
+    "description": "Error shown when opening a session into this window fails because the browser did not report which window the page is in."
+  },
+  "treeWindowLabel": {
+    "message": "ウィンドウ $1",
+    "description": "Heading and screen-reader label of one browser window in a tab list. $1 is the window's number (1, 2, 3...). Short heading."
+  },
+  "treeTabCountWithState": {
+    "message": "$1 · $2",
+    "description": "Window header line when the window is not in its normal state. $1 is a tab count such as \"12 tabs\", $2 is the window state such as \"minimized\". Keep the middle dot separator unless your language uses another."
+  },
+  "treeWindowStateNormal": {
+    "message": "通常",
+    "description": "State of a browser window (neither minimized, maximized nor full screen). Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateMinimized": {
+    "message": "最小化",
+    "description": "State of a browser window that is minimized. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateMaximized": {
+    "message": "最大化",
+    "description": "State of a browser window that is maximized. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateFullscreen": {
+    "message": "全画面",
+    "description": "State of a browser window in full screen mode. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeUntitledGroup": {
+    "message": "名前のないグループ",
+    "description": "Name shown for a Chrome tab group that has no title. Short label on a small chip."
+  },
+  "treeCollapseGroup": {
+    "message": "$1 を折りたたむ",
+    "description": "Tooltip of a tab group header while the group is open; clicking hides its tabs. $1 is the group's name."
+  },
+  "treeExpandGroup": {
+    "message": "$1 を展開",
+    "description": "Tooltip of a tab group header while the group is closed; clicking shows its tabs. $1 is the group's name."
+  },
+  "treePinned": {
+    "message": "固定",
+    "description": "Screen-reader label of the pin icon on a tab row: the tab is pinned in Chrome. One word."
+  },
+  "treeSelectTab": {
+    "message": "$1 を選択",
+    "description": "Screen-reader label of the tick box on a tab row. $1 is the tab's title (or its address when it has none)."
+  },
+  "treeSelectTabHint": {
+    "message": "このタブを選択（Shift キーを押しながらクリックで範囲選択）",
+    "description": "Tooltip of the tick box on a tab row. Shift-click ticks every tab between this one and the one ticked last."
+  },
+  "treeShowMoreTabs_other": {
+    "message": "さらに$1個のタブを表示",
+    "description": "Button under a very large window's tab list that shows the next tabs. $1 is the formatted count of tabs it will add. Button text, keep short."
+  },
+  "treeSessionMeta": {
+    "message": "$1 · $2 · $3",
+    "description": "One line of facts about a saved session or snapshot. $1 is a window count such as \"3 windows\", $2 a tab count such as \"87 tabs\", $3 its size on disk such as \"2.1 KB\". Keep the middle dot separators unless your language uses another."
+  },
+  "treeSizeBytes": {
+    "message": "$1 B",
+    "description": "A storage size in bytes. $1 is the formatted number. Keep the unit symbol short."
+  },
+  "treeSizeKilobytes": {
+    "message": "$1 KB",
+    "description": "A storage size in kilobytes (1024 bytes). $1 is the formatted number with one decimal. Keep the unit symbol short."
+  },
+  "treeSizeMegabytes": {
+    "message": "$1 MB",
+    "description": "A storage size in megabytes (1024 x 1024 bytes). $1 is the formatted number with one decimal. Keep the unit symbol short."
+  },
+  "searchOpenWindowsName": {
+    "message": "開いているウィンドウ",
+    "description": "Name shown for the browser's currently open windows in search results, where a saved session's name would otherwise appear (e.g. \"Open windows · Window 2\"). Short."
+  },
+  "searchGroupMatchingSessions": {
+    "message": "一致するセッション",
+    "description": "Heading of the search results group listing saved sessions whose name matches the query. Shown in small capitals; short."
+  },
+  "searchGroupOpenTabs": {
+    "message": "開いているタブ",
+    "description": "Heading of the search results group listing matching tabs that are open in the browser now. Shown in small capitals; short."
+  },
+  "searchGroupSavedSessions": {
+    "message": "保存したセッション",
+    "description": "Heading of the search results group listing matching tabs inside saved sessions. Shown in small capitals; short."
+  },
+  "searchGroupHistory": {
+    "message": "スナップショット",
+    "description": "Heading of the search results group listing matching tabs inside automatic snapshots. Shown in small capitals; short. Use the same word for snapshots as everywhere else."
+  },
+  "searchLabel": {
+    "message": "検索",
+    "description": "Accessible name of the search box at the top of the app page. One word."
+  },
+  "searchInputTitle": {
+    "message": "開いているタブ、保存したセッション、そのアドレスを検索",
+    "description": "Tooltip of the search box at the top of the app page."
+  },
+  "searchPlaceholder": {
+    "message": "タブとセッションを検索（/ キー）",
+    "description": "Placeholder text inside the empty search box. The \"/\" is the keyboard key that focuses the box; keep it as is. Keep it short enough to fit a narrow box (about 40 characters)."
+  },
+  "searchClear": {
+    "message": "検索をクリア",
+    "description": "Tooltip and accessible name of the X button that empties the search box."
+  },
+  "searchResultPlace": {
+    "message": "$1 · ウィンドウ $2",
+    "description": "Where a matching tab is, shown beside it in search results. $1 is the session name (or the name for the open windows), $2 is the window's number (1, 2, ...). Short; it is cut off when too long."
+  },
+  "searchRestoreSession": {
+    "message": "セッションを復元",
+    "description": "Button beside a session in search results that opens the whole session again. Button text, short."
+  },
+  "searchResultsHeading": {
+    "message": "検索結果",
+    "description": "Heading above the search results."
+  },
+  "searchResultCount_other": {
+    "message": "$1件の結果",
+    "description": "Number of search results, beside the results heading and read out by screen readers. $1 is the formatted count."
+  },
+  "searchStillLoading": {
+    "message": "セッションをまだ読み込んでいます…",
+    "description": "Shown beside the result count while saved sessions are still being read, so more results may appear."
+  },
+  "searchNoMatches": {
+    "message": "「$1」に一致するものはありません。",
+    "description": "Shown when a search finds nothing. $1 is the text the user typed."
+  },
+  "searchShowMore": {
+    "message": "さらに表示",
+    "description": "Button under a group of search results that shows more of them. Button text, short."
+  },
+  "storageSessionNotFound": {
+    "message": "セッションが見つかりません: $1",
+    "description": "Error shown when an action targets a saved session or snapshot that no longer exists (deleted elsewhere). $1 is the session's internal id."
+  },
+  "storageUnnamedSession": {
+    "message": "名前のないセッション",
+    "description": "Fallback name for a session in the sidebar when its stored record has no name (e.g. saved by a newer version). Short, like a title."
+  },
+  "storageUnknownError": {
+    "message": "不明なエラー",
+    "description": "Shown in error lines and toasts when a failure carries no message. Short."
+  },
+  "errorGeneric": {
+    "message": "問題が発生しました。詳細はブラウザのコンソールで確認できます。",
+    "description": "Shown in error lines and toasts for a failure the extension cannot explain (the technical details go to the browser console)."
+  },
+  "errorSessionChanged": {
+    "message": "その間にセッションが変更されました。もう一度お試しください。",
+    "description": "Error when a window, tab or group that was on screen is no longer in the stored session (it was changed in another tab, or by the automatic snapshots)."
+  },
+  "errorDataUnreadable": {
+    "message": "保存されたデータを読み込めませんでした。",
+    "description": "Error when stored session data is damaged and cannot be read."
+  },
+  "errorDataTooNew": {
+    "message": "このデータは新しいバージョンの Tab Organizer で保存されています。使用するには拡張機能を更新してください。",
+    "description": "Error when stored data was written by a newer version of the extension. Tab Organizer is the extension name."
+  },
+  "errorRestoreNoWindow": {
+    "message": "Chrome で復元先のウィンドウを開けませんでした。",
+    "description": "Error when Chrome did not open the new window a restore asked for."
+  },
+  "errorTabsBusy": {
+    "message": "Chrome がタブを処理中です。タブをドラッグしている場合は、離してからもう一度お試しください。",
+    "description": "Error when Chrome refuses to change tabs for a moment, usually because a tab is being dragged."
+  },
+  "errorTabGone": {
+    "message": "そのタブまたはウィンドウはもう開いていません。",
+    "description": "Error when the tab, window or tab group an action was meant for has been closed meanwhile."
+  },
+  "errorWindowBounds": {
+    "message": "保存されたウィンドウの位置がこの画面に収まりません。",
+    "description": "Error when a restored window's saved position and size do not fit the current screen."
+  },
+  "errorNotAllowed": {
+    "message": "ブラウザで許可されませんでした。",
+    "description": "Error when the browser refused an action such as copying to the clipboard (for example because the page was not focused)."
+  },
+  "storageQuotaNotice": {
+    "message": "ストレージがいっぱいです。古いスナップショットやセッションを削除してください。",
+    "description": "Red notice shown when saving or importing fails because the extension's local storage is full."
+  },
+  "storageShowStorageUse": {
+    "message": "使用容量を表示",
+    "description": "Small button on the 'storage is full' notice; scrolls to the storage meter in Settings. Button, keep short."
+  },
+  "storageTotalLine": {
+    "message": "この端末に $1 保存されています",
+    "description": "Storage meter headline in Settings. $1 is a size such as '4.6 MB'."
+  },
+  "storageDetailLine": {
+    "message": "$2: $1 · $4: $3",
+    "description": "Storage meter breakdown under the headline. $1 is the size of saved sessions (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $3 the size of snapshots, $4 the counted phrase storageSnapshotCount (e.g. '12 snapshots'). Keep the middle dot separator."
+  },
+  "storageSavedSessionCount_other": {
+    "message": "保存したセッション $1件",
+    "description": "Counted noun phrase used inside storage messages (plural). $1 is the number."
+  },
+  "storageSnapshotCount_other": {
+    "message": "スナップショット $1件",
+    "description": "Counted noun phrase for automatic snapshots used inside storage messages (plural). $1 is the number."
+  },
+  "storageSnapshotHint": {
+    "message": "自動スナップショットが $1 を使用しています。「保持する件数」を減らすか、保護されていないスナップショットを削除してください。",
+    "description": "Hint under the storage meter when snapshots take most of the space. $1 is a size such as '3.4 MB'. The quoted label is the setting settingsKeepLast; quote its translated text exactly."
+  },
+  "storageHeading": {
+    "message": "ストレージ",
+    "description": "Heading of the storage meter section in Settings. One or two words."
+  },
+  "storageMeasuring": {
+    "message": "計測しています…",
+    "description": "Shown in the storage meter while the used space is being measured. Short."
+  },
+  "storageDeleteUnprotected": {
+    "message": "保護されていないものをすべて削除",
+    "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
+  },
+  "storageDeleteUnprotectedTooltip": {
+    "message": "保護されていないスナップショットをすべて削除",
+    "description": "Tooltip of the 'Delete all unprotected' button."
+  },
+  "storageDeleteAllData": {
+    "message": "セッションデータをすべて削除",
+    "description": "Small destructive button under the storage meter that deletes all saved sessions and snapshots. Button, keep short."
+  },
+  "storageDeleteAllDataTooltip": {
+    "message": "この端末に保存したすべてのセッションとスナップショットを削除",
+    "description": "Tooltip of the 'Delete all session data' button."
+  },
+  "storageDeletedAllNotice": {
+    "message": "セッションデータをすべて削除しました。設定はそのまま残っています。",
+    "description": "Toast shown after all session data was deleted."
+  },
+  "storageDeletedUnprotectedNotice_other": {
+    "message": "保護されていないスナップショットを$1件削除しました。",
+    "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
+  },
+  "storageDeleteHistoryTitle": {
+    "message": "保護されていないスナップショットを削除しますか？",
+    "description": "Title of the confirm dialog for 'Delete all unprotected'."
+  },
+  "storageDeleteHistoryBody_other": {
+    "message": "$1件のスナップショットをこの端末から削除します。保護されたスナップショットと保存したセッションは残ります。この操作は元に戻せません。",
+    "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
+  },
+  "storageDeleteHistoryConfirm": {
+    "message": "スナップショットを削除",
+    "description": "Destructive confirm button in the 'Delete unprotected snapshots?' dialog. Button, keep short."
+  },
+  "storageDeleteAllTitle": {
+    "message": "セッションデータをすべて削除しますか？",
+    "description": "Title of step one of the two-step 'Delete all session data' confirm dialog."
+  },
+  "storageDeleteAllBody": {
+    "message": "$1と$2（$3）をこの端末から削除します。スナップショットと復元の設定は残り、開いているウィンドウやタブには影響しません。",
+    "description": "Body of step one of the 'Delete all session data' dialog. $1 is the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $2 the counted phrase storageSnapshotCount (e.g. '12 snapshots'), $3 the total size such as '4.6 MB'."
+  },
+  "storageContinue": {
+    "message": "続ける",
+    "description": "Button on step one of the 'Delete all session data' dialog that goes to the final confirmation. Button, keep short."
+  },
+  "storageDeleteAllFinalTitle": {
+    "message": "この操作は元に戻せません",
+    "description": "Title of step two (final confirmation) of the 'Delete all session data' dialog."
+  },
+  "storageDeleteAllFinalBody": {
+    "message": "この端末に保存したすべてのセッションとすべての自動スナップショットが削除されます。事前にバックアップをエクスポートしていない場合、復元することはできません。",
+    "description": "Body of step two (final confirmation) of the 'Delete all session data' dialog."
+  },
+  "storageBack": {
+    "message": "戻る",
+    "description": "Button on step two of the 'Delete all session data' dialog that returns to step one. Button, keep short."
+  },
+  "storageDeleteEverything": {
+    "message": "すべて削除",
+    "description": "Final destructive button of the 'Delete all session data' dialog. Button, keep short."
+  },
+  "restoreWindowLine": {
+    "message": "ウィンドウ $1/$2",
+    "description": "Small grey line in the restore progress toast saying which window is being filled. $1 is the window number (1-based), $2 the number of windows. Short."
+  },
+  "restoreRate_other": {
+    "message": "約$1タブ/秒",
+    "description": "Restore speed in the progress toast, approximate tabs per second. $1 is the number (may be a decimal such as 0.4). Very short."
+  },
+  "restoreLazyHint": {
+    "message": "メモリを節約するため、タブは読み込まずに開きます。各タブはクリックしたときに読み込まれます。",
+    "description": "Grey hint in the restore progress toast while tabs are opened without loading them."
+  },
+  "restoreLazyDone_other": {
+    "message": "$1個のタブは読み込まれていません。クリックすると読み込まれます。",
+    "description": "Grey line under the restore result. $1 is the number of tabs opened without loading."
+  },
+  "restoreDestinationHere": {
+    "message": "「$1」をこのウィンドウに追加します。",
+    "description": "Sentence in the confirm dialog before opening a large session into the current window. $1 is the session name."
+  },
+  "restoreDestinationNewWindows_other": {
+    "message": "「$2」を$1個のウィンドウで開きます。",
+    "description": "Sentence in the confirm dialog before opening a large session in new windows. $1 is the number of windows, $2 the session name."
+  },
+  "restoreProgress_other": {
+    "message": "タブを復元しています…（$2/$1）",
+    "description": "Main line of the restore progress toast. $1 is the total number of tabs, $2 how many are open so far."
+  },
+  "restoreCancelling": {
+    "message": "キャンセルしています…",
+    "description": "Label of the Cancel button in the restore progress toast after it was pressed, while the restore stops. Button, keep short."
+  },
+  "restoreSummaryRestored_other": {
+    "message": "$1個中$2個のタブを復元しました",
+    "description": "First clause of the restore result in the toast; further clauses follow, separated by ' · '. $1 is the number of tabs attempted, $2 how many opened."
+  },
+  "restoreSummaryCancelled_other": {
+    "message": "復元をキャンセルしました: $1個のタブを開きました",
+    "description": "First clause of the result of a cancelled restore; further clauses may follow, separated by ' · '. $1 is the number of tabs opened before Cancel."
+  },
+  "restoreSummaryDiscarded_other": {
+    "message": "$1個のタブはクリックすると読み込まれます",
+    "description": "Clause of the restore result (joined with ' · '), lower-case start in English. $1 is the number of tabs opened without loading."
+  },
+  "restoreSummaryKept": {
+    "message": "すでに開いたタブはそのまま残しました",
+    "description": "Clause of the result of a cancelled restore (joined with ' · '), lower-case start in English: cancelling does not close the tabs already opened."
+  },
+  "restoreSummarySkipped_other": {
+    "message": "$1個をスキップ",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tabs not opened because their address cannot be opened by an extension."
+  },
+  "restoreSummaryFailed_other": {
+    "message": "$1個を開けませんでした",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tabs Chrome failed to open."
+  },
+  "restoreSummaryProblems_other": {
+    "message": "グループ/ウィンドウの問題 $1件",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tab groups or window states that could not be recreated."
+  },
+  "restoreSkippedItem": {
+    "message": "スキップ: $1",
+    "description": "List item under the restore result. $1 is the address of a tab that was not opened."
+  },
+  "restoreFailedItem": {
+    "message": "失敗: $1（$2）",
+    "description": "List item under the restore result. $1 is the address of a tab that failed to open, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreFailedItemPlain": {
+    "message": "失敗: $1",
+    "description": "List item under the restore result when there is no reason that can be shown. $1 is the address of a tab that failed to open."
+  },
+  "restoreProblemGroup": {
+    "message": "グループ「$1」を再作成できませんでした（$2）",
+    "description": "List item under the restore result. $1 is the name of a tab group that could not be recreated, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreProblemGroupPlain": {
+    "message": "グループ「$1」を再作成できませんでした。",
+    "description": "List item under the restore result. $1 is the name of a tab group that could not be recreated."
+  },
+  "restoreProblemActivate": {
+    "message": "$1 に切り替えられませんでした（$2）",
+    "description": "List item under the restore result. $1 is the address of the tab that should have been the window's active tab, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreProblemActivatePlain": {
+    "message": "$1 に切り替えられませんでした。",
+    "description": "List item under the restore result. $1 is the address of the tab that should have been the window's active tab."
+  },
+  "restoreProblemWindowState": {
+    "message": "ウィンドウのサイズを復元できませんでした（$1）",
+    "description": "List item under the restore result when a window could not be maximized, minimized or made full screen as saved. $1 is the reason, a complete sentence already in your language."
+  },
+  "restoreProblemWindowStatePlain": {
+    "message": "ウィンドウのサイズを復元できませんでした。",
+    "description": "List item under the restore result when a window could not be maximized, minimized or made full screen as saved."
+  },
+  "restoreDismiss": {
+    "message": "閉じる",
+    "description": "Tooltip and screen-reader label of the x button that closes the restore result toast."
+  },
+  "restoreSessionTooNew": {
+    "message": "このセッションは新しいバージョンの Tab Organizer で保存されたため、表示できません。",
+    "description": "Error shown in place of a session whose stored format is from a newer version of the extension. Tab Organizer is the extension name."
+  },
+  "workerMenuSaveAll": {
+    "message": "すべてのウィンドウをセッションとして保存",
+    "description": "Item in the toolbar icon's right-click menu: saves every open window as one session. Menu item, keep it short (under 40 characters). The Open tabs first-run hint quotes this label too, so it must match the menu."
+  },
+  "workerDuplicatesGroupTitle": {
+    "message": "重複（$1）",
+    "description": "Title of a Chrome tab group that holds duplicate tabs whose address has no host name. $1 is the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short (under 20 characters)."
+  },
+  "workerDuplicatesHostGroupTitle": {
+    "message": "$1（$2）",
+    "description": "Title of a Chrome tab group that holds duplicate tabs of one address. $1 is the site's host name (such as example.com, never translated), $2 the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short."
+  }
+}

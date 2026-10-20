@@ -1,4 +1,5 @@
-import { pluralize } from '@/lib/display-format';
+import { knownErrorText } from '@/lib/error-message';
+import { formatNumber, joinFacts, t, tp } from '@/lib/i18n';
 import type { RestoreResult, RestoreTarget } from '@/lib/session-restore';
 import type { Session } from '@/types';
 
@@ -19,9 +20,9 @@ export function needsRestoreConfirm(session: Session): boolean {
  */
 export function formatRestoreDestination(session: Session, target: RestoreTarget): string {
   if (target.kind === 'window') {
-    return `${session.name} will be added to this window.`;
+    return t('restoreDestinationHere', session.name);
   }
-  return `${session.name} will open ${pluralize(session.windows.length, 'window')}.`;
+  return tp('restoreDestinationNewWindows', session.windows.length, session.name);
 }
 
 // executeRestore records group/activation/window-state failures as `errors` entries whose `url`
@@ -31,6 +32,38 @@ const STRUCTURAL_ERROR_PREFIXES = ['group:', 'activate:', 'window-state:'];
 
 function isStructuralRestoreError(entry: RestoreResult['errors'][number]): boolean {
   return STRUCTURAL_ERROR_PREFIXES.some((prefix) => entry.url.startsWith(prefix));
+}
+
+/**
+ * One line of the restore result's error list, in the UI language. `entry.message` is Chrome's
+ * (English) text; it is shown only when `knownErrorText()` can say it in the UI language, and the
+ * line is worded without a reason otherwise. The synthetic markers become words too: a group by
+ * its title, an activation by the tab's address, a window state without the internal state name.
+ */
+export function restoreErrorLine(entry: RestoreResult['errors'][number]): string {
+  const reason = knownErrorText(entry.message);
+  const { url } = entry;
+  if (url.startsWith('group:')) {
+    const title = url.slice('group:'.length);
+    const name = title === '' ? t('treeUntitledGroup') : title;
+    return reason === undefined
+      ? t('restoreProblemGroupPlain', name)
+      : t('restoreProblemGroup', name, reason);
+  }
+  if (url.startsWith('activate:')) {
+    const address = url.slice('activate:'.length);
+    return reason === undefined
+      ? t('restoreProblemActivatePlain', address)
+      : t('restoreProblemActivate', address, reason);
+  }
+  if (url.startsWith('window-state:')) {
+    return reason === undefined
+      ? t('restoreProblemWindowStatePlain')
+      : t('restoreProblemWindowState', reason);
+  }
+  return reason === undefined
+    ? t('restoreFailedItemPlain', url)
+    : t('restoreFailedItem', url, reason);
 }
 
 interface SplitRestoreErrors {
@@ -67,28 +100,28 @@ export function formatRestoreSummary(
 ): string {
   const parts =
     options.cancelled === true
-      ? [`Restore cancelled: ${pluralize(result.restored, 'tab')} opened`]
-      : [`Restored ${result.restored} of ${pluralize(total, 'tab')}`];
+      ? [tp('restoreSummaryCancelled', result.restored)]
+      : [tp('restoreSummaryRestored', total, formatNumber(result.restored))];
   if (result.discarded > 0) {
-    parts.push(`${pluralize(result.discarded, 'tab')} will load when clicked`);
+    parts.push(tp('restoreSummaryDiscarded', result.discarded));
   }
   if (options.cancelled === true) {
     // Cancel stops the restore; it never undoes it (spec §14: "already-created tabs are kept").
     // Say so, or the windows left behind look like a half-failed restore to clean up by hand.
     if (result.restored > 0) {
-      parts.push('the tabs already opened were kept');
+      parts.push(t('restoreSummaryKept'));
     }
-    return parts.join(' · ');
+    return joinFacts(parts);
   }
   const { tabErrors, structuralProblems } = splitRestoreErrors(result);
   if (result.skipped.length > 0) {
-    parts.push(`${result.skipped.length} skipped`);
+    parts.push(tp('restoreSummarySkipped', result.skipped.length));
   }
   if (tabErrors.length > 0) {
-    parts.push(`${tabErrors.length} could not be opened`);
+    parts.push(tp('restoreSummaryFailed', tabErrors.length));
   }
   if (structuralProblems.length > 0) {
-    parts.push(pluralize(structuralProblems.length, 'group/window problem'));
+    parts.push(tp('restoreSummaryProblems', structuralProblems.length));
   }
-  return parts.join(' · ');
+  return joinFacts(parts);
 }

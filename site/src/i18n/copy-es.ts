@@ -35,6 +35,8 @@ export const es: SiteCopy = {
     lead: 'Tab Organizer ordena y agrupa las pestañas de tu ventana, elimina las duplicadas y guarda ventanas completas como sesiones que puedes recuperar cuando quieras. Todo se queda en tu equipo.',
     imageAlt:
       'La página de Tab Organizer: las sesiones guardadas en la columna izquierda y, a la derecha, una sesión de dos ventanas con sus pestañas fijadas y grupos de pestañas',
+    languages:
+      'La extensión está disponible en English, 한국어, Español y 日本語, y usa el idioma de Chrome.',
   },
   sort: {
     kicker: 'Ordenar',
@@ -47,7 +49,7 @@ export const es: SiteCopy = {
     afterAlt:
       'La misma barra tras un clic: las pestañas ordenadas por sitio, con las de GitHub y las de Google juntas en grupos de pestañas',
     points: [
-      'Por dirección, por título o agrupadas por sitio en el orden en que las abriste',
+      'Por URL, Por título o Personalizado, que agrupa por sitio en el orden en que las abriste',
       'Agrupa por nombre de host completo, o por dominio para reunir todos los servicios de Google',
       'Los grupos de pestañas existentes se ordenan por nombre y por dentro; las pestañas fijadas no se mueven',
     ],
@@ -57,13 +59,13 @@ export const es: SiteCopy = {
       shot: 'restore',
       kicker: 'Sesiones',
       title: 'Guarda un proyecto para después y recupéralo tal como lo dejaste',
-      body: 'Guarda todas las ventanas desde el menú contextual o con el botón Guardar, o solo la actual con un atajo de teclado que tú asignes. Al restaurar vuelven el orden de las pestañas, las pestañas fijadas, los grupos de pestañas, la pestaña activa y el tamaño de la ventana.',
+      body: 'Guarda todas las ventanas desde el menú contextual o con el botón Guardar, o solo la actual con una combinación de teclas que tú asignes. Al restaurar vuelven el orden de las pestañas, las pestañas fijadas, los grupos de pestañas, la pestaña activa y el tamaño de la ventana.',
       points: [
         'Abre una sesión en ventanas nuevas o agrégala a la ventana actual',
-        'Las sesiones grandes se cargan poco a poco, con progreso y botón Cancelar',
+        'Las sesiones grandes se cargan en diferido, con progreso y botón Cancelar',
         'Restaurar nunca borra la sesión guardada',
       ],
-      alt: 'Tab Organizer pregunta si restaurar 112 pestañas y ofrece cargarlas al hacer clic, sobre una sesión guardada de tres ventanas',
+      alt: 'Tab Organizer pregunta «¿Restaurar 112 pestañas?» con la opción «Cargar las pestañas en diferido», sobre una sesión guardada de tres ventanas',
     },
     {
       shot: 'history',
@@ -91,15 +93,15 @@ export const es: SiteCopy = {
     },
     {
       shot: 'settings',
-      kicker: 'Duplicadas y configuración',
+      kicker: 'Pestañas duplicadas y configuración',
       title: 'Pestañas duplicadas, a tu manera',
-      body: 'La opción predeterminada es Conservar una: las copias de la misma página se cierran y se queda la que estás viendo. También puedes conservarlas todas o agruparlas para revisarlas antes.',
+      body: 'La opción predeterminada es Conservar una: las copias de la misma página se cierran y se queda la que estás viendo. También puedes elegir Conservar todas, o Agruparlas para reunir las copias en un grupo de pestañas y revisarlas antes.',
       points: [
         'Cada opción se guarda al momento, sin botón Guardar',
         'Las opciones para pestañas fijadas y suspendidas quedan en Avanzado',
         '¿Cerraste una duplicada sin querer? Ctrl+Mayús+T la recupera',
       ],
-      alt: 'El cuadro de configuración de Tab Organizer: Ordenar por URL, Pestañas duplicadas en "Conservar una" e instantáneas automáticas activadas',
+      alt: 'El cuadro de Configuración de Tab Organizer: «Ordenar por» en «Por URL», «Pestañas duplicadas» en «Conservar una» e «Instantáneas automáticas» activadas',
     },
   ],
   more: {
@@ -108,7 +110,7 @@ export const es: SiteCopy = {
     cards: [
       {
         icon: 'assemble',
-        title: '¡Reunir! (Assemble!)',
+        title: '¡Reunir!',
         body: 'Reúne en la ventana que estás usando las pestañas de todas las demás. Las pestañas se mueven, no se vuelven a abrir, así que se conservan los grupos, el historial y lo que hubieras escrito.',
       },
       {
@@ -119,7 +121,7 @@ export const es: SiteCopy = {
       {
         icon: 'keyboard',
         title: 'Combinaciones de teclas',
-        body: 'Ordena con Alt+Mayús+S y reúne todas las ventanas con Alt+Mayús+A (Opción en Mac). Guardar una sesión y abrir Tab Organizer pueden tener sus propias teclas.',
+        body: 'Ordena con Alt+Mayús+S y ¡Reunir! con Alt+Mayús+A (Opción en Mac). Guardar una sesión y abrir Tab Organizer pueden tener sus propias teclas.',
       },
       {
         icon: 'grouping',
@@ -158,7 +160,7 @@ export const es: SiteCopy = {
     startSteps: [
       'Agrega Tab Organizer desde Chrome Web Store y fija su icono en la barra de herramientas.',
       'Haz clic en el icono para ordenar la ventana en la que estás.',
-      'Haz clic con el botón derecho en el icono para ver ¡Reunir! (Assemble!) y Guardar todas las ventanas como sesión. Opciones abre la página de Tab Organizer, con tus sesiones y tu configuración.',
+      'Haz clic con el botón derecho en el icono para ver ¡Reunir! y Guardar todas las ventanas como sesión. Opciones abre la página de Tab Organizer, con tus sesiones y tu configuración.',
     ],
     reportTitle: 'Avisar de un problema',
     reportLead:
@@ -178,7 +180,7 @@ export const es: SiteCopy = {
     faq: [
       {
         q: '¿Ordena todas las ventanas a la vez?',
-        a: 'Ordena la ventana en la que estás, así que haz clic en el icono en cada ventana que quieras ordenar. Para juntar antes todas las ventanas, usa ¡Reunir! (Assemble!) en el menú contextual. Las sesiones sí pueden abarcar todas las ventanas.',
+        a: 'Ordena la ventana en la que estás, así que haz clic en el icono en cada ventana que quieras ordenar. Para juntar antes todas las ventanas, usa ¡Reunir! en el menú contextual. Las sesiones sí pueden abarcar todas las ventanas.',
       },
       {
         q: '¿Desordena mis pestañas fijadas?',
@@ -198,7 +200,7 @@ export const es: SiteCopy = {
       },
       {
         q: '¿Cómo restauro una sesión?',
-        a: 'Haz clic con el botón derecho en el icono y elige Opciones (o usa tu atajo), selecciona la sesión en la columna izquierda y pulsa Abrir. Las ventanas vuelven con su orden, pestañas fijadas, grupos de pestañas y pestaña activa. Abrir aquí agrega una ventana guardada a la actual.',
+        a: 'Haz clic con el botón derecho en el icono y elige Opciones (o usa tu combinación de teclas), selecciona la sesión en la columna izquierda y pulsa Abrir. Las ventanas vuelven con su orden, pestañas fijadas, grupos de pestañas y pestaña activa. Abrir aquí agrega una ventana guardada a la actual.',
       },
       {
         q: '¿Puedo llevar mis sesiones a otro equipo?',

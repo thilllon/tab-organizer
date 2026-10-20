@@ -1,3 +1,4 @@
+import { DialogCloseButton } from '@/components/dialog-close-button';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { pluralize } from '@/lib/display-format';
+import { t, tp } from '@/lib/i18n';
 
 interface DeleteAllHistoryDialogProps {
   /** How many unprotected snapshots the confirm covers. */
@@ -29,22 +30,20 @@ export function DeleteAllHistoryDialog({
 }: DeleteAllHistoryDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Delete unprotected snapshots?</DialogTitle>
-          <DialogDescription>
-            {pluralize(count, 'snapshot')} will be removed from this device. Protected snapshots and
-            saved sessions are kept. This cannot be undone.
-          </DialogDescription>
+          <DialogTitle>{t('storageDeleteHistoryTitle')}</DialogTitle>
+          <DialogDescription>{tp('storageDeleteHistoryBody', count)}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('commonCancel')}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Delete snapshots
+            {t('storageDeleteHistoryConfirm')}
           </Button>
         </DialogFooter>
+        <DialogCloseButton />
       </DialogContent>
     </Dialog>
   );

@@ -5,6 +5,7 @@ import { CloseWindowDialog } from '@/components/close-window-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WindowTree } from '@/components/window-tree';
+import { formatNumber, t } from '@/lib/i18n';
 import type { OpenWindowView } from '@/lib/open-windows';
 import type { TabSelection } from '@/lib/tab-selection';
 import { closeTab, closeWindow, goToTab } from '@/lib/window-actions';
@@ -88,9 +89,9 @@ export function OpenWindowsPane({
       {/* The surrounding view already says "Open tabs" above it; the heading names the tree. */}
       <div className="sr-only">
         <h2 id="open-windows-heading" className="text-sm font-semibold">
-          Open windows
+          {t('openWindowsHeading')}
         </h2>
-        <span className="text-xs text-muted-foreground">{windows.length}</span>
+        <span className="text-xs text-muted-foreground">{formatNumber(windows.length)}</span>
       </div>
 
       {error !== undefined && (
@@ -105,11 +106,11 @@ export function OpenWindowsPane({
       )}
 
       {loading ? (
-        <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t('commonLoading')}</p>
       ) : windows.length === 0 ? (
         <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
           <AppWindow className="size-4" />
-          No open windows to show.
+          {t('openNoWindows')}
         </p>
       ) : (
         // The live windows are a tree too (spec §12 Phase 6): window -> group -> tab.
@@ -121,8 +122,8 @@ export function OpenWindowsPane({
               index={index}
               badge={
                 window.windowId === currentWindowId ? (
-                  <Badge variant="secondary" title="The window this page is in">
-                    This window
+                  <Badge variant="secondary" title={t('openThisWindowTitle')}>
+                    {t('openThisWindow')}
                   </Badge>
                 ) : undefined
               }
@@ -133,15 +134,15 @@ export function OpenWindowsPane({
                     variant="outline"
                     onClick={() => onSaveWindow(window.windowId)}
                     disabled={busy}
-                    title="Save this window as a session"
+                    title={t('openSaveWindowTitle')}
                   >
                     <Save />
-                    Save window
+                    {t('openSaveWindow')}
                   </Button>
                   <Button
                     size="xs"
                     variant="ghost"
-                    title="Close this window and all its tabs"
+                    title={t('openCloseWindowTooltip')}
                     onClick={() =>
                       requestClose({
                         windowId: window.windowId,
@@ -152,7 +153,7 @@ export function OpenWindowsPane({
                     }
                   >
                     <X />
-                    Close window
+                    {t('openCloseWindow')}
                   </Button>
                 </>
               }
@@ -185,8 +186,8 @@ export function OpenWindowsPane({
                     <Button
                       size="icon-xs"
                       variant="ghost"
-                      aria-label="Go to tab"
-                      title="Go to tab"
+                      aria-label={t('openGoToTab')}
+                      title={t('openGoToTab')}
                       onClick={() => activateTab(tab.tabId, window.windowId)}
                     >
                       <SquareArrowOutUpRight />
@@ -194,8 +195,8 @@ export function OpenWindowsPane({
                     <Button
                       size="icon-xs"
                       variant="ghost"
-                      aria-label="Close tab"
-                      title="Close tab"
+                      aria-label={t('openCloseTab')}
+                      title={t('openCloseTab')}
                       onClick={() => removeTab(tab.tabId)}
                     >
                       <X />

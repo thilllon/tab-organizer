@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  CHANGE_ONLY_IN_CHROME,
+  changeOnlyInChrome,
   commandRows,
-  SORT_COMMAND_LABEL,
+  sortCommandLabel,
   shortcutsDescription,
   suggestedKeyFor,
-  UNNAMED_COMMAND,
+  unnamedCommand,
 } from '@/lib/command-rows';
 
 describe('commandRows', () => {
   it('names the built-in icon-click command, which Chrome leaves without a description', () => {
     const [row] = commandRows([{ name: '_execute_action', description: '', shortcut: '' }], false);
-    expect(row?.name).toBe(SORT_COMMAND_LABEL);
+    expect(row?.name).toBe(sortCommandLabel());
     expect(row?.keys).toEqual([]);
   });
 
@@ -30,7 +30,7 @@ describe('commandRows', () => {
       false,
     );
     expect(rows).toEqual([
-      { id: '_execute_action', name: SORT_COMMAND_LABEL, keys: ['Alt', 'Shift', 'S'] },
+      { id: '_execute_action', name: sortCommandLabel(), keys: ['Alt', 'Shift', 'S'] },
       { id: 'save-session', name: 'Save the current window as a session', keys: [] },
       { id: 'assemble-tabs', name: 'Move the tabs', keys: ['Alt', 'A'] },
     ]);
@@ -63,7 +63,7 @@ describe('commandRows', () => {
     expect(commandRows([{ name: 'mystery' }], false)[0]?.name).toBe('mystery');
     expect(commandRows([{ name: 'mystery', description: '  ' }], false)[0]?.name).toBe('mystery');
     const [nameless] = commandRows([{ description: '' }], false);
-    expect(nameless?.name).toBe(UNNAMED_COMMAND);
+    expect(nameless?.name).toBe(unnamedCommand());
     expect(nameless?.id).not.toBe('');
   });
 });
@@ -90,9 +90,9 @@ describe('shortcutsDescription', () => {
   });
 });
 
-describe('CHANGE_ONLY_IN_CHROME', () => {
+describe('changeOnlyInChrome', () => {
   it("says the keys are changed in Chrome's settings, without an em dash", () => {
-    expect(CHANGE_ONLY_IN_CHROME).toContain('Chrome');
-    expect(CHANGE_ONLY_IN_CHROME).not.toContain(' - ');
+    expect(changeOnlyInChrome()).toContain('Chrome');
+    expect(changeOnlyInChrome()).not.toContain(' - ');
   });
 });
