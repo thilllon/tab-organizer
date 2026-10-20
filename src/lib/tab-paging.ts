@@ -1,4 +1,4 @@
-import { pluralize } from '@/lib/display-format';
+import { tp } from '@/lib/i18n';
 
 /**
  * Paging for very large windows (spec §12 Phase 6: "a 10,000-tab session never mounts 10,000
@@ -44,5 +44,5 @@ export function hiddenTabCount(visible: number, total: number): number {
  */
 export function showMoreLabel(visible: number, total: number): string {
   const hidden = hiddenTabCount(visible, total);
-  return `Show ${pluralize(Math.min(TAB_PAGE_SIZE, hidden), 'more tab')}`;
+  return tp('treeShowMoreTabs', Math.min(TAB_PAGE_SIZE, hidden));
 }

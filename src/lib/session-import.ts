@@ -1,3 +1,4 @@
+import { formatNumber, t } from '@/lib/i18n';
 import { isExportBundle, isRecord, isSession } from '@/lib/import-guards';
 import { contentHash } from '@/lib/session-hash';
 import { migrateSession } from '@/lib/session-migrate';
@@ -120,14 +121,14 @@ function sessionRecords(value: unknown): unknown[] | null {
   return isRecord(value) ? [value] : null;
 }
 
-/** Fresh id, saved/import, "(imported)" suffix, timestamps = now; unknown fields are dropped. */
+/** Fresh id, saved/import, the "(imported)" suffix (in the UI language), timestamps = now; unknown fields are dropped. */
 function asImported(session: Session, now: number): Session {
   // `protected` is a history-only flag and an imported session is always a saved one.
   const imported: Session = {
     schemaVersion: session.schemaVersion,
     id: crypto.randomUUID(),
     kind: 'saved',
-    name: `${session.name} (imported)`,
+    name: t('expImportedName', session.name),
     origin: 'import',
     createdAt: now,
     updatedAt: now,
@@ -288,7 +289,7 @@ function folderToSession(folder: BookmarkFolder, now: number): Session | null {
     return null;
   }
   return buildSession(
-    folder.title === '' ? 'Imported bookmarks' : folder.title,
+    folder.title === '' ? t('expImportedBookmarks') : folder.title,
     focusFirst(windows),
     now,
   );
@@ -306,7 +307,9 @@ export function parseNetscapeHtml(text: string, now: number): Session[] | null {
   const root = parseBookmarkTree(text);
   const sessions: Session[] = [];
   if (root.links.length > 0) {
-    sessions.push(buildSession('Imported bookmarks', [buildWindow(root.links, [], true)], now));
+    sessions.push(
+      buildSession(t('expImportedBookmarks'), [buildWindow(root.links, [], true)], now),
+    );
   }
   for (const folder of root.folders) {
     const session = folderToSession(folder, now);
@@ -406,7 +409,7 @@ export function parseTextOrMarkdown(text: string, now: number): Session[] | null
   if (windows.length === 0) {
     return null;
   }
-  return [buildSession('Imported links', focusFirst(windows), now)];
+  return [buildSession(t('expImportedLinks'), focusFirst(windows), now)];
 }
 
 // ---------------------------------------------------------------------------
@@ -420,10 +423,36 @@ export function parseTextOrMarkdown(text: string, now: number): Session[] | null
  */
 export const parsers: ImportParser[] = [parseJson, parseNetscapeHtml, parseTextOrMarkdown];
 
+/**
+ * Where in `text` the JSON parser stopped, read out of its (English) message: V8 says
+ * "... at position 52" and newer builds add "(line 1 column 53)". `undefined` when it says
+ * neither, e.g. "Unexpected end of JSON input".
+ */
+export function jsonErrorLocation(
+  message: string,
+  text: string,
+): { line: number; column: number } | undefined {
+  const lineColumn = /line (\d+) column (\d+)/.exec(message);
+  if (lineColumn !== null) {
+    return { line: Number(lineColumn[1]), column: Number(lineColumn[2]) };
+  }
+  const position = /position (\d+)/.exec(message);
+  if (position === null) {
+    return undefined;
+  }
+  const before = text.slice(0, Number(position[1]));
+  const lines = before.split('\n');
+  return { line: lines.length, column: (lines.at(-1)?.length ?? 0) + 1 };
+}
+
 function describeJsonFailure(text: string): string {
   const parsed = tryParseJson(text);
   if ('error' in parsed) {
-    return `Malformed JSON: ${parsed.error}`;
+    // The parser's own words are English whatever the UI language; only where it stopped is kept.
+    const location = jsonErrorLocation(parsed.error, text);
+    return location === undefined
+      ? t('expErrorMalformedJson')
+      : t('expErrorMalformedJsonAt', formatNumber(location.line), formatNumber(location.column));
   }
   const { value } = parsed;
   let records: unknown[];
@@ -433,14 +462,14 @@ function describeJsonFailure(text: string): string {
     }
     const { sessions } = value;
     if (!Array.isArray(sessions)) {
-      return 'The export bundle has no "sessions" list.';
+      return t('expErrorNoSessionsList');
     }
     records = sessions;
   } else {
     records = Array.isArray(value) ? value : [value];
   }
   if (records.length === 0) {
-    return 'The export contains no sessions.';
+    return t('expErrorNoSessions');
   }
   for (const [index, record] of records.entries()) {
     if (
@@ -451,14 +480,14 @@ function describeJsonFailure(text: string): string {
       return unsupportedVersion(record.schemaVersion);
     }
     if (!isSession(record)) {
-      return `Session ${index + 1} is not a valid Tab Organizer session record.`;
+      return t('expErrorInvalidSession', formatNumber(index + 1));
     }
   }
-  return 'The JSON is not a Tab Organizer export.';
+  return t('expErrorNotExport');
 }
 
 function unsupportedVersion(version: number): string {
-  return `Unsupported session schema version ${version} (this version reads ${SESSION_SCHEMA_VERSION}).`;
+  return t('expErrorSchemaVersion', String(version), String(SESSION_SCHEMA_VERSION));
 }
 
 function describeFailure(format: ImportFormat, text: string): string {
@@ -467,11 +496,11 @@ function describeFailure(format: ImportFormat, text: string): string {
       return describeJsonFailure(text);
     }
     case 'html': {
-      return 'No bookmarks were found in the HTML.';
+      return t('expErrorNoBookmarks');
     }
     case 'markdown':
     case 'text': {
-      return 'No URLs were found.';
+      return t('expErrorNoUrls');
     }
   }
 }
@@ -480,11 +509,11 @@ function collectWarnings(sessions: Session[]): string[] {
   const warnings: string[] = [];
   for (const session of sessions) {
     if (session.windows.length === 0) {
-      warnings.push(`"${session.name}" has no windows.`);
+      warnings.push(t('expWarnNoWindows', session.name));
     }
     for (const [index, window] of session.windows.entries()) {
       if (window.tabs.length === 0) {
-        warnings.push(`"${session.name}": window ${index + 1} has no tabs.`);
+        warnings.push(t('expWarnEmptyWindow', session.name, formatNumber(index + 1)));
       }
     }
   }
@@ -497,8 +526,7 @@ export function importSessions(text: string, now: number): ImportResult {
   if (format === null) {
     return {
       format: null,
-      error:
-        'Nothing to import: paste a Tab Organizer JSON export, a bookmarks HTML file, Markdown, or a list of URLs.',
+      error: t('expErrorNothingToImport'),
     };
   }
   for (const parse of parsers) {

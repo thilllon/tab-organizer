@@ -1,3 +1,4 @@
+import { DialogCloseButton } from '@/components/dialog-close-button';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { pluralize } from '@/lib/display-format';
+import { formatNumber, joinSentences, t, tp } from '@/lib/i18n';
 
 interface CloseWindowDialogProps {
   /** Window number as shown in the pane (1-based), or undefined while the dialog fades out. */
@@ -30,22 +31,29 @@ export function CloseWindowDialog({
 }: CloseWindowDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Close window {windowNumber ?? ''}?</DialogTitle>
+          <DialogTitle>
+            {t(
+              'openCloseWindowQuestion',
+              windowNumber === undefined ? '' : formatNumber(windowNumber),
+            )}
+          </DialogTitle>
           <DialogDescription>
-            {pluralize(tabCount, 'tab')} will be closed. Save the window first if you want it back.
-            {isCurrent ? ' This is the window the Sessions dashboard is in.' : ''}
+            {isCurrent
+              ? joinSentences(tp('openCloseWindowBody', tabCount), t('openCloseWindowIsCurrent'))
+              : tp('openCloseWindowBody', tabCount)}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('commonCancel')}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Close window
+            {t('openCloseWindow')}
           </Button>
         </DialogFooter>
+        <DialogCloseButton />
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,7 @@
 import { Upload } from 'lucide-react';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 
+import { DialogCloseButton } from '@/components/dialog-close-button';
 import { QuotaNotice } from '@/components/quota-notice';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,8 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { pluralize } from '@/lib/display-format';
-import { errorMessage } from '@/lib/error-message';
+import { reportError } from '@/lib/error-message';
+import { formatNumber, t, tp } from '@/lib/i18n';
 import {
   buildImportPreview,
   checkImportSize,
@@ -34,7 +35,8 @@ import type { Session } from '@/types';
 /** Extensions the picker offers; every one of them is handled by a parser in session-import.ts. */
 const IMPORT_ACCEPT = '.json,.html,.htm,.md,.txt';
 
-const TEXTAREA_LABEL = 'Paste sessions, bookmarks or links';
+/** Stands in for the format name so it can be drawn in bold wherever the translation puts it. */
+const FORMAT_SLOT = '\uE000';
 
 type ParsedInput =
   | { kind: 'empty' }
@@ -152,7 +154,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
         setError(undefined);
         setQuotaFull(true);
       } else {
-        setError(errorMessage(err));
+        setError(reportError('import', err));
       }
     } finally {
       setBusy(false);
@@ -160,33 +162,32 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
   };
 
   const shownError = error ?? (parsed.kind === 'error' ? parsed.error : undefined);
+  const textareaLabel = t('expPasteLabel');
+  const [detectedBefore, detectedAfter = ''] = t('expDetected', FORMAT_SLOT).split(FORMAT_SLOT);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent showCloseButton={false} className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import sessions</DialogTitle>
-          <DialogDescription>
-            A Tab Organizer JSON export, a bookmarks HTML file, Markdown or a plain list of links.
-            Imported sessions are added to the saved list on this device; nothing is uploaded.
-          </DialogDescription>
+          <DialogTitle>{t('expImportTitle')}</DialogTitle>
+          <DialogDescription>{t('expImportDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
-          <Label htmlFor="import-file">Choose a file</Label>
+          <Label htmlFor="import-file">{t('expChooseFile')}</Label>
           <Input id="import-file" type="file" accept={IMPORT_ACCEPT} onChange={handleFile} />
           {fileName !== undefined && <p className="text-xs text-muted-foreground">{fileName}</p>}
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="import-text">{TEXTAREA_LABEL}</Label>
+          <Label htmlFor="import-text">{textareaLabel}</Label>
           <textarea
             id="import-text"
-            aria-label={TEXTAREA_LABEL}
+            aria-label={textareaLabel}
             value={text}
             spellCheck={false}
             rows={5}
-            placeholder="https://example.com/&#10;- [Docs](https://example.com/docs)"
+            placeholder={t('expPastePlaceholder')}
             className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
             onChange={(event) => {
               setError(undefined);
@@ -218,8 +219,10 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
         {parsed.kind === 'ready' && (
           <div className="grid gap-2">
             <p className="text-sm">
-              Detected <strong>{importFormatLabel(parsed.format)}</strong> ·{' '}
-              {formatImportTotals(parsed.preview)}
+              {detectedBefore}
+              <strong>{importFormatLabel(parsed.format)}</strong>
+              {detectedAfter}
+              {t('commonFactJoin', '', formatImportTotals(parsed.preview))}
             </p>
             {parsed.warnings.length > 0 && (
               <ul className="list-inside list-disc text-xs text-muted-foreground">
@@ -239,15 +242,21 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                       {previewSession.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {pluralize(previewSession.windowCount, 'window')} ·{' '}
-                      {pluralize(previewSession.tabCount, 'tab')}
+                      {t(
+                        'commonWindowsAndTabs',
+                        tp('windowCount', previewSession.windowCount),
+                        tp('tabCount', previewSession.tabCount),
+                      )}
                     </p>
                     <ul className="mt-1 ml-2 space-y-1 border-l pl-2">
                       {previewSession.windows.map((previewWindow) => (
                         <li key={previewWindow.number}>
                           <p className="text-xs font-medium">
-                            Window {previewWindow.number} ·{' '}
-                            {pluralize(previewWindow.tabCount, 'tab')}
+                            {tp(
+                              'expPreviewWindow',
+                              previewWindow.tabCount,
+                              formatNumber(previewWindow.number),
+                            )}
                           </p>
                           <ul className="text-xs text-muted-foreground">
                             {previewWindow.titles.map((title, titleIndex) => (
@@ -261,14 +270,14 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                               </li>
                             ))}
                             {previewWindow.moreTabs > 0 && (
-                              <li>+{pluralize(previewWindow.moreTabs, 'more tab')}</li>
+                              <li>{tp('expMoreTabs', previewWindow.moreTabs)}</li>
                             )}
                           </ul>
                         </li>
                       ))}
                       {previewSession.moreWindows > 0 && (
                         <li className="text-xs text-muted-foreground">
-                          +{pluralize(previewSession.moreWindows, 'more window')}
+                          {tp('expMoreWindows', previewSession.moreWindows)}
                         </li>
                       )}
                     </ul>
@@ -277,7 +286,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
               </ul>
               {parsed.preview.moreSessions > 0 && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  +{pluralize(parsed.preview.moreSessions, 'more session')}
+                  {tp('expMoreSessions', parsed.preview.moreSessions)}
                 </p>
               )}
             </div>
@@ -286,13 +295,14 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('commonCancel')}
           </Button>
           <Button disabled={parsed.kind !== 'ready' || busy} onClick={() => void commit()}>
             <Upload />
-            {parsed.kind === 'ready' ? importButtonLabel(parsed.sessions.length) : 'Import'}
+            {parsed.kind === 'ready' ? importButtonLabel(parsed.sessions.length) : t('expImport')}
           </Button>
         </DialogFooter>
+        <DialogCloseButton />
       </DialogContent>
     </Dialog>
   );

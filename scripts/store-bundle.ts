@@ -2,9 +2,10 @@
  * Collects everything needed to submit a release to the Chrome Web Store into one folder.
  *
  * Nothing here *produces* an asset. `prepare-registration.ts` shoots the screenshots and promo
- * images and `zip.ts` packages `dist/`; this step gathers those, takes the description out of
- * `docs/store_listing.md`, puts the screenshots in the order they should be uploaded, and writes a
- * SUBMIT.md whose every field is read from the built manifest rather than retyped - a listing that
+ * images and `zip.ts` packages `dist/`; this step gathers those, takes every language's
+ * description out of `docs/store_listing.md`, puts the screenshots in the order they should be
+ * uploaded (per language when `screenshots/<lang>/` exists), and writes a SUBMIT.md whose every
+ * field is read from the built manifest and its `_locales` rather than retyped - a listing that
  * disagrees with the manifest it ships beside is the sort of thing a reviewer bounces.
  *
  * It runs as the last `after:bump` hook of `pnpm release`, and standalone as `pnpm store:bundle`
@@ -20,11 +21,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  extractDescription,
+  DEFAULT_LISTING_LOCALE,
+  extractListings,
+  type ListingLocale,
   LISTING_SOURCE,
+  type LocalizedListing,
+  LOCALE_NAMES,
+  readLocaleMessage,
   validateDescription,
   validateSummary,
 } from './store-listing';
+import { readDisplayName, zipFileName } from './zip-name';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -107,8 +114,39 @@ interface Manifest {
   name: string;
   version: string;
   description: string;
+  default_locale?: string;
   permissions?: string[];
   host_permissions?: string[];
+}
+
+/** One language's part of SUBMIT.md, every text read from the build or the listing. */
+interface LocaleSection extends LocalizedListing {
+  title: string;
+  /** Where its screenshots sit inside the bundle, or `null` when it uses the English ones. */
+  screenshotDir: string | null;
+}
+
+const LOCALES_DIR = path.join(ROOT, 'dist', '_locales');
+
+/**
+ * The manifest names a message (`__MSG_extName__`) rather than holding the text; resolve it the
+ * way Chrome does, through `dist/_locales/<locale>/messages.json`, falling back to the default
+ * locale. Text without a placeholder comes back as it is.
+ */
+function resolveMessages(value: string, locale: string, fallback: string): string {
+  return value.replace(/__MSG_(\w+)__/g, (whole, key: string) => {
+    const text =
+      readLocaleMessage(LOCALES_DIR, locale, key) ?? readLocaleMessage(LOCALES_DIR, fallback, key);
+    if (text === undefined) {
+      throw new Error(`dist/_locales has no message "${key}" for ${whole} (locale ${locale})`);
+    }
+    return text;
+  });
+}
+
+/** The localized screenshots of one language, if `screenshots/<lang>/` holds any of them. */
+function hasLocalizedScreenshots(locale: ListingLocale): boolean {
+  return SCREENSHOTS.some((shot) => existsSync(path.join(ROOT, 'screenshots', locale, shot.from)));
 }
 
 function copyInto(from: string, to: string, missing: string[]): void {
@@ -119,7 +157,44 @@ function copyInto(from: string, to: string, missing: string[]): void {
   copyFileSync(from, to);
 }
 
-function submitDoc(manifest: Manifest, description: string, missing: string[]): string {
+function localeSectionDoc(section: LocaleSection, isDefault: boolean): string {
+  const name = LOCALE_NAMES[section.locale];
+  const shots =
+    section.screenshotDir === null
+      ? `Screenshots: none of its own; the store shows the ${LOCALE_NAMES[DEFAULT_LISTING_LOCALE]} ones. Leave the field empty.`
+      : `Screenshots: \`${section.screenshotDir}/\`, in the order of section 3.`;
+  return `### ${name} (\`${section.locale}\`)${isDefault ? ' - default language' : ''}
+
+Set the Store listing tab's language menu to **${name}**${isDefault ? ' (the default: every language without its own listing shows this one)' : ''}.
+
+**Title** (read from the package, not editable in the dashboard)
+
+\`\`\`
+${section.title}
+\`\`\`
+
+**Summary** (${section.summary.length} / 132 characters; read from the package's \`_locales/${section.locale}/messages.json\` \`extDescription\`, not editable in the dashboard)
+
+\`\`\`
+${section.summary}
+\`\`\`
+
+**Description** (${section.description.length.toLocaleString('en-US')} / 16,000 characters) - copied from \`docs/store_listing.md\`; edit it there, never in this file.
+
+\`\`\`text
+${section.description}
+\`\`\`
+
+${shots}
+`;
+}
+
+function submitDoc(
+  manifest: Manifest,
+  sections: LocaleSection[],
+  zipName: string,
+  missing: string[],
+): string {
   const permissions = manifest.permissions ?? [];
   const unknown = permissions.filter((name) => JUSTIFICATIONS[name] === undefined);
   if (unknown.length > 0) {
@@ -129,9 +204,19 @@ function submitDoc(manifest: Manifest, description: string, missing: string[]): 
     );
   }
 
-  const shots = SCREENSHOTS.map(
-    (s, i) => `| ${i + 1} | \`screenshots/${s.as}\` | ${s.caption} |`,
-  ).join('\n');
+  const shots = SCREENSHOTS.map((s, i) => `| ${i + 1} | \`${s.as}\` | ${s.caption} |`).join('\n');
+  const shotFolders = sections
+    .map(
+      (section) =>
+        `- ${LOCALE_NAMES[section.locale]}: ${section.screenshotDir === null ? `none (uses \`screenshots/\`)` : `\`${section.screenshotDir}/\``}`,
+    )
+    .join('\n');
+  const listings = sections
+    .map((section) => localeSectionDoc(section, section.locale === DEFAULT_LISTING_LOCALE))
+    .join('\n');
+  const languages = sections
+    .map((section) => `${LOCALE_NAMES[section.locale]} (\`${section.locale}\`)`)
+    .join(', ');
   const promos = PROMOS.map((p) => `| ${p.slot} | \`promo/${p.as}\` | ${p.size} |`).join('\n');
   const perms = permissions.map((name) => `| \`${name}\` | ${JUSTIFICATIONS[name]} |`).join('\n');
   const hosts =
@@ -158,45 +243,35 @@ Generated by \`scripts/store-bundle.ts\`. Do not hand-edit - re-run \`pnpm store
 
 ## 1. Package
 
-Upload \`${manifest.name.replaceAll(' ', '-')}-${manifest.version}.zip\` under **Package → Upload new package**.
+Upload \`${zipName}\` under **Package → Upload new package**.
 
-Manifest V3, no remotely hosted code.
+Manifest V3, no remotely hosted code. The listing below covers ${languages}; each is a folder of
+the package's \`_locales\`, which is what the dashboard's language menu offers.
 
 ---
 
-## 2. Store listing
+## 2. Store listing, per language
 
-**Title**
-
-\`\`\`
-${manifest.name}
-\`\`\`
-
-**Summary** (${manifest.description.length} / 132 characters - this is the manifest \`description\`, so the two must stay in sync)
-
-\`\`\`
-${manifest.description}
-\`\`\`
-
-**Description** (${description.length.toLocaleString('en-US')} / 16,000 characters) - the block under "Description" in
-\`docs/store_listing.md\`, copied here; edit it there, never in this file.
-
-\`\`\`text
-${description}
-\`\`\`
+Fill one block per language. Title and Summary come out of the package for each language, so
+only the Description and the images are entered by hand.
 
 **Category**: Workflow & Planning
-**Language**: English
 
+${listings}
 ---
 
 ## 3. Screenshots
 
-Upload in this order. The first is what people see in search results.
+Upload in this order, for each language from its own folder. The first is what people see in
+search results.
 
 | # | File | Suggested caption |
 |---|------|-------------------|
 ${shots}
+
+Folders:
+
+${shotFolders}
 
 All are 1280×800. The store accepts 1280×800 or 640×400; one size is enough.
 
@@ -242,7 +317,7 @@ bundled Inter font, ships inside the package.
 Privacy policy URL:
 
 \`\`\`
-https://github.com/thilllon/tab-organizer/blob/main/PRIVACY_POLICY.md
+https://thilllon.github.io/tab-organizer/privacy/
 \`\`\`
 
 ---
@@ -250,9 +325,9 @@ https://github.com/thilllon/tab-organizer/blob/main/PRIVACY_POLICY.md
 ## 6. Before clicking Submit
 
 - [ ] Version in the uploaded zip reads **${manifest.version}**.
-- [ ] Summary matches the manifest \`description\` exactly.
-- [ ] Description pasted whole; the field does not complain about length.
-- [ ] Screenshots uploaded in the order above, sessions first.
+- [ ] Every language in the menu shows the Title and Summary above.
+- [ ] Each language's Description pasted whole; the field does not complain about length.
+- [ ] Screenshots uploaded in the order above, sessions first, per language where it has its own.
 - [ ] Every permission in the table has a justification filled in - a blank one is the single most
       common cause of a rejection.
 - [ ] "Collects user data" left as **No**.
@@ -264,7 +339,13 @@ function main(): void {
   if (!existsSync(manifestPath)) {
     throw new Error(`No dist/manifest.json - run \`pnpm build\` first.`);
   }
-  const manifest: Manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+  const raw: Manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+  const defaultLocale = raw.default_locale ?? DEFAULT_LISTING_LOCALE;
+  const manifest: Manifest = {
+    ...raw,
+    name: resolveMessages(raw.name, defaultLocale, defaultLocale),
+    description: resolveMessages(raw.description, defaultLocale, defaultLocale),
+  };
 
   /*
    * Refuse a dev build. `pnpm dev` writes its own `dist/` whose manifest is named "… Dev" and
@@ -286,27 +367,58 @@ function main(): void {
 
   const missing: string[] = [];
 
-  const zipName = `${manifest.name.replaceAll(' ', '-')}-${manifest.version}.zip`;
+  // The same name zip.ts gives the file: package.json's displayName, never the manifest's
+  // `__MSG_extName__`.
+  const zipName = zipFileName(readDisplayName(path.join(ROOT, 'package.json')), manifest.version);
   copyInto(path.join(ROOT, 'package', zipName), path.join(out, zipName), missing);
 
-  // Both limits count characters (`.length`), not bytes: the text is full of em dashes and curly
-  // quotes that read ~200 over when measured with `wc -c`.
-  const description = extractDescription(readFileSync(LISTING_SOURCE, 'utf-8'));
-  validateDescription(description);
-  validateSummary(manifest.description);
+  // Both limits count characters (`.length`), not bytes: measured with `wc -c` the Korean and
+  // Japanese texts read about three times their real length.
+  const sections: LocaleSection[] = extractListings(readFileSync(LISTING_SOURCE, 'utf-8')).map(
+    (listing) => {
+      validateDescription(listing.description);
+      const summary = resolveMessages(raw.description, listing.locale, defaultLocale);
+      validateSummary(summary);
+      if (summary !== listing.summary) {
+        throw new Error(
+          `The ${listing.locale} Summary in docs/store_listing.md differs from extDescription in ` +
+            `dist/_locales/${listing.locale}/messages.json. Rebuild, or bring the two in line.`,
+        );
+      }
+      const own =
+        listing.locale !== DEFAULT_LISTING_LOCALE && hasLocalizedScreenshots(listing.locale);
+      return {
+        ...listing,
+        summary,
+        title: resolveMessages(raw.name, listing.locale, defaultLocale),
+        screenshotDir:
+          listing.locale === DEFAULT_LISTING_LOCALE
+            ? 'screenshots'
+            : own
+              ? `screenshots/${listing.locale}`
+              : null,
+      };
+    },
+  );
 
-  for (const shot of SCREENSHOTS) {
-    copyInto(
-      path.join(ROOT, 'screenshots', shot.from),
-      path.join(out, 'screenshots', shot.as),
-      missing,
-    );
+  for (const section of sections) {
+    if (section.screenshotDir === null) {
+      continue;
+    }
+    const from =
+      section.locale === DEFAULT_LISTING_LOCALE
+        ? path.join(ROOT, 'screenshots')
+        : path.join(ROOT, 'screenshots', section.locale);
+    mkdirSync(path.join(out, section.screenshotDir), { recursive: true });
+    for (const shot of SCREENSHOTS) {
+      copyInto(path.join(from, shot.from), path.join(out, section.screenshotDir, shot.as), missing);
+    }
   }
   for (const promo of PROMOS) {
     copyInto(path.join(ROOT, promo.from), path.join(out, 'promo', promo.as), missing);
   }
 
-  writeFileSync(path.join(out, 'SUBMIT.md'), submitDoc(manifest, description, missing));
+  writeFileSync(path.join(out, 'SUBMIT.md'), submitDoc(manifest, sections, zipName, missing));
 
   const where = path.relative(ROOT, out);
   console.log(`Store bundle: ${where}/  (start at ${where}/SUBMIT.md)`);

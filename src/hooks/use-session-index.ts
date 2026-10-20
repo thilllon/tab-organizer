@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { errorMessage } from '@/lib/error-message';
+import { errorDetail, reportError } from '@/lib/error-message';
 import { INDEX_KEY, sessionRepo } from '@/lib/session-repo';
 import type { SessionSummary } from '@/types';
 
@@ -39,7 +39,7 @@ export function useSessionIndex(): SessionIndexState {
       if (gen !== genRef.current) {
         return;
       }
-      setError(errorMessage(err));
+      setError(reportError('session index', err));
     } finally {
       if (gen === genRef.current) {
         setLoading(false);
@@ -71,7 +71,7 @@ export function useSessionIndex(): SessionIndexState {
         // Spec §4: reconcile orphan bodies / dangling index entries on dashboard mount.
         await sessionRepo.reconcile();
       } catch (err) {
-        console.warn('[tab-organizer:sessions] reconcile failed', errorMessage(err));
+        console.warn('[tab-organizer:sessions] reconcile failed', errorDetail(err));
       }
       if (disposed) {
         return;

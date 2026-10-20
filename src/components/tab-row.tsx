@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { Favicon } from '@/components/favicon';
 import { hostnameOf } from '@/lib/display-format';
+import { t } from '@/lib/i18n';
 import { browserHandlesClick, hrefFor } from '@/lib/row-link';
 import type { TabSnapshot } from '@/types';
 
@@ -64,7 +65,9 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
       <span className="max-w-40 shrink-0 truncate text-xs text-muted-foreground">
         {hostnameOf(tab.url)}
       </span>
-      {tab.pinned && <Pin className="size-3 shrink-0 text-muted-foreground" aria-label="Pinned" />}
+      {tab.pinned && (
+        <Pin className="size-3 shrink-0 text-muted-foreground" aria-label={t('treePinned')} />
+      )}
     </>
   );
   const rowClass =
@@ -87,8 +90,8 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
         {selection !== undefined && (
           <input
             type="checkbox"
-            aria-label={`Select ${label}`}
-            title="Select this tab (Shift-click selects a range)"
+            aria-label={t('treeSelectTab', label)}
+            title={t('treeSelectTabHint')}
             checked={selection.selected}
             onChange={(event) =>
               selection.onToggle(

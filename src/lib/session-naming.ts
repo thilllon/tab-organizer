@@ -1,20 +1,31 @@
+import { t, tp } from '@/lib/i18n';
+
 function pad2(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-function plural(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+/**
+ * Local-time "2026-08-29 14:03". Numeric on purpose, in every UI language: it sorts, reads the
+ * same everywhere and `slugify()` keeps it in export file names.
+ */
+export function formatNameStamp(date: Date): string {
+  return (
+    `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ` +
+    `${pad2(date.getHours())}:${pad2(date.getMinutes())}`
+  );
 }
 
 /**
- * Default name for a captured session, in local time:
+ * Default name for a captured session, in local time and the UI language at capture time:
  * "Session 2026-08-29 14:03 · 3 windows · 87 tabs"
  */
 export function defaultSessionName(date: Date, windowCount: number, tabCount: number): string {
-  const stamp =
-    `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ` +
-    `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
-  return `Session ${stamp} · ${plural(windowCount, 'window')} · ${plural(tabCount, 'tab')}`;
+  return t(
+    'sessionDefaultName',
+    formatNameStamp(date),
+    tp('windowCount', windowCount),
+    tp('tabCount', tabCount),
+  );
 }
 
 /**

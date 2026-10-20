@@ -1,3 +1,4 @@
+import { formatNumber, t } from '@/lib/i18n';
 import { contentHash } from '@/lib/session-hash';
 import { slugify } from '@/lib/session-naming';
 import type {
@@ -11,8 +12,11 @@ import type {
 import { SESSION_SCHEMA_VERSION } from '@/types';
 
 /**
- * Pure serializers for the dashboard's export / copy actions. No DOM, no chrome.* calls, so
- * the same functions run under vitest (Node) and in the extension page.
+ * Pure serializers for the dashboard's export / copy actions. No DOM, and no chrome.* calls but
+ * `chrome.i18n` for the human-readable labels ("Window N", "Untitled group"), which the test fake
+ * provides, so the same functions run under vitest (Node) and in the extension page. Everything an
+ * importer reads back (the `(pinned)` marker, the Netscape structure, CSV and JSON) stays the
+ * same in every language.
  */
 
 // ---------------------------------------------------------------------------
@@ -68,6 +72,11 @@ export function scopeToSession(scope: ExportScope): Session {
 interface IndexedWindow {
   window: WindowSnapshot;
   number: number; // 1-based, matching "Window N" in the human-readable formats
+}
+
+/** "Window N", the label a window gets in the human-readable formats. */
+function windowLabel(number: number): string {
+  return t('expWindowLabel', formatNumber(number));
 }
 
 function populatedWindows(session: Session): IndexedWindow[] {
@@ -161,10 +170,10 @@ export function toMarkdownLinks(tabs: readonly TabSnapshot[]): string {
 
 function markdownWindow({ window, number }: IndexedWindow): string {
   const { ungrouped, groups } = layoutWindow(window);
-  const lines = [`### Window ${number}`, ...ungrouped.map(markdownTab)];
+  const lines = [`### ${windowLabel(number)}`, ...ungrouped.map(markdownTab)];
   for (const { group, tabs } of groups) {
     lines.push(
-      `#### ${group.title === '' ? 'Untitled group' : group.title}`,
+      `#### ${group.title === '' ? t('expUntitledGroup') : group.title}`,
       ...tabs.map(markdownTab),
     );
   }
@@ -258,7 +267,7 @@ function htmlWindow({ window, number }: IndexedWindow, addDate: number, depth: n
       ),
     );
   }
-  return htmlFolder(`Window ${number}`, `ADD_DATE="${addDate}"`, depth, children);
+  return htmlFolder(windowLabel(number), `ADD_DATE="${addDate}"`, depth, children);
 }
 
 function htmlSession(session: Session, depth: number): string[] {

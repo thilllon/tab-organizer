@@ -5,7 +5,7 @@
  * they can be tested without a DOM.
  */
 
-import { pluralize } from '@/lib/display-format';
+import { formatNumber, t, tp } from '@/lib/i18n';
 
 /**
  * "Window 2 of 3" - which window of the plan is being filled. `index` is 0-based, as
@@ -17,7 +17,7 @@ export function formatWindowLine(index: number, count: number): string | undefin
     return undefined;
   }
   const shown = Math.min(Math.max(1, Math.floor(index) + 1), Math.floor(count));
-  return `Window ${shown} of ${Math.floor(count)}`;
+  return t('restoreWindowLine', formatNumber(shown), formatNumber(Math.floor(count)));
 }
 
 /** Below this the sample is too short for a rate that does not jump around. */
@@ -37,17 +37,18 @@ export function formatRate(done: number, elapsedMs: number): string | undefined 
   const perSecond = done / (elapsedMs / 1000);
   // Under 10/s the integer would round away most of the signal (0.4 -> "0 tabs/s").
   const rounded = perSecond >= 10 ? Math.round(perSecond) : Math.round(perSecond * 10) / 10;
-  return `~${rounded === 1 ? '1 tab' : `${rounded} tabs`}/s`;
+  return tp('restoreRate', rounded);
 }
 
 /** Shown while a lazy restore runs - the tabs appear immediately but stay unloaded. */
-export const LAZY_RESTORE_HINT =
-  'Tabs are opened unloaded to save memory; each one loads when you click it.';
+export function lazyRestoreHint(): string {
+  return t('restoreLazyHint');
+}
 
 /** Shown on the result of a restore that discarded tabs. */
 export function lazyRestoreSummaryHint(discarded: number): string | undefined {
   if (discarded <= 0) {
     return undefined;
   }
-  return `${pluralize(discarded, 'tab')} stayed unloaded and will load when clicked.`;
+  return tp('restoreLazyDone', discarded);
 }

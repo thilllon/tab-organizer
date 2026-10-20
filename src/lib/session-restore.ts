@@ -1,3 +1,4 @@
+import { ExplainedError } from '@/lib/error-message';
 import { unwrapSuspendedUrl } from '@/lib/suspended-url';
 import type { Session, SessionSettings, WindowBounds, WindowSnapshot } from '@/types';
 
@@ -371,7 +372,7 @@ async function openTargetWindow(
     });
   }
   if (win === undefined || win.id === undefined) {
-    throw new Error('windows.create returned no window');
+    throw new ExplainedError('windows.create returned no window', 'errorRestoreNoWindow');
   }
   const placeholderId = win.tabs?.[0]?.id;
   return { windowId: win.id, placeholderId };

@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n';
 import type { Session } from '@/types';
 
 export type SearchSource = 'open' | 'saved' | 'history';
@@ -5,8 +6,10 @@ export type SearchSource = 'open' | 'saved' | 'history';
 /** Result and ranking order of the sources: live tabs, then saved sessions, then history. */
 export const SEARCH_SOURCES: readonly SearchSource[] = ['open', 'saved', 'history'];
 
-/** `sessionName` of the pseudo-session that holds the live tabs. */
-export const OPEN_WINDOWS_NAME = 'Open windows';
+/** `sessionName` of the pseudo-session that holds the live tabs, in the UI language. */
+export function openWindowsName(): string {
+  return t('searchOpenWindowsName');
+}
 
 /**
  * One searchable tab. Built once per session body / open-windows snapshot by the
@@ -106,6 +109,7 @@ export function entriesFromOpenWindows(
 ): SearchEntry[] {
   const excludePrefix = opts.excludeUrlPrefix ?? '';
   const now = Date.now();
+  const sessionName = openWindowsName();
 
   const entries: SearchEntry[] = [];
   // Counts only the windows that are kept, so "Window N" numbers them exactly like the
@@ -131,7 +135,7 @@ export function entriesFromOpenWindows(
       }
       const entry: SearchEntry = {
         source: 'open',
-        sessionName: OPEN_WINDOWS_NAME,
+        sessionName,
         sessionUpdatedAt: now,
         windowIndex,
         tabIndex: tab.index,

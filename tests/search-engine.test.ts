@@ -6,7 +6,7 @@ import {
   entriesFromSession,
   matchEntry,
   matchSessionName,
-  OPEN_WINDOWS_NAME,
+  openWindowsName,
   rankEntries,
   type SearchEntry,
   type SearchSource,
@@ -233,7 +233,7 @@ describe('entriesFromOpenWindows', () => {
     ]);
     expect(entries[0]).toMatchObject({
       source: 'open',
-      sessionName: OPEN_WINDOWS_NAME,
+      sessionName: openWindowsName(),
       title: 'A',
       url: 'https://new.example/',
       hostname: 'new.example',

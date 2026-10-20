@@ -54,6 +54,39 @@ interface LaunchOptions {
    * Ignored when there is no display - see {@link resolveHeadless}.
    */
   preferHeaded?: boolean;
+  /**
+   * The Chrome UI language, which is also the language the extension's text is in (`chrome.i18n`).
+   * Defaults to English so the harnesses that find elements by their text pass whatever language
+   * the machine is set to.
+   */
+  locale?: string;
+}
+
+/** POSIX locale for LANG/LANGUAGE, which Chromium on Linux reads before `--lang`. */
+const POSIX_LOCALES: Record<string, string> = {
+  en: 'en_US',
+  ko: 'ko_KR',
+  es: 'es_ES',
+  ja: 'ja_JP',
+};
+
+/**
+ * Chrome switches that make `chrome.i18n` answer in `locale`. Linux and Windows read `--lang`
+ * (Linux also LANGUAGE/LANG, see {@link setLanguageEnv}); macOS ignores both and takes the Cocoa
+ * `AppleLanguages` default, which a process accepts as a `-AppleLanguages (<code>)` argument pair.
+ */
+export function languageArgs(locale: string): string[] {
+  const args = [`--lang=${locale}`];
+  if (process.platform === 'darwin') {
+    args.push('-AppleLanguages', `(${locale})`);
+  }
+  return args;
+}
+
+/** Sets LANGUAGE/LANG for `locale`; Playwright hands the browser this process's environment. */
+export function setLanguageEnv(locale: string): void {
+  process.env.LANGUAGE = locale;
+  process.env.LANG = `${POSIX_LOCALES[locale] ?? locale}.UTF-8`;
 }
 
 /** How long to wait for the extension service worker to register. */
@@ -137,8 +170,9 @@ async function workerWithApis(context: BrowserContext, timeout: number): Promise
 
 /** Launches a persistent context with `dist/` loaded as an unpacked extension. */
 export async function launchExtension(options: LaunchOptions): Promise<ExtensionSession> {
-  const { dist, args = [], preferHeaded = false } = options;
+  const { dist, args = [], preferHeaded = false, locale = 'en' } = options;
   const executablePath = resolveChromiumExecutable();
+  setLanguageEnv(locale);
 
   const context = await chromium.launchPersistentContext('', {
     ...(executablePath === undefined ? {} : { executablePath }),
@@ -149,6 +183,7 @@ export async function launchExtension(options: LaunchOptions): Promise<Extension
       '--no-first-run',
       '--no-default-browser-check',
       '--disable-default-apps',
+      ...languageArgs(locale),
       ...args,
     ],
   });

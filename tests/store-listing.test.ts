@@ -6,8 +6,15 @@ import { describe, expect, it } from 'vitest';
 import {
   CWS_DESCRIPTION_MAX_CHARS,
   CWS_SUMMARY_MAX_CHARS,
+  descriptionHeading,
   extractDescription,
+  extractListings,
+  extractSummary,
+  LISTING_LOCALES,
   LISTING_SOURCE,
+  LOCALES_SOURCE,
+  readLocaleMessage,
+  summaryHeading,
   validateDescription,
   validateSummary,
 } from '../scripts/store-listing';
@@ -50,6 +57,31 @@ describe('extractDescription', () => {
     expect(() => extractDescription(markdown)).toThrow(/No fenced block/);
   });
 
+  it('finds a translation under its own heading, not the English block', () => {
+    const markdown = [
+      '### Summary',
+      '```text',
+      'English summary',
+      '```',
+      '### Description',
+      '```text',
+      'English',
+      '```',
+      '### Summary (ko)',
+      '```text',
+      '한국어 요약',
+      '```',
+      '### Description (ko)',
+      '```text',
+      '한국어',
+      '```',
+    ].join('\n');
+    expect(extractDescription(markdown)).toBe('English');
+    expect(extractDescription(markdown, 'ko')).toBe('한국어');
+    expect(extractSummary(markdown)).toBe('English summary');
+    expect(extractSummary(markdown, 'ko')).toBe('한국어 요약');
+  });
+
   it('throws on a block that is never closed', () => {
     expect(() => extractDescription('### Description\n\n```text\nunfinished')).toThrow(
       /No fenced block/,
@@ -79,24 +111,44 @@ describe('validateSummary', () => {
   });
 });
 
-// The real files: this is what keeps an over-long listing from being committed.
+// The real files: this is what keeps an over-long or stale listing from being committed.
 describe('the store listing in this repository', () => {
-  const description = extractDescription(readFileSync(LISTING_SOURCE, 'utf-8'));
+  const markdown = readFileSync(LISTING_SOURCE, 'utf-8');
+  const listings = extractListings(markdown);
 
-  it('has a description the store will accept', () => {
-    expect(description.trim()).not.toBe('');
-    expect(() => validateDescription(description)).not.toThrow();
+  it('has a Summary and a Description for every language of public/_locales', () => {
+    expect(listings.map((listing) => listing.locale)).toEqual([...LISTING_LOCALES]);
+    for (const locale of LISTING_LOCALES) {
+      expect(markdown).toContain(`\n${summaryHeading(locale)}\n`);
+      expect(markdown).toContain(`\n${descriptionHeading(locale)}\n`);
+    }
   });
 
-  it('keeps Markdown out of the description, since it is pasted as it is', () => {
-    expect(description).not.toMatch(/^#{1,6}\s/m);
-    expect(description).not.toMatch(/\*\*|`/);
+  describe.each(listings)('$locale', ({ locale, summary, description }) => {
+    it('has a description the store will accept', () => {
+      expect(description.trim()).not.toBe('');
+      expect(() => validateDescription(description)).not.toThrow();
+    });
+
+    it('keeps Markdown out of the description, since it is pasted as it is', () => {
+      expect(description).not.toMatch(/^#{1,6}\s/m);
+      expect(description).not.toMatch(/\*\*|`/);
+    });
+
+    it('has no em or en dash', () => {
+      expect(summary).not.toMatch(/[\u2013\u2014]/);
+      expect(description).not.toMatch(/[\u2013\u2014]/);
+    });
+
+    it("has the Summary the package carries (that locale's extDescription)", () => {
+      expect(summary).toBe(readLocaleMessage(LOCALES_SOURCE, locale, 'extDescription'));
+      expect(() => validateSummary(summary)).not.toThrow();
+    });
   });
 
-  it('has a summary (package.json description) the store will accept', () => {
+  it('keeps package.json description equal to the English summary', () => {
     const pkgPath = path.resolve(path.dirname(LISTING_SOURCE), '..', 'package.json');
     const pkg: { description?: string } = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-    expect(pkg.description).toBeTruthy();
-    expect(() => validateSummary(pkg.description ?? '')).not.toThrow();
+    expect(pkg.description).toBe(extractSummary(markdown));
   });
 });

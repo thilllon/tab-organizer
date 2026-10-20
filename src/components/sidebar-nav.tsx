@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatRoute, type Route } from '@/lib/app-route';
-import { formatDateTime, pluralize } from '@/lib/display-format';
+import { formatDateTime } from '@/lib/display-format';
+import { formatNumber, t, tp } from '@/lib/i18n';
 import { browserHandlesClick } from '@/lib/row-link';
 import { HISTORY_OPEN_KEY, readUiState, writeUiState } from '@/lib/ui-state';
 import { cn } from '@/lib/utils';
@@ -131,18 +132,18 @@ export function SidebarNav({
   };
 
   return (
-    <nav aria-label="Sessions" className="flex min-w-0 flex-col gap-0.5">
+    <nav aria-label={t('appNavLabel')} className="flex min-w-0 flex-col gap-0.5">
       <ul className="contents">
         <NavItem
           icon={<LayoutGrid />}
-          label="Open tabs"
-          sub={`${pluralize(windowCount, 'window')}`}
+          label={t('appNavOpenTabs')}
+          sub={tp('windowCount', windowCount)}
           meta={
             <span
-              title={`${pluralize(tabCount, 'tab')} open`}
+              title={tp('appNavTabsOpen', tabCount)}
               className="font-mono text-xs text-muted-foreground"
             >
-              {tabCount}
+              {formatNumber(tabCount)}
             </span>
           }
           current={route.view === 'open'}
@@ -151,11 +152,11 @@ export function SidebarNav({
         />
       </ul>
 
-      <SectionLabel>Saved</SectionLabel>
+      <SectionLabel>{t('appNavSaved')}</SectionLabel>
       {loading ? (
-        <p className="px-2 text-xs text-muted-foreground">Loading…</p>
+        <p className="px-2 text-xs text-muted-foreground">{t('commonLoading')}</p>
       ) : saved.length === 0 ? (
-        <p className="px-2 text-xs text-muted-foreground">Nothing saved yet.</p>
+        <p className="px-2 text-xs text-muted-foreground">{t('appNavNothingSaved')}</p>
       ) : (
         <ul className="contents">
           {saved.map((summary) => (
@@ -163,12 +164,16 @@ export function SidebarNav({
               key={summary.id}
               icon={<FolderOpen />}
               label={summary.name}
-              sub={`${pluralize(summary.windowCount, 'window')} · ${pluralize(summary.tabCount, 'tab')}`}
-              time={`Saved ${formatDateTime(summary.updatedAt)}`}
+              sub={t(
+                'commonWindowsAndTabs',
+                tp('windowCount', summary.windowCount),
+                tp('tabCount', summary.tabCount),
+              )}
+              time={t('appNavSavedAt', formatDateTime(summary.updatedAt))}
               meta={
                 summary.unreadable === undefined ? undefined : (
-                  <Badge variant="secondary" title="Saved by a newer version of Tab Organizer">
-                    newer
+                  <Badge variant="secondary" title={t('appNavNewerTitle')}>
+                    {t('appNavNewerBadge')}
                   </Badge>
                 )
               }
@@ -180,18 +185,20 @@ export function SidebarNav({
         </ul>
       )}
 
-      <SectionLabel>Auto-saved</SectionLabel>
+      <SectionLabel>{t('appNavAutoSaved')}</SectionLabel>
       <Button
         variant="ghost"
         size="sm"
         aria-expanded={historyOpen}
-        title={historyOpen ? 'Hide snapshots' : 'Show snapshots'}
+        title={historyOpen ? t('appNavHideSnapshots') : t('appNavShowSnapshots')}
         onClick={toggleHistory}
         className="justify-start gap-2 px-2 font-normal text-muted-foreground"
       >
         <Clock />
         <span className="flex-1 text-left">
-          {history.length === 0 ? 'No snapshots yet' : pluralize(history.length, 'snapshot')}
+          {history.length === 0
+            ? t('appNavNoSnapshots')
+            : tp('appNavSnapshotCount', history.length)}
         </span>
         <ChevronRight className={cn('transition-transform', historyOpen && 'rotate-90')} />
       </Button>
@@ -202,15 +209,19 @@ export function SidebarNav({
               key={summary.id}
               icon={summary.id === recoveredId ? <Undo2 /> : <Clock />}
               label={formatDateTime(summary.createdAt)}
-              sub={`${pluralize(summary.windowCount, 'window')} · ${pluralize(summary.tabCount, 'tab')}`}
+              sub={t(
+                'commonWindowsAndTabs',
+                tp('windowCount', summary.windowCount),
+                tp('tabCount', summary.tabCount),
+              )}
               meta={
                 summary.id === recoveredId ? (
-                  <Badge variant="secondary" title="Taken before the last browser restart">
-                    recovered
+                  <Badge variant="secondary" title={t('appNavRecoveredTitle')}>
+                    {t('appNavRecoveredBadge')}
                   </Badge>
                 ) : summary.protected === true ? (
-                  <Badge variant="outline" title="Kept: never removed to make room">
-                    kept
+                  <Badge variant="outline" title={t('appNavKeptTitle')}>
+                    {t('appNavKeptBadge')}
                   </Badge>
                 ) : undefined
               }

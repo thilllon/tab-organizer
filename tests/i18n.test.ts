@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { formatNumber, t, tp } from '@/lib/i18n';
+import { formatNumber, joinFacts, joinSentences, t, tp, uiLocale } from '@/lib/i18n';
 
 import { getChromeFake } from './chrome-fake';
 
@@ -113,5 +113,47 @@ describe('t / tp', () => {
   it('falls back to English for a language it does not ship', () => {
     getChromeFake().setUiLanguage('fr');
     expect(t('commonCancel')).toBe('Cancel');
+  });
+
+  it('counts and formats numbers the English way when the text fell back to English', () => {
+    // French would pick "one" for 0 and group 1234 as "1 234"; the text shown is English.
+    getChromeFake().setUiLanguage('fr');
+    expect(uiLocale()).toBe('en');
+    expect(tp('tabCount', 0)).toBe('0 tabs');
+    expect(tp('tabCount', 1234)).toBe('1,234 tabs');
+    expect(formatNumber(1234.5)).toBe('1,234.5');
+  });
+
+  it('formats for the language of the file Chrome picked', () => {
+    getChromeFake().setUiLanguage('es');
+    expect(uiLocale()).toBe('es');
+    expect(tp('tabCount', 1)).toBe(t('tabCount_one', 1));
+    // Spanish ships no _many forms; a million falls back to _other.
+    expect(tp('tabCount', 1_000_000)).toBe(t('tabCount_other', formatNumber(1_000_000)));
+    getChromeFake().setUiLanguage('ja');
+    expect(uiLocale()).toBe('ja');
+  });
+});
+
+describe('localeCode', () => {
+  it('names the language of each file', () => {
+    for (const locale of LOCALES) {
+      expect(load(locale).localeCode?.message).toBe(locale);
+    }
+  });
+});
+
+describe('joinSentences / joinFacts', () => {
+  it('puts sentences side by side the way the language does', () => {
+    expect(joinSentences('One.', 'Two.')).toBe('One. Two.');
+    expect(joinSentences('One.', '', 'Three.')).toBe('One. Three.');
+    expect(joinSentences('')).toBe('');
+    getChromeFake().setUiLanguage('ja');
+    expect(joinSentences('一。', '二。')).toBe('一。二。');
+  });
+
+  it('separates facts with a middle dot', () => {
+    expect(joinFacts(['3 windows', '', '87 tabs', '2 KB'])).toBe('3 windows · 87 tabs · 2 KB');
+    expect(joinFacts([])).toBe('');
   });
 });

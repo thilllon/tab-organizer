@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { GroupSection } from '@/components/group-section';
 import { TabRow, type TabRowSelection } from '@/components/tab-row';
 import { Button } from '@/components/ui/button';
-import { pluralize } from '@/lib/display-format';
+import { windowStateLabel } from '@/lib/display-format';
+import { formatNumber, t, tp } from '@/lib/i18n';
 import { hiddenTabCount, initialTabPage, nextTabPage, showMoreLabel } from '@/lib/tab-paging';
 import { segmentTabs } from '@/lib/tab-segments';
 import type { WindowSnapshot } from '@/types';
@@ -70,6 +71,8 @@ export function WindowTree({
   // is still its position in the full tab strip.
   const segments = useMemo(() => segmentTabs(shown), [shown]);
   const hidden = hiddenTabCount(visible, total);
+  const windowLabel = t('treeWindowLabel', formatNumber(index + 1));
+  const tabCount = tp('tabCount', total);
 
   return (
     <section
@@ -78,16 +81,17 @@ export function WindowTree({
       // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role -- see above
       role="treeitem"
       aria-expanded
-      aria-label={`Window ${index + 1}`}
+      aria-label={windowLabel}
       // -1, not 0: the rows inside are what the Tab key walks (no roving tabindex here).
       tabIndex={-1}
       className="cv-window rounded-md border outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <header className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-2 py-1">
-        <h3 className="text-sm font-medium">Window {index + 1}</h3>
+        <h3 className="text-sm font-medium">{windowLabel}</h3>
         <span className="text-xs text-muted-foreground">
-          {pluralize(total, 'tab')}
-          {window.state !== 'normal' ? ` · ${window.state}` : ''}
+          {window.state !== 'normal'
+            ? t('treeTabCountWithState', tabCount, windowStateLabel(window.state))
+            : tabCount}
         </span>
         {badge}
         {actions !== undefined && <div className="ml-auto flex items-center gap-1">{actions}</div>}

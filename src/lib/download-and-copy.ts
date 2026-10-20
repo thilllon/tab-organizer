@@ -1,4 +1,5 @@
-import { errorMessage } from '@/lib/error-message';
+import { errorDetail, knownErrorText } from '@/lib/error-message';
+import { t } from '@/lib/i18n';
 import { exportFilename, mimeTypeFor } from '@/lib/session-export';
 import type { ExportFormat } from '@/types';
 
@@ -67,11 +68,14 @@ export function downloadExport(
 
 type CopyResult = { ok: true } | { ok: false; error: string };
 
-export const CLIPBOARD_UNAVAILABLE =
-  'Could not copy: this browser did not allow clipboard access from this page.';
+export function clipboardUnavailableMessage(): string {
+  return t('expClipboardUnavailable');
+}
 
 export function copyFailureMessage(err: unknown): string {
-  return `Could not copy to the clipboard: ${errorMessage(err)}`;
+  console.warn('[tab-organizer] copy failed', errorDetail(err));
+  const reason = knownErrorText(err);
+  return reason === undefined ? t('expCopyFailedPlain') : t('expCopyFailed', reason);
 }
 
 /**
@@ -82,7 +86,7 @@ export function copyFailureMessage(err: unknown): string {
 export async function copyText(text: string): Promise<CopyResult> {
   const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
   if (clipboard === undefined || typeof clipboard.writeText !== 'function') {
-    return { ok: false, error: CLIPBOARD_UNAVAILABLE };
+    return { ok: false, error: clipboardUnavailableMessage() };
   }
   try {
     await clipboard.writeText(text);

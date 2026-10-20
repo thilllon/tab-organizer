@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildImportPreview,
@@ -82,10 +82,12 @@ describe('labels', () => {
   });
 
   it('explains an unreadable file', () => {
-    expect(fileReadError(new Error('NotReadableError'))).toBe(
-      'Could not read this file: NotReadableError',
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(fileReadError(new Error('NotReadableError'))).toBe('Could not read this file.');
+    expect(fileReadError(undefined)).toBe('Could not read this file.');
+    expect(fileReadError(new DOMException('denied', 'NotAllowedError'))).toBe(
+      'Could not read this file: The browser did not allow this.',
     );
-    expect(fileReadError(undefined)).toBe('Could not read this file: Unknown error');
   });
 });
 

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { t } from '@/lib/i18n';
+
 interface AdvancedFoldProps {
   label: string;
   description: string;
@@ -16,7 +18,7 @@ export function AdvancedFold({ label, description, children }: AdvancedFoldProps
   return (
     <details className="group -mx-2 rounded-md px-2">
       <summary
-        title="Show or hide more settings"
+        title={t('settingsAdvancedToggle')}
         className="flex cursor-pointer list-none items-center gap-2 rounded-md py-2 pr-2 pl-3 text-sm font-medium text-foreground/80 hover:bg-muted"
       >
         <svg

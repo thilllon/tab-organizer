@@ -5,8 +5,8 @@ import { DeleteAllDataDialog } from '@/components/delete-all-data-dialog';
 import { DeleteAllHistoryDialog } from '@/components/delete-all-history-dialog';
 import { Button } from '@/components/ui/button';
 import { isIndexChange } from '@/hooks/use-session-index';
-import { pluralize } from '@/lib/display-format';
-import { errorMessage } from '@/lib/error-message';
+import { reportError } from '@/lib/error-message';
+import { t, tp } from '@/lib/i18n';
 import { sessionRepo } from '@/lib/session-repo';
 import {
   STORAGE_METER_ID,
@@ -52,7 +52,7 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
       setBytes(await chrome.storage.local.getBytesInUse());
       setError(undefined);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(reportError('storage', err));
     }
   }, []);
 
@@ -86,9 +86,9 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
       try {
         await sessionRepo.removeAll();
         setError(undefined);
-        onNotice('Deleted all session data. Your settings were kept.');
+        onNotice(t('storageDeletedAllNotice'));
       } catch (err) {
-        setError(errorMessage(err));
+        setError(reportError('storage', err));
       } finally {
         setBusy(false);
         await refresh();
@@ -103,9 +103,9 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
       try {
         const removed = await sessionRepo.removeAllHistory({ unprotectedOnly: true });
         setError(undefined);
-        onNotice(`Deleted ${pluralize(removed.length, 'unprotected snapshot')}.`);
+        onNotice(tp('storageDeletedUnprotectedNotice', removed.length));
       } catch (err) {
-        setError(errorMessage(err));
+        setError(reportError('storage', err));
       } finally {
         setBusy(false);
         await refresh();
@@ -124,10 +124,10 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h3 id="storage-meter-heading" className="flex items-center gap-1.5 text-xs font-semibold">
           <HardDrive className="size-3.5 text-muted-foreground" />
-          Storage
+          {t('storageHeading')}
         </h3>
         <p className="text-xs text-muted-foreground">
-          {bytes === undefined ? 'Measuring…' : storageTotalLine(breakdown)}
+          {bytes === undefined ? t('storageMeasuring') : storageTotalLine(breakdown)}
           {bytes === undefined ? '' : ` · ${storageDetailLine(breakdown)}`}
         </p>
       </div>
@@ -148,10 +148,10 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           // Nothing to free: every snapshot is protected, or there are none.
           disabled={busy || breakdown.unprotectedSnapshotCount === 0}
           onClick={() => setConfirmingHistory(true)}
-          title="Delete every snapshot that is not protected"
+          title={t('storageDeleteUnprotectedTooltip')}
         >
           <Trash2 />
-          Delete all unprotected
+          {t('storageDeleteUnprotected')}
         </Button>
         <Button
           variant="outline"
@@ -159,10 +159,10 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           className="text-destructive hover:text-destructive"
           disabled={busy}
           onClick={() => setConfirming(true)}
-          title="Delete all saved sessions and snapshots on this device"
+          title={t('storageDeleteAllDataTooltip')}
         >
           <Trash2 />
-          Delete all session data
+          {t('storageDeleteAllData')}
         </Button>
       </div>
       {error !== undefined && (

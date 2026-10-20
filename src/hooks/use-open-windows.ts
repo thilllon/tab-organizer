@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { errorMessage } from '@/lib/error-message';
+import { errorDetail, reportError } from '@/lib/error-message';
 import { type OpenWindowView, snapshotOpenWindows, subscribeOpenWindows } from '@/lib/open-windows';
 
 export interface OpenWindowsState {
@@ -39,7 +39,7 @@ export function useOpenWindows(): OpenWindowsState {
       if (gen !== genRef.current) {
         return;
       }
-      setError(errorMessage(err));
+      setError(reportError('open windows', err));
     } finally {
       if (gen === genRef.current) {
         setLoading(false);
@@ -66,7 +66,7 @@ export function useOpenWindows(): OpenWindowsState {
           setCurrentWindowId(current.id);
         }
       } catch (err) {
-        console.warn('[tab-organizer:sessions] windows.getCurrent failed', errorMessage(err));
+        console.warn('[tab-organizer:sessions] windows.getCurrent failed', errorDetail(err));
       }
       if (disposed) {
         return;

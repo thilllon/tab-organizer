@@ -10,6 +10,18 @@ export class UnknownSchemaVersionError extends Error {
 }
 
 /**
+ * A stored record that is not a session or an index at all (damaged, or written by something
+ * else). A `TypeError`, so a caller that only cares about "malformed" can keep checking for that;
+ * `errorMessage()` turns it into a sentence in the UI language, the English message is for the console.
+ */
+export class MalformedRecordError extends TypeError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MalformedRecordError';
+  }
+}
+
+/**
  * The schema version of a body written by a *newer* Tab Organizer, or `undefined` when `err` is
  * anything else (a malformed record, or a version this build cannot place). Callers use it to
  * tell "I am too old to read this" -- which the UI can explain and the user can fix by updating
@@ -102,7 +114,7 @@ function isUnreadableSession(value: unknown): value is UnreadableSession {
  */
 export function migrateSession(record: unknown): Session {
   if (!isRecord(record)) {
-    throw new TypeError('Not a session record');
+    throw new MalformedRecordError('Not a session record');
   }
   assertSchemaVersion(record);
   const { id, kind, name, origin, createdAt, updatedAt, windows } = record;
@@ -115,7 +127,7 @@ export function migrateSession(record: unknown): Session {
     typeof updatedAt !== 'number' ||
     !Array.isArray(windows)
   ) {
-    throw new TypeError('Not a session record');
+    throw new MalformedRecordError('Not a session record');
   }
   // Fields were checked above; the remaining nested shapes are trusted (written by sessionRepo).
   return record as unknown as Session;
@@ -127,11 +139,11 @@ export function migrateIndex(record: unknown): SessionIndex {
     return { schemaVersion: SESSION_SCHEMA_VERSION, sessions: [] };
   }
   if (!isRecord(record)) {
-    throw new TypeError('Not a session index');
+    throw new MalformedRecordError('Not a session index');
   }
   assertSchemaVersion(record);
   if (!Array.isArray(record.sessions)) {
-    throw new TypeError('Not a session index');
+    throw new MalformedRecordError('Not a session index');
   }
   const sessions: SessionSummary[] = record.sessions.filter((entry): entry is SessionSummary =>
     isSessionSummary(entry),

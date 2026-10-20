@@ -4,6 +4,7 @@ import { NativeSelect } from '@/components/native-select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { t } from '@/lib/i18n';
 import {
   CUSTOM_INTERVAL,
   HISTORY_INTERVAL_MAX_MINUTES,
@@ -12,6 +13,7 @@ import {
   HISTORY_MAX_MAX,
   HISTORY_MAX_MIN,
   intervalLabel,
+  intervalRangeHint,
   intervalSelectValue,
   isRestoreLazy,
   lazyLabel,
@@ -107,12 +109,12 @@ export function SessionSettingsFields({
   return (
     <div className="space-y-5">
       {showBasic && (
-        <SettingRow label="Automatic snapshots" htmlFor={enabledId}>
+        <SettingRow label={t('settingsAutoSnapshots')} htmlFor={enabledId}>
           <Switch
             id={enabledId}
             checked={settings.historyEnabled}
             disabled={disabled}
-            title="Save what is open on a timer, without asking"
+            title={t('settingsAutoSnapshotsTitle')}
             onCheckedChange={(checked) => onChange({ historyEnabled: checked })}
           />
         </SettingRow>
@@ -120,9 +122,9 @@ export function SessionSettingsFields({
 
       {showAdvanced && (
         <SettingRow
-          label="Snapshot interval"
+          label={t('settingsSnapshotInterval')}
           htmlFor={intervalId}
-          hint={`Custom: ${HISTORY_INTERVAL_MIN_MINUTES} to ${HISTORY_INTERVAL_MAX_MINUTES} minutes.`}
+          hint={intervalRangeHint()}
         >
           <NativeSelect
             id={intervalId}
@@ -146,13 +148,13 @@ export function SessionSettingsFields({
                 {intervalLabel(minutes)}
               </option>
             ))}
-            <option value={CUSTOM_INTERVAL}>Custom</option>
+            <option value={CUSTOM_INTERVAL}>{t('settingsIntervalCustom')}</option>
           </NativeSelect>
           {intervalChoice === CUSTOM_INTERVAL && (
             <>
               <Input
                 id={customIntervalId}
-                aria-label="Custom snapshot interval in minutes"
+                aria-label={t('settingsIntervalCustomLabel')}
                 type="number"
                 inputMode="numeric"
                 min={HISTORY_INTERVAL_MIN_MINUTES}
@@ -170,18 +172,14 @@ export function SessionSettingsFields({
                   }
                 }}
               />
-              <span className="text-sm text-muted-foreground">minutes</span>
+              <span className="text-sm text-muted-foreground">{t('settingsMinutesUnit')}</span>
             </>
           )}
         </SettingRow>
       )}
 
       {showAdvanced && (
-        <SettingRow
-          label="Keep last"
-          htmlFor={maxId}
-          hint="Older snapshots are removed first. Protected ones are never counted."
-        >
+        <SettingRow label={t('settingsKeepLast')} htmlFor={maxId} hint={t('settingsKeepLastHint')}>
           <Input
             id={maxId}
             type="number"
@@ -201,15 +199,15 @@ export function SessionSettingsFields({
               }
             }}
           />
-          <span className="text-sm text-muted-foreground">snapshots</span>
+          <span className="text-sm text-muted-foreground">{t('settingsSnapshotsUnit')}</span>
         </SettingRow>
       )}
 
       {showAdvanced && (
         <SettingRow
-          label="Lazy restore"
+          label={t('settingsLazyRestore')}
           htmlFor={lazyId}
-          hint="Opens tabs without loading them until you visit them."
+          hint={t('settingsLazyRestoreHint')}
         >
           <NativeSelect
             id={lazyId}

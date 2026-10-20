@@ -4,63 +4,1831 @@
     "description": "The extension name in Chrome and the Chrome Web Store. Keep the brand name; at most 75 characters."
   },
   "extDescription": {
-    "message": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
+    "message": "Ordena y agrupa todas las pestañas en un clic; guarda y restaura ventanas enteras como sesiones. Sin conexión ni cuenta, todo local.",
     "description": "The store summary and the line under the name at chrome://extensions. At most 132 characters."
   },
+  "localeCode": {
+    "message": "es",
+    "description": "Do not translate. The language code of this file itself (en, ko, es, ja), not a word: it picks the plural rules and number formats that match this file's text, also when Chrome falls back to it for a language the extension does not ship."
+  },
   "actionTitle": {
-    "message": "Tab Organizer: click to sort tabs, right-click for sessions",
+    "message": "Tab Organizer: haz clic para ordenar las pestañas, clic derecho para sesiones",
     "description": "Tooltip of the toolbar icon. Teaches the two gestures."
   },
   "cmdSaveSession": {
-    "message": "Save the current window as a session",
+    "message": "Guardar la ventana actual como sesión",
     "description": "Keyboard command, listed at chrome://extensions/shortcuts."
   },
   "cmdOpenDashboard": {
-    "message": "Open Tab Organizer",
+    "message": "Abrir Tab Organizer",
     "description": "Keyboard command that opens the app page."
   },
   "cmdAssembleTabs": {
-    "message": "Assemble! (move every window's tabs into this one)",
+    "message": "¡Reunir! (mover las pestañas de todas las ventanas a esta)",
     "description": "Keyboard command and right-click menu item: the action name, then what it does in brackets."
   },
   "assembleName": {
-    "message": "Assemble!",
+    "message": "¡Reunir!",
     "description": "Short name of the action that moves every window's tabs into the current one. Shown on a button."
   },
   "commonCancel": {
-    "message": "Cancel",
+    "message": "Cancelar",
     "description": "Button that closes a dialog without doing anything."
   },
+  "commonSentenceJoin": {
+    "message": "$1 $2",
+    "description": "How two complete sentences stand side by side in one text. $1 and $2 are full sentences. Most languages put a space between them; languages written without spaces (Japanese) put nothing."
+  },
+  "commonFactJoin": {
+    "message": "$1 · $2",
+    "description": "How two short facts are separated on one line, such as \"3 windows · 87 tabs\". $1 and $2 are the facts (either may itself be a joined list). Keep the middle dot separator unless your language uses another."
+  },
+  "commonLoading": {
+    "message": "Cargando…",
+    "description": "Shown while something (a session's tabs, the saved sessions, the open windows) is being read."
+  },
   "commonClose": {
-    "message": "Close",
+    "message": "Cerrar",
     "description": "Button or label that closes a dialog or panel."
   },
   "commonDelete": {
-    "message": "Delete",
+    "message": "Eliminar",
     "description": "Button that deletes something."
   },
   "commonSave": {
-    "message": "Save",
+    "message": "Guardar",
     "description": "Button that saves."
   },
   "commonOpen": {
-    "message": "Open",
+    "message": "Abrir",
     "description": "Button that opens something."
   },
   "tabCount_one": {
-    "message": "$1 tab",
+    "message": "$1 pestaña",
     "description": "A number of browser tabs. $1 is the formatted count."
   },
   "tabCount_other": {
-    "message": "$1 tabs",
+    "message": "$1 pestañas",
     "description": "A number of browser tabs. $1 is the formatted count."
   },
   "windowCount_one": {
-    "message": "$1 window",
+    "message": "$1 ventana",
     "description": "A number of browser windows. $1 is the formatted count."
   },
   "windowCount_other": {
-    "message": "$1 windows",
+    "message": "$1 ventanas",
     "description": "A number of browser windows. $1 is the formatted count."
+  },
+  "settingsTitle": {
+    "message": "Configuración",
+    "description": "Title of the Settings dialog."
+  },
+  "settingsSubtitle": {
+    "message": "Los cambios se guardan al hacerlos.",
+    "description": "Line under the Settings dialog title: there is no Save button, every change is stored at once."
+  },
+  "settingsSaved": {
+    "message": "Ajuste guardado",
+    "description": "Short toast shown after any setting was stored."
+  },
+  "settingsSaveFailed": {
+    "message": "No se pudo guardar ese ajuste: $1",
+    "description": "Error line shown when Chrome refused to store a setting. $1 is Chrome's own error message (usually English) or the word for an unknown error."
+  },
+  "settingsUnknownError": {
+    "message": "desconocido",
+    "description": "Fills the error message of settingsSaveFailed when Chrome gave no reason. One lower-case word."
+  },
+  "settingsAdvanced": {
+    "message": "Avanzado",
+    "description": "Label of a fold in the Settings dialog that hides the settings people rarely change. One short word."
+  },
+  "settingsAdvancedToggle": {
+    "message": "Mostrar u ocultar más ajustes",
+    "description": "Tooltip of the Advanced fold in the Settings dialog."
+  },
+  "settingsSortingTitle": {
+    "message": "Ordenación",
+    "description": "Heading of the Settings section about sorting tabs."
+  },
+  "settingsSortingDescription": {
+    "message": "Lo que hace un clic en el icono de la barra de herramientas.",
+    "description": "Explanation under the Sorting heading in Settings."
+  },
+  "settingsSortBy": {
+    "message": "Ordenar por",
+    "description": "Label of the dropdown that chooses how tabs are ordered."
+  },
+  "settingsSortByTitle": {
+    "message": "Cómo se ordenan las pestañas al hacer clic en el icono de la barra de herramientas",
+    "description": "Tooltip of the Sort by dropdown in Settings."
+  },
+  "settingsSortByUrl": {
+    "message": "Por URL",
+    "description": "Sort by dropdown option: order tabs by their web address. Short."
+  },
+  "settingsSortByTitleOption": {
+    "message": "Por título",
+    "description": "Sort by dropdown option: order tabs alphabetically by page title. Short."
+  },
+  "settingsSortByCustom": {
+    "message": "Personalizado",
+    "description": "Sort by dropdown option: group tabs by site with the options shown under it. Short."
+  },
+  "settingsTabGroups": {
+    "message": "Grupos de pestañas",
+    "description": "Label of the dropdown that decides which tabs count as the same site when sorting by Custom."
+  },
+  "settingsTabGroupsHint": {
+    "message": "Qué cuenta como el mismo sitio.",
+    "description": "Grey hint under the Tab groups setting."
+  },
+  "settingsGroupingSubdomain": {
+    "message": "Por nombre de host completo",
+    "description": "Tab groups dropdown option: mail.example.com and www.example.com are different sites. Short."
+  },
+  "settingsGroupingDomain": {
+    "message": "Por dominio",
+    "description": "Tab groups dropdown option: every subdomain of example.com is one site. Short."
+  },
+  "settingsGroupingDirection": {
+    "message": "Dirección de agrupación",
+    "description": "Label of the dropdown that chooses which end of the tab strip decides the order of the site groups."
+  },
+  "settingsGroupingDirectionHint": {
+    "message": "Qué extremo de la barra de pestañas decide el orden de los sitios.",
+    "description": "Grey hint under the Grouping direction setting."
+  },
+  "settingsGroupFromLeft": {
+    "message": "De izquierda a derecha",
+    "description": "Grouping direction dropdown option. Short."
+  },
+  "settingsGroupFromRight": {
+    "message": "De derecha a izquierda",
+    "description": "Grouping direction dropdown option. Short."
+  },
+  "settingsPreserveOrder": {
+    "message": "Conservar el orden dentro de los grupos",
+    "description": "Label of a switch: keep each site's tabs in their current order instead of sorting them."
+  },
+  "settingsPreserveOrderHint": {
+    "message": "Mantiene las pestañas de cada sitio en el orden en que las abriste.",
+    "description": "Grey hint under the Preserve order within groups switch."
+  },
+  "settingsDuplicateTabs": {
+    "message": "Pestañas duplicadas",
+    "description": "Label of the dropdown that chooses what happens to tabs with the same address."
+  },
+  "settingsDuplicateTabsHint": {
+    "message": "Cuando la misma dirección está abierta más de una vez.",
+    "description": "Grey hint under the Duplicate tabs setting."
+  },
+  "settingsDuplicateKeepOne": {
+    "message": "Conservar una",
+    "description": "Duplicate tabs dropdown option: close the extra copies. Short."
+  },
+  "settingsDuplicateKeepAll": {
+    "message": "Conservar todas",
+    "description": "Duplicate tabs dropdown option: leave them alone. Short."
+  },
+  "settingsDuplicateGroup": {
+    "message": "Agruparlas",
+    "description": "Duplicate tabs dropdown option: put the copies in one tab group. Short."
+  },
+  "settingsSortingAdvancedDescription": {
+    "message": "Pestañas fijadas, pestañas suspendidas",
+    "description": "Small grey text beside the Advanced fold of the Sorting section, listing what is inside."
+  },
+  "settingsSortPinned": {
+    "message": "Ordenar pestañas fijadas",
+    "description": "Label of a switch in Settings."
+  },
+  "settingsSortPinnedHint": {
+    "message": "Desactivado: las pestañas fijadas se quedan exactamente donde están.",
+    "description": "Grey hint under the Sort pinned tabs switch."
+  },
+  "settingsGroupSuspended": {
+    "message": "Agrupar las pestañas suspendidas",
+    "description": "Label of a switch in Settings. Suspended tabs are pages unloaded by a tab suspender extension."
+  },
+  "settingsGroupSuspendedHint": {
+    "message": "Activado: las pestañas suspendidas pasan al principio como un solo bloque.",
+    "description": "Grey hint under the Group suspended tabs together switch."
+  },
+  "settingsSuspenderId": {
+    "message": "ID de la extensión de suspensión de pestañas",
+    "description": "Label of a text field holding another extension's 32-letter id."
+  },
+  "settingsSuspenderIdHint": {
+    "message": "La extensión cuyas páginas suspendidas se reconocen. Si está vacío, se usa The Marvellous Suspender.",
+    "description": "Grey hint under the Tab suspender extension ID field. Keep the extension name The Marvellous Suspender as it is."
+  },
+  "settingsSuspenderIdInvalid": {
+    "message": "32 letras de la a a la p",
+    "description": "Short red error beside the extension id field: an id is exactly 32 letters from a to p. Keep the letters a and p."
+  },
+  "settingsSessionsTitle": {
+    "message": "Sesiones",
+    "description": "Heading of the Settings section about saved sessions and automatic snapshots."
+  },
+  "settingsSessionsDescription": {
+    "message": "Las instantáneas automáticas son la red de seguridad ante un fallo o una ventana cerrada. Se quedan en este dispositivo.",
+    "description": "Explanation under the Sessions heading in Settings."
+  },
+  "settingsSessionsAdvancedDescription": {
+    "message": "Intervalo, cuántas conservar, restauración diferida",
+    "description": "Small grey text beside the Advanced fold of the Sessions section, listing what is inside."
+  },
+  "settingsAutoSnapshots": {
+    "message": "Instantáneas automáticas",
+    "description": "Label of the switch that turns timed snapshots of the open windows on or off."
+  },
+  "settingsAutoSnapshotsTitle": {
+    "message": "Guardar lo que está abierto cada cierto tiempo, sin preguntar",
+    "description": "Tooltip of the Automatic snapshots switch."
+  },
+  "settingsSnapshotInterval": {
+    "message": "Intervalo de instantáneas",
+    "description": "Label of the dropdown that chooses how often a snapshot is taken."
+  },
+  "settingsSnapshotIntervalHint": {
+    "message": "Personalizado: de $1 a $2 minutos.",
+    "description": "Grey hint under Snapshot interval: the range a typed-in custom interval may take. $1 is the smallest number of minutes, $2 the largest."
+  },
+  "settingsIntervalEvery_one": {
+    "message": "Cada minuto",
+    "description": "Snapshot interval dropdown option for one minute. $1 is the formatted number of minutes (1) and may be left out."
+  },
+  "settingsIntervalEvery_other": {
+    "message": "Cada $1 minutos",
+    "description": "Snapshot interval dropdown option. $1 is the formatted number of minutes."
+  },
+  "settingsIntervalCustom": {
+    "message": "Personalizado",
+    "description": "Snapshot interval dropdown option that shows a field to type any number of minutes. Short."
+  },
+  "settingsIntervalCustomLabel": {
+    "message": "Intervalo personalizado de instantáneas en minutos",
+    "description": "Screen-reader label of the number field for a custom snapshot interval."
+  },
+  "settingsMinutesUnit": {
+    "message": "minutos",
+    "description": "Unit shown right after the number field of a custom snapshot interval. One short word."
+  },
+  "settingsKeepLast": {
+    "message": "Conservar las últimas",
+    "description": "Label in front of the number field for how many automatic snapshots are kept; the field is followed by settingsSnapshotsUnit."
+  },
+  "settingsKeepLastHint": {
+    "message": "Las instantáneas más antiguas se eliminan primero. Las protegidas nunca cuentan.",
+    "description": "Grey hint under the Keep last setting."
+  },
+  "settingsSnapshotsUnit": {
+    "message": "instantáneas",
+    "description": "Unit shown right after the number field of the Keep last setting. One short word."
+  },
+  "settingsLazyRestore": {
+    "message": "Restauración diferida",
+    "description": "Label of the dropdown that chooses whether restored tabs load only when visited."
+  },
+  "settingsLazyRestoreHint": {
+    "message": "Abre las pestañas sin cargarlas hasta que las visites.",
+    "description": "Grey hint under the Lazy restore setting."
+  },
+  "settingsLazyAuto": {
+    "message": "Automática (más de $1 pestañas)",
+    "description": "Lazy restore dropdown option: only when a session has more tabs than $1, the formatted threshold (50)."
+  },
+  "settingsLazyAlways": {
+    "message": "Siempre",
+    "description": "Lazy restore dropdown option. Short."
+  },
+  "settingsLazyNever": {
+    "message": "Nunca",
+    "description": "Lazy restore dropdown option. Short."
+  },
+  "settingsBackupTitle": {
+    "message": "Copia de seguridad",
+    "description": "Heading of the Settings section about exporting and importing sessions."
+  },
+  "settingsBackupDescription": {
+    "message": "Las sesiones solo están en este dispositivo. Exporta un archivo para llevarlas a otro sitio.",
+    "description": "Explanation under the Backup heading in Settings."
+  },
+  "settingsExportEverything": {
+    "message": "Exportar todo",
+    "description": "Label of the row with the button that exports every session to a file."
+  },
+  "settingsExportEverythingHint": {
+    "message": "Sesiones guardadas e instantáneas, en un solo archivo JSON.",
+    "description": "Grey hint under Export everything. Keep JSON as it is."
+  },
+  "settingsExportButton": {
+    "message": "Exportar…",
+    "description": "Button that starts the export; the ellipsis means a choice follows. Short."
+  },
+  "settingsImport": {
+    "message": "Importar",
+    "description": "Label of the row with the button that imports sessions from a file or pasted text."
+  },
+  "settingsImportHint": {
+    "message": "JSON, marcadores en HTML, una lista en Markdown o URLs sin formato.",
+    "description": "Grey hint under Import: the formats it reads. Keep JSON, HTML, Markdown and URLs as they are."
+  },
+  "settingsImportButton": {
+    "message": "Importar…",
+    "description": "Button that opens the import dialog. Short."
+  },
+  "settingsBackupAdvancedDescription": {
+    "message": "Almacenamiento usado, eliminar todo",
+    "description": "Small grey text beside the Advanced fold of the Backup section, listing what is inside."
+  },
+  "settingsShortcutsTitle": {
+    "message": "Combinaciones de teclas",
+    "description": "Heading of the Settings section listing the extension's keyboard commands."
+  },
+  "settingsShortcutsDescription": {
+    "message": "En una instalación nueva, Chrome asigna $1 a ordenar y $3 a $2 si ninguna otra extensión usa esas teclas. Los demás comandos empiezan sin tecla.",
+    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A)."
+  },
+  "settingsSortCommand": {
+    "message": "Ordenar las pestañas de esta ventana (igual que hacer clic en el icono)",
+    "description": "Name of the keyboard command that sorts, in the shortcuts list."
+  },
+  "settingsUnnamedCommand": {
+    "message": "Comando sin nombre",
+    "description": "Shortcuts list: a command Chrome reported without any name."
+  },
+  "settingsShortcutNotSet": {
+    "message": "Sin asignar",
+    "description": "Shortcuts list: the command has no key. Short."
+  },
+  "settingsShortcutSuggestedHint": {
+    "message": "Tecla sugerida: $1. Chrome no la ha asignado aquí; puedes configurarla en la página de combinaciones de teclas de Chrome.",
+    "description": "Grey hint under an unbound command in the shortcuts list. $1 is the key, e.g. Alt + Shift + A."
+  },
+  "settingsShortcutsChangeOnlyInChrome": {
+    "message": "Estas combinaciones de teclas solo se pueden cambiar en la configuración de combinaciones de teclas de Chrome.",
+    "description": "Note beside the Change in Chrome button."
+  },
+  "settingsShortcutsLoading": {
+    "message": "Leyendo las combinaciones de teclas de Chrome…",
+    "description": "Shown while Chrome has not yet reported the keyboard shortcuts."
+  },
+  "settingsShortcutsFailed": {
+    "message": "Chrome no ha informado de las combinaciones de teclas. Abre su página de combinaciones de teclas para verlas.",
+    "description": "Shown when Chrome could not list the keyboard shortcuts."
+  },
+  "settingsChangeInChrome": {
+    "message": "Cambiar en Chrome",
+    "description": "Button that opens Chrome's keyboard shortcuts page. Short."
+  },
+  "settingsChangeInChromeTitle": {
+    "message": "Abrir la página de combinaciones de teclas de Chrome",
+    "description": "Tooltip of the Change in Chrome button."
+  },
+  "settingsKeyCommand": {
+    "message": "Comando",
+    "description": "Name of the Mac Command key (⌘) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyControl": {
+    "message": "Control",
+    "description": "Name of the Mac Control key (⌃) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyOption": {
+    "message": "Opción",
+    "description": "Name of the Mac Option key (⌥) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyCtrl": {
+    "message": "Ctrl",
+    "description": "Name of the Ctrl key on Windows, Linux and ChromeOS keyboards. Shown in a small key chip."
+  },
+  "settingsKeyAlt": {
+    "message": "Alt",
+    "description": "Name of the Alt key on Windows, Linux and ChromeOS keyboards. Shown in a small key chip."
+  },
+  "settingsKeyShift": {
+    "message": "Mayús",
+    "description": "Name of the Shift key as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeySearch": {
+    "message": "Buscar",
+    "description": "Name of the ChromeOS Search key. Shown in a small key chip."
+  },
+  "settingsKeyNameComma": {
+    "message": "Coma",
+    "description": "Name of the comma key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePeriod": {
+    "message": "Punto",
+    "description": "Name of the period (full stop) key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameSpace": {
+    "message": "Espacio",
+    "description": "Name of the space bar as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameUp": {
+    "message": "Flecha arriba",
+    "description": "Name of the up arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameDown": {
+    "message": "Flecha abajo",
+    "description": "Name of the down arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameLeft": {
+    "message": "Flecha izquierda",
+    "description": "Name of the left arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameRight": {
+    "message": "Flecha derecha",
+    "description": "Name of the right arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameHome": {
+    "message": "Inicio",
+    "description": "Name of the Home key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEnd": {
+    "message": "Fin",
+    "description": "Name of the End key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePageUp": {
+    "message": "Re Pág",
+    "description": "Name of the Page Up key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePageDown": {
+    "message": "Av Pág",
+    "description": "Name of the Page Down key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameInsert": {
+    "message": "Insert",
+    "description": "Name of the Insert key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameDelete": {
+    "message": "Supr",
+    "description": "Name of the Delete key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameTab": {
+    "message": "Tab",
+    "description": "Name of the Tab key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEscape": {
+    "message": "Esc",
+    "description": "Name of the Escape key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEnter": {
+    "message": "Intro",
+    "description": "Name of the Enter (Return) key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameBackspace": {
+    "message": "Retroceso",
+    "description": "Name of the Backspace key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaNextTrack": {
+    "message": "Pista siguiente",
+    "description": "Name of the media key that skips to the next track as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaPlayPause": {
+    "message": "Reproducir/Pausa",
+    "description": "Name of the media key that plays or pauses as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaPrevTrack": {
+    "message": "Pista anterior",
+    "description": "Name of the media key that goes back to the previous track as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaStop": {
+    "message": "Detener",
+    "description": "Name of the media key that stops playback as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "sessionDefaultName": {
+    "message": "Sesión $1 · $2 · $3",
+    "description": "Default name of a saved session, stored with it. $1 is the capture time as 2026-08-29 14:03 (keep as is), $2 is a window count such as \"3 windows\", $3 a tab count such as \"87 tabs\". Keep the · separators."
+  },
+  "sessionSnapshotDefaultName": {
+    "message": "Instantánea $1 · $2 · $3",
+    "description": "Default name of an automatic snapshot. $1 is the capture time as 2026-08-29 14:03 (keep as is), $2 is a window count such as \"3 windows\", $3 a tab count such as \"87 tabs\". Keep the · separators."
+  },
+  "sessionRecoveredName": {
+    "message": "Sesión anterior (recuperada) $1",
+    "description": "Name given to the snapshot recovered after a browser restart. $1 is its capture time as 2026-08-29 14:03."
+  },
+  "sessionUnreadableMessage": {
+    "message": "Guardada con una versión más reciente de Tab Organizer. Actualiza para abrirla.",
+    "description": "Shown in the saved list instead of a session this version cannot read. Tab Organizer is the extension name."
+  },
+  "sessionUnreadableSchema": {
+    "message": "esquema v$1",
+    "description": "Short technical label after the unreadable-session message. $1 is the data format version number, e.g. 2."
+  },
+  "sessionOriginAlarm": {
+    "message": "auto",
+    "description": "Small lowercase label on a snapshot taken automatically on a timer. One short word."
+  },
+  "sessionOriginManual": {
+    "message": "manual",
+    "description": "Small lowercase label on a snapshot taken by clicking the toolbar icon. One short word."
+  },
+  "sessionOriginStartup": {
+    "message": "inicio",
+    "description": "Small lowercase label on a snapshot taken when the browser started. One short word."
+  },
+  "sessionOriginRecovered": {
+    "message": "recuperada",
+    "description": "Small lowercase label on the snapshot recovered after a browser restart. One short word."
+  },
+  "sessionOriginImport": {
+    "message": "importada",
+    "description": "Small lowercase label on a session that came from an imported file. One short word."
+  },
+  "sessionSavedAt": {
+    "message": "guardada el $1",
+    "description": "Lowercase fragment after the window and tab counts of a session, e.g. \"2 windows · 9 tabs · 4 KB · saved Aug 29, 2026, 14:03\". $1 is the date and time."
+  },
+  "sessionDeleteLabel": {
+    "message": "Eliminar sesión",
+    "description": "Tooltip and screen reader label of the trash icon button on a session row."
+  },
+  "sessionDeleteTitle": {
+    "message": "¿Eliminar la sesión?",
+    "description": "Title of the dialog that confirms deleting a saved session."
+  },
+  "sessionSnapshotDeleteTitle": {
+    "message": "¿Eliminar la instantánea?",
+    "description": "Title of the dialog that confirms deleting an automatic snapshot."
+  },
+  "sessionDeleteBody": {
+    "message": "«$1» se eliminará de este dispositivo. No se puede deshacer.",
+    "description": "Body of the delete confirmation dialog. $1 is the session name or the snapshot's date; use the language's quotation marks around it."
+  },
+  "sessionRestoreTitle_one": {
+    "message": "¿Restaurar $1 pestaña?",
+    "description": "Title of the dialog that confirms opening a large session. $1 is the formatted tab count."
+  },
+  "sessionRestoreTitle_other": {
+    "message": "¿Restaurar $1 pestañas?",
+    "description": "Title of the dialog that confirms opening a large session. $1 is the formatted tab count."
+  },
+  "sessionRestoreBody": {
+    "message": "Las restauraciones grandes pueden tardar y usar mucha memoria.",
+    "description": "Body of the restore confirmation dialog, shown after the sentence saying where the tabs will open (restoreDestinationHere / restoreDestinationNewWindows)."
+  },
+  "sessionRestoreLazyLabel": {
+    "message": "Cargar las pestañas en diferido (recomendado: se cargan al hacer clic)",
+    "description": "Checkbox label in the restore confirmation dialog: restored tabs stay unloaded until clicked."
+  },
+  "sessionRestoreButton": {
+    "message": "Restaurar",
+    "description": "Confirm button of the restore dialog: opens the session's tabs. Short button text."
+  },
+  "sessionGone": {
+    "message": "Esta sesión ya no existe.",
+    "description": "Error shown when a session that was deleted meanwhile (for example from another tab) is opened, exported or shown."
+  },
+  "sessionSnapshotGone": {
+    "message": "Esta instantánea ya no existe.",
+    "description": "Error shown when opening a snapshot that was deleted meanwhile."
+  },
+  "sessionSwitchedToOpenTab": {
+    "message": "Se ha cambiado a esa pestaña, que ya estaba abierta.",
+    "description": "Toast after clicking a saved tab whose page was already open: the open tab was brought forward instead of opening it again."
+  },
+  "sessionNameLabel": {
+    "message": "Nombre de la sesión",
+    "description": "Screen reader label of the text field for renaming a session."
+  },
+  "sessionRenameHint": {
+    "message": "Intro para guardar, Esc para cancelar",
+    "description": "Tooltip of the rename field. Enter and Escape are keyboard keys."
+  },
+  "sessionRename": {
+    "message": "Cambiar nombre",
+    "description": "Menu item and tooltip on the session title that starts renaming the session. Short."
+  },
+  "sessionRenameLabel": {
+    "message": "Cambiar el nombre de la sesión",
+    "description": "Tooltip and screen reader label of the pencil icon button next to the session name."
+  },
+  "sessionOpenTitle": {
+    "message": "Abrir esta sesión en ventanas nuevas",
+    "description": "Tooltip of the Open button on a saved session."
+  },
+  "sessionMoreActions": {
+    "message": "Más acciones",
+    "description": "Tooltip and screen reader label of the ⋯ menu button on a session or snapshot."
+  },
+  "sessionOpenHere": {
+    "message": "Abrir en esta ventana",
+    "description": "Menu item: open the saved session's tabs in the current window. Short menu item."
+  },
+  "sessionWindowsIn": {
+    "message": "Ventanas de $1",
+    "description": "Screen reader label of a session's window list. $1 is the session name."
+  },
+  "sessionOpenWindowTitle": {
+    "message": "Abrir las pestañas de esta ventana en una ventana nueva",
+    "description": "Tooltip of the Open window button on one window of a saved session."
+  },
+  "sessionOpenWindow": {
+    "message": "Abrir ventana",
+    "description": "Small button on one window of a saved session: open its tabs in a new window. Short button text."
+  },
+  "sessionOpenWindowHereTitle": {
+    "message": "Abrir las pestañas de esta ventana en la ventana actual",
+    "description": "Tooltip of the Open here button on one window of a saved session."
+  },
+  "sessionOpenWindowHere": {
+    "message": "Abrir aquí",
+    "description": "Small button on one window of a saved session: open its tabs in the current window. Short button text."
+  },
+  "sessionRemoveWindowTitle": {
+    "message": "Quitar esta ventana de la sesión",
+    "description": "Tooltip of the Remove button on one window of a saved session."
+  },
+  "sessionRemoveWindow": {
+    "message": "Quitar",
+    "description": "Small button that removes one window from a saved session. Short button text."
+  },
+  "sessionCopyLink": {
+    "message": "Copiar enlace",
+    "description": "Tooltip and screen reader label of the link icon button on a saved tab: copies its address."
+  },
+  "sessionRemoveTab": {
+    "message": "Quitar de la sesión",
+    "description": "Tooltip and screen reader label of the × icon button on a saved tab."
+  },
+  "sessionSnapshotLabel": {
+    "message": "Instantánea $1",
+    "description": "Screen reader label of the snapshot view. $1 is the snapshot's date and time."
+  },
+  "sessionSnapshotOpenTitle": {
+    "message": "Abrir esta instantánea en ventanas nuevas",
+    "description": "Tooltip of the Open button on an automatic snapshot."
+  },
+  "sessionKeep": {
+    "message": "Conservar",
+    "description": "Button on an automatic snapshot that moves it into the saved sessions. Short button text; also appears in bold inside sessionSnapshotExplainer."
+  },
+  "sessionKeepTitle": {
+    "message": "Mover a las sesiones guardadas, donde nada la elimina",
+    "description": "Tooltip of the Keep button on an automatic snapshot."
+  },
+  "sessionKeptNotice": {
+    "message": "Conservada como «$1».",
+    "description": "Toast after Keep moved a snapshot into the saved sessions. $1 is the new saved session's name; use the language's quotation marks."
+  },
+  "sessionSnapshotExplainer_one": {
+    "message": "Las instantáneas se toman automáticamente y solo se conserva $1, la más reciente. Pulsa $2 para mover esta a tus sesiones guardadas, donde nada la elimina.",
+    "description": "Explanation under a snapshot's title. $1 is the formatted number of snapshots kept, $2 is the bold word of the Keep button (sessionKeep); keep $2 exactly once."
+  },
+  "sessionSnapshotExplainer_other": {
+    "message": "Las instantáneas se toman automáticamente y solo se conservan las últimas $1. Pulsa $2 para mover esta a tus sesiones guardadas, donde nada la elimina.",
+    "description": "Explanation under a snapshot's title. $1 is the formatted number of snapshots kept, $2 is the bold word of the Keep button (sessionKeep); keep $2 exactly once."
+  },
+  "sessionSnapshotWindows": {
+    "message": "Ventanas de esta instantánea",
+    "description": "Screen reader label of a snapshot's window list."
+  },
+  "expMenuJson": {
+    "message": "Exportar como JSON",
+    "description": "Downloads the session as a JSON file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuMarkdown": {
+    "message": "Exportar como Markdown",
+    "description": "Downloads the session as a Markdown file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuText": {
+    "message": "Exportar como texto",
+    "description": "Downloads the session as a plain-text list of links. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuHtml": {
+    "message": "Exportar como marcadores HTML",
+    "description": "Downloads the session as a bookmarks HTML file that browsers can import. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuCsv": {
+    "message": "Exportar como CSV",
+    "description": "Downloads the session as a CSV spreadsheet file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expFormatJson": {
+    "message": "JSON",
+    "description": "Name of the JSON export format, used on its own."
+  },
+  "expFormatMarkdown": {
+    "message": "Markdown",
+    "description": "Name of the Markdown export format, used on its own."
+  },
+  "expFormatText": {
+    "message": "texto",
+    "description": "Name of the plain-text export format, used on its own (lower case in English)."
+  },
+  "expFormatHtml": {
+    "message": "marcadores HTML",
+    "description": "Name of the bookmarks HTML export format, used on its own."
+  },
+  "expFormatCsv": {
+    "message": "CSV",
+    "description": "Name of the CSV export format, used on its own."
+  },
+  "expExportedJson": {
+    "message": "Se ha exportado «$1» como JSON.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedMarkdown": {
+    "message": "Se ha exportado «$1» como Markdown.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedText": {
+    "message": "Se ha exportado «$1» como texto.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedHtml": {
+    "message": "Se ha exportado «$1» como marcadores HTML.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedCsv": {
+    "message": "Se ha exportado «$1» como CSV.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expScopeWindow": {
+    "message": "$1 (ventana $2)",
+    "description": "Name of an export narrowed to one window, used in the file name and the confirmation. $1 is the session name, $2 the window number."
+  },
+  "expScopeGroup": {
+    "message": "$1 ($2)",
+    "description": "Name of an export narrowed to one tab group. $1 is the session name, $2 the group title."
+  },
+  "expUntitledGroup": {
+    "message": "Grupo sin título",
+    "description": "Stands in for a tab group without a title, in export names and as a heading in Markdown exports."
+  },
+  "expWindowLabel": {
+    "message": "Ventana $1",
+    "description": "Heading for one window inside Markdown and bookmarks HTML exports. $1 is the window number."
+  },
+  "commonCopiedLinks_one": {
+    "message": "Se ha copiado $1 enlace.",
+    "description": "Toast after copying links (of a session, a window, a group or the selected tabs). $1 is the formatted number of links."
+  },
+  "expCopiedMarkdown_one": {
+    "message": "Se ha copiado $1 enlace como Markdown.",
+    "description": "Toast after copying links as a Markdown list. $1 is the formatted number of links."
+  },
+  "commonCopiedLinks_other": {
+    "message": "Se han copiado $1 enlaces.",
+    "description": "Toast after copying links (of a session, a window, a group or the selected tabs). $1 is the formatted number of links."
+  },
+  "expCopiedMarkdown_other": {
+    "message": "Se han copiado $1 enlaces como Markdown.",
+    "description": "Toast after copying links as a Markdown list. $1 is the formatted number of links."
+  },
+  "expCopiedLink": {
+    "message": "Enlace copiado.",
+    "description": "Toast after copying the link of a single tab."
+  },
+  "expNothingToExport": {
+    "message": "No hay nada que exportar: esta selección no tiene pestañas.",
+    "description": "Toast when the chosen window or group holds no tabs."
+  },
+  "expCollecting": {
+    "message": "Recopilando sesiones… $1 de $2.",
+    "description": "Progress toast while every session is read for a backup. $1 is how many are read so far, $2 the total."
+  },
+  "expExportedAll_one": {
+    "message": "Se ha exportado $1 sesión como JSON.",
+    "description": "Toast after 'Export everything' (a JSON backup). $1 is the formatted number of sessions."
+  },
+  "expUnreadable_one": {
+    "message": "No se pudo leer $1 sesión.",
+    "description": "Sentence added after the export toast when some sessions could not be read. $1 is the formatted number of sessions."
+  },
+  "expImportButton_one": {
+    "message": "Importar $1 sesión",
+    "description": "Button that imports the previewed sessions. $1 is the formatted number of sessions. Keep it short."
+  },
+  "expImportedNotice_one": {
+    "message": "Se ha importado $1 sesión.",
+    "description": "Toast after an import. $1 is the formatted number of sessions imported."
+  },
+  "expSessionCount_one": {
+    "message": "$1 sesión",
+    "description": "A number of sessions, in the import preview totals. $1 is the formatted count."
+  },
+  "expExportedAll_other": {
+    "message": "Se han exportado $1 sesiones como JSON.",
+    "description": "Toast after 'Export everything' (a JSON backup). $1 is the formatted number of sessions."
+  },
+  "expUnreadable_other": {
+    "message": "No se pudieron leer $1 sesiones.",
+    "description": "Sentence added after the export toast when some sessions could not be read. $1 is the formatted number of sessions."
+  },
+  "expImportButton_other": {
+    "message": "Importar $1 sesiones",
+    "description": "Button that imports the previewed sessions. $1 is the formatted number of sessions. Keep it short."
+  },
+  "expImportedNotice_other": {
+    "message": "Se han importado $1 sesiones.",
+    "description": "Toast after an import. $1 is the formatted number of sessions imported."
+  },
+  "expSessionCount_other": {
+    "message": "$1 sesiones",
+    "description": "A number of sessions, in the import preview totals. $1 is the formatted count."
+  },
+  "expNothingToExportAll": {
+    "message": "No hay nada que exportar: aún no hay sesiones guardadas.",
+    "description": "Toast when 'Export everything' finds no sessions."
+  },
+  "expClipboardUnavailable": {
+    "message": "No se pudo copiar: este navegador no ha permitido el acceso al portapapeles desde esta página.",
+    "description": "Error when the clipboard cannot be used at all."
+  },
+  "expCopyFailed": {
+    "message": "No se pudo copiar al portapapeles: $1",
+    "description": "Error when copying failed. $1 is the reason, a complete sentence already in your language (one of the error* messages)."
+  },
+  "expCopyFailedPlain": {
+    "message": "No se pudo copiar al portapapeles.",
+    "description": "Error when copying failed and there is no reason that can be shown."
+  },
+  "expMenuButton": {
+    "message": "Exportar",
+    "description": "Accessible name of the export menu's icon button."
+  },
+  "expMenuTitleGroup": {
+    "message": "Exportar o copiar este grupo",
+    "description": "Tooltip of the export button on a tab group."
+  },
+  "expMenuTitleWindow": {
+    "message": "Exportar o copiar esta ventana",
+    "description": "Tooltip of the export button on a window."
+  },
+  "expMenuTitleAll": {
+    "message": "Exportar o copiar todo",
+    "description": "Tooltip of the export button on a whole session."
+  },
+  "expCopyLinks": {
+    "message": "Copiar enlaces",
+    "description": "Export menu item that copies every link as plain text. Keep it short."
+  },
+  "expCopyMarkdown": {
+    "message": "Copiar como Markdown",
+    "description": "Export menu item that copies every link as a Markdown list. Keep it short."
+  },
+  "expImportedName": {
+    "message": "$1 (importada)",
+    "description": "Name given to a session read from a JSON import. $1 is the session's original name."
+  },
+  "expImportedBookmarks": {
+    "message": "Marcadores importados",
+    "description": "Name of a session made from bookmarks that were not in any folder."
+  },
+  "expImportedLinks": {
+    "message": "Enlaces importados",
+    "description": "Name of the session made from pasted links or a Markdown/text file."
+  },
+  "expErrorMalformedJson": {
+    "message": "No es un JSON válido.",
+    "description": "Import error when the pasted or chosen text starts like JSON but cannot be read as JSON."
+  },
+  "expErrorMalformedJsonAt": {
+    "message": "No es un JSON válido (línea $1, columna $2).",
+    "description": "Import error when the text cannot be read as JSON, with where the reading stopped. $1 is the line number, $2 the column number."
+  },
+  "expErrorNoSessionsList": {
+    "message": "El paquete exportado no tiene una lista \"sessions\".",
+    "description": "Import error for a Tab Organizer JSON file without its sessions list. Keep \"sessions\" as is: it is the field name in the file."
+  },
+  "expErrorNoSessions": {
+    "message": "La exportación no contiene sesiones.",
+    "description": "Import error for an empty export."
+  },
+  "expErrorInvalidSession": {
+    "message": "La sesión $1 no es un registro de sesión válido de Tab Organizer.",
+    "description": "Import error. $1 is the 1-based position of the bad session in the file."
+  },
+  "expErrorNotExport": {
+    "message": "El JSON no es una exportación de Tab Organizer.",
+    "description": "Import error for JSON from somewhere else."
+  },
+  "expErrorSchemaVersion": {
+    "message": "Versión de esquema de sesión no admitida: $1 (esta versión lee la $2).",
+    "description": "Import error for a file from another version of the extension. $1 is the file's schema version, $2 the one this build reads."
+  },
+  "expErrorNoBookmarks": {
+    "message": "No se han encontrado marcadores en el HTML.",
+    "description": "Import error for a bookmarks HTML file without links."
+  },
+  "expErrorNoUrls": {
+    "message": "No se han encontrado URLs.",
+    "description": "Import error for pasted text or Markdown without links."
+  },
+  "expErrorNothingToImport": {
+    "message": "No hay nada que importar: pega una exportación JSON de Tab Organizer, un archivo HTML de marcadores, Markdown o una lista de URLs.",
+    "description": "Import error when the pasted text is not any known format."
+  },
+  "expWarnNoWindows": {
+    "message": "«$1» no tiene ventanas.",
+    "description": "Import preview warning. $1 is a session name."
+  },
+  "expWarnEmptyWindow": {
+    "message": "«$1»: la ventana $2 no tiene pestañas.",
+    "description": "Import preview warning. $1 is a session name, $2 a window number."
+  },
+  "expErrorTooLarge": {
+    "message": "Es demasiado grande para importarlo ($1). El límite es $2.",
+    "description": "Import error for an oversized file or paste. $1 is its size, $2 the limit (both like '25.0 MB')."
+  },
+  "expErrorFileRead": {
+    "message": "No se pudo leer este archivo: $1",
+    "description": "Import error when the chosen file cannot be read. $1 is the reason, a complete sentence already in your language (one of the error* messages)."
+  },
+  "expErrorFileReadPlain": {
+    "message": "No se pudo leer este archivo.",
+    "description": "Import error when the chosen file cannot be read and there is no reason that can be shown."
+  },
+  "expDetectedJson": {
+    "message": "JSON de Tab Organizer",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedHtml": {
+    "message": "Marcadores HTML",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedMarkdown": {
+    "message": "Markdown",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedLinks": {
+    "message": "Enlaces",
+    "description": "Import format name for a plain list of links, shown after 'Detected'."
+  },
+  "expDetected": {
+    "message": "Detectado: $1",
+    "description": "Import preview line; the session totals follow it after a ' · '. $1 is the format name (drawn in bold), e.g. 'Bookmarks HTML'."
+  },
+  "expImportTitle": {
+    "message": "Importar sesiones",
+    "description": "Title of the import dialog."
+  },
+  "expImportDescription": {
+    "message": "Una exportación JSON de Tab Organizer, un archivo HTML de marcadores, Markdown o una lista de enlaces sin formato. Las sesiones importadas se añaden a la lista de guardadas en este dispositivo; no se sube nada.",
+    "description": "Explanation under the import dialog's title."
+  },
+  "expChooseFile": {
+    "message": "Elegir un archivo",
+    "description": "Label of the import dialog's file picker."
+  },
+  "expPasteLabel": {
+    "message": "Pega sesiones, marcadores o enlaces",
+    "description": "Label of the import dialog's paste box."
+  },
+  "expPastePlaceholder": {
+    "message": "https://example.com/\n- [Documentación](https://example.com/docs)",
+    "description": "Placeholder of the paste box: an example bare link, a line break, then a Markdown link. Only translate the word 'Docs'; keep the URLs and the '- [..](..)' syntax."
+  },
+  "expPreviewWindow_one": {
+    "message": "Ventana $2 · $1 pestaña",
+    "description": "Import preview line for one window. $2 is the window number, $1 the formatted number of tabs in it."
+  },
+  "expMoreTabs_one": {
+    "message": "+$1 pestaña más",
+    "description": "Import preview: tabs of a window not listed. $1 is the formatted count."
+  },
+  "expPreviewWindow_other": {
+    "message": "Ventana $2 · $1 pestañas",
+    "description": "Import preview line for one window. $2 is the window number, $1 the formatted number of tabs in it."
+  },
+  "expMoreTabs_other": {
+    "message": "+$1 pestañas más",
+    "description": "Import preview: tabs of a window not listed. $1 is the formatted count."
+  },
+  "expMoreWindows_one": {
+    "message": "+$1 ventana más",
+    "description": "Import preview: windows of a session not listed. $1 is the formatted count."
+  },
+  "expMoreWindows_other": {
+    "message": "+$1 ventanas más",
+    "description": "Import preview: windows of a session not listed. $1 is the formatted count."
+  },
+  "expMoreSessions_one": {
+    "message": "+$1 sesión más",
+    "description": "Import preview: sessions not listed. $1 is the formatted count."
+  },
+  "expMoreSessions_other": {
+    "message": "+$1 sesiones más",
+    "description": "Import preview: sessions not listed. $1 is the formatted count."
+  },
+  "expImport": {
+    "message": "Importar",
+    "description": "Import button while nothing importable has been chosen yet. Keep it short."
+  },
+  "appNothingToSaveWindow": {
+    "message": "No hay nada que guardar: esta ventana solo contiene Tab Organizer.",
+    "description": "Notice toast after Save when the current window holds nothing but the extension's own page. 'Tab Organizer' is the extension name."
+  },
+  "appNothingToSaveAll": {
+    "message": "No hay nada que guardar: ninguna ventana abierta contiene algo aparte de Tab Organizer.",
+    "description": "Notice toast after 'Save all windows' when no window holds anything but the extension's own page. 'Tab Organizer' is the extension name."
+  },
+  "appNothingToSaveTabs": {
+    "message": "No hay nada que guardar: las pestañas seleccionadas ya no están abiertas.",
+    "description": "Notice toast after saving selected tabs when every selected tab has been closed meanwhile."
+  },
+  "appSavedNotice": {
+    "message": "Se ha guardado «$1». Cámbiale el nombre desde su título.",
+    "description": "Notice toast after a session is saved. $1 is the session's name. The second sentence tells the user that clicking the session's title renames it."
+  },
+  "appOpenAlreadyRunning": {
+    "message": "Ya se está abriendo una sesión.",
+    "description": "Notice toast when the user opens a saved session while another one is still being opened (restored)."
+  },
+  "appSearchNothingFound": {
+    "message": "Nada en tus pestañas abiertas ni en tus sesiones guardadas.",
+    "description": "Shown in the search results when nothing matches; a button offering to search automatic snapshots follows it."
+  },
+  "appSearchHistoryTitle": {
+    "message": "Buscar también en las instantáneas automáticas",
+    "description": "Tooltip of the button that extends the search to automatic snapshots (auto-saved sessions)."
+  },
+  "appSearchHistoryButton": {
+    "message": "Buscar también en instantáneas",
+    "description": "Small button under empty search results that extends the search to automatic snapshots. Keep short (button). Use the same word for snapshots as everywhere else."
+  },
+  "appHomeTitle": {
+    "message": "Volver a las pestañas abiertas",
+    "description": "Tooltip of the extension name at the top left of the page, which is a link back to the open tabs view."
+  },
+  "commonOpenSettingsTitle": {
+    "message": "Abrir la configuración",
+    "description": "Tooltip of the Settings button in the page header and of the link that opens the Settings dialog."
+  },
+  "appSettings": {
+    "message": "Configuración",
+    "description": "Label of the Settings button in the page header. Keep short (button)."
+  },
+  "appResizeSidebarLabel": {
+    "message": "Cambiar el tamaño de la barra lateral",
+    "description": "Screen-reader label of the draggable handle between the sidebar and the main pane."
+  },
+  "appResizeSidebarTitle": {
+    "message": "Arrastra para cambiar el tamaño de la barra lateral; haz doble clic para restablecerlo",
+    "description": "Tooltip of the draggable handle between the sidebar and the main pane."
+  },
+  "appNavLabel": {
+    "message": "Sesiones",
+    "description": "Screen-reader label of the sidebar navigation (open tabs, saved sessions, snapshots)."
+  },
+  "appNavOpenTabs": {
+    "message": "Pestañas abiertas",
+    "description": "Sidebar row that shows the browser's currently open tabs. Keep short (menu item)."
+  },
+  "appNavTabsOpen_one": {
+    "message": "$1 pestaña abierta",
+    "description": "Tooltip on the tab count of the 'Open tabs' sidebar row. $1 is the formatted number of open tabs."
+  },
+  "appNavTabsOpen_other": {
+    "message": "$1 pestañas abiertas",
+    "description": "Tooltip on the tab count of the 'Open tabs' sidebar row. $1 is the formatted number of open tabs."
+  },
+  "appNavSaved": {
+    "message": "Guardadas",
+    "description": "Sidebar section heading above the list of saved sessions. Shown in uppercase. Keep short."
+  },
+  "appNavNothingSaved": {
+    "message": "Aún no hay nada guardado.",
+    "description": "Shown in the sidebar's Saved section when there are no saved sessions."
+  },
+  "commonWindowsAndTabs": {
+    "message": "$1 · $2",
+    "description": "A window count and a tab count on one line: the second line of a sidebar row, the Open tabs heading, the import preview. $1 is a window count phrase such as '2 windows', $2 a tab count phrase such as '14 tabs'. Change the separator or order if your language needs it."
+  },
+  "appNavSavedAt": {
+    "message": "Guardada el $1",
+    "description": "Third line of a saved session row in the sidebar. $1 is the date and time it was last saved, already formatted."
+  },
+  "appNavNewerTitle": {
+    "message": "Guardada con una versión más reciente de Tab Organizer",
+    "description": "Tooltip of the 'newer' badge on a session this version cannot read. 'Tab Organizer' is the extension name."
+  },
+  "appNavNewerBadge": {
+    "message": "más reciente",
+    "description": "Small lowercase badge on a session saved by a newer version of the extension. One short word."
+  },
+  "appNavAutoSaved": {
+    "message": "Instantáneas automáticas",
+    "description": "Sidebar section heading above the list of automatic snapshots. Use the same term for snapshots as everywhere else (settingsAutoSnapshots)."
+  },
+  "appNavHideSnapshots": {
+    "message": "Ocultar instantáneas",
+    "description": "Tooltip of the toggle that folds away the list of automatic snapshots."
+  },
+  "appNavShowSnapshots": {
+    "message": "Mostrar instantáneas",
+    "description": "Tooltip of the toggle that unfolds the list of automatic snapshots."
+  },
+  "appNavNoSnapshots": {
+    "message": "Aún no hay instantáneas",
+    "description": "Label of the snapshots toggle in the sidebar when no automatic snapshot exists."
+  },
+  "appNavSnapshotCount_one": {
+    "message": "$1 instantánea",
+    "description": "Label of the snapshots toggle in the sidebar. $1 is the formatted number of automatic snapshots."
+  },
+  "appNavSnapshotCount_other": {
+    "message": "$1 instantáneas",
+    "description": "Label of the snapshots toggle in the sidebar. $1 is the formatted number of automatic snapshots."
+  },
+  "appNavRecoveredTitle": {
+    "message": "Tomada antes del último reinicio del navegador",
+    "description": "Tooltip of the 'recovered' badge on the snapshot taken just before the browser was last restarted."
+  },
+  "appNavRecoveredBadge": {
+    "message": "recuperada",
+    "description": "Small lowercase badge on the snapshot taken before the last browser restart. One short word."
+  },
+  "appNavKeptTitle": {
+    "message": "Conservada: nunca se elimina para hacer sitio",
+    "description": "Tooltip of the 'kept' badge on a snapshot that is protected from automatic deletion."
+  },
+  "appNavKeptBadge": {
+    "message": "conservada",
+    "description": "Small lowercase badge on a protected snapshot. One short word."
+  },
+  "openHeading": {
+    "message": "Pestañas abiertas",
+    "description": "Heading of the view that lists the browser's open windows and tabs; also the accessible name of that section and its sidebar entry. Short, at most 20 characters."
+  },
+  "openSaveAllWindows": {
+    "message": "Guardar todas las ventanas",
+    "description": "Button on the Open tabs view when more than one window is open: saves every window as one session. Short button text."
+  },
+  "openSaveThisWindow": {
+    "message": "Guardar esta ventana",
+    "description": "Button on the Open tabs view when only one window is open: saves it as a session. Short button text."
+  },
+  "openSaveAllWindowsTitle": {
+    "message": "Guardar todas las ventanas abiertas como una sesión",
+    "description": "Tooltip of the Save all windows button."
+  },
+  "openSaveWindowTitle": {
+    "message": "Guardar esta ventana como sesión",
+    "description": "Tooltip of a button that saves one browser window as a session."
+  },
+  "openFirstRunHint": {
+    "message": "Aún no hay nada guardado. Pulsa $1 o haz clic derecho en el icono de Tab Organizer y elige $2. Para usar una combinación de teclas, $3.",
+    "description": "Hint shown on the Open tabs view while no session has been saved. $1 is the Save button's label (e.g. 'Save all windows'), shown in bold. $2 is the right-click menu item 'Save all windows as session', shown in bold. $3 is a link that opens Settings (openFirstRunHintSettingsLink). Keep 'Tab Organizer' as is."
+  },
+  "openFirstRunHintSettingsLink": {
+    "message": "configúrala en Configuración",
+    "description": "Link text inside openFirstRunHint ($3), after 'To use a keyboard shortcut,'. Opens the Settings dialog. Lower case, it continues the sentence."
+  },
+  "openWindowsHeading": {
+    "message": "Ventanas abiertas",
+    "description": "Screen-reader heading of the tree of live browser windows on the Open tabs view."
+  },
+  "openNoWindows": {
+    "message": "No hay ventanas abiertas que mostrar.",
+    "description": "Shown in the Open tabs view when there is no browser window to list."
+  },
+  "openThisWindow": {
+    "message": "Esta ventana",
+    "description": "Badge on the window the app page itself is in. Very short, at most 15 characters."
+  },
+  "openThisWindowTitle": {
+    "message": "La ventana en la que está esta página",
+    "description": "Tooltip of the 'This window' badge."
+  },
+  "openSaveWindow": {
+    "message": "Guardar ventana",
+    "description": "Small button on one window of the Open tabs list: saves that window as a session. Short button text."
+  },
+  "openCloseWindow": {
+    "message": "Cerrar ventana",
+    "description": "Small button on one window of the Open tabs list, and the confirm button of the close-window dialog. Short button text."
+  },
+  "openCloseWindowTooltip": {
+    "message": "Cerrar esta ventana y todas sus pestañas",
+    "description": "Tooltip of the Close window button."
+  },
+  "openGoToTab": {
+    "message": "Ir a la pestaña",
+    "description": "Icon button (label and tooltip) on a tab row: switches to that tab."
+  },
+  "openCloseTab": {
+    "message": "Cerrar pestaña",
+    "description": "Icon button (label and tooltip) on a tab row: closes that tab."
+  },
+  "openCloseWindowQuestion": {
+    "message": "¿Cerrar la ventana $1?",
+    "description": "Title of the dialog that confirms closing a browser window. $1 is the window's number in the list (1, 2, ...)."
+  },
+  "openCloseWindowBody_one": {
+    "message": "Se cerrará $1 pestaña. Guarda antes la ventana si quieres recuperarla.",
+    "description": "Text of the close-window dialog. $1 is the formatted number of tabs in the window."
+  },
+  "openCloseWindowBody_other": {
+    "message": "Se cerrarán $1 pestañas. Guarda antes la ventana si quieres recuperarlas.",
+    "description": "Text of the close-window dialog. $1 is the formatted number of tabs in the window."
+  },
+  "openCloseWindowIsCurrent": {
+    "message": "Es la ventana en la que está Tab Organizer.",
+    "description": "Extra sentence after openCloseWindowBody when the window being closed holds the app page itself, so closing it closes the page too."
+  },
+  "openCloseTabsQuestion_one": {
+    "message": "¿Cerrar $1 pestaña?",
+    "description": "Title of the dialog that confirms closing the selected tabs. $1 is the formatted number of tabs."
+  },
+  "openCloseTabsQuestion_other": {
+    "message": "¿Cerrar $1 pestañas?",
+    "description": "Title of the dialog that confirms closing the selected tabs. $1 is the formatted number of tabs."
+  },
+  "openCloseTabsBody": {
+    "message": "Se cerrarán todas las pestañas seleccionadas, incluidas las que estén dentro de un grupo contraído o más abajo en una ventana larga de lo que muestra la lista. Usa Guardar y cerrar si quieres recuperarlas.",
+    "description": "Text of the dialog that confirms closing several selected tabs. 'Save & close' is the menu item openSaveAndClose and must read the same."
+  },
+  "openCloseTabs": {
+    "message": "Cerrar pestañas",
+    "description": "Confirm button of the dialog that closes the selected tabs. Short button text."
+  },
+  "openClearSelection": {
+    "message": "Borrar selección",
+    "description": "Icon button (label and tooltip) that unticks every selected tab."
+  },
+  "openSelectedTabs_one": {
+    "message": "$1 pestaña seleccionada",
+    "description": "Heading of the bar shown while tabs are ticked. $1 is the formatted number of ticked tabs."
+  },
+  "openSelectedTabs_other": {
+    "message": "$1 pestañas seleccionadas",
+    "description": "Heading of the bar shown while tabs are ticked. $1 is the formatted number of ticked tabs."
+  },
+  "openSaveTabsTitle": {
+    "message": "Guardar estas pestañas como sesión",
+    "description": "Tooltip of the Save button in the selection bar."
+  },
+  "openCopy": {
+    "message": "Copiar",
+    "description": "Button in the selection bar: copies the links of the selected tabs. Short button text."
+  },
+  "openCopyTitle": {
+    "message": "Copiar los enlaces de estas pestañas",
+    "description": "Tooltip of the Copy button in the selection bar."
+  },
+  "openCloseTabsTitle": {
+    "message": "Cerrar estas pestañas",
+    "description": "Tooltip of the Close button in the selection bar."
+  },
+  "openMoreActions": {
+    "message": "Más acciones para las pestañas seleccionadas",
+    "description": "Label and tooltip of the menu button with more actions in the selection bar."
+  },
+  "openSaveAndClose": {
+    "message": "Guardar y cerrar",
+    "description": "Menu item: saves the selected tabs as a session, then closes them. Short menu item."
+  },
+  "openCopyAs": {
+    "message": "Copiar como…",
+    "description": "Menu item that opens a submenu of copy formats. Short menu item."
+  },
+  "openSelectLike": {
+    "message": "Seleccionar todas las pestañas de este sitio",
+    "description": "Menu item: selects every open tab on the same sites as the selected ones."
+  },
+  "openSelectUnlike": {
+    "message": "Seleccionar todas las pestañas de otros sitios",
+    "description": "Menu item: selects every open tab on any other site than the selected ones."
+  },
+  "openCopyFormatLinks": {
+    "message": "Enlaces",
+    "description": "Copy format in the 'Copy as…' submenu: one link per line. Short menu item."
+  },
+  "openCopyFormatMarkdown": {
+    "message": "Enlaces Markdown",
+    "description": "Copy format in the 'Copy as…' submenu: Markdown [title](url) links. Short menu item."
+  },
+  "openCopyFormatTitled": {
+    "message": "Títulos y enlaces",
+    "description": "Copy format in the 'Copy as…' submenu: each tab's title on one line and its link on the next. Short menu item."
+  },
+  "openCopiedLinksMarkdown_one": {
+    "message": "Se ha copiado $1 enlace como Markdown.",
+    "description": "Toast after copying the selected tabs as Markdown links. $1 is the formatted number of links."
+  },
+  "openCopiedLinksMarkdown_other": {
+    "message": "Se han copiado $1 enlaces como Markdown.",
+    "description": "Toast after copying the selected tabs as Markdown links. $1 is the formatted number of links."
+  },
+  "openCopiedLinksTitled_one": {
+    "message": "Se ha copiado $1 enlace con título.",
+    "description": "Toast after copying the selected tabs as titles and links. $1 is the formatted number of links."
+  },
+  "openCopiedLinksTitled_other": {
+    "message": "Se han copiado $1 enlaces con títulos.",
+    "description": "Toast after copying the selected tabs as titles and links. $1 is the formatted number of links."
+  },
+  "openClosedTabs_one": {
+    "message": "Se ha cerrado $1 pestaña.",
+    "description": "Toast after closing selected tabs. $1 is the formatted number of tabs."
+  },
+  "openClosedTabs_other": {
+    "message": "Se han cerrado $1 pestañas.",
+    "description": "Toast after closing selected tabs. $1 is the formatted number of tabs."
+  },
+  "openKeptOpen_one": {
+    "message": "No se pudo guardar $1 pestaña, así que se ha dejado abierta.",
+    "description": "Toast after 'Save & close' when some selected tabs could not be saved and so were not closed. $1 is the formatted number of those tabs."
+  },
+  "openKeptOpen_other": {
+    "message": "No se pudieron guardar $1 pestañas, así que se han dejado abiertas.",
+    "description": "Toast after 'Save & close' when some selected tabs could not be saved and so were not closed. $1 is the formatted number of those tabs."
+  },
+  "openAssembleBusy": {
+    "message": "Aún se están reuniendo las pestañas, un momento.",
+    "description": "Toast when Assemble! is pressed while a previous run is still moving tabs."
+  },
+  "openAssembleNothing": {
+    "message": "No hay nada que reunir: ninguna otra ventana tiene pestañas.",
+    "description": "Toast when Assemble! finds no other window to move tabs from."
+  },
+  "openAssembleDone_one": {
+    "message": "Se ha reunido $1 ventana en esta.",
+    "description": "Toast after Assemble! moved every other window's tabs into this window. $1 is the formatted number of windows gathered."
+  },
+  "openAssembleDone_other": {
+    "message": "Se han reunido $1 ventanas en esta.",
+    "description": "Toast after Assemble! moved every other window's tabs into this window. $1 is the formatted number of windows gathered."
+  },
+  "openAssemblePartial_one": {
+    "message": "Se han reunido aquí las pestañas de $2; $1 ventana no se pudo mover y se ha dejado como estaba.",
+    "description": "Error line after Assemble! when some windows failed. $1 is the formatted number of windows that could not be moved. $2 is how many were gathered, already counted, e.g. '2 windows' (from windowCount)."
+  },
+  "openAssemblePartial_other": {
+    "message": "Se han reunido aquí las pestañas de $2; $1 ventanas no se pudieron mover y se han dejado como estaban.",
+    "description": "Error line after Assemble! when some windows failed. $1 is the formatted number of windows that could not be moved. $2 is how many were gathered, already counted, e.g. '2 windows' (from windowCount)."
+  },
+  "openUnsupportedUrl": {
+    "message": "Esta pestaña no se puede abrir (URL no admitida).",
+    "description": "Error shown when a saved tab's address is of a kind the extension refuses to open (data:, javascript:, another extension's page)."
+  },
+  "openNoCurrentWindow": {
+    "message": "No se pudo identificar esta ventana.",
+    "description": "Error shown when opening a session into this window fails because the browser did not report which window the page is in."
+  },
+  "treeWindowLabel": {
+    "message": "Ventana $1",
+    "description": "Heading and screen-reader label of one browser window in a tab list. $1 is the window's number (1, 2, 3...). Short heading."
+  },
+  "treeTabCountWithState": {
+    "message": "$1 · $2",
+    "description": "Window header line when the window is not in its normal state. $1 is a tab count such as \"12 tabs\", $2 is the window state such as \"minimized\". Keep the middle dot separator unless your language uses another."
+  },
+  "treeWindowStateNormal": {
+    "message": "normal",
+    "description": "State of a browser window (neither minimized, maximized nor full screen). Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateMinimized": {
+    "message": "minimizada",
+    "description": "State of a browser window that is minimized. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateMaximized": {
+    "message": "maximizada",
+    "description": "State of a browser window that is maximized. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateFullscreen": {
+    "message": "pantalla completa",
+    "description": "State of a browser window in full screen mode. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeUntitledGroup": {
+    "message": "Grupo sin título",
+    "description": "Name shown for a Chrome tab group that has no title. Short label on a small chip."
+  },
+  "treeCollapseGroup": {
+    "message": "Contraer $1",
+    "description": "Tooltip of a tab group header while the group is open; clicking hides its tabs. $1 is the group's name."
+  },
+  "treeExpandGroup": {
+    "message": "Expandir $1",
+    "description": "Tooltip of a tab group header while the group is closed; clicking shows its tabs. $1 is the group's name."
+  },
+  "treePinned": {
+    "message": "Fijada",
+    "description": "Screen-reader label of the pin icon on a tab row: the tab is pinned in Chrome. One word."
+  },
+  "treeSelectTab": {
+    "message": "Seleccionar $1",
+    "description": "Screen-reader label of the tick box on a tab row. $1 is the tab's title (or its address when it has none)."
+  },
+  "treeSelectTabHint": {
+    "message": "Seleccionar esta pestaña (Mayús + clic selecciona un intervalo)",
+    "description": "Tooltip of the tick box on a tab row. Shift-click ticks every tab between this one and the one ticked last."
+  },
+  "treeShowMoreTabs_one": {
+    "message": "Mostrar $1 pestaña más",
+    "description": "Button under a very large window's tab list that shows the next tabs. $1 is the formatted count of tabs it will add. Button text, keep short."
+  },
+  "treeShowMoreTabs_other": {
+    "message": "Mostrar $1 pestañas más",
+    "description": "Button under a very large window's tab list that shows the next tabs. $1 is the formatted count of tabs it will add. Button text, keep short."
+  },
+  "treeSessionMeta": {
+    "message": "$1 · $2 · $3",
+    "description": "One line of facts about a saved session or snapshot. $1 is a window count such as \"3 windows\", $2 a tab count such as \"87 tabs\", $3 its size on disk such as \"2.1 KB\". Keep the middle dot separators unless your language uses another."
+  },
+  "treeSizeBytes": {
+    "message": "$1 B",
+    "description": "A storage size in bytes. $1 is the formatted number. Keep the unit symbol short."
+  },
+  "treeSizeKilobytes": {
+    "message": "$1 KB",
+    "description": "A storage size in kilobytes (1024 bytes). $1 is the formatted number with one decimal. Keep the unit symbol short."
+  },
+  "treeSizeMegabytes": {
+    "message": "$1 MB",
+    "description": "A storage size in megabytes (1024 x 1024 bytes). $1 is the formatted number with one decimal. Keep the unit symbol short."
+  },
+  "searchOpenWindowsName": {
+    "message": "Ventanas abiertas",
+    "description": "Name shown for the browser's currently open windows in search results, where a saved session's name would otherwise appear (e.g. \"Open windows · Window 2\"). Short."
+  },
+  "searchGroupMatchingSessions": {
+    "message": "Sesiones coincidentes",
+    "description": "Heading of the search results group listing saved sessions whose name matches the query. Shown in small capitals; short."
+  },
+  "searchGroupOpenTabs": {
+    "message": "Pestañas abiertas",
+    "description": "Heading of the search results group listing matching tabs that are open in the browser now. Shown in small capitals; short."
+  },
+  "searchGroupSavedSessions": {
+    "message": "Sesiones guardadas",
+    "description": "Heading of the search results group listing matching tabs inside saved sessions. Shown in small capitals; short."
+  },
+  "searchGroupHistory": {
+    "message": "Instantáneas",
+    "description": "Heading of the search results group listing matching tabs inside automatic snapshots. Shown in small capitals; short. Use the same word for snapshots as everywhere else."
+  },
+  "searchLabel": {
+    "message": "Buscar",
+    "description": "Accessible name of the search box at the top of the app page. One word."
+  },
+  "searchInputTitle": {
+    "message": "Buscar en las pestañas abiertas, las sesiones guardadas y sus direcciones",
+    "description": "Tooltip of the search box at the top of the app page."
+  },
+  "searchPlaceholder": {
+    "message": "Buscar pestañas y sesiones (pulsa /)",
+    "description": "Placeholder text inside the empty search box. The \"/\" is the keyboard key that focuses the box; keep it as is. Keep it short enough to fit a narrow box (about 40 characters)."
+  },
+  "searchClear": {
+    "message": "Borrar búsqueda",
+    "description": "Tooltip and accessible name of the X button that empties the search box."
+  },
+  "searchResultPlace": {
+    "message": "$1 · ventana $2",
+    "description": "Where a matching tab is, shown beside it in search results. $1 is the session name (or the name for the open windows), $2 is the window's number (1, 2, ...). Short; it is cut off when too long."
+  },
+  "searchRestoreSession": {
+    "message": "Restaurar sesión",
+    "description": "Button beside a session in search results that opens the whole session again. Button text, short."
+  },
+  "searchResultsHeading": {
+    "message": "Resultados de la búsqueda",
+    "description": "Heading above the search results."
+  },
+  "searchResultCount_one": {
+    "message": "$1 resultado",
+    "description": "Number of search results, beside the results heading and read out by screen readers. $1 is the formatted count."
+  },
+  "searchResultCount_other": {
+    "message": "$1 resultados",
+    "description": "Number of search results, beside the results heading and read out by screen readers. $1 is the formatted count."
+  },
+  "searchStillLoading": {
+    "message": "Aún se están cargando las sesiones…",
+    "description": "Shown beside the result count while saved sessions are still being read, so more results may appear."
+  },
+  "searchNoMatches": {
+    "message": "No hay coincidencias para «$1».",
+    "description": "Shown when a search finds nothing. $1 is the text the user typed."
+  },
+  "searchShowMore": {
+    "message": "Mostrar más",
+    "description": "Button under a group of search results that shows more of them. Button text, short."
+  },
+  "storageSessionNotFound": {
+    "message": "Sesión no encontrada: $1",
+    "description": "Error shown when an action targets a saved session or snapshot that no longer exists (deleted elsewhere). $1 is the session's internal id."
+  },
+  "storageUnnamedSession": {
+    "message": "Sesión sin nombre",
+    "description": "Fallback name for a session in the sidebar when its stored record has no name (e.g. saved by a newer version). Short, like a title."
+  },
+  "storageUnknownError": {
+    "message": "Error desconocido",
+    "description": "Shown in error lines and toasts when a failure carries no message. Short."
+  },
+  "errorGeneric": {
+    "message": "Algo salió mal. Los detalles están en la consola del navegador.",
+    "description": "Shown in error lines and toasts for a failure the extension cannot explain (the technical details go to the browser console)."
+  },
+  "errorSessionChanged": {
+    "message": "La sesión ha cambiado mientras tanto. Inténtalo de nuevo.",
+    "description": "Error when a window, tab or group that was on screen is no longer in the stored session (it was changed in another tab, or by the automatic snapshots)."
+  },
+  "errorDataUnreadable": {
+    "message": "No se pudieron leer los datos guardados.",
+    "description": "Error when stored session data is damaged and cannot be read."
+  },
+  "errorDataTooNew": {
+    "message": "Estos datos se guardaron con una versión más reciente de Tab Organizer. Actualiza la extensión para usarlos.",
+    "description": "Error when stored data was written by a newer version of the extension. Tab Organizer is the extension name."
+  },
+  "errorRestoreNoWindow": {
+    "message": "Chrome no abrió ninguna ventana en la que restaurar.",
+    "description": "Error when Chrome did not open the new window a restore asked for."
+  },
+  "errorTabsBusy": {
+    "message": "Chrome está ocupado con las pestañas, quizá porque se está arrastrando una. Inténtalo de nuevo.",
+    "description": "Error when Chrome refuses to change tabs for a moment, usually because a tab is being dragged."
+  },
+  "errorTabGone": {
+    "message": "Esa pestaña o ventana ya no está abierta.",
+    "description": "Error when the tab, window or tab group an action was meant for has been closed meanwhile."
+  },
+  "errorWindowBounds": {
+    "message": "La posición guardada de la ventana no cabe en esta pantalla.",
+    "description": "Error when a restored window's saved position and size do not fit the current screen."
+  },
+  "errorNotAllowed": {
+    "message": "El navegador no lo ha permitido.",
+    "description": "Error when the browser refused an action such as copying to the clipboard (for example because the page was not focused)."
+  },
+  "storageQuotaNotice": {
+    "message": "El almacenamiento está lleno. Elimina instantáneas o sesiones antiguas.",
+    "description": "Red notice shown when saving or importing fails because the extension's local storage is full."
+  },
+  "storageShowStorageUse": {
+    "message": "Ver uso del almacenamiento",
+    "description": "Small button on the 'storage is full' notice; scrolls to the storage meter in Settings. Button, keep short."
+  },
+  "storageTotalLine": {
+    "message": "$1 almacenados en este dispositivo",
+    "description": "Storage meter headline in Settings. $1 is a size such as '4.6 MB'."
+  },
+  "storageDetailLine": {
+    "message": "$1 en $2 · $3 en $4",
+    "description": "Storage meter breakdown under the headline. $1 is the size of saved sessions (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $3 the size of snapshots, $4 the counted phrase storageSnapshotCount (e.g. '12 snapshots'). Keep the middle dot separator."
+  },
+  "storageSavedSessionCount_one": {
+    "message": "$1 sesión guardada",
+    "description": "Counted noun phrase used inside storage messages (singular). $1 is the number."
+  },
+  "storageSavedSessionCount_other": {
+    "message": "$1 sesiones guardadas",
+    "description": "Counted noun phrase used inside storage messages (plural). $1 is the number."
+  },
+  "storageSnapshotCount_one": {
+    "message": "$1 instantánea",
+    "description": "Counted noun phrase for automatic snapshots used inside storage messages (singular). $1 is the number."
+  },
+  "storageSnapshotCount_other": {
+    "message": "$1 instantáneas",
+    "description": "Counted noun phrase for automatic snapshots used inside storage messages (plural). $1 is the number."
+  },
+  "storageSnapshotHint": {
+    "message": "Las instantáneas automáticas ocupan $1. Reduce «Conservar las últimas» o elimina las instantáneas no protegidas.",
+    "description": "Hint under the storage meter when snapshots take most of the space. $1 is a size such as '3.4 MB'. The quoted label is the setting settingsKeepLast; quote its translated text exactly."
+  },
+  "storageHeading": {
+    "message": "Almacenamiento",
+    "description": "Heading of the storage meter section in Settings. One or two words."
+  },
+  "storageMeasuring": {
+    "message": "Midiendo…",
+    "description": "Shown in the storage meter while the used space is being measured. Short."
+  },
+  "storageDeleteUnprotected": {
+    "message": "Eliminar las no protegidas",
+    "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
+  },
+  "storageDeleteUnprotectedTooltip": {
+    "message": "Eliminar todas las instantáneas que no estén protegidas",
+    "description": "Tooltip of the 'Delete all unprotected' button."
+  },
+  "storageDeleteAllData": {
+    "message": "Eliminar todos los datos de sesiones",
+    "description": "Small destructive button under the storage meter that deletes all saved sessions and snapshots. Button, keep short."
+  },
+  "storageDeleteAllDataTooltip": {
+    "message": "Eliminar todas las sesiones guardadas e instantáneas de este dispositivo",
+    "description": "Tooltip of the 'Delete all session data' button."
+  },
+  "storageDeletedAllNotice": {
+    "message": "Se han eliminado todos los datos de sesiones. Tu configuración se ha conservado.",
+    "description": "Toast shown after all session data was deleted."
+  },
+  "storageDeletedUnprotectedNotice_one": {
+    "message": "Se ha eliminado $1 instantánea no protegida.",
+    "description": "Toast after deleting unprotected snapshots (singular). $1 is the number deleted."
+  },
+  "storageDeletedUnprotectedNotice_other": {
+    "message": "Se han eliminado $1 instantáneas no protegidas.",
+    "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
+  },
+  "storageDeleteHistoryTitle": {
+    "message": "¿Eliminar las instantáneas no protegidas?",
+    "description": "Title of the confirm dialog for 'Delete all unprotected'."
+  },
+  "storageDeleteHistoryBody_one": {
+    "message": "Se eliminará $1 instantánea de este dispositivo. Las instantáneas protegidas y las sesiones guardadas se conservan. No se puede deshacer.",
+    "description": "Body of the confirm dialog for deleting unprotected snapshots (singular). $1 is the number of snapshots."
+  },
+  "storageDeleteHistoryBody_other": {
+    "message": "Se eliminarán $1 instantáneas de este dispositivo. Las instantáneas protegidas y las sesiones guardadas se conservan. No se puede deshacer.",
+    "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
+  },
+  "storageDeleteHistoryConfirm": {
+    "message": "Eliminar instantáneas",
+    "description": "Destructive confirm button in the 'Delete unprotected snapshots?' dialog. Button, keep short."
+  },
+  "storageDeleteAllTitle": {
+    "message": "¿Eliminar todos los datos de sesiones?",
+    "description": "Title of step one of the two-step 'Delete all session data' confirm dialog."
+  },
+  "storageDeleteAllBody": {
+    "message": "Se eliminarán de este dispositivo $1 y $2 ($3). Tu configuración de instantáneas y restauración se conserva, y las ventanas y pestañas abiertas no se tocan.",
+    "description": "Body of step one of the 'Delete all session data' dialog. $1 is the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $2 the counted phrase storageSnapshotCount (e.g. '12 snapshots'), $3 the total size such as '4.6 MB'."
+  },
+  "storageContinue": {
+    "message": "Continuar",
+    "description": "Button on step one of the 'Delete all session data' dialog that goes to the final confirmation. Button, keep short."
+  },
+  "storageDeleteAllFinalTitle": {
+    "message": "No se puede deshacer",
+    "description": "Title of step two (final confirmation) of the 'Delete all session data' dialog."
+  },
+  "storageDeleteAllFinalBody": {
+    "message": "Se eliminarán todas las sesiones guardadas y todas las instantáneas automáticas de este dispositivo. Si no exportaste antes una copia de seguridad, no se podrán recuperar.",
+    "description": "Body of step two (final confirmation) of the 'Delete all session data' dialog."
+  },
+  "storageBack": {
+    "message": "Atrás",
+    "description": "Button on step two of the 'Delete all session data' dialog that returns to step one. Button, keep short."
+  },
+  "storageDeleteEverything": {
+    "message": "Eliminar todo",
+    "description": "Final destructive button of the 'Delete all session data' dialog. Button, keep short."
+  },
+  "restoreWindowLine": {
+    "message": "Ventana $1 de $2",
+    "description": "Small grey line in the restore progress toast saying which window is being filled. $1 is the window number (1-based), $2 the number of windows. Short."
+  },
+  "restoreRate_one": {
+    "message": "~$1 pestaña/s",
+    "description": "Restore speed in the progress toast, approximate tabs per second. $1 is the number (may be a decimal such as 0.4). Very short."
+  },
+  "restoreRate_other": {
+    "message": "~$1 pestañas/s",
+    "description": "Restore speed in the progress toast, approximate tabs per second. $1 is the number (may be a decimal such as 0.4). Very short."
+  },
+  "restoreLazyHint": {
+    "message": "Las pestañas se abren sin cargar para ahorrar memoria; cada una se carga al hacer clic en ella.",
+    "description": "Grey hint in the restore progress toast while tabs are opened without loading them."
+  },
+  "restoreLazyDone_one": {
+    "message": "$1 pestaña se ha quedado sin cargar y se cargará al hacer clic.",
+    "description": "Grey line under the restore result. $1 is the number of tabs opened without loading."
+  },
+  "restoreLazyDone_other": {
+    "message": "$1 pestañas se han quedado sin cargar y se cargarán al hacer clic.",
+    "description": "Grey line under the restore result. $1 is the number of tabs opened without loading."
+  },
+  "restoreDestinationHere": {
+    "message": "«$1» se añadirá a esta ventana.",
+    "description": "Sentence in the confirm dialog before opening a large session into the current window. $1 is the session name."
+  },
+  "restoreDestinationNewWindows_one": {
+    "message": "«$2» abrirá $1 ventana.",
+    "description": "Sentence in the confirm dialog before opening a large session in new windows. $1 is the number of windows, $2 the session name."
+  },
+  "restoreDestinationNewWindows_other": {
+    "message": "«$2» abrirá $1 ventanas.",
+    "description": "Sentence in the confirm dialog before opening a large session in new windows. $1 is the number of windows, $2 the session name."
+  },
+  "restoreProgress_one": {
+    "message": "Restaurando $2 de $1 pestaña…",
+    "description": "Main line of the restore progress toast. $1 is the total number of tabs, $2 how many are open so far. (English keeps 'tabs' in both forms.)"
+  },
+  "restoreProgress_other": {
+    "message": "Restaurando $2 de $1 pestañas…",
+    "description": "Main line of the restore progress toast. $1 is the total number of tabs, $2 how many are open so far."
+  },
+  "restoreCancelling": {
+    "message": "Cancelando…",
+    "description": "Label of the Cancel button in the restore progress toast after it was pressed, while the restore stops. Button, keep short."
+  },
+  "restoreSummaryRestored_one": {
+    "message": "$2 de $1 pestaña restaurada",
+    "description": "First clause of the restore result in the toast; further clauses follow, separated by ' · '. $1 is the number of tabs attempted, $2 how many opened."
+  },
+  "restoreSummaryRestored_other": {
+    "message": "$2 de $1 pestañas restauradas",
+    "description": "First clause of the restore result in the toast; further clauses follow, separated by ' · '. $1 is the number of tabs attempted, $2 how many opened."
+  },
+  "restoreSummaryCancelled_one": {
+    "message": "Restauración cancelada: $1 pestaña abierta",
+    "description": "First clause of the result of a cancelled restore; further clauses may follow, separated by ' · '. $1 is the number of tabs opened before Cancel."
+  },
+  "restoreSummaryCancelled_other": {
+    "message": "Restauración cancelada: $1 pestañas abiertas",
+    "description": "First clause of the result of a cancelled restore; further clauses may follow, separated by ' · '. $1 is the number of tabs opened before Cancel."
+  },
+  "restoreSummaryDiscarded_one": {
+    "message": "$1 pestaña se cargará al hacer clic",
+    "description": "Clause of the restore result (joined with ' · '), lower-case start in English. $1 is the number of tabs opened without loading."
+  },
+  "restoreSummaryDiscarded_other": {
+    "message": "$1 pestañas se cargarán al hacer clic",
+    "description": "Clause of the restore result (joined with ' · '), lower-case start in English. $1 is the number of tabs opened without loading."
+  },
+  "restoreSummaryKept": {
+    "message": "las pestañas ya abiertas se han conservado",
+    "description": "Clause of the result of a cancelled restore (joined with ' · '), lower-case start in English: cancelling does not close the tabs already opened."
+  },
+  "restoreSummarySkipped_one": {
+    "message": "$1 omitida",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tabs not opened because their address cannot be opened by an extension."
+  },
+  "restoreSummarySkipped_other": {
+    "message": "$1 omitidas",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tabs not opened because their address cannot be opened by an extension."
+  },
+  "restoreSummaryFailed_one": {
+    "message": "$1 no se pudo abrir",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tabs Chrome failed to open."
+  },
+  "restoreSummaryFailed_other": {
+    "message": "$1 no se pudieron abrir",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tabs Chrome failed to open."
+  },
+  "restoreSummaryProblems_one": {
+    "message": "$1 problema de grupo/ventana",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tab groups or window states that could not be recreated."
+  },
+  "restoreSummaryProblems_other": {
+    "message": "$1 problemas de grupo/ventana",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tab groups or window states that could not be recreated."
+  },
+  "restoreSkippedItem": {
+    "message": "Omitida: $1",
+    "description": "List item under the restore result. $1 is the address of a tab that was not opened."
+  },
+  "restoreFailedItem": {
+    "message": "Error: $1 ($2)",
+    "description": "List item under the restore result. $1 is the address of a tab that failed to open, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreFailedItemPlain": {
+    "message": "Error: $1",
+    "description": "List item under the restore result when there is no reason that can be shown. $1 is the address of a tab that failed to open."
+  },
+  "restoreProblemGroup": {
+    "message": "No se pudo recrear el grupo «$1» ($2)",
+    "description": "List item under the restore result. $1 is the name of a tab group that could not be recreated, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreProblemGroupPlain": {
+    "message": "No se pudo recrear el grupo «$1».",
+    "description": "List item under the restore result. $1 is the name of a tab group that could not be recreated."
+  },
+  "restoreProblemActivate": {
+    "message": "No se pudo cambiar a $1 ($2)",
+    "description": "List item under the restore result. $1 is the address of the tab that should have been the window's active tab, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreProblemActivatePlain": {
+    "message": "No se pudo cambiar a $1.",
+    "description": "List item under the restore result. $1 is the address of the tab that should have been the window's active tab."
+  },
+  "restoreProblemWindowState": {
+    "message": "No se pudo restaurar el tamaño de la ventana ($1)",
+    "description": "List item under the restore result when a window could not be maximized, minimized or made full screen as saved. $1 is the reason, a complete sentence already in your language."
+  },
+  "restoreProblemWindowStatePlain": {
+    "message": "No se pudo restaurar el tamaño de la ventana.",
+    "description": "List item under the restore result when a window could not be maximized, minimized or made full screen as saved."
+  },
+  "restoreDismiss": {
+    "message": "Descartar",
+    "description": "Tooltip and screen-reader label of the x button that closes the restore result toast."
+  },
+  "restoreSessionTooNew": {
+    "message": "Esta sesión se guardó con una versión más reciente de Tab Organizer y no se puede mostrar.",
+    "description": "Error shown in place of a session whose stored format is from a newer version of the extension. Tab Organizer is the extension name."
+  },
+  "workerMenuSaveAll": {
+    "message": "Guardar todas las ventanas como sesión",
+    "description": "Item in the toolbar icon's right-click menu: saves every open window as one session. Menu item, keep it short (under 40 characters). The Open tabs first-run hint quotes this label too, so it must match the menu."
+  },
+  "workerDuplicatesGroupTitle": {
+    "message": "Duplicadas ($1)",
+    "description": "Title of a Chrome tab group that holds duplicate tabs whose address has no host name. $1 is the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short (under 20 characters)."
+  },
+  "workerDuplicatesHostGroupTitle": {
+    "message": "$1 ($2)",
+    "description": "Title of a Chrome tab group that holds duplicate tabs of one address. $1 is the site's host name (such as example.com, never translated), $2 the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short."
   }
 }

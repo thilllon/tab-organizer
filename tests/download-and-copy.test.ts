@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  CLIPBOARD_UNAVAILABLE,
+  clipboardUnavailableMessage,
   copyFailureMessage,
   copyText,
   downloadDescriptor,
@@ -64,22 +64,30 @@ describe('copyText', () => {
   });
 
   it('reports a rejected write instead of throwing', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     stubClipboard(vi.fn().mockRejectedValue(new Error('Document is not focused')));
     await expect(copyText('x')).resolves.toEqual({
       ok: false,
-      error: 'Could not copy to the clipboard: Document is not focused',
+      error: 'Could not copy to the clipboard.',
     });
   });
 
   it('reports a missing clipboard API', async () => {
     stubClipboard(undefined);
-    await expect(copyText('x')).resolves.toEqual({ ok: false, error: CLIPBOARD_UNAVAILABLE });
+    await expect(copyText('x')).resolves.toEqual({
+      ok: false,
+      error: clipboardUnavailableMessage(),
+    });
   });
 });
 
 describe('copyFailureMessage', () => {
-  it('reads non-Error rejections too', () => {
-    expect(copyFailureMessage('nope')).toBe('Could not copy to the clipboard: nope');
-    expect(copyFailureMessage(undefined)).toBe('Could not copy to the clipboard: Unknown error');
+  it('gives the reason in the UI language, or none when the browser said something it cannot translate', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(
+      copyFailureMessage(new DOMException('Document is not focused.', 'NotAllowedError')),
+    ).toBe('Could not copy to the clipboard: The browser did not allow this.');
+    expect(copyFailureMessage('nope')).toBe('Could not copy to the clipboard.');
+    expect(copyFailureMessage(undefined)).toBe('Could not copy to the clipboard.');
   });
 });

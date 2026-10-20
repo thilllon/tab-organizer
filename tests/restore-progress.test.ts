@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatRate,
   formatWindowLine,
-  LAZY_RESTORE_HINT,
+  lazyRestoreHint,
   lazyRestoreSummaryHint,
 } from '@/lib/restore-progress';
 
@@ -53,7 +53,7 @@ describe('formatRate', () => {
 
 describe('lazy restore hints', () => {
   it('explains that discarded tabs load when clicked', () => {
-    expect(LAZY_RESTORE_HINT).toContain('loads when you click it');
+    expect(lazyRestoreHint()).toContain('loads when you click it');
     expect(lazyRestoreSummaryHint(12)).toBe('12 tabs stayed unloaded and will load when clicked.');
     expect(lazyRestoreSummaryHint(1)).toBe('1 tab stayed unloaded and will load when clicked.');
   });

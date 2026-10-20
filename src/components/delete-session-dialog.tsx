@@ -1,3 +1,4 @@
+import { DialogCloseButton } from '@/components/dialog-close-button';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { t } from '@/lib/i18n';
 
 interface DeleteSessionDialogProps {
   name: string;
@@ -24,7 +26,7 @@ interface DeleteSessionDialogProps {
 
 export function DeleteSessionDialog({
   name,
-  title = 'Delete session?',
+  title = t('sessionDeleteTitle'),
   open,
   onOpenChange,
   onConfirm,
@@ -32,21 +34,20 @@ export function DeleteSessionDialog({
 }: DeleteSessionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent showCloseButton={false} onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            “{name}” will be removed from this device. This cannot be undone.
-          </DialogDescription>
+          <DialogDescription>{t('sessionDeleteBody', name)}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('commonCancel')}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Delete
+            {t('commonDelete')}
           </Button>
         </DialogFooter>
+        <DialogCloseButton />
       </DialogContent>
     </Dialog>
   );

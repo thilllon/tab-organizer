@@ -1,10 +1,9 @@
-import { errorMessage } from '@/lib/error-message';
+import { reportError } from '@/lib/error-message';
+import { t } from '@/lib/i18n';
 import { loadSanitizeOptions } from '@/lib/sanitize-options';
 import { sanitizeRestoreUrl } from '@/lib/session-restore';
 
 type OpenTabResult = { ok: true } | { ok: false; reason: string };
-
-const UNSUPPORTED_REASON = 'This tab cannot be opened (unsupported URL).';
 
 /**
  * Opens one saved tab in a background tab, through the same spec §6 sanitiser a restore uses:
@@ -18,11 +17,11 @@ export async function openTabInBackground(url: string): Promise<OpenTabResult> {
     const options = await loadSanitizeOptions();
     const safe = sanitizeRestoreUrl(url, options);
     if (safe === null) {
-      return { ok: false, reason: UNSUPPORTED_REASON };
+      return { ok: false, reason: t('openUnsupportedUrl') };
     }
     await chrome.tabs.create({ url: safe, active: false });
     return { ok: true };
   } catch (err) {
-    return { ok: false, reason: errorMessage(err) };
+    return { ok: false, reason: reportError('open tab', err) };
   }
 }

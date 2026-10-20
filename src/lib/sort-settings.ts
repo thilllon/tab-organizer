@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n';
 import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import type { DuplicateTabHandling, GroupFrom, GroupingMode, SortBy, SortSettings } from '@/types';
 
@@ -61,29 +62,38 @@ interface SortOption<T extends string> {
 /**
  * What each dropdown in the Sorting section offers, in the order shown. The values are exactly the
  * ones the guards above accept (pinned by `sort-settings.test.ts`), so a choice can never write a
- * value the sort engine does not read.
+ * value the sort engine does not read. Functions, not constants: the labels are read in the UI
+ * language at the moment they are drawn.
  */
-export const SORT_BY_OPTIONS: readonly SortOption<SortBy>[] = [
-  { value: 'url', label: 'By URL' },
-  { value: 'title', label: 'By title' },
-  { value: 'custom', label: 'Custom' },
-];
+export function sortByOptions(): SortOption<SortBy>[] {
+  return [
+    { value: 'url', label: t('settingsSortByUrl') },
+    { value: 'title', label: t('settingsSortByTitleOption') },
+    { value: 'custom', label: t('settingsSortByCustom') },
+  ];
+}
 
-export const DUPLICATE_TAB_OPTIONS: readonly SortOption<DuplicateTabHandling>[] = [
-  { value: 'closeAllButOne', label: 'Keep one' },
-  { value: 'none', label: 'Keep all' },
-  { value: 'group', label: 'Group them' },
-];
+export function duplicateTabOptions(): SortOption<DuplicateTabHandling>[] {
+  return [
+    { value: 'closeAllButOne', label: t('settingsDuplicateKeepOne') },
+    { value: 'none', label: t('settingsDuplicateKeepAll') },
+    { value: 'group', label: t('settingsDuplicateGroup') },
+  ];
+}
 
-export const GROUPING_MODE_OPTIONS: readonly SortOption<GroupingMode>[] = [
-  { value: 'subdomain', label: 'By full hostname' },
-  { value: 'domain', label: 'By domain' },
-];
+export function groupingModeOptions(): SortOption<GroupingMode>[] {
+  return [
+    { value: 'subdomain', label: t('settingsGroupingSubdomain') },
+    { value: 'domain', label: t('settingsGroupingDomain') },
+  ];
+}
 
-export const GROUP_FROM_OPTIONS: readonly SortOption<GroupFrom>[] = [
-  { value: 'leftToRight', label: 'Left to right' },
-  { value: 'rightToLeft', label: 'Right to left' },
-];
+export function groupFromOptions(): SortOption<GroupFrom>[] {
+  return [
+    { value: 'leftToRight', label: t('settingsGroupFromLeft') },
+    { value: 'rightToLeft', label: t('settingsGroupFromRight') },
+  ];
+}
 
 /** A Chrome extension id: exactly 32 characters from the alphabet a-p, lower case. */
 const EXTENSION_ID_PATTERN = /^[a-p]{32}$/;

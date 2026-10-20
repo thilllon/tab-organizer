@@ -1,4 +1,4 @@
-import { pluralize } from '@/lib/display-format';
+import { t, tp } from '@/lib/i18n';
 import type { OpenWindowView } from '@/lib/open-windows';
 import { toMarkdownLinks } from '@/lib/session-export';
 
@@ -115,11 +115,14 @@ interface CopyFormatItem {
   label: string;
 }
 
-export const COPY_FORMAT_ITEMS: readonly CopyFormatItem[] = [
-  { format: 'links', label: 'Links' },
-  { format: 'markdown', label: 'Markdown links' },
-  { format: 'titled', label: 'Titles and links' },
-];
+/** The copy formats with their menu labels, in the UI language (read at call time). */
+export function copyFormatItems(): readonly CopyFormatItem[] {
+  return [
+    { format: 'links', label: t('openCopyFormatLinks') },
+    { format: 'markdown', label: t('openCopyFormatMarkdown') },
+    { format: 'titled', label: t('openCopyFormatTitled') },
+  ];
+}
 
 export function selectionText(tabs: readonly OpenTab[], format: CopyFormat): string {
   switch (format) {
@@ -136,26 +139,25 @@ export function selectionText(tabs: readonly OpenTab[], format: CopyFormat): str
 }
 
 export function selectionLabel(count: number): string {
-  return `${count} selected ${count === 1 ? 'tab' : 'tabs'}`;
+  return tp('openSelectedTabs', count);
 }
 
 export function copiedSelectionNotice(count: number, format: CopyFormat): string {
-  const links = pluralize(count, 'link');
   switch (format) {
     case 'links':
-      return `Copied ${links}.`;
+      return tp('commonCopiedLinks', count);
     case 'markdown':
-      return `Copied ${links} as Markdown.`;
+      return tp('openCopiedLinksMarkdown', count);
     case 'titled':
-      return `Copied ${links} with titles.`;
+      return tp('openCopiedLinksTitled', count);
   }
 }
 
 export function closedTabsNotice(count: number): string {
-  return `Closed ${pluralize(count, 'tab')}.`;
+  return tp('openClosedTabs', count);
 }
 
 /** "Save & close", when some ticked tabs could not be saved and were therefore left open. */
 export function keptOpenNotice(count: number): string {
-  return `${pluralize(count, 'tab')} could not be saved and ${count === 1 ? 'was' : 'were'} left open.`;
+  return tp('openKeptOpen', count);
 }

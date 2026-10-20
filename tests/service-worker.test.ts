@@ -429,6 +429,40 @@ describe('listener wiring', () => {
     });
   });
 
+  it('onStartup recreates the menus in the current Chrome language', async () => {
+    vi.resetModules();
+    await import('@/service-worker');
+    const fake = getChromeFake();
+    // Menus created in English by an earlier install; Chrome has since been switched to Korean.
+    fake.state.menus.push({ id: 'assemble-tabs', title: 'Assemble!', contexts: ['action'] });
+    fake.setUiLanguage('ko');
+    const { t } = await import('@/lib/i18n');
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(fake.state.menus.map((menu) => menu.title)).toEqual([
+        t('cmdAssembleTabs'),
+        t('workerMenuSaveAll'),
+      ]);
+    });
+    expect(t('workerMenuSaveAll')).not.toBe('Save all windows as session');
+  });
+
+  it('onStartup still arms the alarms when the menus cannot be recreated', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(chrome.contextMenus, 'removeAll').mockRejectedValue(new Error('menus unavailable'));
+
+    fake.fire.startup();
+
+    await vi.waitFor(() => {
+      expect(fake.state.alarms.size).toBeGreaterThan(0);
+    });
+    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+  });
+
   it('registers no chrome.tabs / windows / tabGroups listeners (AGENTS.md rule)', async () => {
     await loadWorker();
 

@@ -4,6 +4,7 @@
  * `sort-order.ts` and `move-plan.ts`.
  */
 
+import { formatNumber, t } from '@/lib/i18n';
 import { isContiguous, type MoveBatch, planMoves } from '@/lib/move-plan';
 import {
   findDuplicateTabs,
@@ -189,14 +190,18 @@ async function groupDuplicateTabs(url: string, tabs: chrome.tabs.Tab[]): Promise
 
   try {
     const urlObj = new URL(url);
-    const groupTitle = `${urlObj.hostname} (${tabIds.length})`;
+    const groupTitle = t(
+      'workerDuplicatesHostGroupTitle',
+      urlObj.hostname,
+      formatNumber(tabIds.length),
+    );
     await chrome.tabGroups.update(groupId, {
       title: groupTitle,
       color: hashStringToColor(urlObj.hostname),
       collapsed: false,
     });
   } catch {
-    const groupTitle = `Duplicates (${tabIds.length})`;
+    const groupTitle = t('workerDuplicatesGroupTitle', formatNumber(tabIds.length));
     await chrome.tabGroups.update(groupId, {
       title: groupTitle,
       color: hashStringToColor(groupTitle),

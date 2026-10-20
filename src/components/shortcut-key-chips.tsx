@@ -1,4 +1,4 @@
-import { NOT_SET } from '@/lib/command-rows';
+import { notSetLabel } from '@/lib/command-rows';
 
 interface ShortcutKeyChipsProps {
   keys: readonly string[];
@@ -7,7 +7,7 @@ interface ShortcutKeyChipsProps {
 /** One shortcut as small key chips joined by "+", or a grey "Not set". */
 export function ShortcutKeyChips({ keys }: ShortcutKeyChipsProps) {
   if (keys.length === 0) {
-    return <span className="text-xs text-muted-foreground">{NOT_SET}</span>;
+    return <span className="text-xs text-muted-foreground">{notSetLabel()}</span>;
   }
   return (
     <span className="flex items-center gap-1 text-xs text-muted-foreground">

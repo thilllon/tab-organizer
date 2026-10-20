@@ -1,27 +1,37 @@
-import type { SessionSummary } from '@/types';
+import { t, tp, uiLocale } from '@/lib/i18n';
+import type { SessionSummary, WindowSnapshot } from '@/types';
 
-export function pluralize(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+/**
+ * A size number in the UI language's digits and decimal mark. No digit grouping, so a value just
+ * under the next unit reads "1023.9", as it always has.
+ */
+function formatSize(value: number, fractionDigits: number): string {
+  return new Intl.NumberFormat(uiLocale(), {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+    useGrouping: false,
+  }).format(value);
 }
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) {
-    return `${bytes} B`;
+    return t('treeSizeBytes', formatSize(bytes, 0));
   }
   if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
+    return t('treeSizeKilobytes', formatSize(bytes / 1024, 1));
   }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return t('treeSizeMegabytes', formatSize(bytes / (1024 * 1024), 1));
 }
 
 export function formatSessionMeta(
   summary: Pick<SessionSummary, 'windowCount' | 'tabCount' | 'bytes'>,
 ): string {
-  return [
-    pluralize(summary.windowCount, 'window'),
-    pluralize(summary.tabCount, 'tab'),
+  return t(
+    'treeSessionMeta',
+    tp('windowCount', summary.windowCount),
+    tp('tabCount', summary.tabCount),
     formatBytes(summary.bytes),
-  ].join(' · ');
+  );
 }
 
 export function hostnameOf(url: string): string {
@@ -41,11 +51,25 @@ export function hostnameOf(url: string): string {
 }
 
 export function formatDateTime(epochMs: number): string {
-  return new Date(epochMs).toLocaleString(undefined, {
+  return new Intl.DateTimeFormat(uiLocale(), {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  }).format(new Date(epochMs));
+}
+
+/** A window's state as a person reads it, for the window header ("Minimized"). */
+export function windowStateLabel(state: WindowSnapshot['state']): string {
+  switch (state) {
+    case 'minimized':
+      return t('treeWindowStateMinimized');
+    case 'maximized':
+      return t('treeWindowStateMaximized');
+    case 'fullscreen':
+      return t('treeWindowStateFullscreen');
+    case 'normal':
+      return t('treeWindowStateNormal');
+  }
 }

@@ -1,17 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatBytes, formatSessionMeta, hostnameOf, pluralize } from '@/lib/display-format';
-
-describe('pluralize', () => {
-  it('uses the singular for exactly one', () => {
-    expect(pluralize(1, 'tab')).toBe('1 tab');
-  });
-
-  it('uses the plural otherwise', () => {
-    expect(pluralize(0, 'tab')).toBe('0 tabs');
-    expect(pluralize(87, 'window')).toBe('87 windows');
-  });
-});
+import { formatBytes, formatSessionMeta, hostnameOf } from '@/lib/display-format';
 
 describe('formatBytes', () => {
   it('formats bytes, kilobytes and megabytes', () => {

@@ -4,8 +4,8 @@ import { useState } from 'react';
 
 import { TabRow, type TabRowSelection } from '@/components/tab-row';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { pluralize } from '@/lib/display-format';
 import { groupChipClass, groupRailClass } from '@/lib/group-colors';
+import { t, tp } from '@/lib/i18n';
 import type { GroupSnapshot, TabSnapshot } from '@/types';
 
 interface GroupSectionProps {
@@ -31,7 +31,7 @@ export function GroupSection({
 }: GroupSectionProps) {
   const [open, setOpen] = useState(!group.collapsed);
 
-  const label = group.title.length > 0 ? group.title : 'Untitled group';
+  const label = group.title.length > 0 ? group.title : t('treeUntitledGroup');
 
   return (
     // A tab group is a tree node with children: the collapsible trigger below is the toggle Radix
@@ -43,7 +43,7 @@ export function GroupSection({
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              title={open ? `Collapse ${label}` : `Expand ${label}`}
+              title={open ? t('treeCollapseGroup', label) : t('treeExpandGroup', label)}
               className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <ChevronRight className={`size-4 transition-transform ${open ? 'rotate-90' : ''}`} />
@@ -55,7 +55,7 @@ export function GroupSection({
                 {label}
               </span>
               <span className="min-w-0 flex-1" />
-              <span className="text-xs text-muted-foreground">{pluralize(tabs.length, 'tab')}</span>
+              <span className="text-xs text-muted-foreground">{tp('tabCount', tabs.length)}</span>
             </button>
           </CollapsibleTrigger>
           {actions}

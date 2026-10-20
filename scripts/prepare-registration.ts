@@ -29,6 +29,16 @@
  *   SKIP_GIF        skip demo.gif (auto-skipped without ffmpeg)
  *   HEADLESS=1      force a headless browser (the default where there is no display)
  *   PW_CHROMIUM     Chromium binary to drive (see scripts/e2e/browser.ts)
+ *
+ * Store screenshots per UI language:
+ *   LOCALES=en,ko,es,ja   the languages to shoot (default `en`). Each gets its own browser,
+ *                   started with `--lang=<code>` and LANGUAGE/LANG set (plus `-AppleLanguages`
+ *                   on macOS, where Chrome ignores `--lang`), so `chrome.i18n` picks that
+ *                   language; the run fails a language whose browser reports another one. English
+ *                   runs the whole pipeline into `screenshots/` under today's file names; every
+ *                   other language only shoots the Settings and dashboard screenshots (steps 3-4),
+ *                   with the fixture session names in that language, into `screenshots/<code>/`.
+ *                   The demo, mockups, promo images and video carry English text and are shared.
  */
 
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
@@ -39,9 +49,16 @@ import { fileURLToPath } from 'node:url';
 
 import type { Locator, Page } from '@playwright/test';
 
-import type { ExportBundle } from '../src/types';
+import type { ExportBundle, Session } from '../src/types';
 import { type ExtensionSession, launchExtension } from './e2e/browser';
 import { buildDashboardFixtures, seedSessions } from './e2e/fixtures';
+import {
+  DEFAULT_LISTING_LOCALE,
+  isListingLocale,
+  LISTING_LOCALES,
+  type ListingLocale,
+  readLocaleMessage,
+} from './store-listing';
 import { getChromeWindowBounds } from './window-bounds';
 
 /*
@@ -59,6 +76,15 @@ interface TabInfo {
 interface SkipRecord {
   step: string;
   reason: string;
+}
+
+/** Where one language's screenshots go and how to read the UI text they look for. */
+interface CaptureTarget {
+  locale: ListingLocale;
+  /** `screenshots/` for English, `screenshots/<code>/` for the others. */
+  dir: string;
+  /** A message of the built extension in this language, `$1`.. filled in. */
+  text: (key: string, ...substitutions: (string | number)[]) => string;
 }
 
 /*
@@ -87,6 +113,57 @@ const GROUP_COLORS: Record<string, string> = {
   orange: '#fcad70',
 };
 
+/**
+ * The fixture sessions' names and group titles as a person using that language would have typed
+ * them; they show in the sidebar and the session view, so they are part of the screenshot. Keyed by
+ * the English text in `scripts/e2e/fixtures.ts`; anything not listed stays English (tab titles
+ * are web page titles, which stay as the sites wrote them).
+ */
+const FIXTURE_TEXT: Record<Exclude<ListingLocale, 'en'>, Record<string, string>> = {
+  ko: {
+    'Work - Monday morning': '업무 - 월요일 아침',
+    'Research - everything open': '리서치 - 열려 있던 전부',
+    'Snapshot - 40 minutes ago': '스냅샷 - 40분 전',
+    'Snapshot - 2 hours ago': '스냅샷 - 2시간 전',
+    'Recovered - before the crash': '복구됨 - 종료되기 전',
+    Review: '리뷰',
+    Docs: '문서',
+    Reading: '읽을거리',
+    'Prior art': '선행 사례',
+    Specs: '명세',
+    Benchmarks: '벤치마크',
+    'Inbox zero': '받은편지함 비우기',
+  },
+  es: {
+    'Work - Monday morning': 'Trabajo - lunes por la mañana',
+    'Research - everything open': 'Investigación - todo lo abierto',
+    'Snapshot - 40 minutes ago': 'Instantánea - hace 40 minutos',
+    'Snapshot - 2 hours ago': 'Instantánea - hace 2 horas',
+    'Recovered - before the crash': 'Recuperada - antes del cierre',
+    Review: 'Revisión',
+    Docs: 'Documentos',
+    Reading: 'Lectura',
+    'Prior art': 'Antecedentes',
+    Specs: 'Especificaciones',
+    Benchmarks: 'Pruebas de rendimiento',
+    'Inbox zero': 'Bandeja vacía',
+  },
+  ja: {
+    'Work - Monday morning': '仕事 - 月曜の朝',
+    'Research - everything open': '調査 - 開いていたもの全部',
+    'Snapshot - 40 minutes ago': 'スナップショット - 40 分前',
+    'Snapshot - 2 hours ago': 'スナップショット - 2 時間前',
+    'Recovered - before the crash': '復旧 - クラッシュ前',
+    Review: 'レビュー',
+    Docs: 'ドキュメント',
+    Reading: '読み物',
+    'Prior art': '先行事例',
+    Specs: '仕様',
+    Benchmarks: 'ベンチマーク',
+    'Inbox zero': '受信トレイ整理',
+  },
+};
+
 const DEMO_SITES = [
   'https://news.ycombinator.com',
   'https://www.youtube.com',
@@ -109,6 +186,75 @@ const DEMO_SITES = [
 function envFlag(name: string): boolean {
   const value = process.env[name];
   return value === '1' || value === 'true';
+}
+
+/** `LOCALES=en,ko` → `['en', 'ko']`; unset means English only. Unknown codes stop the run. */
+function requestedLocales(): ListingLocale[] {
+  const raw = process.env.LOCALES;
+  if (raw === undefined || raw.trim() === '') {
+    return [DEFAULT_LISTING_LOCALE];
+  }
+  const codes = raw
+    .split(',')
+    .map((code) => code.trim())
+    .filter((code) => code !== '');
+  const unknown = codes.filter((code) => !isListingLocale(code));
+  if (unknown.length > 0) {
+    throw new Error(
+      `LOCALES has ${unknown.join(', ')}; the listing has ${LISTING_LOCALES.join(', ')}`,
+    );
+  }
+  return LISTING_LOCALES.filter((code) => codes.includes(code));
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * A message of the built extension, the way `chrome.i18n.getMessage` fills it in: `$1`..`$9`
+ * from `substitutions`, `$$` a literal dollar sign; English when the language lacks the key.
+ */
+function builtMessage(
+  locale: ListingLocale,
+  key: string,
+  substitutions: (string | number)[],
+): string {
+  const localesDir = path.join(DIST, '_locales');
+  const message =
+    readLocaleMessage(localesDir, locale, key) ??
+    readLocaleMessage(localesDir, DEFAULT_LISTING_LOCALE, key);
+  if (message === undefined) {
+    throw new Error(`dist/_locales has no message "${key}"`);
+  }
+  return message.replace(/\$(\$|[1-9])/g, (_whole, mark: string) =>
+    mark === '$' ? '$' : String(substitutions[Number(mark) - 1] ?? ''),
+  );
+}
+
+function captureTarget(locale: ListingLocale): CaptureTarget {
+  return {
+    locale,
+    dir: locale === DEFAULT_LISTING_LOCALE ? SCREENSHOTS_DIR : path.join(SCREENSHOTS_DIR, locale),
+    text: (key, ...substitutions) => builtMessage(locale, key, substitutions),
+  };
+}
+
+/** The fixture sessions with their names and group titles in `locale`. */
+function localizeFixtures(sessions: Session[], locale: ListingLocale): Session[] {
+  if (locale === 'en') {
+    return sessions;
+  }
+  const table = FIXTURE_TEXT[locale];
+  const tr = (text: string): string => table[text] ?? text;
+  return sessions.map((session) => ({
+    ...session,
+    name: tr(session.name),
+    windows: session.windows.map((window) => ({
+      ...window,
+      groups: window.groups.map((group) => ({ ...group, title: tr(group.title) })),
+    })),
+  }));
 }
 
 function commandExists(command: string): boolean {
@@ -136,6 +282,7 @@ class Preparation {
   private screenshotPage: Page | null = null;
   private readonly skipped: SkipRecord[] = [];
   private readonly failed: SkipRecord[] = [];
+  private readonly locales = requestedLocales();
 
   constructor() {
     mkdirSync(SCREENSHOTS_DIR, { recursive: true });
@@ -147,14 +294,34 @@ class Preparation {
     // Step 1: Build
     this.buildExtension();
 
+    if (this.locales.includes(DEFAULT_LISTING_LOCALE)) {
+      await this.runEnglish();
+    }
+    // Other languages: Settings and dashboard only, each in a browser of its own.
+    for (const locale of this.locales) {
+      if (locale !== DEFAULT_LISTING_LOCALE) {
+        await this.captureLocale(locale);
+      }
+    }
+
+    this.report();
+  }
+
+  /** The whole pipeline, as it ran before the extension was translated: English, `screenshots/`. */
+  private async runEnglish(): Promise<void> {
+    const target = captureTarget(DEFAULT_LISTING_LOCALE);
+
     // Step 2: Launch browser
     await this.launchBrowser();
+    const languageOk = await this.checkUiLanguage(target.locale);
 
-    // Step 3: Options screenshots
-    await this.takeOptionsScreenshots();
+    if (languageOk) {
+      // Step 3: Options screenshots
+      await this.takeOptionsScreenshots(target);
 
-    // Step 4: Sessions dashboard screenshots
-    await this.takeDashboardScreenshots();
+      // Step 4: Sessions dashboard screenshots
+      await this.takeDashboardScreenshots(target);
+    }
 
     // Step 5: Demo screenshots (before/after)
     const { beforeTabs } = await this.takeDemoScreenshots();
@@ -183,8 +350,44 @@ class Preparation {
 
     // Step 8: demo.gif for README.md and docs/store_listing.md
     this.generateDemoGif(ffmpeg !== null);
+  }
 
-    this.report();
+  /** Steps 3-4 in a browser whose UI language is `locale`, into `screenshots/<locale>/`. */
+  private async captureLocale(locale: ListingLocale): Promise<void> {
+    Preparation.step(`Store screenshots in ${locale}`);
+    const target = captureTarget(locale);
+    mkdirSync(target.dir, { recursive: true });
+    await this.launchBrowser(locale);
+    if (await this.checkUiLanguage(locale)) {
+      await this.takeOptionsScreenshots(target);
+      await this.takeDashboardScreenshots(target);
+    }
+    await this.context?.close();
+    this.context = null;
+    this.ext = null;
+    this.serviceWorker = null;
+    this.screenshotPage = null;
+  }
+
+  /**
+   * True when the extension really runs in `locale`. A browser that ignored the language switches
+   * would shoot English screenshots into another language's folder, so that counts as a failure.
+   */
+  private async checkUiLanguage(locale: ListingLocale): Promise<boolean> {
+    if (!this.ext) {
+      return false;
+    }
+    const worker = await this.ext.worker();
+    const uiLanguage = await worker.evaluate(() => chrome.i18n.getUILanguage());
+    if (uiLanguage.toLowerCase().split(/[-_]/)[0] !== locale) {
+      this.fail(
+        `screenshots (${locale})`,
+        `the browser's UI language is ${uiLanguage}, not ${locale}; its screenshots were not taken`,
+      );
+      return false;
+    }
+    console.log(`  UI language: ${uiLanguage}`);
+    return true;
   }
 
   /* Skip / failure bookkeeping */
@@ -329,11 +532,12 @@ class Preparation {
     console.log('Build complete.');
   }
 
-  private async launchBrowser(): Promise<void> {
-    Preparation.step('2/8  Launching browser for screenshots & demo');
+  private async launchBrowser(locale: ListingLocale = DEFAULT_LISTING_LOCALE): Promise<void> {
+    Preparation.step(`2/8  Launching browser for screenshots & demo (${locale})`);
     const session = await launchExtension({
       dist: DIST,
       preferHeaded: true,
+      locale,
       args: ['--window-size=1400,900', '--window-position=100,50'],
     }).catch((err: unknown) => {
       console.error('Could not launch Chrome with the extension:', Preparation.errorMessage(err));
@@ -347,11 +551,11 @@ class Preparation {
     console.log(`Extension ID: ${this.extensionId}`);
   }
 
-  private async takeOptionsScreenshots(): Promise<void> {
+  private async takeOptionsScreenshots(target: CaptureTarget): Promise<void> {
     if (!this.context) {
       return;
     }
-    Preparation.step('3/8  Options page screenshots');
+    Preparation.step(`3/8  Options page screenshots (${target.locale})`);
     if (envFlag('SKIP_OPTIONS')) {
       this.skip('3/8  Options page screenshots', 'SKIP_OPTIONS=1');
       return;
@@ -369,7 +573,7 @@ class Preparation {
       await page.waitForSelector('main', { timeout: 5000 });
       await page.waitForTimeout(500);
 
-      const filepath = path.join(SCREENSHOTS_DIR, `screenshot-${width}x${height}.png`);
+      const filepath = path.join(target.dir, `screenshot-${width}x${height}.png`);
       await page.screenshot({ path: filepath, fullPage: false });
       console.log(`  Saved: ${filepath}`);
       await page.close();
@@ -385,17 +589,18 @@ class Preparation {
    * capture locates its control by role/accessible name and skips itself with a warning when that
    * control is not there, so this step never fails a release run.
    */
-  private async takeDashboardScreenshots(): Promise<void> {
+  private async takeDashboardScreenshots(target: CaptureTarget): Promise<void> {
     if (!this.context || !this.ext) {
       return;
     }
-    Preparation.step('4/8  Sessions dashboard screenshots');
+    const { text } = target;
+    Preparation.step(`4/8  Sessions dashboard screenshots (${target.locale})`);
     if (envFlag('SKIP_DASHBOARD')) {
       this.skip('4/8  Sessions dashboard screenshots', 'SKIP_DASHBOARD=1');
       return;
     }
 
-    const fixtures = buildDashboardFixtures();
+    const fixtures = localizeFixtures(buildDashboardFixtures(), target.locale);
     const worker = await this.ext.worker();
     await seedSessions(worker, fixtures);
 
@@ -406,9 +611,12 @@ class Preparation {
     const reload = async (): Promise<void> => {
       await page.goto(dashboardUrl);
       await page.waitForLoadState('networkidle');
-      await page.locator('main').getByRole('heading', { name: 'Open tabs' }).waitFor({
-        timeout: CONTROL_TIMEOUT,
-      });
+      await page
+        .locator('main')
+        .getByRole('heading', { name: text('openHeading') })
+        .waitFor({
+          timeout: CONTROL_TIMEOUT,
+        });
       await page.waitForTimeout(300);
     };
 
@@ -421,7 +629,7 @@ class Preparation {
           return;
         }
         await page.waitForTimeout(400);
-        const filepath = path.join(SCREENSHOTS_DIR, `dashboard-${name}.png`);
+        const filepath = path.join(target.dir, `dashboard-${name}.png`);
         await page.screenshot({ path: filepath, clip: { x: 0, y: 0, width: 1280, height: 800 } });
         console.log(`  Saved: ${path.relative(ROOT, filepath)}`);
       } catch (err) {
@@ -434,9 +642,12 @@ class Preparation {
      * links since they got addresses (SidebarNav's NavItem), not buttons.
      */
     const sidebarEntry = (name: string): Locator =>
-      page.getByRole('navigation', { name: 'Sessions' }).locator('li a').filter({
-        hasText: name,
-      });
+      page
+        .getByRole('navigation', { name: text('appNavLabel') })
+        .locator('li a')
+        .filter({
+          hasText: name,
+        });
 
     const openSession = async (name: string): Promise<string | null> => {
       const entry = sidebarEntry(name);
@@ -446,7 +657,7 @@ class Preparation {
       await entry.first().click();
       await page
         .locator('main')
-        .getByRole('heading', { name: 'Window 1' })
+        .getByRole('heading', { name: text('treeWindowLabel', 1) })
         .first()
         .waitFor({ timeout: CONTROL_TIMEOUT });
       return null;
@@ -462,7 +673,9 @@ class Preparation {
       if (missing !== null) {
         return missing;
       }
-      const open = page.locator('main').getByRole('button', { name: 'Open', exact: true });
+      const open = page
+        .locator('main')
+        .getByRole('button', { name: text('commonOpen'), exact: true });
       if (!(await Preparation.isVisible(open))) {
         return 'no Open control on the session view';
       }
@@ -470,7 +683,11 @@ class Preparation {
 
       const dialog = page.getByRole('dialog');
       const cancelRunning = page
-        .getByRole('button', { name: /^Cancel(ling)?/ })
+        .getByRole('button', {
+          name: new RegExp(
+            `^(${escapeRegExp(text('restoreCancelling'))}|${escapeRegExp(text('commonCancel'))})`,
+          ),
+        })
         .and(page.locator('output button'));
       if (await Preparation.isVisible(cancelRunning, 2000)) {
         await cancelRunning
@@ -489,7 +706,8 @@ class Preparation {
       const search = page
         .getByRole('searchbox')
         .or(page.getByRole('textbox', { name: /search|filter/i }))
-        .or(page.getByPlaceholder(/search|filter/i));
+        .or(page.getByPlaceholder(/search|filter/i))
+        .or(page.getByPlaceholder(text('searchPlaceholder')));
       if (!(await Preparation.isVisible(search))) {
         return 'no search field on the dashboard yet';
       }
@@ -502,10 +720,15 @@ class Preparation {
       // Import moved into Settings with the one-page redesign (v7.2.0).
       await page.goto(`${dashboardUrl}#settings`);
       // Settings is a dialog over the open-tabs view since v7.8.0; its title is the heading.
-      await page.getByRole('dialog').getByRole('heading', { name: 'Settings' }).waitFor({
-        timeout: CONTROL_TIMEOUT,
+      await page
+        .getByRole('dialog')
+        .getByRole('heading', { name: text('settingsTitle') })
+        .waitFor({
+          timeout: CONTROL_TIMEOUT,
+        });
+      const importButton = page.getByRole('button', {
+        name: new RegExp(`^${escapeRegExp(text('settingsImport'))}`, 'i'),
       });
-      const importButton = page.getByRole('button', { name: /^import/i });
       if (!(await Preparation.isVisible(importButton))) {
         return 'no Import control on the dashboard yet';
       }
@@ -527,7 +750,9 @@ class Preparation {
       const bundlePath = path.join(os.tmpdir(), 'tab-organizer-import-preview.json');
       writeFileSync(bundlePath, JSON.stringify(bundle, null, 2));
       await fileInput.first().setInputFiles(bundlePath);
-      const preview = dialog.getByText(new RegExp(fixtures[0].name.slice(0, 12), 'i'));
+      const preview = dialog.getByText(
+        new RegExp(escapeRegExp(fixtures[0].name.slice(0, 12)), 'i'),
+      );
       if (!(await Preparation.isVisible(preview))) {
         return 'the import dialog never showed a preview of the chosen file';
       }
@@ -537,8 +762,13 @@ class Preparation {
     await shot('history', async () => {
       // The snapshots live folded in the sidebar; open them and show the newest one.
       const toggle = page
-        .getByRole('navigation', { name: 'Sessions' })
-        .getByRole('button', { name: /snapshot/i });
+        .getByRole('navigation', { name: text('appNavLabel') })
+        .getByRole('button', {
+          name: new RegExp(
+            `${escapeRegExp(text('appNavShowSnapshots'))}|${escapeRegExp(text('appNavHideSnapshots'))}`,
+            'i',
+          ),
+        });
       if (!(await Preparation.isVisible(toggle))) {
         return 'no snapshots control in the sidebar yet';
       }
@@ -546,7 +776,10 @@ class Preparation {
         await toggle.first().click();
         await page.waitForTimeout(300);
       }
-      const snapshot = page.getByRole('navigation', { name: 'Sessions' }).locator('li a').last();
+      const snapshot = page
+        .getByRole('navigation', { name: text('appNavLabel') })
+        .locator('li a')
+        .last();
       if (!(await Preparation.isVisible(snapshot))) {
         return 'no snapshot to show';
       }

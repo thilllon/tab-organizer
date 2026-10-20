@@ -96,7 +96,7 @@ describe('buildSearchGroups', () => {
       'Matching sessions',
       'Open tabs',
       'Saved sessions',
-      'History',
+      'Snapshots',
     ]);
     expect(groups.map((group) => group.startIndex)).toEqual([0, 1, 2, 3]);
     expect(groups.map((group) => group.count)).toEqual([1, 1, 1, 1]);

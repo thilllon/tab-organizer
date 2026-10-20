@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   closeTab,
@@ -9,6 +9,11 @@ import {
 } from '@/lib/window-actions';
 
 import { getChromeFake } from './chrome-fake';
+
+beforeEach(() => {
+  // A rejected action logs Chrome's original message; the page shows it in the UI language.
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+});
 
 describe('goToTab', () => {
   it('activates the tab and focuses its window', async () => {
@@ -31,7 +36,10 @@ describe('goToTab', () => {
   });
 
   it('reports a tab that is already gone instead of throwing', async () => {
-    expect(await goToTab(4242, 1)).toEqual({ ok: false, reason: 'No tab with id: 4242.' });
+    expect(await goToTab(4242, 1)).toEqual({
+      ok: false,
+      reason: 'That tab or window is no longer open.',
+    });
   });
 });
 
@@ -89,7 +97,10 @@ describe('closeTab', () => {
   });
 
   it('reports a rejection as { ok: false }', async () => {
-    expect(await closeTab(4242)).toEqual({ ok: false, reason: 'No tab with id: 4242.' });
+    expect(await closeTab(4242)).toEqual({
+      ok: false,
+      reason: 'That tab or window is no longer open.',
+    });
   });
 });
 
@@ -109,7 +120,10 @@ describe('closeWindow', () => {
   });
 
   it('reports a rejection as { ok: false }', async () => {
-    expect(await closeWindow(4242)).toEqual({ ok: false, reason: 'No window with id: 4242.' });
+    expect(await closeWindow(4242)).toEqual({
+      ok: false,
+      reason: 'That tab or window is no longer open.',
+    });
   });
 });
 

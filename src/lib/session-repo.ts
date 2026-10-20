@@ -1,3 +1,5 @@
+import { LocalizedError } from '@/lib/error-message';
+import { t } from '@/lib/i18n';
 import {
   futureSchemaVersion,
   migrateIndex,
@@ -180,7 +182,7 @@ function unreadableSummary(
   const base: SessionSummary = existing ?? {
     id,
     kind: 'saved',
-    name: name === undefined || name === '' ? 'Unnamed session' : name,
+    name: name === undefined || name === '' ? t('storageUnnamedSession') : name,
     origin: 'manual',
     createdAt: readTimestamp(record, 'createdAt'),
     updatedAt: readTimestamp(record, 'updatedAt'),
@@ -319,7 +321,7 @@ export const sessionRepo = {
     return withLock(async () => {
       const existing = await readBody(id);
       if (existing === undefined) {
-        throw new Error(`Session not found: ${id}`);
+        throw new LocalizedError(t('storageSessionNotFound', id));
       }
       await writeBodyAndIndex({ ...existing, name });
     });
@@ -339,7 +341,7 @@ export const sessionRepo = {
     return withLock(async () => {
       const existing = await readBody(id);
       if (existing === undefined) {
-        throw new Error(`Session not found: ${id}`);
+        throw new LocalizedError(t('storageSessionNotFound', id));
       }
       const next = mutate(existing);
       if (next === null) {
@@ -642,7 +644,7 @@ export const sessionRepo = {
     return withLock(async () => {
       const source = await readBody(id);
       if (source === undefined) {
-        throw new Error(`Session not found: ${id}`);
+        throw new LocalizedError(t('storageSessionNotFound', id));
       }
       const now = Date.now();
       const tabCount = source.windows.reduce((count, win) => count + win.tabs.length, 0);
@@ -732,7 +734,7 @@ function updateBody(id: SessionId, update: (existing: Session) => Session): Prom
   return withLock(async () => {
     const existing = await readBody(id);
     if (existing === undefined) {
-      throw new Error(`Session not found: ${id}`);
+      throw new LocalizedError(t('storageSessionNotFound', id));
     }
     await writeBodyAndIndex(update(existing));
   });

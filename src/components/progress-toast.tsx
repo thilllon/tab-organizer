@@ -2,13 +2,14 @@ import { LoaderCircle, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import type { RestoreProgress } from '@/hooks/use-restore';
+import { formatNumber, joinFacts, t, tp } from '@/lib/i18n';
 import {
   formatRate,
   formatWindowLine,
-  LAZY_RESTORE_HINT,
+  lazyRestoreHint,
   lazyRestoreSummaryHint,
 } from '@/lib/restore-progress';
-import { formatRestoreSummary, splitRestoreErrors } from '@/lib/restore-summary';
+import { formatRestoreSummary, restoreErrorLine, splitRestoreErrors } from '@/lib/restore-summary';
 import type { RestoreResult } from '@/lib/session-restore';
 
 interface ProgressToastProps {
@@ -47,7 +48,7 @@ export function ProgressToast({
       : formatWindowLine(progress.windowIndex, progress.windowCount);
   const rate =
     progress === undefined ? undefined : formatRate(progress.done, Date.now() - progress.startedAt);
-  const pace = [windowLine, rate].filter((part) => part !== undefined).join(' · ');
+  const pace = joinFacts([windowLine ?? '', rate ?? '']);
   const lazyDone = result === undefined ? undefined : lazyRestoreSummaryHint(result.discarded);
 
   return (
@@ -59,9 +60,9 @@ export function ProgressToast({
         <div className="flex items-center gap-3">
           <LoaderCircle className="size-4 animate-spin" />
           <div className="flex-1 text-sm">
-            Restoring {progress.done} of {progress.total} tabs…
+            {tp('restoreProgress', progress.total, formatNumber(progress.done))}
             {pace !== '' && <p className="text-xs text-muted-foreground">{pace}</p>}
-            {progress.lazy && <p className="text-xs text-muted-foreground">{LAZY_RESTORE_HINT}</p>}
+            {progress.lazy && <p className="text-xs text-muted-foreground">{lazyRestoreHint()}</p>}
             <div className="mt-2 h-1.5 overflow-hidden rounded bg-muted">
               <div
                 className="h-full bg-primary transition-[width]"
@@ -72,7 +73,7 @@ export function ProgressToast({
             </div>
           </div>
           <Button size="sm" variant="outline" onClick={onCancel} disabled={cancelling}>
-            {cancelling ? 'Cancelling…' : 'Cancel'}
+            {cancelling ? t('restoreCancelling') : t('commonCancel')}
           </Button>
         </div>
       )}
@@ -91,19 +92,19 @@ export function ProgressToast({
                 {result.skipped.map((url, i) => (
                   // oxlint-disable-next-line react/no-array-index-key -- static snapshot, never reordered
                   <li key={`skipped-${i}`} className="truncate" title={url}>
-                    Skipped: {url}
+                    {t('restoreSkippedItem', url)}
                   </li>
                 ))}
                 {tabErrors.map((entry, i) => (
                   // oxlint-disable-next-line react/no-array-index-key -- static snapshot, never reordered
-                  <li key={`error-${i}`} className="truncate" title={entry.message}>
-                    Failed: {entry.url} ({entry.message})
+                  <li key={`error-${i}`} className="truncate" title={restoreErrorLine(entry)}>
+                    {restoreErrorLine(entry)}
                   </li>
                 ))}
                 {structuralProblems.map((entry, i) => (
                   // oxlint-disable-next-line react/no-array-index-key -- static snapshot, never reordered
-                  <li key={`structural-${i}`} className="truncate" title={entry.message}>
-                    Problem: {entry.url} ({entry.message})
+                  <li key={`structural-${i}`} className="truncate" title={restoreErrorLine(entry)}>
+                    {restoreErrorLine(entry)}
                   </li>
                 ))}
               </ul>
@@ -112,8 +113,8 @@ export function ProgressToast({
           <Button
             size="icon-xs"
             variant="ghost"
-            aria-label="Dismiss"
-            title="Dismiss"
+            aria-label={t('restoreDismiss')}
+            title={t('restoreDismiss')}
             onClick={onDismiss}
           >
             <X />

@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n';
 import {
   matchSessionName,
   SEARCH_SOURCES,
@@ -10,12 +11,19 @@ import type { SessionSummary } from '@/types';
 /** The tier-1 (session name) block plus the tier-2 sources, in the order they are rendered. */
 type SearchGroupSource = 'sessions' | SearchSource;
 
-const SEARCH_GROUP_HEADINGS: Record<SearchGroupSource, string> = {
-  sessions: 'Matching sessions',
-  open: 'Open tabs',
-  saved: 'Saved sessions',
-  history: 'History',
-};
+/** A group's heading in the UI language, read at call time (tests switch the language). */
+function searchGroupHeading(source: SearchGroupSource): string {
+  switch (source) {
+    case 'sessions':
+      return t('searchGroupMatchingSessions');
+    case 'open':
+      return t('searchGroupOpenTabs');
+    case 'saved':
+      return t('searchGroupSavedSessions');
+    case 'history':
+      return t('searchGroupHistory');
+  }
+}
 
 /** One activatable row: restore a whole session (tier 1), or open/focus one tab (tier 2). */
 export type SearchItem =
@@ -93,7 +101,7 @@ export function buildSearchGroups(
     }
     groups.push({
       source,
-      heading: SEARCH_GROUP_HEADINGS[source],
+      heading: searchGroupHeading(source),
       count,
       hasMore,
       items,

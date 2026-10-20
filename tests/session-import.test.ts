@@ -6,6 +6,7 @@ import {
   decodeEntities,
   detectFormat,
   importSessions,
+  jsonErrorLocation,
   parseJson,
   parseNetscapeHtml,
   parsers,
@@ -493,7 +494,21 @@ describe('importSessions', () => {
       NOW,
     );
     expect(result.format).toBeNull();
-    expect(result.format === null && result.error).toMatch(/^Malformed JSON: /);
+    expect(result.format === null && result.error).toMatch(/^This is not valid JSON/);
+  });
+
+  it('says where the JSON parser stopped, in the UI language, without its English message', () => {
+    expect(jsonErrorLocation('Unexpected token } in JSON at position 6', '{"a":\n}')).toEqual({
+      line: 2,
+      column: 1,
+    });
+    expect(
+      jsonErrorLocation(
+        "Expected ',' or '}' after property value in JSON at position 9 (line 2 column 3)",
+        '',
+      ),
+    ).toEqual({ line: 2, column: 3 });
+    expect(jsonErrorLocation('Unexpected end of JSON input', '{')).toBeUndefined();
   });
 
   it('explains invalid bundles, unsupported versions and foreign JSON', () => {

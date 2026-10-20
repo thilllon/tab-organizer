@@ -18,14 +18,6 @@ export const DEFAULT_SHORTCUTS = {
   'assemble-tabs': 'Alt+Shift+A',
 } as const;
 
-/** The action's name, as on the Open tabs button. */
-export const ASSEMBLE_NAME = 'Assemble!';
-
-/** What it does, short enough to sit in brackets after the name. */
-const ASSEMBLE_EXPLANATION = "move every window's tabs into this one";
-
-/**
- * Name and explanation together, for the places that have no tooltip to explain the name: the
- * icon's right-click menu and the command list at chrome://extensions/shortcuts.
- */
-export const ASSEMBLE_LABEL = `${ASSEMBLE_NAME} (${ASSEMBLE_EXPLANATION})`;
+// The action's name ("Assemble!") and its bracketed explanation are user text, so they live in
+// public/_locales as `assembleName` and `cmdAssembleTabs` (read with `t()` from src/lib/i18n.ts);
+// this file cannot hold them because it must stay free of `chrome.*`.

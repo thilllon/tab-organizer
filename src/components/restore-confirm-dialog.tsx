@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { DialogCloseButton } from '@/components/dialog-close-button';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { joinSentences, t, tp } from '@/lib/i18n';
 import { countTabs, formatRestoreDestination } from '@/lib/restore-summary';
 import { isLazyRestore, type RestoreTarget } from '@/lib/session-restore';
 import type { Session, SessionSettings } from '@/types';
@@ -57,12 +59,14 @@ export function RestoreConfirmDialog({ pending, onConfirm, onCancel }: RestoreCo
         }
       }}
     >
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Restore {tabCount} tabs?</DialogTitle>
+          <DialogTitle>{tp('sessionRestoreTitle', tabCount)}</DialogTitle>
           <DialogDescription>
-            {shown === undefined ? '' : formatRestoreDestination(shown.session, shown.target)} Large
-            restores can take a while and use a lot of memory.
+            {joinSentences(
+              shown === undefined ? '' : formatRestoreDestination(shown.session, shown.target),
+              t('sessionRestoreBody'),
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center gap-2">
@@ -73,16 +77,17 @@ export function RestoreConfirmDialog({ pending, onConfirm, onCancel }: RestoreCo
             checked={lazy}
             onChange={(event) => setLazy(event.target.checked)}
           />
-          <Label htmlFor="restore-lazy">
-            Load tabs lazily (recommended: tabs load when clicked)
-          </Label>
+          <Label htmlFor="restore-lazy">{t('sessionRestoreLazyLabel')}</Label>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onCancel}>
-            Cancel
+            {t('commonCancel')}
           </Button>
-          <Button onClick={() => onConfirm(lazy ? 'always' : 'never')}>Restore</Button>
+          <Button onClick={() => onConfirm(lazy ? 'always' : 'never')}>
+            {t('sessionRestoreButton')}
+          </Button>
         </DialogFooter>
+        <DialogCloseButton />
       </DialogContent>
     </Dialog>
   );

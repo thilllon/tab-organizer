@@ -4,55 +4,1659 @@
     "description": "The extension name in Chrome and the Chrome Web Store. Keep the brand name; at most 75 characters."
   },
   "extDescription": {
-    "message": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
+    "message": "클릭 한 번으로 모든 탭을 정렬하고 그룹으로 묶은 뒤, 창 전체를 세션으로 저장하고 복원합니다. 오프라인, 계정 불필요, 데이터는 기기에만 저장됩니다.",
     "description": "The store summary and the line under the name at chrome://extensions. At most 132 characters."
   },
+  "localeCode": {
+    "message": "ko",
+    "description": "Do not translate. The language code of this file itself (en, ko, es, ja), not a word: it picks the plural rules and number formats that match this file's text, also when Chrome falls back to it for a language the extension does not ship."
+  },
   "actionTitle": {
-    "message": "Tab Organizer: click to sort tabs, right-click for sessions",
+    "message": "Tab Organizer: 클릭하여 탭 정렬, 마우스 오른쪽 버튼으로 세션 관리",
     "description": "Tooltip of the toolbar icon. Teaches the two gestures."
   },
   "cmdSaveSession": {
-    "message": "Save the current window as a session",
+    "message": "현재 창을 세션으로 저장",
     "description": "Keyboard command, listed at chrome://extensions/shortcuts."
   },
   "cmdOpenDashboard": {
-    "message": "Open Tab Organizer",
+    "message": "Tab Organizer 열기",
     "description": "Keyboard command that opens the app page."
   },
   "cmdAssembleTabs": {
-    "message": "Assemble! (move every window's tabs into this one)",
+    "message": "모두 모으기 (모든 창의 탭을 이 창으로 이동)",
     "description": "Keyboard command and right-click menu item: the action name, then what it does in brackets."
   },
   "assembleName": {
-    "message": "Assemble!",
+    "message": "모두 모으기",
     "description": "Short name of the action that moves every window's tabs into the current one. Shown on a button."
   },
   "commonCancel": {
-    "message": "Cancel",
+    "message": "취소",
     "description": "Button that closes a dialog without doing anything."
   },
+  "commonSentenceJoin": {
+    "message": "$1 $2",
+    "description": "How two complete sentences stand side by side in one text. $1 and $2 are full sentences. Most languages put a space between them; languages written without spaces (Japanese) put nothing."
+  },
+  "commonFactJoin": {
+    "message": "$1 · $2",
+    "description": "How two short facts are separated on one line, such as \"3 windows · 87 tabs\". $1 and $2 are the facts (either may itself be a joined list). Keep the middle dot separator unless your language uses another."
+  },
+  "commonLoading": {
+    "message": "불러오는 중…",
+    "description": "Shown while something (a session's tabs, the saved sessions, the open windows) is being read."
+  },
   "commonClose": {
-    "message": "Close",
+    "message": "닫기",
     "description": "Button or label that closes a dialog or panel."
   },
   "commonDelete": {
-    "message": "Delete",
+    "message": "삭제",
     "description": "Button that deletes something."
   },
   "commonSave": {
-    "message": "Save",
+    "message": "저장",
     "description": "Button that saves."
   },
   "commonOpen": {
-    "message": "Open",
+    "message": "열기",
     "description": "Button that opens something."
   },
   "tabCount_other": {
-    "message": "$1 tabs",
+    "message": "탭 $1개",
     "description": "A number of browser tabs. $1 is the formatted count."
   },
   "windowCount_other": {
-    "message": "$1 windows",
+    "message": "창 $1개",
     "description": "A number of browser windows. $1 is the formatted count."
+  },
+  "settingsTitle": {
+    "message": "설정",
+    "description": "Title of the Settings dialog."
+  },
+  "settingsSubtitle": {
+    "message": "변경 사항은 바로 저장됩니다.",
+    "description": "Line under the Settings dialog title: there is no Save button, every change is stored at once."
+  },
+  "settingsSaved": {
+    "message": "설정이 저장되었습니다",
+    "description": "Short toast shown after any setting was stored."
+  },
+  "settingsSaveFailed": {
+    "message": "설정을 저장하지 못했습니다: $1",
+    "description": "Error line shown when Chrome refused to store a setting. $1 is Chrome's own error message (usually English) or the word for an unknown error."
+  },
+  "settingsUnknownError": {
+    "message": "알 수 없음",
+    "description": "Fills the error message of settingsSaveFailed when Chrome gave no reason. One lower-case word."
+  },
+  "settingsAdvanced": {
+    "message": "고급",
+    "description": "Label of a fold in the Settings dialog that hides the settings people rarely change. One short word."
+  },
+  "settingsAdvancedToggle": {
+    "message": "설정 더 보기 또는 숨기기",
+    "description": "Tooltip of the Advanced fold in the Settings dialog."
+  },
+  "settingsSortingTitle": {
+    "message": "정렬",
+    "description": "Heading of the Settings section about sorting tabs."
+  },
+  "settingsSortingDescription": {
+    "message": "툴바 아이콘을 클릭했을 때의 동작입니다.",
+    "description": "Explanation under the Sorting heading in Settings."
+  },
+  "settingsSortBy": {
+    "message": "정렬 기준",
+    "description": "Label of the dropdown that chooses how tabs are ordered."
+  },
+  "settingsSortByTitle": {
+    "message": "툴바 아이콘을 클릭할 때 탭을 정렬하는 방식",
+    "description": "Tooltip of the Sort by dropdown in Settings."
+  },
+  "settingsSortByUrl": {
+    "message": "URL순",
+    "description": "Sort by dropdown option: order tabs by their web address. Short."
+  },
+  "settingsSortByTitleOption": {
+    "message": "제목순",
+    "description": "Sort by dropdown option: order tabs alphabetically by page title. Short."
+  },
+  "settingsSortByCustom": {
+    "message": "사용자 지정",
+    "description": "Sort by dropdown option: group tabs by site with the options shown under it. Short."
+  },
+  "settingsTabGroups": {
+    "message": "탭 그룹",
+    "description": "Label of the dropdown that decides which tabs count as the same site when sorting by Custom."
+  },
+  "settingsTabGroupsHint": {
+    "message": "어디까지를 같은 사이트로 볼지 정합니다.",
+    "description": "Grey hint under the Tab groups setting."
+  },
+  "settingsGroupingSubdomain": {
+    "message": "전체 호스트 이름 기준",
+    "description": "Tab groups dropdown option: mail.example.com and www.example.com are different sites. Short."
+  },
+  "settingsGroupingDomain": {
+    "message": "도메인 기준",
+    "description": "Tab groups dropdown option: every subdomain of example.com is one site. Short."
+  },
+  "settingsGroupingDirection": {
+    "message": "그룹 순서 방향",
+    "description": "Label of the dropdown that chooses which end of the tab strip decides the order of the site groups."
+  },
+  "settingsGroupingDirectionHint": {
+    "message": "탭 표시줄의 어느 쪽부터 사이트 순서를 정할지 선택합니다.",
+    "description": "Grey hint under the Grouping direction setting."
+  },
+  "settingsGroupFromLeft": {
+    "message": "왼쪽에서 오른쪽",
+    "description": "Grouping direction dropdown option. Short."
+  },
+  "settingsGroupFromRight": {
+    "message": "오른쪽에서 왼쪽",
+    "description": "Grouping direction dropdown option. Short."
+  },
+  "settingsPreserveOrder": {
+    "message": "그룹 내 순서 유지",
+    "description": "Label of a switch: keep each site's tabs in their current order instead of sorting them."
+  },
+  "settingsPreserveOrderHint": {
+    "message": "사이트별 탭을 연 순서대로 유지합니다.",
+    "description": "Grey hint under the Preserve order within groups switch."
+  },
+  "settingsDuplicateTabs": {
+    "message": "중복 탭",
+    "description": "Label of the dropdown that chooses what happens to tabs with the same address."
+  },
+  "settingsDuplicateTabsHint": {
+    "message": "같은 주소가 두 번 이상 열려 있을 때의 처리입니다.",
+    "description": "Grey hint under the Duplicate tabs setting."
+  },
+  "settingsDuplicateKeepOne": {
+    "message": "하나만 남기기",
+    "description": "Duplicate tabs dropdown option: close the extra copies. Short."
+  },
+  "settingsDuplicateKeepAll": {
+    "message": "모두 유지",
+    "description": "Duplicate tabs dropdown option: leave them alone. Short."
+  },
+  "settingsDuplicateGroup": {
+    "message": "그룹으로 묶기",
+    "description": "Duplicate tabs dropdown option: put the copies in one tab group. Short."
+  },
+  "settingsSortingAdvancedDescription": {
+    "message": "고정된 탭, 일시 중지된 탭",
+    "description": "Small grey text beside the Advanced fold of the Sorting section, listing what is inside."
+  },
+  "settingsSortPinned": {
+    "message": "고정된 탭 정렬",
+    "description": "Label of a switch in Settings."
+  },
+  "settingsSortPinnedHint": {
+    "message": "끄면 고정된 탭은 지금 위치에 그대로 있습니다.",
+    "description": "Grey hint under the Sort pinned tabs switch."
+  },
+  "settingsGroupSuspended": {
+    "message": "일시 중지된 탭을 함께 묶기",
+    "description": "Label of a switch in Settings. Suspended tabs are pages unloaded by a tab suspender extension."
+  },
+  "settingsGroupSuspendedHint": {
+    "message": "켜면 일시 중지된 탭이 한 묶음으로 맨 앞으로 이동합니다.",
+    "description": "Grey hint under the Group suspended tabs together switch."
+  },
+  "settingsSuspenderId": {
+    "message": "탭 일시 중지 확장 프로그램 ID",
+    "description": "Label of a text field holding another extension's 32-letter id."
+  },
+  "settingsSuspenderIdHint": {
+    "message": "일시 중지된 페이지를 인식할 확장 프로그램입니다. 비워 두면 The Marvellous Suspender를 사용합니다.",
+    "description": "Grey hint under the Tab suspender extension ID field. Keep the extension name The Marvellous Suspender as it is."
+  },
+  "settingsSuspenderIdInvalid": {
+    "message": "a-p 소문자 32자",
+    "description": "Short red error beside the extension id field: an id is exactly 32 letters from a to p. Keep the letters a and p."
+  },
+  "settingsSessionsTitle": {
+    "message": "세션",
+    "description": "Heading of the Settings section about saved sessions and automatic snapshots."
+  },
+  "settingsSessionsDescription": {
+    "message": "자동 스냅샷은 비정상 종료나 닫힌 창에 대비한 안전장치입니다. 이 기기에만 저장됩니다.",
+    "description": "Explanation under the Sessions heading in Settings."
+  },
+  "settingsSessionsAdvancedDescription": {
+    "message": "간격, 보관 개수, 지연 복원",
+    "description": "Small grey text beside the Advanced fold of the Sessions section, listing what is inside."
+  },
+  "settingsAutoSnapshots": {
+    "message": "자동 스냅샷",
+    "description": "Label of the switch that turns timed snapshots of the open windows on or off."
+  },
+  "settingsAutoSnapshotsTitle": {
+    "message": "열려 있는 탭을 묻지 않고 주기적으로 저장",
+    "description": "Tooltip of the Automatic snapshots switch."
+  },
+  "settingsSnapshotInterval": {
+    "message": "스냅샷 간격",
+    "description": "Label of the dropdown that chooses how often a snapshot is taken."
+  },
+  "settingsSnapshotIntervalHint": {
+    "message": "사용자 지정: $1~$2분.",
+    "description": "Grey hint under Snapshot interval: the range a typed-in custom interval may take. $1 is the smallest number of minutes, $2 the largest."
+  },
+  "settingsIntervalEvery_other": {
+    "message": "$1분마다",
+    "description": "Snapshot interval dropdown option. $1 is the formatted number of minutes."
+  },
+  "settingsIntervalCustom": {
+    "message": "사용자 지정",
+    "description": "Snapshot interval dropdown option that shows a field to type any number of minutes. Short."
+  },
+  "settingsIntervalCustomLabel": {
+    "message": "사용자 지정 스냅샷 간격(분)",
+    "description": "Screen-reader label of the number field for a custom snapshot interval."
+  },
+  "settingsMinutesUnit": {
+    "message": "분",
+    "description": "Unit shown right after the number field of a custom snapshot interval. One short word."
+  },
+  "settingsKeepLast": {
+    "message": "최근 스냅샷 보관",
+    "description": "Label in front of the number field for how many automatic snapshots are kept; the field is followed by settingsSnapshotsUnit."
+  },
+  "settingsKeepLastHint": {
+    "message": "오래된 스냅샷부터 삭제됩니다. 보호된 스냅샷은 개수에 포함되지 않습니다.",
+    "description": "Grey hint under the Keep last setting."
+  },
+  "settingsSnapshotsUnit": {
+    "message": "개",
+    "description": "Unit shown right after the number field of the Keep last setting. One short word."
+  },
+  "settingsLazyRestore": {
+    "message": "지연 복원",
+    "description": "Label of the dropdown that chooses whether restored tabs load only when visited."
+  },
+  "settingsLazyRestoreHint": {
+    "message": "탭을 열되 방문할 때까지 로드하지 않습니다.",
+    "description": "Grey hint under the Lazy restore setting."
+  },
+  "settingsLazyAuto": {
+    "message": "자동(탭 $1개 초과 시)",
+    "description": "Lazy restore dropdown option: only when a session has more tabs than $1, the formatted threshold (50)."
+  },
+  "settingsLazyAlways": {
+    "message": "항상",
+    "description": "Lazy restore dropdown option. Short."
+  },
+  "settingsLazyNever": {
+    "message": "사용 안 함",
+    "description": "Lazy restore dropdown option. Short."
+  },
+  "settingsBackupTitle": {
+    "message": "백업",
+    "description": "Heading of the Settings section about exporting and importing sessions."
+  },
+  "settingsBackupDescription": {
+    "message": "세션은 이 기기에만 저장됩니다. 다른 곳으로 옮기려면 파일로 내보내세요.",
+    "description": "Explanation under the Backup heading in Settings."
+  },
+  "settingsExportEverything": {
+    "message": "모두 내보내기",
+    "description": "Label of the row with the button that exports every session to a file."
+  },
+  "settingsExportEverythingHint": {
+    "message": "저장된 세션과 스냅샷을 하나의 JSON 파일로 내보냅니다.",
+    "description": "Grey hint under Export everything. Keep JSON as it is."
+  },
+  "settingsExportButton": {
+    "message": "내보내기…",
+    "description": "Button that starts the export; the ellipsis means a choice follows. Short."
+  },
+  "settingsImport": {
+    "message": "가져오기",
+    "description": "Label of the row with the button that imports sessions from a file or pasted text."
+  },
+  "settingsImportHint": {
+    "message": "JSON, 북마크 HTML, Markdown 목록 또는 일반 URL 목록.",
+    "description": "Grey hint under Import: the formats it reads. Keep JSON, HTML, Markdown and URLs as they are."
+  },
+  "settingsImportButton": {
+    "message": "가져오기…",
+    "description": "Button that opens the import dialog. Short."
+  },
+  "settingsBackupAdvancedDescription": {
+    "message": "저장 공간 사용량, 모두 삭제",
+    "description": "Small grey text beside the Advanced fold of the Backup section, listing what is inside."
+  },
+  "settingsShortcutsTitle": {
+    "message": "단축키",
+    "description": "Heading of the Settings section listing the extension's keyboard commands."
+  },
+  "settingsShortcutsDescription": {
+    "message": "새로 설치하면 다른 확장 프로그램이 해당 키를 사용하지 않는 한 Chrome이 정렬에는 $1, $2에는 $3 키를 지정합니다. 나머지 명령은 키 없이 시작합니다.",
+    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A)."
+  },
+  "settingsSortCommand": {
+    "message": "이 창의 탭 정렬(아이콘 클릭과 동일)",
+    "description": "Name of the keyboard command that sorts, in the shortcuts list."
+  },
+  "settingsUnnamedCommand": {
+    "message": "이름 없는 명령",
+    "description": "Shortcuts list: a command Chrome reported without any name."
+  },
+  "settingsShortcutNotSet": {
+    "message": "설정 안 됨",
+    "description": "Shortcuts list: the command has no key. Short."
+  },
+  "settingsShortcutSuggestedHint": {
+    "message": "추천 키: $1. Chrome이 아직 이 키를 지정하지 않았습니다. Chrome 단축키 페이지에서 설정할 수 있습니다.",
+    "description": "Grey hint under an unbound command in the shortcuts list. $1 is the key, e.g. Alt + Shift + A."
+  },
+  "settingsShortcutsChangeOnlyInChrome": {
+    "message": "이 단축키는 Chrome 자체 단축키 설정에서만 변경할 수 있습니다.",
+    "description": "Note beside the Change in Chrome button."
+  },
+  "settingsShortcutsLoading": {
+    "message": "Chrome에서 단축키를 읽는 중…",
+    "description": "Shown while Chrome has not yet reported the keyboard shortcuts."
+  },
+  "settingsShortcutsFailed": {
+    "message": "Chrome에서 단축키 정보를 받지 못했습니다. 단축키 페이지를 열어 확인하세요.",
+    "description": "Shown when Chrome could not list the keyboard shortcuts."
+  },
+  "settingsChangeInChrome": {
+    "message": "Chrome에서 변경",
+    "description": "Button that opens Chrome's keyboard shortcuts page. Short."
+  },
+  "settingsChangeInChromeTitle": {
+    "message": "Chrome 단축키 페이지 열기",
+    "description": "Tooltip of the Change in Chrome button."
+  },
+  "settingsKeyCommand": {
+    "message": "Command",
+    "description": "Name of the Mac Command key (⌘) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyControl": {
+    "message": "Control",
+    "description": "Name of the Mac Control key (⌃) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyOption": {
+    "message": "Option",
+    "description": "Name of the Mac Option key (⌥) as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeyCtrl": {
+    "message": "Ctrl",
+    "description": "Name of the Ctrl key on Windows, Linux and ChromeOS keyboards. Shown in a small key chip."
+  },
+  "settingsKeyAlt": {
+    "message": "Alt",
+    "description": "Name of the Alt key on Windows, Linux and ChromeOS keyboards. Shown in a small key chip."
+  },
+  "settingsKeyShift": {
+    "message": "Shift",
+    "description": "Name of the Shift key as printed on keyboards in this language. Shown in a small key chip."
+  },
+  "settingsKeySearch": {
+    "message": "검색",
+    "description": "Name of the ChromeOS Search key. Shown in a small key chip."
+  },
+  "settingsKeyNameComma": {
+    "message": "쉼표",
+    "description": "Name of the comma key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePeriod": {
+    "message": "마침표",
+    "description": "Name of the period (full stop) key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameSpace": {
+    "message": "스페이스",
+    "description": "Name of the space bar as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameUp": {
+    "message": "위쪽 화살표",
+    "description": "Name of the up arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameDown": {
+    "message": "아래쪽 화살표",
+    "description": "Name of the down arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameLeft": {
+    "message": "왼쪽 화살표",
+    "description": "Name of the left arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameRight": {
+    "message": "오른쪽 화살표",
+    "description": "Name of the right arrow key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameHome": {
+    "message": "Home",
+    "description": "Name of the Home key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEnd": {
+    "message": "End",
+    "description": "Name of the End key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePageUp": {
+    "message": "Page Up",
+    "description": "Name of the Page Up key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNamePageDown": {
+    "message": "Page Down",
+    "description": "Name of the Page Down key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameInsert": {
+    "message": "Insert",
+    "description": "Name of the Insert key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameDelete": {
+    "message": "Delete",
+    "description": "Name of the Delete key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameTab": {
+    "message": "Tab",
+    "description": "Name of the Tab key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEscape": {
+    "message": "Esc",
+    "description": "Name of the Escape key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameEnter": {
+    "message": "Enter",
+    "description": "Name of the Enter (Return) key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameBackspace": {
+    "message": "Backspace",
+    "description": "Name of the Backspace key as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaNextTrack": {
+    "message": "다음 트랙",
+    "description": "Name of the media key that skips to the next track as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaPlayPause": {
+    "message": "재생/일시정지",
+    "description": "Name of the media key that plays or pauses as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaPrevTrack": {
+    "message": "이전 트랙",
+    "description": "Name of the media key that goes back to the previous track as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "settingsKeyNameMediaStop": {
+    "message": "정지",
+    "description": "Name of the media key that stops playback as printed on keyboards in this language. Shown in a small key chip of a keyboard shortcut."
+  },
+  "sessionDefaultName": {
+    "message": "세션 $1 · $2 · $3",
+    "description": "Default name of a saved session, stored with it. $1 is the capture time as 2026-08-29 14:03 (keep as is), $2 is a window count such as \"3 windows\", $3 a tab count such as \"87 tabs\". Keep the · separators."
+  },
+  "sessionSnapshotDefaultName": {
+    "message": "스냅샷 $1 · $2 · $3",
+    "description": "Default name of an automatic snapshot. $1 is the capture time as 2026-08-29 14:03 (keep as is), $2 is a window count such as \"3 windows\", $3 a tab count such as \"87 tabs\". Keep the · separators."
+  },
+  "sessionRecoveredName": {
+    "message": "이전 세션(복구됨) $1",
+    "description": "Name given to the snapshot recovered after a browser restart. $1 is its capture time as 2026-08-29 14:03."
+  },
+  "sessionUnreadableMessage": {
+    "message": "최신 버전의 Tab Organizer로 저장된 세션입니다. 열려면 업데이트하세요.",
+    "description": "Shown in the saved list instead of a session this version cannot read. Tab Organizer is the extension name."
+  },
+  "sessionUnreadableSchema": {
+    "message": "스키마 v$1",
+    "description": "Short technical label after the unreadable-session message. $1 is the data format version number, e.g. 2."
+  },
+  "sessionOriginAlarm": {
+    "message": "자동",
+    "description": "Small lowercase label on a snapshot taken automatically on a timer. One short word."
+  },
+  "sessionOriginManual": {
+    "message": "수동",
+    "description": "Small lowercase label on a snapshot taken by clicking the toolbar icon. One short word."
+  },
+  "sessionOriginStartup": {
+    "message": "시작 시",
+    "description": "Small lowercase label on a snapshot taken when the browser started. One short word."
+  },
+  "sessionOriginRecovered": {
+    "message": "복구됨",
+    "description": "Small lowercase label on the snapshot recovered after a browser restart. One short word."
+  },
+  "sessionOriginImport": {
+    "message": "가져옴",
+    "description": "Small lowercase label on a session that came from an imported file. One short word."
+  },
+  "sessionSavedAt": {
+    "message": "$1 저장",
+    "description": "Lowercase fragment after the window and tab counts of a session, e.g. \"2 windows · 9 tabs · 4 KB · saved Aug 29, 2026, 14:03\". $1 is the date and time."
+  },
+  "sessionDeleteLabel": {
+    "message": "세션 삭제",
+    "description": "Tooltip and screen reader label of the trash icon button on a session row."
+  },
+  "sessionDeleteTitle": {
+    "message": "세션을 삭제할까요?",
+    "description": "Title of the dialog that confirms deleting a saved session."
+  },
+  "sessionSnapshotDeleteTitle": {
+    "message": "스냅샷을 삭제할까요?",
+    "description": "Title of the dialog that confirms deleting an automatic snapshot."
+  },
+  "sessionDeleteBody": {
+    "message": "“$1”이(가) 이 기기에서 삭제됩니다. 되돌릴 수 없습니다.",
+    "description": "Body of the delete confirmation dialog. $1 is the session name or the snapshot's date; use the language's quotation marks around it."
+  },
+  "sessionRestoreTitle_other": {
+    "message": "탭 $1개를 복원할까요?",
+    "description": "Title of the dialog that confirms opening a large session. $1 is the formatted tab count."
+  },
+  "sessionRestoreBody": {
+    "message": "대규모 복원은 시간이 걸리고 메모리를 많이 사용할 수 있습니다.",
+    "description": "Body of the restore confirmation dialog, shown after the sentence saying where the tabs will open (restoreDestinationHere / restoreDestinationNewWindows)."
+  },
+  "sessionRestoreLazyLabel": {
+    "message": "탭 지연 로드(권장: 클릭할 때 로드)",
+    "description": "Checkbox label in the restore confirmation dialog: restored tabs stay unloaded until clicked."
+  },
+  "sessionRestoreButton": {
+    "message": "복원",
+    "description": "Confirm button of the restore dialog: opens the session's tabs. Short button text."
+  },
+  "sessionGone": {
+    "message": "이 세션은 더 이상 존재하지 않습니다.",
+    "description": "Error shown when a session that was deleted meanwhile (for example from another tab) is opened, exported or shown."
+  },
+  "sessionSnapshotGone": {
+    "message": "이 스냅샷은 더 이상 존재하지 않습니다.",
+    "description": "Error shown when opening a snapshot that was deleted meanwhile."
+  },
+  "sessionSwitchedToOpenTab": {
+    "message": "이미 열려 있던 탭으로 이동했습니다.",
+    "description": "Toast after clicking a saved tab whose page was already open: the open tab was brought forward instead of opening it again."
+  },
+  "sessionNameLabel": {
+    "message": "세션 이름",
+    "description": "Screen reader label of the text field for renaming a session."
+  },
+  "sessionRenameHint": {
+    "message": "Enter 키로 저장, Esc 키로 취소",
+    "description": "Tooltip of the rename field. Enter and Escape are keyboard keys."
+  },
+  "sessionRename": {
+    "message": "이름 변경",
+    "description": "Menu item and tooltip on the session title that starts renaming the session. Short."
+  },
+  "sessionRenameLabel": {
+    "message": "세션 이름 변경",
+    "description": "Tooltip and screen reader label of the pencil icon button next to the session name."
+  },
+  "sessionOpenTitle": {
+    "message": "이 세션을 새 창에서 열기",
+    "description": "Tooltip of the Open button on a saved session."
+  },
+  "sessionMoreActions": {
+    "message": "추가 작업",
+    "description": "Tooltip and screen reader label of the ⋯ menu button on a session or snapshot."
+  },
+  "sessionOpenHere": {
+    "message": "이 창에서 열기",
+    "description": "Menu item: open the saved session's tabs in the current window. Short menu item."
+  },
+  "sessionWindowsIn": {
+    "message": "$1의 창",
+    "description": "Screen reader label of a session's window list. $1 is the session name."
+  },
+  "sessionOpenWindowTitle": {
+    "message": "이 창의 탭을 새 창에서 열기",
+    "description": "Tooltip of the Open window button on one window of a saved session."
+  },
+  "sessionOpenWindow": {
+    "message": "창 열기",
+    "description": "Small button on one window of a saved session: open its tabs in a new window. Short button text."
+  },
+  "sessionOpenWindowHereTitle": {
+    "message": "이 창의 탭을 현재 창에서 열기",
+    "description": "Tooltip of the Open here button on one window of a saved session."
+  },
+  "sessionOpenWindowHere": {
+    "message": "여기서 열기",
+    "description": "Small button on one window of a saved session: open its tabs in the current window. Short button text."
+  },
+  "sessionRemoveWindowTitle": {
+    "message": "세션에서 이 창 제거",
+    "description": "Tooltip of the Remove button on one window of a saved session."
+  },
+  "sessionRemoveWindow": {
+    "message": "제거",
+    "description": "Small button that removes one window from a saved session. Short button text."
+  },
+  "sessionCopyLink": {
+    "message": "링크 복사",
+    "description": "Tooltip and screen reader label of the link icon button on a saved tab: copies its address."
+  },
+  "sessionRemoveTab": {
+    "message": "세션에서 제거",
+    "description": "Tooltip and screen reader label of the × icon button on a saved tab."
+  },
+  "sessionSnapshotLabel": {
+    "message": "스냅샷 $1",
+    "description": "Screen reader label of the snapshot view. $1 is the snapshot's date and time."
+  },
+  "sessionSnapshotOpenTitle": {
+    "message": "이 스냅샷을 새 창에서 열기",
+    "description": "Tooltip of the Open button on an automatic snapshot."
+  },
+  "sessionKeep": {
+    "message": "보관",
+    "description": "Button on an automatic snapshot that moves it into the saved sessions. Short button text; also appears in bold inside sessionSnapshotExplainer."
+  },
+  "sessionKeepTitle": {
+    "message": "자동으로 삭제되지 않는 저장된 세션으로 이동",
+    "description": "Tooltip of the Keep button on an automatic snapshot."
+  },
+  "sessionKeptNotice": {
+    "message": "“$1”(으)로 보관했습니다.",
+    "description": "Toast after Keep moved a snapshot into the saved sessions. $1 is the new saved session's name; use the language's quotation marks."
+  },
+  "sessionSnapshotExplainer_other": {
+    "message": "스냅샷은 자동으로 생성되며 최근 $1개만 보관됩니다. 이 스냅샷을 자동으로 삭제되지 않는 저장된 세션으로 옮기려면 $2 버튼을 누르세요.",
+    "description": "Explanation under a snapshot's title. $1 is the formatted number of snapshots kept, $2 is the bold word of the Keep button (sessionKeep); keep $2 exactly once."
+  },
+  "sessionSnapshotWindows": {
+    "message": "이 스냅샷의 창",
+    "description": "Screen reader label of a snapshot's window list."
+  },
+  "expMenuJson": {
+    "message": "JSON으로 내보내기",
+    "description": "Downloads the session as a JSON file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuMarkdown": {
+    "message": "Markdown으로 내보내기",
+    "description": "Downloads the session as a Markdown file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuText": {
+    "message": "텍스트로 내보내기",
+    "description": "Downloads the session as a plain-text list of links. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuHtml": {
+    "message": "HTML 북마크로 내보내기",
+    "description": "Downloads the session as a bookmarks HTML file that browsers can import. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expMenuCsv": {
+    "message": "CSV로 내보내기",
+    "description": "Downloads the session as a CSV spreadsheet file. Export menu item; keep it short (at most about 30 characters)."
+  },
+  "expFormatJson": {
+    "message": "JSON",
+    "description": "Name of the JSON export format, used on its own."
+  },
+  "expFormatMarkdown": {
+    "message": "Markdown",
+    "description": "Name of the Markdown export format, used on its own."
+  },
+  "expFormatText": {
+    "message": "텍스트",
+    "description": "Name of the plain-text export format, used on its own (lower case in English)."
+  },
+  "expFormatHtml": {
+    "message": "HTML 북마크",
+    "description": "Name of the bookmarks HTML export format, used on its own."
+  },
+  "expFormatCsv": {
+    "message": "CSV",
+    "description": "Name of the CSV export format, used on its own."
+  },
+  "expExportedJson": {
+    "message": "“$1”을(를) JSON으로 내보냈습니다.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedMarkdown": {
+    "message": "“$1”을(를) Markdown으로 내보냈습니다.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedText": {
+    "message": "“$1”을(를) 텍스트로 내보냈습니다.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedHtml": {
+    "message": "“$1”을(를) HTML 북마크로 내보냈습니다.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expExportedCsv": {
+    "message": "“$1”을(를) CSV로 내보냈습니다.",
+    "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."
+  },
+  "expScopeWindow": {
+    "message": "$1 (창 $2)",
+    "description": "Name of an export narrowed to one window, used in the file name and the confirmation. $1 is the session name, $2 the window number."
+  },
+  "expScopeGroup": {
+    "message": "$1 ($2)",
+    "description": "Name of an export narrowed to one tab group. $1 is the session name, $2 the group title."
+  },
+  "expUntitledGroup": {
+    "message": "제목 없는 그룹",
+    "description": "Stands in for a tab group without a title, in export names and as a heading in Markdown exports."
+  },
+  "expWindowLabel": {
+    "message": "창 $1",
+    "description": "Heading for one window inside Markdown and bookmarks HTML exports. $1 is the window number."
+  },
+  "commonCopiedLinks_other": {
+    "message": "링크 $1개를 복사했습니다.",
+    "description": "Toast after copying links (of a session, a window, a group or the selected tabs). $1 is the formatted number of links."
+  },
+  "expCopiedMarkdown_other": {
+    "message": "링크 $1개를 Markdown으로 복사했습니다.",
+    "description": "Toast after copying links as a Markdown list. $1 is the formatted number of links."
+  },
+  "expCopiedLink": {
+    "message": "링크를 복사했습니다.",
+    "description": "Toast after copying the link of a single tab."
+  },
+  "expNothingToExport": {
+    "message": "내보낼 항목이 없습니다. 선택한 범위에 탭이 없습니다.",
+    "description": "Toast when the chosen window or group holds no tabs."
+  },
+  "expCollecting": {
+    "message": "세션 수집 중… $2개 중 $1개.",
+    "description": "Progress toast while every session is read for a backup. $1 is how many are read so far, $2 the total."
+  },
+  "expExportedAll_other": {
+    "message": "세션 $1개를 JSON으로 내보냈습니다.",
+    "description": "Toast after 'Export everything' (a JSON backup). $1 is the formatted number of sessions."
+  },
+  "expUnreadable_other": {
+    "message": "세션 $1개를 읽지 못했습니다.",
+    "description": "Sentence added after the export toast when some sessions could not be read. $1 is the formatted number of sessions."
+  },
+  "expImportButton_other": {
+    "message": "세션 $1개 가져오기",
+    "description": "Button that imports the previewed sessions. $1 is the formatted number of sessions. Keep it short."
+  },
+  "expImportedNotice_other": {
+    "message": "세션 $1개를 가져왔습니다.",
+    "description": "Toast after an import. $1 is the formatted number of sessions imported."
+  },
+  "expSessionCount_other": {
+    "message": "세션 $1개",
+    "description": "A number of sessions, in the import preview totals. $1 is the formatted count."
+  },
+  "expNothingToExportAll": {
+    "message": "내보낼 항목이 없습니다. 아직 저장된 세션이 없습니다.",
+    "description": "Toast when 'Export everything' finds no sessions."
+  },
+  "expClipboardUnavailable": {
+    "message": "복사할 수 없습니다. 이 브라우저가 이 페이지의 클립보드 접근을 허용하지 않았습니다.",
+    "description": "Error when the clipboard cannot be used at all."
+  },
+  "expCopyFailed": {
+    "message": "클립보드에 복사하지 못했습니다: $1",
+    "description": "Error when copying failed. $1 is the reason, a complete sentence already in your language (one of the error* messages)."
+  },
+  "expCopyFailedPlain": {
+    "message": "클립보드에 복사하지 못했습니다.",
+    "description": "Error when copying failed and there is no reason that can be shown."
+  },
+  "expMenuButton": {
+    "message": "내보내기",
+    "description": "Accessible name of the export menu's icon button."
+  },
+  "expMenuTitleGroup": {
+    "message": "이 그룹 내보내기 또는 복사",
+    "description": "Tooltip of the export button on a tab group."
+  },
+  "expMenuTitleWindow": {
+    "message": "이 창 내보내기 또는 복사",
+    "description": "Tooltip of the export button on a window."
+  },
+  "expMenuTitleAll": {
+    "message": "전체 내보내기 또는 복사",
+    "description": "Tooltip of the export button on a whole session."
+  },
+  "expCopyLinks": {
+    "message": "링크 복사",
+    "description": "Export menu item that copies every link as plain text. Keep it short."
+  },
+  "expCopyMarkdown": {
+    "message": "Markdown으로 복사",
+    "description": "Export menu item that copies every link as a Markdown list. Keep it short."
+  },
+  "expImportedName": {
+    "message": "$1 (가져옴)",
+    "description": "Name given to a session read from a JSON import. $1 is the session's original name."
+  },
+  "expImportedBookmarks": {
+    "message": "가져온 북마크",
+    "description": "Name of a session made from bookmarks that were not in any folder."
+  },
+  "expImportedLinks": {
+    "message": "가져온 링크",
+    "description": "Name of the session made from pasted links or a Markdown/text file."
+  },
+  "expErrorMalformedJson": {
+    "message": "올바른 JSON이 아닙니다.",
+    "description": "Import error when the pasted or chosen text starts like JSON but cannot be read as JSON."
+  },
+  "expErrorMalformedJsonAt": {
+    "message": "올바른 JSON이 아닙니다($1행 $2열).",
+    "description": "Import error when the text cannot be read as JSON, with where the reading stopped. $1 is the line number, $2 the column number."
+  },
+  "expErrorNoSessionsList": {
+    "message": "내보내기 파일에 \"sessions\" 목록이 없습니다.",
+    "description": "Import error for a Tab Organizer JSON file without its sessions list. Keep \"sessions\" as is: it is the field name in the file."
+  },
+  "expErrorNoSessions": {
+    "message": "내보내기 파일에 세션이 없습니다.",
+    "description": "Import error for an empty export."
+  },
+  "expErrorInvalidSession": {
+    "message": "$1번째 세션은 올바른 Tab Organizer 세션 레코드가 아닙니다.",
+    "description": "Import error. $1 is the 1-based position of the bad session in the file."
+  },
+  "expErrorNotExport": {
+    "message": "이 JSON은 Tab Organizer 내보내기 파일이 아닙니다.",
+    "description": "Import error for JSON from somewhere else."
+  },
+  "expErrorSchemaVersion": {
+    "message": "지원하지 않는 세션 스키마 버전 $1입니다(이 버전에서 읽을 수 있는 버전: $2).",
+    "description": "Import error for a file from another version of the extension. $1 is the file's schema version, $2 the one this build reads."
+  },
+  "expErrorNoBookmarks": {
+    "message": "HTML에서 북마크를 찾을 수 없습니다.",
+    "description": "Import error for a bookmarks HTML file without links."
+  },
+  "expErrorNoUrls": {
+    "message": "URL을 찾을 수 없습니다.",
+    "description": "Import error for pasted text or Markdown without links."
+  },
+  "expErrorNothingToImport": {
+    "message": "가져올 항목이 없습니다. Tab Organizer JSON 내보내기, 북마크 HTML 파일, Markdown 또는 URL 목록을 붙여넣으세요.",
+    "description": "Import error when the pasted text is not any known format."
+  },
+  "expWarnNoWindows": {
+    "message": "\"$1\"에 창이 없습니다.",
+    "description": "Import preview warning. $1 is a session name."
+  },
+  "expWarnEmptyWindow": {
+    "message": "\"$1\": 창 $2에 탭이 없습니다.",
+    "description": "Import preview warning. $1 is a session name, $2 a window number."
+  },
+  "expErrorTooLarge": {
+    "message": "가져오기에는 너무 큽니다($1). 한도는 $2입니다.",
+    "description": "Import error for an oversized file or paste. $1 is its size, $2 the limit (both like '25.0 MB')."
+  },
+  "expErrorFileRead": {
+    "message": "이 파일을 읽을 수 없습니다: $1",
+    "description": "Import error when the chosen file cannot be read. $1 is the reason, a complete sentence already in your language (one of the error* messages)."
+  },
+  "expErrorFileReadPlain": {
+    "message": "이 파일을 읽을 수 없습니다.",
+    "description": "Import error when the chosen file cannot be read and there is no reason that can be shown."
+  },
+  "expDetectedJson": {
+    "message": "Tab Organizer JSON",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedHtml": {
+    "message": "북마크 HTML",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedMarkdown": {
+    "message": "Markdown",
+    "description": "Import format name shown after 'Detected'."
+  },
+  "expDetectedLinks": {
+    "message": "링크",
+    "description": "Import format name for a plain list of links, shown after 'Detected'."
+  },
+  "expDetected": {
+    "message": "감지됨: $1",
+    "description": "Import preview line; the session totals follow it after a ' · '. $1 is the format name (drawn in bold), e.g. 'Bookmarks HTML'."
+  },
+  "expImportTitle": {
+    "message": "세션 가져오기",
+    "description": "Title of the import dialog."
+  },
+  "expImportDescription": {
+    "message": "Tab Organizer JSON 내보내기, 북마크 HTML 파일, Markdown 또는 일반 링크 목록을 가져옵니다. 가져온 세션은 이 기기의 저장된 목록에 추가되며, 아무것도 업로드되지 않습니다.",
+    "description": "Explanation under the import dialog's title."
+  },
+  "expChooseFile": {
+    "message": "파일 선택",
+    "description": "Label of the import dialog's file picker."
+  },
+  "expPasteLabel": {
+    "message": "세션, 북마크 또는 링크 붙여넣기",
+    "description": "Label of the import dialog's paste box."
+  },
+  "expPastePlaceholder": {
+    "message": "https://example.com/\n- [문서](https://example.com/docs)",
+    "description": "Placeholder of the paste box: an example bare link, a line break, then a Markdown link. Only translate the word 'Docs'; keep the URLs and the '- [..](..)' syntax."
+  },
+  "expPreviewWindow_other": {
+    "message": "창 $2 · 탭 $1개",
+    "description": "Import preview line for one window. $2 is the window number, $1 the formatted number of tabs in it."
+  },
+  "expMoreTabs_other": {
+    "message": "그 외 탭 $1개",
+    "description": "Import preview: tabs of a window not listed. $1 is the formatted count."
+  },
+  "expMoreWindows_other": {
+    "message": "그 외 창 $1개",
+    "description": "Import preview: windows of a session not listed. $1 is the formatted count."
+  },
+  "expMoreSessions_other": {
+    "message": "그 외 세션 $1개",
+    "description": "Import preview: sessions not listed. $1 is the formatted count."
+  },
+  "expImport": {
+    "message": "가져오기",
+    "description": "Import button while nothing importable has been chosen yet. Keep it short."
+  },
+  "appNothingToSaveWindow": {
+    "message": "저장할 항목이 없습니다. 이 창에는 Tab Organizer만 열려 있습니다.",
+    "description": "Notice toast after Save when the current window holds nothing but the extension's own page. 'Tab Organizer' is the extension name."
+  },
+  "appNothingToSaveAll": {
+    "message": "저장할 항목이 없습니다. Tab Organizer 외의 내용이 있는 창이 없습니다.",
+    "description": "Notice toast after 'Save all windows' when no window holds anything but the extension's own page. 'Tab Organizer' is the extension name."
+  },
+  "appNothingToSaveTabs": {
+    "message": "저장할 항목이 없습니다. 선택한 탭이 더 이상 열려 있지 않습니다.",
+    "description": "Notice toast after saving selected tabs when every selected tab has been closed meanwhile."
+  },
+  "appSavedNotice": {
+    "message": "“$1”을(를) 저장했습니다. 제목을 클릭하면 이름을 바꿀 수 있습니다.",
+    "description": "Notice toast after a session is saved. $1 is the session's name. The second sentence tells the user that clicking the session's title renames it."
+  },
+  "appOpenAlreadyRunning": {
+    "message": "이미 세션을 여는 중입니다.",
+    "description": "Notice toast when the user opens a saved session while another one is still being opened (restored)."
+  },
+  "appSearchNothingFound": {
+    "message": "열린 탭이나 저장된 세션에 일치하는 항목이 없습니다.",
+    "description": "Shown in the search results when nothing matches; a button offering to search automatic snapshots follows it."
+  },
+  "appSearchHistoryTitle": {
+    "message": "자동 스냅샷도 검색",
+    "description": "Tooltip of the button that extends the search to automatic snapshots (auto-saved sessions)."
+  },
+  "appSearchHistoryButton": {
+    "message": "스냅샷도 검색",
+    "description": "Small button under empty search results that extends the search to automatic snapshots. Keep short (button). Use the same word for snapshots as everywhere else."
+  },
+  "appHomeTitle": {
+    "message": "열린 탭으로 돌아가기",
+    "description": "Tooltip of the extension name at the top left of the page, which is a link back to the open tabs view."
+  },
+  "commonOpenSettingsTitle": {
+    "message": "설정 열기",
+    "description": "Tooltip of the Settings button in the page header and of the link that opens the Settings dialog."
+  },
+  "appSettings": {
+    "message": "설정",
+    "description": "Label of the Settings button in the page header. Keep short (button)."
+  },
+  "appResizeSidebarLabel": {
+    "message": "사이드바 크기 조절",
+    "description": "Screen-reader label of the draggable handle between the sidebar and the main pane."
+  },
+  "appResizeSidebarTitle": {
+    "message": "드래그하여 사이드바 크기 조절, 더블클릭하여 초기화",
+    "description": "Tooltip of the draggable handle between the sidebar and the main pane."
+  },
+  "appNavLabel": {
+    "message": "세션",
+    "description": "Screen-reader label of the sidebar navigation (open tabs, saved sessions, snapshots)."
+  },
+  "appNavOpenTabs": {
+    "message": "열린 탭",
+    "description": "Sidebar row that shows the browser's currently open tabs. Keep short (menu item)."
+  },
+  "appNavTabsOpen_other": {
+    "message": "열린 탭 $1개",
+    "description": "Tooltip on the tab count of the 'Open tabs' sidebar row. $1 is the formatted number of open tabs."
+  },
+  "appNavSaved": {
+    "message": "저장됨",
+    "description": "Sidebar section heading above the list of saved sessions. Shown in uppercase. Keep short."
+  },
+  "appNavNothingSaved": {
+    "message": "아직 저장된 세션이 없습니다.",
+    "description": "Shown in the sidebar's Saved section when there are no saved sessions."
+  },
+  "commonWindowsAndTabs": {
+    "message": "$1 · $2",
+    "description": "A window count and a tab count on one line: the second line of a sidebar row, the Open tabs heading, the import preview. $1 is a window count phrase such as '2 windows', $2 a tab count phrase such as '14 tabs'. Change the separator or order if your language needs it."
+  },
+  "appNavSavedAt": {
+    "message": "$1 저장",
+    "description": "Third line of a saved session row in the sidebar. $1 is the date and time it was last saved, already formatted."
+  },
+  "appNavNewerTitle": {
+    "message": "최신 버전의 Tab Organizer로 저장됨",
+    "description": "Tooltip of the 'newer' badge on a session this version cannot read. 'Tab Organizer' is the extension name."
+  },
+  "appNavNewerBadge": {
+    "message": "새 버전",
+    "description": "Small lowercase badge on a session saved by a newer version of the extension. One short word."
+  },
+  "appNavAutoSaved": {
+    "message": "자동 스냅샷",
+    "description": "Sidebar section heading above the list of automatic snapshots. Use the same term for snapshots as everywhere else (settingsAutoSnapshots)."
+  },
+  "appNavHideSnapshots": {
+    "message": "스냅샷 숨기기",
+    "description": "Tooltip of the toggle that folds away the list of automatic snapshots."
+  },
+  "appNavShowSnapshots": {
+    "message": "스냅샷 보기",
+    "description": "Tooltip of the toggle that unfolds the list of automatic snapshots."
+  },
+  "appNavNoSnapshots": {
+    "message": "스냅샷 없음",
+    "description": "Label of the snapshots toggle in the sidebar when no automatic snapshot exists."
+  },
+  "appNavSnapshotCount_other": {
+    "message": "스냅샷 $1개",
+    "description": "Label of the snapshots toggle in the sidebar. $1 is the formatted number of automatic snapshots."
+  },
+  "appNavRecoveredTitle": {
+    "message": "마지막 브라우저 재시작 전에 생성됨",
+    "description": "Tooltip of the 'recovered' badge on the snapshot taken just before the browser was last restarted."
+  },
+  "appNavRecoveredBadge": {
+    "message": "복구됨",
+    "description": "Small lowercase badge on the snapshot taken before the last browser restart. One short word."
+  },
+  "appNavKeptTitle": {
+    "message": "보관됨: 오래된 스냅샷을 정리할 때 삭제되지 않음",
+    "description": "Tooltip of the 'kept' badge on a snapshot that is protected from automatic deletion."
+  },
+  "appNavKeptBadge": {
+    "message": "보관됨",
+    "description": "Small lowercase badge on a protected snapshot. One short word."
+  },
+  "openHeading": {
+    "message": "열린 탭",
+    "description": "Heading of the view that lists the browser's open windows and tabs; also the accessible name of that section and its sidebar entry. Short, at most 20 characters."
+  },
+  "openSaveAllWindows": {
+    "message": "모든 창 저장",
+    "description": "Button on the Open tabs view when more than one window is open: saves every window as one session. Short button text."
+  },
+  "openSaveThisWindow": {
+    "message": "이 창 저장",
+    "description": "Button on the Open tabs view when only one window is open: saves it as a session. Short button text."
+  },
+  "openSaveAllWindowsTitle": {
+    "message": "열린 모든 창을 하나의 세션으로 저장",
+    "description": "Tooltip of the Save all windows button."
+  },
+  "openSaveWindowTitle": {
+    "message": "이 창을 세션으로 저장",
+    "description": "Tooltip of a button that saves one browser window as a session."
+  },
+  "openFirstRunHint": {
+    "message": "아직 저장된 세션이 없습니다. $1 버튼을 누르거나, Tab Organizer 아이콘을 마우스 오른쪽 버튼으로 클릭한 뒤 $2 메뉴를 선택하세요. 단축키를 사용하려면 $3.",
+    "description": "Hint shown on the Open tabs view while no session has been saved. $1 is the Save button's label (e.g. 'Save all windows'), shown in bold. $2 is the right-click menu item 'Save all windows as session', shown in bold. $3 is a link that opens Settings (openFirstRunHintSettingsLink). Keep 'Tab Organizer' as is."
+  },
+  "openFirstRunHintSettingsLink": {
+    "message": "설정에서 지정하세요",
+    "description": "Link text inside openFirstRunHint ($3), after 'To use a keyboard shortcut,'. Opens the Settings dialog. Lower case, it continues the sentence."
+  },
+  "openWindowsHeading": {
+    "message": "열린 창",
+    "description": "Screen-reader heading of the tree of live browser windows on the Open tabs view."
+  },
+  "openNoWindows": {
+    "message": "표시할 열린 창이 없습니다.",
+    "description": "Shown in the Open tabs view when there is no browser window to list."
+  },
+  "openThisWindow": {
+    "message": "현재 창",
+    "description": "Badge on the window the app page itself is in. Very short, at most 15 characters."
+  },
+  "openThisWindowTitle": {
+    "message": "이 페이지가 열려 있는 창",
+    "description": "Tooltip of the 'This window' badge."
+  },
+  "openSaveWindow": {
+    "message": "창 저장",
+    "description": "Small button on one window of the Open tabs list: saves that window as a session. Short button text."
+  },
+  "openCloseWindow": {
+    "message": "창 닫기",
+    "description": "Small button on one window of the Open tabs list, and the confirm button of the close-window dialog. Short button text."
+  },
+  "openCloseWindowTooltip": {
+    "message": "이 창과 모든 탭 닫기",
+    "description": "Tooltip of the Close window button."
+  },
+  "openGoToTab": {
+    "message": "탭으로 이동",
+    "description": "Icon button (label and tooltip) on a tab row: switches to that tab."
+  },
+  "openCloseTab": {
+    "message": "탭 닫기",
+    "description": "Icon button (label and tooltip) on a tab row: closes that tab."
+  },
+  "openCloseWindowQuestion": {
+    "message": "창 $1을(를) 닫을까요?",
+    "description": "Title of the dialog that confirms closing a browser window. $1 is the window's number in the list (1, 2, ...)."
+  },
+  "openCloseWindowBody_other": {
+    "message": "탭 $1개가 닫힙니다. 나중에 다시 열려면 먼저 창을 저장하세요.",
+    "description": "Text of the close-window dialog. $1 is the formatted number of tabs in the window."
+  },
+  "openCloseWindowIsCurrent": {
+    "message": "Tab Organizer가 열려 있는 창입니다.",
+    "description": "Extra sentence after openCloseWindowBody when the window being closed holds the app page itself, so closing it closes the page too."
+  },
+  "openCloseTabsQuestion_other": {
+    "message": "탭 $1개를 닫을까요?",
+    "description": "Title of the dialog that confirms closing the selected tabs. $1 is the formatted number of tabs."
+  },
+  "openCloseTabsBody": {
+    "message": "선택한 탭이 모두 닫힙니다. 접힌 그룹 안에 있거나 목록에 표시된 범위보다 아래에 있는 탭도 포함됩니다. 나중에 다시 열려면 대신 저장 후 닫기를 사용하세요.",
+    "description": "Text of the dialog that confirms closing several selected tabs. 'Save & close' is the menu item openSaveAndClose and must read the same."
+  },
+  "openCloseTabs": {
+    "message": "탭 닫기",
+    "description": "Confirm button of the dialog that closes the selected tabs. Short button text."
+  },
+  "openClearSelection": {
+    "message": "선택 해제",
+    "description": "Icon button (label and tooltip) that unticks every selected tab."
+  },
+  "openSelectedTabs_other": {
+    "message": "탭 $1개 선택됨",
+    "description": "Heading of the bar shown while tabs are ticked. $1 is the formatted number of ticked tabs."
+  },
+  "openSaveTabsTitle": {
+    "message": "이 탭들을 세션으로 저장",
+    "description": "Tooltip of the Save button in the selection bar."
+  },
+  "openCopy": {
+    "message": "복사",
+    "description": "Button in the selection bar: copies the links of the selected tabs. Short button text."
+  },
+  "openCopyTitle": {
+    "message": "이 탭들의 링크 복사",
+    "description": "Tooltip of the Copy button in the selection bar."
+  },
+  "openCloseTabsTitle": {
+    "message": "이 탭들 닫기",
+    "description": "Tooltip of the Close button in the selection bar."
+  },
+  "openMoreActions": {
+    "message": "선택한 탭에 대한 추가 작업",
+    "description": "Label and tooltip of the menu button with more actions in the selection bar."
+  },
+  "openSaveAndClose": {
+    "message": "저장 후 닫기",
+    "description": "Menu item: saves the selected tabs as a session, then closes them. Short menu item."
+  },
+  "openCopyAs": {
+    "message": "다른 형식으로 복사…",
+    "description": "Menu item that opens a submenu of copy formats. Short menu item."
+  },
+  "openSelectLike": {
+    "message": "이 사이트의 탭 모두 선택",
+    "description": "Menu item: selects every open tab on the same sites as the selected ones."
+  },
+  "openSelectUnlike": {
+    "message": "다른 사이트의 탭 모두 선택",
+    "description": "Menu item: selects every open tab on any other site than the selected ones."
+  },
+  "openCopyFormatLinks": {
+    "message": "링크",
+    "description": "Copy format in the 'Copy as…' submenu: one link per line. Short menu item."
+  },
+  "openCopyFormatMarkdown": {
+    "message": "Markdown 링크",
+    "description": "Copy format in the 'Copy as…' submenu: Markdown [title](url) links. Short menu item."
+  },
+  "openCopyFormatTitled": {
+    "message": "제목과 링크",
+    "description": "Copy format in the 'Copy as…' submenu: each tab's title on one line and its link on the next. Short menu item."
+  },
+  "openCopiedLinksMarkdown_other": {
+    "message": "링크 $1개를 Markdown으로 복사했습니다.",
+    "description": "Toast after copying the selected tabs as Markdown links. $1 is the formatted number of links."
+  },
+  "openCopiedLinksTitled_other": {
+    "message": "링크 $1개를 제목과 함께 복사했습니다.",
+    "description": "Toast after copying the selected tabs as titles and links. $1 is the formatted number of links."
+  },
+  "openClosedTabs_other": {
+    "message": "탭 $1개를 닫았습니다.",
+    "description": "Toast after closing selected tabs. $1 is the formatted number of tabs."
+  },
+  "openKeptOpen_other": {
+    "message": "탭 $1개를 저장하지 못해 열어 두었습니다.",
+    "description": "Toast after 'Save & close' when some selected tabs could not be saved and so were not closed. $1 is the formatted number of those tabs."
+  },
+  "openAssembleBusy": {
+    "message": "아직 모으는 중입니다. 잠시 기다려 주세요.",
+    "description": "Toast when Assemble! is pressed while a previous run is still moving tabs."
+  },
+  "openAssembleNothing": {
+    "message": "모을 탭이 없습니다. 다른 창에 탭이 없습니다.",
+    "description": "Toast when Assemble! finds no other window to move tabs from."
+  },
+  "openAssembleDone_other": {
+    "message": "창 $1개를 이 창으로 모았습니다.",
+    "description": "Toast after Assemble! moved every other window's tabs into this window. $1 is the formatted number of windows gathered."
+  },
+  "openAssemblePartial_other": {
+    "message": "$2를 모았습니다. 창 $1개는 이동하지 못해 그대로 두었습니다.",
+    "description": "Error line after Assemble! when some windows failed. $1 is the formatted number of windows that could not be moved. $2 is how many were gathered, already counted, e.g. '2 windows' (from windowCount)."
+  },
+  "openUnsupportedUrl": {
+    "message": "이 탭은 열 수 없습니다(지원하지 않는 URL).",
+    "description": "Error shown when a saved tab's address is of a kind the extension refuses to open (data:, javascript:, another extension's page)."
+  },
+  "openNoCurrentWindow": {
+    "message": "현재 창을 확인할 수 없습니다.",
+    "description": "Error shown when opening a session into this window fails because the browser did not report which window the page is in."
+  },
+  "treeWindowLabel": {
+    "message": "창 $1",
+    "description": "Heading and screen-reader label of one browser window in a tab list. $1 is the window's number (1, 2, 3...). Short heading."
+  },
+  "treeTabCountWithState": {
+    "message": "$1 · $2",
+    "description": "Window header line when the window is not in its normal state. $1 is a tab count such as \"12 tabs\", $2 is the window state such as \"minimized\". Keep the middle dot separator unless your language uses another."
+  },
+  "treeWindowStateNormal": {
+    "message": "일반",
+    "description": "State of a browser window (neither minimized, maximized nor full screen). Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateMinimized": {
+    "message": "최소화됨",
+    "description": "State of a browser window that is minimized. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateMaximized": {
+    "message": "최대화됨",
+    "description": "State of a browser window that is maximized. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeWindowStateFullscreen": {
+    "message": "전체 화면",
+    "description": "State of a browser window in full screen mode. Shown lowercase after the tab count in a window header. One or two words."
+  },
+  "treeUntitledGroup": {
+    "message": "제목 없는 그룹",
+    "description": "Name shown for a Chrome tab group that has no title. Short label on a small chip."
+  },
+  "treeCollapseGroup": {
+    "message": "$1 접기",
+    "description": "Tooltip of a tab group header while the group is open; clicking hides its tabs. $1 is the group's name."
+  },
+  "treeExpandGroup": {
+    "message": "$1 펼치기",
+    "description": "Tooltip of a tab group header while the group is closed; clicking shows its tabs. $1 is the group's name."
+  },
+  "treePinned": {
+    "message": "고정됨",
+    "description": "Screen-reader label of the pin icon on a tab row: the tab is pinned in Chrome. One word."
+  },
+  "treeSelectTab": {
+    "message": "$1 선택",
+    "description": "Screen-reader label of the tick box on a tab row. $1 is the tab's title (or its address when it has none)."
+  },
+  "treeSelectTabHint": {
+    "message": "이 탭 선택(Shift+클릭으로 범위 선택)",
+    "description": "Tooltip of the tick box on a tab row. Shift-click ticks every tab between this one and the one ticked last."
+  },
+  "treeShowMoreTabs_other": {
+    "message": "탭 $1개 더 보기",
+    "description": "Button under a very large window's tab list that shows the next tabs. $1 is the formatted count of tabs it will add. Button text, keep short."
+  },
+  "treeSessionMeta": {
+    "message": "$1 · $2 · $3",
+    "description": "One line of facts about a saved session or snapshot. $1 is a window count such as \"3 windows\", $2 a tab count such as \"87 tabs\", $3 its size on disk such as \"2.1 KB\". Keep the middle dot separators unless your language uses another."
+  },
+  "treeSizeBytes": {
+    "message": "$1 B",
+    "description": "A storage size in bytes. $1 is the formatted number. Keep the unit symbol short."
+  },
+  "treeSizeKilobytes": {
+    "message": "$1 KB",
+    "description": "A storage size in kilobytes (1024 bytes). $1 is the formatted number with one decimal. Keep the unit symbol short."
+  },
+  "treeSizeMegabytes": {
+    "message": "$1 MB",
+    "description": "A storage size in megabytes (1024 x 1024 bytes). $1 is the formatted number with one decimal. Keep the unit symbol short."
+  },
+  "searchOpenWindowsName": {
+    "message": "열린 창",
+    "description": "Name shown for the browser's currently open windows in search results, where a saved session's name would otherwise appear (e.g. \"Open windows · Window 2\"). Short."
+  },
+  "searchGroupMatchingSessions": {
+    "message": "일치하는 세션",
+    "description": "Heading of the search results group listing saved sessions whose name matches the query. Shown in small capitals; short."
+  },
+  "searchGroupOpenTabs": {
+    "message": "열린 탭",
+    "description": "Heading of the search results group listing matching tabs that are open in the browser now. Shown in small capitals; short."
+  },
+  "searchGroupSavedSessions": {
+    "message": "저장된 세션",
+    "description": "Heading of the search results group listing matching tabs inside saved sessions. Shown in small capitals; short."
+  },
+  "searchGroupHistory": {
+    "message": "스냅샷",
+    "description": "Heading of the search results group listing matching tabs inside automatic snapshots. Shown in small capitals; short. Use the same word for snapshots as everywhere else."
+  },
+  "searchLabel": {
+    "message": "검색",
+    "description": "Accessible name of the search box at the top of the app page. One word."
+  },
+  "searchInputTitle": {
+    "message": "열린 탭, 저장된 세션과 그 주소 검색",
+    "description": "Tooltip of the search box at the top of the app page."
+  },
+  "searchPlaceholder": {
+    "message": "탭 및 세션 검색 (/ 키)",
+    "description": "Placeholder text inside the empty search box. The \"/\" is the keyboard key that focuses the box; keep it as is. Keep it short enough to fit a narrow box (about 40 characters)."
+  },
+  "searchClear": {
+    "message": "검색어 지우기",
+    "description": "Tooltip and accessible name of the X button that empties the search box."
+  },
+  "searchResultPlace": {
+    "message": "$1 · 창 $2",
+    "description": "Where a matching tab is, shown beside it in search results. $1 is the session name (or the name for the open windows), $2 is the window's number (1, 2, ...). Short; it is cut off when too long."
+  },
+  "searchRestoreSession": {
+    "message": "세션 복원",
+    "description": "Button beside a session in search results that opens the whole session again. Button text, short."
+  },
+  "searchResultsHeading": {
+    "message": "검색 결과",
+    "description": "Heading above the search results."
+  },
+  "searchResultCount_other": {
+    "message": "결과 $1개",
+    "description": "Number of search results, beside the results heading and read out by screen readers. $1 is the formatted count."
+  },
+  "searchStillLoading": {
+    "message": "세션을 불러오는 중…",
+    "description": "Shown beside the result count while saved sessions are still being read, so more results may appear."
+  },
+  "searchNoMatches": {
+    "message": "“$1”에 대한 검색 결과가 없습니다.",
+    "description": "Shown when a search finds nothing. $1 is the text the user typed."
+  },
+  "searchShowMore": {
+    "message": "더 보기",
+    "description": "Button under a group of search results that shows more of them. Button text, short."
+  },
+  "storageSessionNotFound": {
+    "message": "세션을 찾을 수 없습니다: $1",
+    "description": "Error shown when an action targets a saved session or snapshot that no longer exists (deleted elsewhere). $1 is the session's internal id."
+  },
+  "storageUnnamedSession": {
+    "message": "이름 없는 세션",
+    "description": "Fallback name for a session in the sidebar when its stored record has no name (e.g. saved by a newer version). Short, like a title."
+  },
+  "storageUnknownError": {
+    "message": "알 수 없는 오류",
+    "description": "Shown in error lines and toasts when a failure carries no message. Short."
+  },
+  "errorGeneric": {
+    "message": "문제가 발생했습니다. 자세한 내용은 브라우저 콘솔에서 확인할 수 있습니다.",
+    "description": "Shown in error lines and toasts for a failure the extension cannot explain (the technical details go to the browser console)."
+  },
+  "errorSessionChanged": {
+    "message": "그사이에 세션이 변경되었습니다. 다시 시도하세요.",
+    "description": "Error when a window, tab or group that was on screen is no longer in the stored session (it was changed in another tab, or by the automatic snapshots)."
+  },
+  "errorDataUnreadable": {
+    "message": "저장된 데이터를 읽지 못했습니다.",
+    "description": "Error when stored session data is damaged and cannot be read."
+  },
+  "errorDataTooNew": {
+    "message": "이 데이터는 최신 버전의 Tab Organizer로 저장되었습니다. 사용하려면 확장 프로그램을 업데이트하세요.",
+    "description": "Error when stored data was written by a newer version of the extension. Tab Organizer is the extension name."
+  },
+  "errorRestoreNoWindow": {
+    "message": "Chrome에서 복원할 창을 열지 못했습니다.",
+    "description": "Error when Chrome did not open the new window a restore asked for."
+  },
+  "errorTabsBusy": {
+    "message": "Chrome에서 탭을 처리하는 중입니다. 탭을 끌고 있다면 놓은 뒤 다시 시도하세요.",
+    "description": "Error when Chrome refuses to change tabs for a moment, usually because a tab is being dragged."
+  },
+  "errorTabGone": {
+    "message": "해당 탭이나 창이 더 이상 열려 있지 않습니다.",
+    "description": "Error when the tab, window or tab group an action was meant for has been closed meanwhile."
+  },
+  "errorWindowBounds": {
+    "message": "저장된 창 위치가 이 화면에 맞지 않습니다.",
+    "description": "Error when a restored window's saved position and size do not fit the current screen."
+  },
+  "errorNotAllowed": {
+    "message": "브라우저에서 허용하지 않았습니다.",
+    "description": "Error when the browser refused an action such as copying to the clipboard (for example because the page was not focused)."
+  },
+  "storageQuotaNotice": {
+    "message": "저장 공간이 가득 찼습니다. 오래된 스냅샷이나 세션을 삭제하세요.",
+    "description": "Red notice shown when saving or importing fails because the extension's local storage is full."
+  },
+  "storageShowStorageUse": {
+    "message": "저장 공간 사용량 보기",
+    "description": "Small button on the 'storage is full' notice; scrolls to the storage meter in Settings. Button, keep short."
+  },
+  "storageTotalLine": {
+    "message": "이 기기에 $1 저장됨",
+    "description": "Storage meter headline in Settings. $1 is a size such as '4.6 MB'."
+  },
+  "storageDetailLine": {
+    "message": "$2: $1 · $4: $3",
+    "description": "Storage meter breakdown under the headline. $1 is the size of saved sessions (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $3 the size of snapshots, $4 the counted phrase storageSnapshotCount (e.g. '12 snapshots'). Keep the middle dot separator."
+  },
+  "storageSavedSessionCount_other": {
+    "message": "저장된 세션 $1개",
+    "description": "Counted noun phrase used inside storage messages (plural). $1 is the number."
+  },
+  "storageSnapshotCount_other": {
+    "message": "스냅샷 $1개",
+    "description": "Counted noun phrase for automatic snapshots used inside storage messages (plural). $1 is the number."
+  },
+  "storageSnapshotHint": {
+    "message": "자동 스냅샷이 $1를 사용합니다. “최근 스냅샷 보관” 개수를 줄이거나 보호되지 않은 스냅샷을 삭제하세요.",
+    "description": "Hint under the storage meter when snapshots take most of the space. $1 is a size such as '3.4 MB'. The quoted label is the setting settingsKeepLast; quote its translated text exactly."
+  },
+  "storageHeading": {
+    "message": "저장 공간",
+    "description": "Heading of the storage meter section in Settings. One or two words."
+  },
+  "storageMeasuring": {
+    "message": "측정 중…",
+    "description": "Shown in the storage meter while the used space is being measured. Short."
+  },
+  "storageDeleteUnprotected": {
+    "message": "보호되지 않은 항목 모두 삭제",
+    "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
+  },
+  "storageDeleteUnprotectedTooltip": {
+    "message": "보호되지 않은 스냅샷 모두 삭제",
+    "description": "Tooltip of the 'Delete all unprotected' button."
+  },
+  "storageDeleteAllData": {
+    "message": "모든 세션 데이터 삭제",
+    "description": "Small destructive button under the storage meter that deletes all saved sessions and snapshots. Button, keep short."
+  },
+  "storageDeleteAllDataTooltip": {
+    "message": "이 기기의 저장된 세션과 스냅샷 모두 삭제",
+    "description": "Tooltip of the 'Delete all session data' button."
+  },
+  "storageDeletedAllNotice": {
+    "message": "모든 세션 데이터를 삭제했습니다. 설정은 유지됩니다.",
+    "description": "Toast shown after all session data was deleted."
+  },
+  "storageDeletedUnprotectedNotice_other": {
+    "message": "보호되지 않은 스냅샷 $1개를 삭제했습니다.",
+    "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
+  },
+  "storageDeleteHistoryTitle": {
+    "message": "보호되지 않은 스냅샷을 삭제할까요?",
+    "description": "Title of the confirm dialog for 'Delete all unprotected'."
+  },
+  "storageDeleteHistoryBody_other": {
+    "message": "스냅샷 $1개가 이 기기에서 삭제됩니다. 보호된 스냅샷과 저장된 세션은 유지됩니다. 되돌릴 수 없습니다.",
+    "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
+  },
+  "storageDeleteHistoryConfirm": {
+    "message": "스냅샷 삭제",
+    "description": "Destructive confirm button in the 'Delete unprotected snapshots?' dialog. Button, keep short."
+  },
+  "storageDeleteAllTitle": {
+    "message": "모든 세션 데이터를 삭제할까요?",
+    "description": "Title of step one of the two-step 'Delete all session data' confirm dialog."
+  },
+  "storageDeleteAllBody": {
+    "message": "이 기기에서 $1와 $2($3)를 삭제합니다. 스냅샷 및 복원 설정은 유지되며, 열린 창과 탭은 영향을 받지 않습니다.",
+    "description": "Body of step one of the 'Delete all session data' dialog. $1 is the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $2 the counted phrase storageSnapshotCount (e.g. '12 snapshots'), $3 the total size such as '4.6 MB'."
+  },
+  "storageContinue": {
+    "message": "계속",
+    "description": "Button on step one of the 'Delete all session data' dialog that goes to the final confirmation. Button, keep short."
+  },
+  "storageDeleteAllFinalTitle": {
+    "message": "되돌릴 수 없습니다",
+    "description": "Title of step two (final confirmation) of the 'Delete all session data' dialog."
+  },
+  "storageDeleteAllFinalBody": {
+    "message": "이 기기의 모든 저장된 세션과 자동 스냅샷이 삭제됩니다. 미리 백업을 내보내지 않았다면 복구할 수 없습니다.",
+    "description": "Body of step two (final confirmation) of the 'Delete all session data' dialog."
+  },
+  "storageBack": {
+    "message": "뒤로",
+    "description": "Button on step two of the 'Delete all session data' dialog that returns to step one. Button, keep short."
+  },
+  "storageDeleteEverything": {
+    "message": "모두 삭제",
+    "description": "Final destructive button of the 'Delete all session data' dialog. Button, keep short."
+  },
+  "restoreWindowLine": {
+    "message": "창 $1/$2",
+    "description": "Small grey line in the restore progress toast saying which window is being filled. $1 is the window number (1-based), $2 the number of windows. Short."
+  },
+  "restoreRate_other": {
+    "message": "초당 약 $1탭",
+    "description": "Restore speed in the progress toast, approximate tabs per second. $1 is the number (may be a decimal such as 0.4). Very short."
+  },
+  "restoreLazyHint": {
+    "message": "메모리를 아끼기 위해 탭을 로드하지 않은 상태로 엽니다. 각 탭은 클릭하면 로드됩니다.",
+    "description": "Grey hint in the restore progress toast while tabs are opened without loading them."
+  },
+  "restoreLazyDone_other": {
+    "message": "탭 $1개는 로드되지 않은 상태이며 클릭하면 로드됩니다.",
+    "description": "Grey line under the restore result. $1 is the number of tabs opened without loading."
+  },
+  "restoreDestinationHere": {
+    "message": "“$1”이(가) 이 창에 추가됩니다.",
+    "description": "Sentence in the confirm dialog before opening a large session into the current window. $1 is the session name."
+  },
+  "restoreDestinationNewWindows_other": {
+    "message": "“$2”이(가) 새 창 $1개로 열립니다.",
+    "description": "Sentence in the confirm dialog before opening a large session in new windows. $1 is the number of windows, $2 the session name."
+  },
+  "restoreProgress_other": {
+    "message": "탭 $1개 중 $2개 복원 중…",
+    "description": "Main line of the restore progress toast. $1 is the total number of tabs, $2 how many are open so far."
+  },
+  "restoreCancelling": {
+    "message": "취소 중…",
+    "description": "Label of the Cancel button in the restore progress toast after it was pressed, while the restore stops. Button, keep short."
+  },
+  "restoreSummaryRestored_other": {
+    "message": "탭 $1개 중 $2개 복원됨",
+    "description": "First clause of the restore result in the toast; further clauses follow, separated by ' · '. $1 is the number of tabs attempted, $2 how many opened."
+  },
+  "restoreSummaryCancelled_other": {
+    "message": "복원 취소됨: 탭 $1개 열림",
+    "description": "First clause of the result of a cancelled restore; further clauses may follow, separated by ' · '. $1 is the number of tabs opened before Cancel."
+  },
+  "restoreSummaryDiscarded_other": {
+    "message": "탭 $1개는 클릭하면 로드됨",
+    "description": "Clause of the restore result (joined with ' · '), lower-case start in English. $1 is the number of tabs opened without loading."
+  },
+  "restoreSummaryKept": {
+    "message": "이미 열린 탭은 유지됨",
+    "description": "Clause of the result of a cancelled restore (joined with ' · '), lower-case start in English: cancelling does not close the tabs already opened."
+  },
+  "restoreSummarySkipped_other": {
+    "message": "$1개 건너뜀",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tabs not opened because their address cannot be opened by an extension."
+  },
+  "restoreSummaryFailed_other": {
+    "message": "$1개 열지 못함",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tabs Chrome failed to open."
+  },
+  "restoreSummaryProblems_other": {
+    "message": "그룹/창 문제 $1건",
+    "description": "Clause of the restore result (joined with ' · '). $1 is the number of tab groups or window states that could not be recreated."
+  },
+  "restoreSkippedItem": {
+    "message": "건너뜀: $1",
+    "description": "List item under the restore result. $1 is the address of a tab that was not opened."
+  },
+  "restoreFailedItem": {
+    "message": "실패: $1 ($2)",
+    "description": "List item under the restore result. $1 is the address of a tab that failed to open, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreFailedItemPlain": {
+    "message": "실패: $1",
+    "description": "List item under the restore result when there is no reason that can be shown. $1 is the address of a tab that failed to open."
+  },
+  "restoreProblemGroup": {
+    "message": "“$1” 그룹을 다시 만들지 못했습니다($2)",
+    "description": "List item under the restore result. $1 is the name of a tab group that could not be recreated, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreProblemGroupPlain": {
+    "message": "“$1” 그룹을 다시 만들지 못했습니다.",
+    "description": "List item under the restore result. $1 is the name of a tab group that could not be recreated."
+  },
+  "restoreProblemActivate": {
+    "message": "$1(으)로 전환하지 못했습니다($2)",
+    "description": "List item under the restore result. $1 is the address of the tab that should have been the window's active tab, $2 the reason, a complete sentence already in your language."
+  },
+  "restoreProblemActivatePlain": {
+    "message": "$1(으)로 전환하지 못했습니다.",
+    "description": "List item under the restore result. $1 is the address of the tab that should have been the window's active tab."
+  },
+  "restoreProblemWindowState": {
+    "message": "창 크기를 복원하지 못했습니다($1)",
+    "description": "List item under the restore result when a window could not be maximized, minimized or made full screen as saved. $1 is the reason, a complete sentence already in your language."
+  },
+  "restoreProblemWindowStatePlain": {
+    "message": "창 크기를 복원하지 못했습니다.",
+    "description": "List item under the restore result when a window could not be maximized, minimized or made full screen as saved."
+  },
+  "restoreDismiss": {
+    "message": "닫기",
+    "description": "Tooltip and screen-reader label of the x button that closes the restore result toast."
+  },
+  "restoreSessionTooNew": {
+    "message": "이 세션은 최신 버전의 Tab Organizer로 저장되어 표시할 수 없습니다.",
+    "description": "Error shown in place of a session whose stored format is from a newer version of the extension. Tab Organizer is the extension name."
+  },
+  "workerMenuSaveAll": {
+    "message": "모든 창을 세션으로 저장",
+    "description": "Item in the toolbar icon's right-click menu: saves every open window as one session. Menu item, keep it short (under 40 characters). The Open tabs first-run hint quotes this label too, so it must match the menu."
+  },
+  "workerDuplicatesGroupTitle": {
+    "message": "중복 ($1)",
+    "description": "Title of a Chrome tab group that holds duplicate tabs whose address has no host name. $1 is the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short (under 20 characters)."
+  },
+  "workerDuplicatesHostGroupTitle": {
+    "message": "$1 ($2)",
+    "description": "Title of a Chrome tab group that holds duplicate tabs of one address. $1 is the site's host name (such as example.com, never translated), $2 the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short."
   }
 }

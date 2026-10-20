@@ -1,4 +1,3 @@
-import { ASSEMBLE_LABEL } from '@/constants';
 import { assembleTabs } from '@/lib/assemble-tabs';
 import {
   ensureHistoryAlarm,
@@ -8,6 +7,7 @@ import {
   scheduleFirstSnapshot,
   takeHistorySnapshot,
 } from '@/lib/history-snapshots';
+import { t } from '@/lib/i18n';
 import { openDashboard } from '@/lib/open-app-page';
 import { captureSession } from '@/lib/session-capture';
 import { ensureUniqueName } from '@/lib/session-naming';
@@ -95,12 +95,12 @@ export async function registerContextMenus(): Promise<void> {
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({
     id: MENU_IDS.assembleTabs,
-    title: ASSEMBLE_LABEL,
+    title: t('cmdAssembleTabs'),
     contexts: ['action'],
   });
   chrome.contextMenus.create({
     id: MENU_IDS.saveAll,
-    title: 'Save all windows as session',
+    title: t('workerMenuSaveAll'),
     contexts: ['action'],
   });
 }
@@ -195,6 +195,10 @@ async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<vo
 
 async function onStartup(): Promise<void> {
   clearBadge();
+  // Chrome keeps the context menu items across restarts with the titles they were created with,
+  // in the language of that moment; recreating them here makes them follow a Chrome language the
+  // person changed since the last install or update. Caught locally like the repair steps below.
+  await registerContextMenus().catch(report);
   await sessionRepo.reconcile().catch(report);
   // Crash recovery first, so the last snapshot of the previous browser session is protected
   // before any new snapshot can push it out of the ring. Caught locally (like reconcile above)
