@@ -1,0 +1,76 @@
+---
+// The English policy is PRIVACY_POLICY.md at the repository root, rendered as it is, so the page
+// and the file can never disagree. The translations live in src/privacy/ and must be updated
+// whenever that file changes.
+import { Content as English } from '../../../../PRIVACY_POLICY.md';
+import { Content as Spanish } from '../../privacy/es.md';
+import { Content as Japanese } from '../../privacy/ja.md';
+import { Content as Korean } from '../../privacy/ko.md';
+import { localePaths, pageUrl, type Locale } from '../../i18n/locales';
+import { copyFor } from '../../i18n/site-copy';
+import BaseLayout from '../../layouts/base-layout.astro';
+
+export function getStaticPaths() {
+  return localePaths();
+}
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = copyFor(locale);
+const POLICIES = { en: English, ko: Korean, es: Spanish, ja: Japanese } satisfies Record<
+  Locale,
+  unknown
+>;
+const Policy = POLICIES[locale];
+---
+
+<BaseLayout
+  locale={locale}
+  page="privacy"
+  title={copy.meta.privacyTitle}
+  description={copy.meta.privacyDescription}
+>
+  <div class="container narrow page">
+    <p class="notice">
+      {copy.privacyPage.notice}
+      {
+        locale !== 'en' && (
+          <>
+            {' '}
+            <a href={pageUrl('en', 'privacy')} hreflang="en">
+              {copy.privacyPage.englishLink}
+            </a>
+          </>
+        )
+      }
+    </p>
+    <article class="prose">
+      <Policy />
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-block: 3rem 4.5rem;
+  }
+
+  .notice {
+    margin-bottom: 2rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--accent-foreground);
+    font-size: 0.9375rem;
+  }
+
+  .notice a {
+    color: inherit;
+    font-weight: 600;
+  }
+</style>

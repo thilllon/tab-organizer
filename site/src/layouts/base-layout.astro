@@ -1,0 +1,100 @@
+---
+import { getImage } from 'astro:assets';
+
+import favicon32 from '../../../public/img/logo-32.png?url';
+import touchIcon from '../../../public/img/logo-128.png?url';
+import faviconSvg from '../../../public/img/logo.svg?url';
+import ogSource from '../../../screenshots/dashboard-sessions.png';
+import SiteFooter from '../components/site-footer.astro';
+import SiteHeader from '../components/site-header.astro';
+import {
+  absolutePageUrl,
+  DEFAULT_LOCALE,
+  LOCALES,
+  OG_LOCALES,
+  type Locale,
+  type Page,
+} from '../i18n/locales';
+import { copyFor } from '../i18n/site-copy';
+import '../styles/global.css';
+
+interface Props {
+  locale: Locale;
+  page: Page;
+  title: string;
+  description: string;
+  /** For the 404 page: no canonical, no alternates, kept out of search results. */
+  noindex?: boolean;
+}
+
+const { locale, page, title, description, noindex = false } = Astro.props;
+const copy = copyFor(locale);
+const canonical = absolutePageUrl(locale, page);
+const ogImage = await getImage({ src: ogSource, width: 1200, format: 'jpg', quality: 85 });
+const ogImageUrl = new URL(ogImage.src, Astro.site).href;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {
+      noindex ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <>
+          <link rel="canonical" href={canonical} />
+          {LOCALES.map((alternate) => (
+            <link rel="alternate" hreflang={alternate} href={absolutePageUrl(alternate, page)} />
+          ))}
+          <link
+            rel="alternate"
+            hreflang="x-default"
+            href={absolutePageUrl(DEFAULT_LOCALE, page)}
+          />
+        </>
+      )
+    }
+    <link rel="icon" href={faviconSvg} type="image/svg+xml" />
+    <link rel="icon" href={favicon32} type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href={touchIcon} />
+    <link rel="sitemap" href={`${base}sitemap-index.xml`} />
+    <meta name="theme-color" content="#FAFBFC" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0D1117" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tab Organizer" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {!noindex && <meta property="og:url" content={canonical} />}
+    <meta property="og:locale" content={OG_LOCALES[locale]} />
+    {
+      !noindex &&
+        LOCALES.filter((other) => other !== locale).map((other) => (
+          <meta property="og:locale:alternate" content={OG_LOCALES[other]} />
+        ))
+    }
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content={String(ogImage.attributes.width ?? 1200)} />
+    <meta property="og:image:height" content={String(ogImage.attributes.height ?? 750)} />
+    <meta property="og:image:alt" content={copy.meta.ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={copy.meta.ogImageAlt} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{copy.nav.skipToContent}</a>
+    <SiteHeader locale={locale} page={page} />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter locale={locale} page={page} />
+  </body>
+</html>

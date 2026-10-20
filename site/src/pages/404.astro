@@ -1,0 +1,30 @@
+---
+import { pageUrl } from '../i18n/locales';
+import BaseLayout from '../layouts/base-layout.astro';
+---
+
+<BaseLayout
+  locale="en"
+  page="home"
+  title="Page not found - Tab Organizer"
+  description="This page does not exist."
+  noindex
+>
+  <div class="container narrow missing">
+    <h1>Page not found</h1>
+    <p>The page you were looking for is not here.</p>
+    <p><a class="button button-primary" href={pageUrl('en', 'home')}>Go to the home page</a></p>
+  </div>
+</BaseLayout>
+
+<style>
+  .missing {
+    padding-block: 5rem;
+    text-align: center;
+  }
+
+  .missing p {
+    margin-top: 1rem;
+    color: var(--muted-foreground);
+  }
+</style>

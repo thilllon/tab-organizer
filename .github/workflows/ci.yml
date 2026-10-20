@@ -48,6 +48,10 @@ jobs:
 
       - run: pnpm build
 
+      # The project website (site/, deployed by pages.yml). Built here too so a pull request
+      # that breaks it fails before it reaches main.
+      - run: pnpm site:build
+
       # `pnpm build` must emit the extension's one page. It is a rollup input, so a config edit that
       # drops it is a silent, shippable break.
       - name: Verify the build emitted the extension page

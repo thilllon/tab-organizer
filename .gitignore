@@ -31,3 +31,8 @@ docs/superpowers/
 
 # Throw-away pages prepare-registration.ts writes and screenshots on every run
 screenshots/*.html
+
+# The website (site/): its dependencies, build output and Astro's generated types
+site/node_modules
+site/dist
+site/.astro
