@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  CWS_DESCRIPTION_MAX_CHARS,
+  DESCRIPTION_MAX_CHARS,
   CWS_SUMMARY_MAX_CHARS,
   descriptionHeading,
   extractDescription,
@@ -91,13 +91,11 @@ describe('extractDescription', () => {
 
 describe('validateDescription', () => {
   it('accepts a description at the limit', () => {
-    expect(() => validateDescription('a'.repeat(CWS_DESCRIPTION_MAX_CHARS))).not.toThrow();
+    expect(() => validateDescription('a'.repeat(DESCRIPTION_MAX_CHARS))).not.toThrow();
   });
 
-  it(`rejects a description longer than ${CWS_DESCRIPTION_MAX_CHARS} characters`, () => {
-    expect(() => validateDescription('a'.repeat(CWS_DESCRIPTION_MAX_CHARS + 1))).toThrow(
-      /at most 16,000/,
-    );
+  it(`rejects a description longer than ${DESCRIPTION_MAX_CHARS} characters`, () => {
+    expect(() => validateDescription('a'.repeat(DESCRIPTION_MAX_CHARS + 1))).toThrow(/at most 500/);
   });
 });
 

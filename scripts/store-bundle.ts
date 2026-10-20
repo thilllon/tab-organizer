@@ -179,7 +179,7 @@ ${section.title}
 ${section.summary}
 \`\`\`
 
-**Description** (${section.description.length.toLocaleString('en-US')} / 16,000 characters) - copied from \`docs/store_listing.md\`; edit it there, never in this file.
+**Description** (${section.description.length.toLocaleString('en-US')} / 500 characters) - copied from \`docs/store_listing.md\`; edit it there, never in this file.
 
 \`\`\`text
 ${section.description}

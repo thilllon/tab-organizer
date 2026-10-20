@@ -16,8 +16,11 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-/** Chrome Web Store limit for the "Description" field. */
-export const CWS_DESCRIPTION_MAX_CHARS = 16_000;
+/**
+ * Limit for the "Description" field, set by the owner: nobody reads a long store description, so
+ * it is a hook, a few lines and a link to the website. The store itself allows 16,000.
+ */
+export const DESCRIPTION_MAX_CHARS = 500;
 /** Chrome Web Store limit for the "Summary" field (manifest `description`). */
 export const CWS_SUMMARY_MAX_CHARS = 132;
 
@@ -146,9 +149,9 @@ export function readLocaleMessage(
 }
 
 export function validateDescription(description: string): void {
-  if (description.length > CWS_DESCRIPTION_MAX_CHARS) {
+  if (description.length > DESCRIPTION_MAX_CHARS) {
     throw new Error(
-      `Description is ${description.length.toLocaleString('en-US')} characters; the Chrome Web Store allows at most ${CWS_DESCRIPTION_MAX_CHARS.toLocaleString('en-US')}`,
+      `Description is ${description.length.toLocaleString('en-US')} characters; the Chrome Web Store is kept to at most ${DESCRIPTION_MAX_CHARS}`,
     );
   }
 }
