@@ -1,6 +1,6 @@
 # Política de privacidad - Tab Organizer
 
-Última actualización: 20 de octubre de 2026
+Última actualización: 21 de octubre de 2026
 
 ## Resumen
 
@@ -24,7 +24,7 @@ Nunca se capturan las ventanas de incógnito, las ventanas vacías ni las págin
 
 Estos datos nunca salen de tu dispositivo: no se sincronizan con tu cuenta de Google, no se suben a ningún servidor y las páginas web no pueden acceder a ellos. La única forma de que los datos de sesiones salgan de la extensión es que tú decidas exportarlos: Exportar crea un archivo o copia texto al portapapeles, solo cuando tú lo pides expresamente.
 
-Tus preferencias de ordenación (el modo de agrupación y cómo se tratan las pestañas duplicadas) se guardan en el almacenamiento sincronizado de Chrome, junto con el número de versión registrado al instalar o actualizar la extensión. Si tienes activada la sincronización de Chrome, esas preferencias, y nada más, pueden sincronizarse entre los dispositivos conectados a la misma cuenta de Chrome. Los datos y ajustes de sesiones nunca se guardan en el almacenamiento sincronizado.
+Tus preferencias de ordenación (el modo de agrupación y cómo se tratan las pestañas duplicadas) y el idioma que elegiste para la extensión en Configuración (si elegiste uno) se guardan en el almacenamiento sincronizado de Chrome, junto con el número de versión registrado al instalar o actualizar la extensión. Si tienes activada la sincronización de Chrome, esas preferencias, y nada más, pueden sincronizarse entre los dispositivos conectados a la misma cuenta de Chrome. Los datos y ajustes de sesiones nunca se guardan en el almacenamiento sincronizado.
 
 ### Instantáneas automáticas
 
@@ -45,7 +45,7 @@ Esta extensión necesita los siguientes permisos:
 
 - **tabs**: para leer las URL y los títulos de las pestañas al ordenarlas, al guardar sesiones y para la lista de ventanas abiertas de la página de Tab Organizer, y para crear pestañas al restaurar una sesión.
 - **tabGroups**: para ordenar y organizar los grupos de pestañas de la ventana actual y para volver a crearlos al restaurar una sesión.
-- **storage**: para guardar tus preferencias de ordenación en el almacenamiento sincronizado de Chrome, y para guardar las sesiones, instantáneas y ajustes de sesiones en el almacenamiento local, solo en este dispositivo.
+- **storage**: para guardar tus preferencias de ordenación y el idioma elegido en el almacenamiento sincronizado de Chrome, y para guardar las sesiones, instantáneas y ajustes de sesiones en el almacenamiento local, solo en este dispositivo.
 - **contextMenus**: para agregar «¡Reunir!» y «Guardar todas las ventanas como sesión» al menú contextual del icono de la extensión. No se agrega ningún elemento de menú a las páginas web.
 - **unlimitedStorage**: permite que las sesiones grandes superen la cuota predeterminada del almacenamiento local de Chrome. No cambia dónde se guardan los datos: todo se queda en tu dispositivo.
 - **favicon**: para mostrar, junto a las pestañas de la página de Tab Organizer, los iconos de los sitios desde la caché local de favicons de Chrome. No se descarga ningún icono de la red y la extensión no guarda datos de iconos.

@@ -7,12 +7,13 @@ import {
   scheduleFirstSnapshot,
   takeHistorySnapshot,
 } from '@/lib/history-snapshots';
-import { t } from '@/lib/i18n';
+import { applyUiLanguage, t, uiLanguageReady } from '@/lib/i18n';
 import { openDashboard } from '@/lib/open-app-page';
 import { captureSession } from '@/lib/session-capture';
 import { ensureUniqueName } from '@/lib/session-naming';
 import { SETTINGS_KEY, sessionRepo } from '@/lib/session-repo';
 import { sortTabGroups } from '@/lib/sort-tabs';
+import { applyStoredUiLanguage, parseUiLanguage, UI_LANGUAGE_KEY } from '@/lib/ui-language';
 
 /**
  * The service worker: the manifest's `background.service_worker`, and the one file that is only
@@ -91,7 +92,12 @@ export function clearBadge(): void {
   chrome.action.setBadgeText({ text: idle.text }).catch(report);
 }
 
+/**
+ * Recreates the icon's right-click menu with its titles in the UI language. Waits for the language
+ * chosen in Settings first: the worker starts handling an event before that choice is read.
+ */
 export async function registerContextMenus(): Promise<void> {
+  await uiLanguageReady();
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({
     id: MENU_IDS.assembleTabs,
@@ -107,6 +113,8 @@ export async function registerContextMenus(): Promise<void> {
 
 async function saveSession(scope: 'window' | 'all'): Promise<void> {
   try {
+    // The session is named in the UI language as it is captured.
+    await uiLanguageReady();
     const session = await captureSession(scope);
     if (session.windows.length === 0) {
       // Nothing capturable (e.g. only the dashboard, or an incognito window, is open).
@@ -250,16 +258,24 @@ function onActionClicked(): void {
 }
 
 /**
- * `storage.onChanged` handler: a `sessionSettings` write from the app page's Settings
- * (history toggled, interval changed) re-arms or clears the alarms. The stored value is re-read
- * through `sessionRepo.getSettings()` rather than taken from `changes[...].newValue` so it goes
- * through the same normalisation (and default fallback when the key was removed) as every other
- * settings read.
+ * `storage.onChanged` handler, for two settings the app page writes:
+ *
+ * - `sessionSettings` (local; history toggled, interval changed) re-arms or clears the alarms. The
+ *   stored value is re-read through `sessionRepo.getSettings()` rather than taken from
+ *   `changes[...].newValue` so it goes through the same normalisation (and default fallback when
+ *   the key was removed) as every other settings read.
+ * - `uiLanguage` (sync; the language chosen in Settings, or on another device) is put in use and
+ *   the right-click menu is recreated, so its titles follow at once.
  */
 function onStorageChanged(
   changes: { [key: string]: chrome.storage.StorageChange },
   areaName: chrome.storage.AreaName,
 ): void {
+  if (areaName === 'sync' && UI_LANGUAGE_KEY in changes) {
+    void applyUiLanguage(parseUiLanguage(changes[UI_LANGUAGE_KEY]?.newValue));
+    registerContextMenus().catch(report);
+    return;
+  }
   if (areaName !== 'local' || !(SETTINGS_KEY in changes)) {
     return;
   }
@@ -269,6 +285,11 @@ function onStorageChanged(
 function report(err: unknown): void {
   console.error('[tab-organizer:sessions]', err);
 }
+
+// The language chosen in Settings, read once per worker start. Started here, before any listener
+// can run, and never rejecting; everything that makes text waits on `uiLanguageReady()`. Listeners
+// are still registered synchronously below - this only starts a read.
+void applyStoredUiLanguage();
 
 chrome.runtime.onInstalled.addListener((details) => {
   onInstalled(details).catch(report);

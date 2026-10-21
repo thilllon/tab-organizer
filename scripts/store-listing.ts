@@ -16,6 +16,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '../src/constants';
+
 /**
  * Limit for the "Description" field, set by the owner: nobody reads a long store description, so
  * it is a hook, a few lines and a link to the website. The store itself allows 16,000.
@@ -25,13 +27,14 @@ export const DESCRIPTION_MAX_CHARS = 500;
 export const CWS_SUMMARY_MAX_CHARS = 132;
 
 /**
- * The languages the listing is written in, default first. Each is a folder of `public/_locales/`,
- * so Chrome and the store offer exactly these.
+ * The languages the listing is written in, default first: the languages the extension ships in
+ * (`SUPPORTED_LOCALES` in src/constants.ts), each a folder of `public/_locales/`, so Chrome and
+ * the store offer exactly these.
  */
-export const LISTING_LOCALES = ['en', 'ko', 'es', 'ja'] as const;
-export type ListingLocale = (typeof LISTING_LOCALES)[number];
+export const LISTING_LOCALES = SUPPORTED_LOCALES;
+export type ListingLocale = SupportedLocale;
 /** The manifest's `default_locale`: the listing every language without its own falls back to. */
-export const DEFAULT_LISTING_LOCALE: ListingLocale = 'en';
+export const DEFAULT_LISTING_LOCALE: ListingLocale = DEFAULT_LOCALE;
 
 /** English names, for headings in SUBMIT.md and log lines. */
 export const LOCALE_NAMES: Record<ListingLocale, string> = {

@@ -21,7 +21,7 @@ import {
   commandsLoading,
   shortcutsDescription,
 } from '@/lib/command-rows';
-import { t } from '@/lib/i18n';
+import { appliedUiLanguage, t } from '@/lib/i18n';
 import { openShortcutSettings } from '@/lib/open-shortcut-settings';
 import { isMacPlatform } from '@/lib/shortcut-keys';
 import {
@@ -40,6 +40,13 @@ import {
   suspenderIdStatus,
   toStoredSortSettings,
 } from '@/lib/sort-settings';
+import {
+  isUiLanguage,
+  languageSaveFailedMessage,
+  saveUiLanguage,
+  type UiLanguage,
+  uiLanguageOptions,
+} from '@/lib/ui-language';
 import type { SessionSettings, SessionSummary, SortSettings } from '@/types';
 
 /** Chrome names keys differently on a Mac (Option, Command), so the page asks once. */
@@ -83,6 +90,9 @@ export function SettingsView({
   );
   // `null` until Chrome answers; `'failed'` when it does not.
   const [commands, setCommands] = useState<CommandRow[] | null | 'failed'>(null);
+  // The language the page is actually in (index.tsx put it in use before the first render), not a
+  // fresh read of storage: right from the first frame, and 'auto' when the chosen one failed to load.
+  const [language, setLanguage] = useState<UiLanguage>(appliedUiLanguage);
   const sessionSettings = useSessionSettings();
 
   useEffect(() => {
@@ -120,6 +130,28 @@ export function SettingsView({
     });
   };
 
+  /**
+   * The language menu. Every string on the page, and every number and date format, was made in
+   * the language in use when the page loaded, so once the choice is stored the page reloads into
+   * it; the address keeps `#settings`, so the dialog comes back. A refused write keeps the page
+   * as it is and says why.
+   */
+  const changeLanguage = (value: string) => {
+    if (!isUiLanguage(value) || value === language) {
+      return;
+    }
+    const previous = language;
+    setLanguage(value);
+    saveUiLanguage(value).then(
+      () => location.reload(),
+      (err: unknown) => {
+        console.error('[tab-organizer] language not saved', err);
+        setLanguage(previous);
+        onError(languageSaveFailedMessage(err));
+      },
+    );
+  };
+
   /** The session half. `update()` reports failure through its result; it never throws. */
   const writeSession = (patch: Partial<SessionSettings>) => {
     void sessionSettings.update(patch).then((ok) => {
@@ -134,9 +166,21 @@ export function SettingsView({
 
   return (
     <>
-      <DialogHeader className="border-b px-6 py-4">
-        <DialogTitle>{t('settingsTitle')}</DialogTitle>
-        <DialogDescription className="text-xs">{t('settingsSubtitle')}</DialogDescription>
+      {/* The language menu sits on the title row, left of the × (DialogCloseButton, placed absolutely
+          at top-4 right-4 by app.tsx): pr-14 keeps the row clear of it, and on a narrow window the
+          menu wraps under the title instead of running into it. */}
+      <DialogHeader className="flex-row flex-wrap items-start justify-between gap-x-4 gap-y-3 border-b py-4 pr-14 pl-6 text-left">
+        <div className="flex min-w-0 flex-col gap-2">
+          <DialogTitle>{t('settingsTitle')}</DialogTitle>
+          <DialogDescription className="text-xs">{t('settingsSubtitle')}</DialogDescription>
+        </div>
+        <SelectMenu
+          label={t('settingsLanguage')}
+          title={t('settingsLanguageTitle')}
+          value={language}
+          options={uiLanguageOptions()}
+          onValueChange={changeLanguage}
+        />
       </DialogHeader>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/30 px-6 py-4">
         {children}

@@ -4,7 +4,7 @@
  * `sort-order.ts` and `move-plan.ts`.
  */
 
-import { formatNumber, t } from '@/lib/i18n';
+import { formatNumber, t, uiLanguageReady } from '@/lib/i18n';
 import { isContiguous, type MoveBatch, planMoves } from '@/lib/move-plan';
 import {
   findDuplicateTabs,
@@ -187,6 +187,9 @@ async function groupDuplicateTabs(url: string, tabs: chrome.tabs.Tab[]): Promise
   const tabIds: [number, ...number[]] = [filteredIds[0], ...filteredIds.slice(1)];
 
   const groupId = await chrome.tabs.group({ tabIds });
+  // The title is in the language chosen in Settings, which a worker just woken by this click may
+  // still be reading. Waited for only here, after the tabs are grouped, so no move is held up.
+  await uiLanguageReady();
 
   try {
     const urlObj = new URL(url);

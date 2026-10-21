@@ -11,10 +11,11 @@ import {
   scheduleFirstSnapshot,
   takeHistorySnapshot,
 } from '@/lib/history-snapshots';
+import { applyUiLanguage } from '@/lib/i18n';
 import { INDEX_KEY, SETTINGS_KEY, sessionRepo } from '@/lib/session-repo';
 import { SESSION_SCHEMA_VERSION, type Session, type WindowSnapshot } from '@/types';
 
-import { getChromeFake } from './chrome-fake';
+import { getChromeFake, readLocaleFile } from './chrome-fake';
 
 // Local time 2026-08-29 14:03 so generated names are deterministic.
 const NOW = new Date(2026, 7, 29, 14, 3).getTime();
@@ -549,5 +550,47 @@ describe('scheduleFirstSnapshot', () => {
     });
 
     await expect(chrome.alarms.getAll()).resolves.toEqual([]);
+  });
+});
+
+describe('the language chosen in Settings', () => {
+  afterEach(async () => {
+    await applyUiLanguage('auto');
+  });
+
+  it('names a snapshot in that language, waiting for it to load', async () => {
+    await seedWindow(['https://a.example/']);
+    const english = defaultHistoryName(new Date(NOW), 1, 1);
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    // A worker just woken by the alarm: the chosen language's files are still being read.
+    void applyUiLanguage('ja', async (locale) => {
+      await gate;
+      return readLocaleFile(locale);
+    });
+    const getAll = vi.spyOn(chrome.windows, 'getAll');
+
+    const snapshot = takeHistorySnapshot({ origin: 'alarm' });
+    // The capture is done and the snapshot is only waiting for its name: nothing may be stored
+    // yet, or it would have been named in Chrome's language.
+    await vi.waitFor(() => {
+      expect(getAll).toHaveBeenCalled();
+    });
+    for (let turn = 0; turn < 50; turn++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    expect(storedSessionIds()).toEqual([]);
+
+    release();
+    const result = await snapshot;
+
+    const stored = await sessionRepo.get(result.sessionId ?? '');
+    expect(stored?.name).not.toBe(english);
+    // What Chrome itself would have named it in a Japanese browser.
+    getChromeFake().setUiLanguage('ja');
+    await applyUiLanguage('auto');
+    expect(stored?.name).toBe(defaultHistoryName(new Date(NOW), 1, 1));
   });
 });

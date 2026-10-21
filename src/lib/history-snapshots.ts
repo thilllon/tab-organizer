@@ -1,4 +1,4 @@
-import { t, tp } from '@/lib/i18n';
+import { t, tp, uiLanguageReady } from '@/lib/i18n';
 import { captureSession } from '@/lib/session-capture';
 import { contentHash } from '@/lib/session-hash';
 import { formatNameStamp } from '@/lib/session-naming';
@@ -93,6 +93,9 @@ export async function takeHistorySnapshot(
     return { outcome: 'skipped-unchanged', pruned: [] };
   }
 
+  // Named in the language chosen in Settings, which a just-woken worker may still be reading. Only
+  // here, after the capture: an icon click's snapshot must see the tabs before the sort runs.
+  await uiLanguageReady();
   const session: Session = {
     ...captured,
     kind: 'history',
@@ -154,6 +157,7 @@ export async function promoteRecoveredSnapshot(): Promise<SessionId | null> {
     .sort((a, b) => b.createdAt - a.createdAt || b.updatedAt - a.updatedAt)[0];
 
   if (candidate !== undefined) {
+    await uiLanguageReady();
     await sessionRepo.markRecovered(
       candidate.id,
       recoveredSnapshotName(new Date(candidate.createdAt)),

@@ -23,3 +23,26 @@ export const DEFAULT_SHORTCUTS = {
  * when it opens more than this many tabs. Settings shows the number in the option's label.
  */
 export const LAZY_AUTO_THRESHOLD = 10;
+
+/**
+ * The languages the extension ships in, default first: one `public/_locales/<code>/messages.json`
+ * each, and the choices of the language menu in Settings. The one list to extend when a language
+ * is added; every other list (the store listing, the test checks, the screenshot scripts) is typed
+ * from it, so the type checker then names each file that still lacks the new language.
+ */
+export const SUPPORTED_LOCALES = ['en', 'ko', 'es', 'ja'] as const;
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+
+/** The manifest's `default_locale`: every message exists in it, and every language falls back to it. */
+export const DEFAULT_LOCALE: SupportedLocale = 'en';
+
+/**
+ * Each language's own name for itself, as the language menu shows it. Never translated: a person
+ * looking for their language finds it written the way they write it, whatever the page is in now.
+ */
+export const LOCALE_ENDONYMS: Record<SupportedLocale, string> = {
+  en: 'English',
+  ko: '한국어',
+  es: 'Español',
+  ja: '日本語',
+};

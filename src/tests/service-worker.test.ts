@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HISTORY_ALARM, HISTORY_FIRST_ALARM } from '@/lib/history-snapshots';
+import { toCatalog } from '@/lib/i18n';
 import { INDEX_KEY, SETTINGS_KEY } from '@/lib/session-repo';
+import { UI_LANGUAGE_KEY } from '@/lib/ui-language';
 import {
   COMMAND_IDS,
   clearBadge,
@@ -15,7 +17,7 @@ import {
 } from '@/service-worker';
 import { SESSION_SCHEMA_VERSION, type Session, type SessionIndex } from '@/types';
 
-import { getChromeFake } from './chrome-fake';
+import { fetchPackagedFile, getChromeFake, readLocaleFile } from './chrome-fake';
 
 const APP_URL = 'chrome-extension://fakeextid/app.html';
 
@@ -87,6 +89,7 @@ async function loadWorker(): Promise<typeof import('@/lib/session-repo')> {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -966,5 +969,88 @@ describe('history wiring', () => {
       expect(historySummaries()).toHaveLength(1);
     });
     expect(historySummaries()[0]).toMatchObject({ origin: 'alarm', tabCount: 2 });
+  });
+});
+
+describe('the language chosen in Settings', () => {
+  /** The two menu titles as a language's own messages.json has them. */
+  async function menuTitles(locale: string): Promise<(string | undefined)[]> {
+    const catalog = toCatalog(await readLocaleFile(locale));
+    return [catalog.cmdAssembleTabs?.message, catalog.workerMenuSaveAll?.message];
+  }
+
+  it('titles the menus in the stored language, whatever Chrome is in', async () => {
+    vi.stubGlobal('fetch', fetchPackagedFile);
+    const fake = getChromeFake();
+    fake.setUiLanguage('en');
+    fake.state.sync.set(UI_LANGUAGE_KEY, 'ko');
+    vi.resetModules();
+    await import('@/service-worker');
+
+    fake.fire.installed({ reason: 'install' });
+
+    const korean = await menuTitles('ko');
+    await vi.waitFor(() => {
+      expect(fake.state.menus.map((menu) => menu.title)).toEqual(korean);
+    });
+  });
+
+  it('retitles the menus at once when the language is changed', async () => {
+    vi.stubGlobal('fetch', fetchPackagedFile);
+    const fake = getChromeFake();
+    vi.resetModules();
+    await import('@/service-worker');
+    fake.fire.installed({ reason: 'install' });
+    const english = await menuTitles('en');
+    await vi.waitFor(() => {
+      expect(fake.state.menus.map((menu) => menu.title)).toEqual(english);
+    });
+
+    await chrome.storage.sync.set({ [UI_LANGUAGE_KEY]: 'ja' });
+
+    const japanese = await menuTitles('ja');
+    await vi.waitFor(() => {
+      expect(fake.state.menus.map((menu) => menu.title)).toEqual(japanese);
+    });
+
+    await chrome.storage.sync.set({ [UI_LANGUAGE_KEY]: 'auto' });
+
+    await vi.waitFor(() => {
+      expect(fake.state.menus.map((menu) => menu.title)).toEqual(english);
+    });
+  });
+
+  it('names a saved session in the stored language, waiting for it to load', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    // The worker was just woken by the command: the language files arrive only after it fires.
+    vi.stubGlobal('fetch', async (input: string | URL | Request) => {
+      await gate;
+      return fetchPackagedFile(input);
+    });
+    const fake = getChromeFake();
+    fake.state.sync.set(UI_LANGUAGE_KEY, 'es');
+    await seedWindow(['https://a.example/'], true);
+    vi.resetModules();
+    await import('@/service-worker');
+    const { sessionRepo } = await import('@/lib/session-repo');
+
+    fake.fire.command(COMMAND_IDS.saveSession);
+    for (let turn = 0; turn < 50; turn++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    // Still waiting for the language: saved now, it would be named in Chrome's.
+    expect(sessionKeys()).toEqual([]);
+
+    release();
+    await vi.waitFor(async () => {
+      expect(await sessionRepo.listSummaries()).toHaveLength(1);
+    });
+    const [summary] = await sessionRepo.listSummaries();
+    // Spanish counts the window as "1 ventana"; English would say "1 window".
+    fake.setUiLanguage('es');
+    expect(summary?.name).toContain(chrome.i18n.getMessage('windowCount_one', ['1']));
   });
 });
