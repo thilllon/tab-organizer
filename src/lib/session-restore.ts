@@ -1,9 +1,9 @@
+import { LAZY_AUTO_THRESHOLD } from '@/constants';
 import { ExplainedError } from '@/lib/error-message';
 import { unwrapSuspendedUrl } from '@/lib/suspended-url';
 import type { Session, SessionSettings, WindowBounds, WindowSnapshot } from '@/types';
 
 export const DEFAULT_CHUNK_SIZE = 25;
-export const LAZY_AUTO_THRESHOLD = 50;
 const MIN_WINDOW_SIDE = 200;
 
 export interface SanitizeOptions {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { LAZY_AUTO_THRESHOLD } from '@/constants';
 import {
   clampToScreen,
   DEFAULT_CHUNK_SIZE,
   isLazyRestore,
-  LAZY_AUTO_THRESHOLD,
   planRestore,
   type RestoreOptions,
   type SanitizeOptions,
@@ -252,7 +252,7 @@ describe('screenRectOf', () => {
 });
 
 describe('isLazyRestore', () => {
-  it("mirrors the planner: 'always' is lazy, 'never' is not, 'auto' is lazy above 50 tabs", () => {
+  it("mirrors the planner: 'always' is lazy, 'never' is not, 'auto' is lazy above 10 tabs", () => {
     expect(isLazyRestore('always', 1)).toBe(true);
     expect(isLazyRestore('never', 500)).toBe(false);
     expect(isLazyRestore('auto', LAZY_AUTO_THRESHOLD)).toBe(false);
@@ -263,7 +263,7 @@ describe('isLazyRestore', () => {
 describe('planRestore', () => {
   it('exposes the chunk size and lazy threshold constants', () => {
     expect(DEFAULT_CHUNK_SIZE).toBe(25);
-    expect(LAZY_AUTO_THRESHOLD).toBe(50);
+    expect(LAZY_AUTO_THRESHOLD).toBe(10);
   });
 
   it('copies url, pinned, active and groupIndex into planned tabs', () => {
@@ -350,11 +350,11 @@ describe('planRestore', () => {
     ]);
   });
 
-  it("lazy 'auto' is false at exactly 50 tabs and true at 51", () => {
-    expect(planRestore(session([win(urls(50))]), options({ lazy: 'auto' })).windows[0].lazy).toBe(
+  it("lazy 'auto' is false at exactly 10 tabs and true at 11", () => {
+    expect(planRestore(session([win(urls(10))]), options({ lazy: 'auto' })).windows[0].lazy).toBe(
       false,
     );
-    expect(planRestore(session([win(urls(51))]), options({ lazy: 'auto' })).windows[0].lazy).toBe(
+    expect(planRestore(session([win(urls(11))]), options({ lazy: 'auto' })).windows[0].lazy).toBe(
       true,
     );
   });
@@ -366,7 +366,7 @@ describe('planRestore', () => {
   });
 
   it("lazy 'auto' counts only tabs that survive sanitize", () => {
-    const tabs = [...urls(50), tab({ url: 'javascript:alert(1)' })];
+    const tabs = [...urls(10), tab({ url: 'javascript:alert(1)' })];
 
     expect(planRestore(session([win(tabs)]), options({ lazy: 'auto' })).windows[0].lazy).toBe(
       false,

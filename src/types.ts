@@ -127,7 +127,7 @@ export interface SessionSettings {
    */
   historyIntervalMinutes: number;
   historyMaxSnapshots: number; // default 20 unprotected
-  restoreLazy: 'auto' | 'always' | 'never'; // default 'auto' = discard when tabCount > 50
+  restoreLazy: 'auto' | 'always' | 'never'; // default 'auto' = discard when tabCount > LAZY_AUTO_THRESHOLD (src/constants.ts)
 }
 
 /**
