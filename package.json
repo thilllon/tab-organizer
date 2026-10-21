@@ -18,7 +18,7 @@
     "build": "vite build",
     "site:dev": "pnpm --filter tab-organizer-site dev",
     "site:build": "pnpm --filter tab-organizer-site build",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/tests",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "lint": "oxlint --deny-warnings && tsx scripts/check-dashes.ts",

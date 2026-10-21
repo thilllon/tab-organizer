@@ -1,9 +1,11 @@
 {
   // The tests, type-checked on their own: they may use Node APIs (fs, path, child_process) that
   // the extension code must not, so `node` types are added here and never in the root config.
-  "extends": "../tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "types": ["chrome", "node"]
   },
-  "include": [".", "../src"]
+  "include": [".", ".."],
+  // The root config leaves this folder out; here it is the point.
+  "exclude": []
 }

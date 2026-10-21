@@ -680,9 +680,9 @@ describe('splitOnMatches', () => {
  * through `createElement`/a spread object, for the price of one glob.
  */
 describe('the source tree', () => {
-  // Every module under src/, as text, through Vite's own glob so the list is exactly what the build
+  // Every module under src/ (these tests left out), as text, through Vite's own glob so the list is exactly what the build
   // sees.
-  const SOURCES = import.meta.glob<string>('../src/**/*.{ts,tsx}', {
+  const SOURCES = import.meta.glob<string>(['../**/*.{ts,tsx}', '!./**'], {
     query: '?raw',
     import: 'default',
     eager: true,

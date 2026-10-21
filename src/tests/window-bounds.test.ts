@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseWindowList, pickDemoWindow, type ScreenWindow } from '../scripts/window-bounds';
+import { parseWindowList, pickDemoWindow, type ScreenWindow } from '../../scripts/window-bounds';
 
 function win(owner: string, id: number, overrides: Partial<ScreenWindow> = {}): ScreenWindow {
   return { owner, id, x: 0, y: 33, width: 1280, height: 800, ...overrides };
