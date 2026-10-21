@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Favicon } from '@/components/favicon';
 import { hostnameOf } from '@/lib/display-format';
 import { t } from '@/lib/i18n';
+import { ROW_ACTIONS_CLASS } from '@/lib/row-actions';
 import { browserHandlesClick, hrefFor } from '@/lib/row-link';
 import type { TabSnapshot } from '@/types';
 
@@ -120,7 +121,9 @@ export function TabRow({ tab, selection, onOpen, actions }: TabRowProps) {
          * `hover: none` query covers touch screens, where there is no hover to reveal them with
          * and hiding them would simply remove the feature.
          */}
-        <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100 [@media(hover:none)]:opacity-100">
+        <span
+          className={`flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100 [@media(hover:none)]:opacity-100 ${ROW_ACTIONS_CLASS}`}
+        >
           {actions}
         </span>
       </div>

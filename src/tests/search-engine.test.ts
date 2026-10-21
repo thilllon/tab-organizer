@@ -5,7 +5,7 @@ import {
   entriesFromOpenWindows,
   entriesFromSession,
   matchSessionName,
-  openWindowsName,
+  resultPlace,
   type SearchEntry,
   type SearchSource,
   search,
@@ -241,7 +241,7 @@ describe('entriesFromOpenWindows', () => {
     ]);
     expect(entries[0]).toMatchObject({
       source: 'open',
-      sessionName: openWindowsName(),
+      sessionName: '',
       title: 'A',
       url: 'https://new.example/',
       hostname: 'new.example',
@@ -694,5 +694,20 @@ describe('the source tree', () => {
       .map(([file]) => file);
 
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('resultPlace', () => {
+  it('names just the window for an open tab', () => {
+    expect(resultPlace({ source: 'open', sessionName: '', windowIndex: 0 })).toBe('Window 1');
+  });
+
+  it('names the session and the window for a saved or snapshot tab', () => {
+    expect(resultPlace({ source: 'saved', sessionName: 'Work', windowIndex: 1 })).toBe(
+      'Work · Window 2',
+    );
+    expect(resultPlace({ source: 'history', sessionName: 'Snap', windowIndex: 0 })).toBe(
+      'Snap · Window 1',
+    );
   });
 });

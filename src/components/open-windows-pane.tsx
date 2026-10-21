@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { CloseWindowDialog } from '@/components/close-window-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { WindowSelectAll } from '@/components/window-select-all';
 import { WindowTree } from '@/components/window-tree';
 import { formatNumber, t } from '@/lib/i18n';
 import type { OpenWindowView } from '@/lib/open-windows';
-import type { TabSelection } from '@/lib/tab-selection';
+import { selectionState, type TabSelection } from '@/lib/tab-selection';
 import { closeTab, closeWindow, goToTab } from '@/lib/window-actions';
 
 interface OpenWindowsPaneProps {
@@ -23,6 +24,8 @@ interface OpenWindowsPaneProps {
   /** The ticked tabs, by tab id; every row gets a tick box that `onToggleTab` flips. */
   selection: TabSelection;
   onToggleTab(tabId: number, shiftKey: boolean): void;
+  /** A window's select-all box: ticks every tab of that window, or clears them. */
+  onToggleWindow(window: OpenWindowView): void;
 }
 
 interface PendingClose {
@@ -46,6 +49,7 @@ export function OpenWindowsPane({
   busy,
   selection,
   onToggleTab,
+  onToggleWindow,
 }: OpenWindowsPaneProps) {
   const [pendingClose, setPendingClose] = useState<PendingClose | undefined>(undefined);
   // Radix keeps the dialog mounted through its close animation; the last pending value keeps its
@@ -120,6 +124,13 @@ export function OpenWindowsPane({
               key={window.windowId}
               window={window}
               index={index}
+              subheader={
+                <WindowSelectAll
+                  windowNumber={formatNumber(index + 1)}
+                  state={selectionState(window, selection)}
+                  onToggle={() => onToggleWindow(window)}
+                />
+              }
               badge={
                 window.windowId === currentWindowId ? (
                   <Badge variant="secondary" title={t('openThisWindowTitle')}>

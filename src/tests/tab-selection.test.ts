@@ -10,9 +10,11 @@ import {
   selectBySite,
   selectedTabs,
   selectionLabel,
+  selectionState,
   selectionText,
   selectRange,
   toggleSelected,
+  toggleWindow,
 } from '@/lib/tab-selection';
 
 function tab(tabId: number, url: string, title = `Tab ${tabId}`): OpenWindowView['tabs'][number] {
@@ -139,5 +141,46 @@ describe('wording', () => {
     expect(closedTabsNotice(4)).toBe('Closed 4 tabs.');
     expect(keptOpenNotice(1)).toBe('1 tab could not be saved and was left open.');
     expect(keptOpenNotice(2)).toBe('2 tabs could not be saved and were left open.');
+  });
+});
+
+describe('selectionState', () => {
+  const [first, second] = WINDOWS as [OpenWindowView, OpenWindowView];
+
+  it('is none when nothing in the window is ticked, whatever other windows hold', () => {
+    expect(selectionState(first, EMPTY_SELECTION)).toBe('none');
+    expect(selectionState(second, new Set([11, 12, 13]))).toBe('none');
+  });
+
+  it('is some when part of the window is ticked', () => {
+    expect(selectionState(first, new Set([12]))).toBe('some');
+  });
+
+  it('is all when every tab of the window is ticked', () => {
+    expect(selectionState(second, new Set([11, 21, 22]))).toBe('all');
+  });
+
+  it('is none for a window without tabs', () => {
+    expect(selectionState(win(9, []), new Set([11]))).toBe('none');
+  });
+});
+
+describe('toggleWindow', () => {
+  const [first, second] = WINDOWS as [OpenWindowView, OpenWindowView];
+
+  it('ticks the whole window when nothing or only part of it is ticked', () => {
+    expect(ids(toggleWindow(first, EMPTY_SELECTION))).toEqual([11, 12, 13]);
+    expect(ids(toggleWindow(first, new Set([13])))).toEqual([11, 12, 13]);
+  });
+
+  it('clears the window when all of it is ticked', () => {
+    expect(ids(toggleWindow(first, new Set([11, 12, 13])))).toEqual([]);
+  });
+
+  it("leaves the other windows' ticks alone, and its input unchanged", () => {
+    const before = new Set([11]);
+    expect(ids(toggleWindow(second, before))).toEqual([11, 21, 22]);
+    expect(ids(toggleWindow(second, new Set([11, 21, 22])))).toEqual([11]);
+    expect(ids(before)).toEqual([11]);
   });
 });

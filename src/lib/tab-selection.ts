@@ -54,6 +54,36 @@ export function selectRange(
   return next;
 }
 
+/** How much of a window is ticked: what its select-all box shows (ticked, dash, empty). */
+export type SelectionState = 'all' | 'some' | 'none';
+
+/** 'all' when every tab of the window is ticked, 'some' when part of them are, 'none' otherwise. */
+export function selectionState(window: OpenWindowView, selection: TabSelection): SelectionState {
+  const ticked = window.tabs.filter((tab) => selection.has(tab.tabId)).length;
+  if (ticked === 0) {
+    return 'none';
+  }
+  return ticked === window.tabs.length ? 'all' : 'some';
+}
+
+/**
+ * A window's select-all box clicked: when every tab of the window is ticked it unticks them,
+ * otherwise it ticks them all - collapsed groups and tabs past "show more" included, since the
+ * selection is of tabs, not of rows. Ticks in other windows are left as they are.
+ */
+export function toggleWindow(window: OpenWindowView, selection: TabSelection): TabSelection {
+  const clear = selectionState(window, selection) === 'all';
+  const next = new Set(selection);
+  for (const tab of window.tabs) {
+    if (clear) {
+      next.delete(tab.tabId);
+    } else {
+      next.add(tab.tabId);
+    }
+  }
+  return next;
+}
+
 /**
  * Drops the ids of tabs that are no longer open. Returns the very same set when nothing was
  * dropped, so an effect that calls this on every refresh of the list does not re-render forever.
