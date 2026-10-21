@@ -11,7 +11,8 @@ import { sessionRepo } from '@/lib/session-repo';
 import {
   STORAGE_METER_ID,
   snapshotHint,
-  storageDetailLine,
+  storageSavedPart,
+  storageSnapshotsPart,
   storageSegments,
   storageTotalLine,
   summarizeStorage,
@@ -31,7 +32,7 @@ interface StorageMeterProps {
  * snapshots when they are what is filling the disk.
  *
  * Two remedies sit below it, bottom-left, because this is where a quota notice sends the user:
- * "Delete all unprotected", the one that actually frees the space and keeps every saved session,
+ * "Delete snapshots", the one that actually frees the space and keeps every saved session,
  * and only then the all-or-nothing "Delete all session data". The first clears every snapshot
  * that is not protected, behind its own confirm (`DeleteAllHistoryDialog`).
  *
@@ -125,13 +126,25 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           <HardDrive className="size-3.5 text-muted-foreground" />
           {t('storageHeading')}
         </h3>
-        <p className="text-xs text-muted-foreground">
-          {bytes === undefined ? t('storageMeasuring') : storageTotalLine(breakdown)}
-          {bytes === undefined ? '' : ` · ${storageDetailLine(breakdown)}`}
-        </p>
+        {bytes === undefined ? (
+          <p className="text-xs text-muted-foreground">{t('storageMeasuring')}</p>
+        ) : (
+          // Each half after a dot in its colour on the bar below, so the bar needs no other key.
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span>{storageTotalLine(breakdown)}</span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-2 rounded-full bg-primary" aria-hidden="true" />
+              {storageSavedPart(breakdown)}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-2 rounded-full bg-primary/50" aria-hidden="true" />
+              {storageSnapshotsPart(breakdown)}
+            </span>
+          </p>
+        )}
       </div>
 
-      {/* Decorative: the same numbers are in the line above, spelled out. */}
+      {/* Decorative: the same numbers are in the line above, spelled out after dots in these colours. */}
       <div className="mt-2 flex h-1.5 w-full overflow-hidden rounded bg-muted" aria-hidden="true">
         <div className="h-full bg-primary" style={{ width: `${segments.saved}%` }} />
         <div className="h-full bg-primary/50" style={{ width: `${segments.snapshots}%` }} />
@@ -164,6 +177,7 @@ export function StorageMeter({ summaries, onNotice }: StorageMeterProps) {
           {t('storageDeleteAllData')}
         </Button>
       </div>
+      <p className="mt-2 text-xs text-muted-foreground">{t('storageDeleteSnapshotsNote')}</p>
       {error !== undefined && (
         <p role="alert" className="mt-2 text-xs text-destructive">
           {error}
