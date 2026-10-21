@@ -118,14 +118,14 @@ tab-organizer/
 │   │   ├── snapshot-detail.tsx  # One history snapshot
 │   │   └── settings-view.tsx    # The content of the Settings dialog
 │   ├── components/             # Every hand-made component, flat: SidebarNav, SidebarResizer, SavedToasts, WindowTree,
-│   │   │                       #   GroupSection, TabRow, Favicon, NativeSelect, ProgressToast, OpenWindowsPane,
+│   │   │                       #   GroupSection, TabRow, Favicon, SelectMenu, ProgressToast, OpenWindowsPane,
 │   │   │                       #   SelectionBar, SearchBar, SearchResults, ExportMenu, ImportDialog, StorageMeter,
 │   │   │                       #   QuotaNotice, SessionSettingsFields, UnreadableSessionRow, RestoreConfirmDialog,
 │   │   │                       #   DeleteSessionDialog, DeleteAllHistoryDialog, DeleteAllDataDialog,
 │   │   │                       #   CloseWindowDialog, CloseTabsDialog, DialogCloseButton, and the Settings dialog's pieces:
 │   │   │                       #   SettingsSection, SettingsField, AdvancedFold, ShortcutKeyChips
 │   │   └── ui/                 # Stock shadcn/ui only, added with the CLI (button, label, input, dialog, dropdown-menu,
-│   │                           #   badge, collapsible, switch). Never a custom component
+│   │                           #   badge, collapsible, switch, select). Never a custom component
 │   ├── hooks/                  # React hooks, flat: useRoute (the hash route), useSessionIndex, useSessionBody,
 │   │                           #   useSessionSettings, useRestore, useOpenWindows (page-side tab listeners),
 │   │                           #   useSearchCorpus, useSavedToasts
@@ -361,7 +361,7 @@ Session types: `SESSION_SCHEMA_VERSION`, `SessionId`, `SessionKind` (`'saved' | 
 | `src/pages/open-tabs-view.tsx` | Live windows + the Save button (label follows the window count); the tab selection (see below); and, with more than one window open, **Assemble!** - `app.tsx` calls `assembleTabs()` from `src/lib/assemble-tabs.ts` in the page (it is only `chrome.*` calls; the target is the last-focused window, i.e. this one) and words the result with `assembleOutcome()` in `src/lib/assemble-notice.ts` |
 | `src/pages/session-detail.tsx` | Rename (click the title), Open / Open in this window, per-window and per-tab actions, export, delete |
 | `src/pages/snapshot-detail.tsx` | Open, **Keep** (`duplicateAsSaved` + `remove` - a move), delete |
-| `src/pages/settings-view.tsx` | The content of the Settings dialog: Sorting (Sort by + Duplicate tabs; Tab groups, Grouping direction and Preserve order indented under Sort by only while it is Custom; three more under Advanced), Sessions, Backup, Keyboard shortcuts. Every control writes immediately; every dropdown is `src/components/native-select.tsx`; an `Advanced` fold shows a grey description of what it holds |
+| `src/pages/settings-view.tsx` | The content of the Settings dialog: Sorting (Sort by + Duplicate tabs; Tab groups, Grouping direction and Preserve order indented under Sort by only while it is Custom; three more under Advanced), Sessions, Backup, Keyboard shortcuts. Every control writes immediately; every dropdown is `src/components/select-menu.tsx` (shadcn Select, the list opening just below the control); an `Advanced` fold shows a grey description of what it holds |
 
 **Selecting open tabs.** Only the Open tabs list has tick boxes (`TabRow`'s optional `selection` prop, threaded through `GroupSection` → `WindowTree` → `OpenWindowsPane`; saved sessions, snapshots and search results pass nothing and render exactly as before). A click on the row still goes to the tab - only the box selects, shift-click takes the range from the box ticked last. `OpenTabsView` holds the selection (a set of runtime tab ids, component state only, pruned whenever the live list changes) and, while it is not empty, draws `SelectionBar` **in place of** its heading - same height, so the list does not jump - sticky under the page header (`--app-header-h`, measured in `app.tsx`). Closing more than one tab asks first (`CloseTabsDialog`): a range or a by-site selection also ticks tabs the list is not showing (collapsed groups, pages past "show more"). Save goes through the app's one `save()` with `captureSession({ tabIds })` (the chosen tabs keep their windows); Copy / Close / "Save & close" (closes only after the save is stored) / "Select all tabs like this · not like this" (same site) are decided in `src/lib/tab-selection.ts` and `closeTabs()` in `window-actions.ts`, both with tests.
 

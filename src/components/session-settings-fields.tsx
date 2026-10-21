@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
 
-import { NativeSelect } from '@/components/native-select';
+import { SelectMenu } from '@/components/select-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -126,12 +126,18 @@ export function SessionSettingsFields({
           htmlFor={intervalId}
           hint={intervalRangeHint()}
         >
-          <NativeSelect
+          <SelectMenu
             id={intervalId}
             value={intervalChoice}
             disabled={intervalDisabled}
-            onChange={(event) => {
-              const value = event.target.value;
+            options={[
+              ...HISTORY_INTERVALS.map((minutes) => ({
+                value: String(minutes),
+                label: intervalLabel(minutes),
+              })),
+              { value: CUSTOM_INTERVAL, label: t('settingsIntervalCustom') },
+            ]}
+            onValueChange={(value) => {
               if (value === CUSTOM_INTERVAL) {
                 setCustomOpen(true);
                 return;
@@ -142,14 +148,7 @@ export function SessionSettingsFields({
                 onChange({ historyIntervalMinutes: minutes });
               }
             }}
-          >
-            {HISTORY_INTERVALS.map((minutes) => (
-              <option key={minutes} value={String(minutes)}>
-                {intervalLabel(minutes)}
-              </option>
-            ))}
-            <option value={CUSTOM_INTERVAL}>{t('settingsIntervalCustom')}</option>
-          </NativeSelect>
+          />
           {intervalChoice === CUSTOM_INTERVAL && (
             <>
               <Input
@@ -209,23 +208,17 @@ export function SessionSettingsFields({
           htmlFor={lazyId}
           hint={t('settingsLazyRestoreHint')}
         >
-          <NativeSelect
+          <SelectMenu
             id={lazyId}
             value={settings.restoreLazy}
             disabled={disabled}
-            onChange={(event) => {
-              const value = event.target.value;
+            options={RESTORE_LAZY_MODES.map((mode) => ({ value: mode, label: lazyLabel(mode) }))}
+            onValueChange={(value) => {
               if (isRestoreLazy(value)) {
                 onChange({ restoreLazy: value });
               }
             }}
-          >
-            {RESTORE_LAZY_MODES.map((mode) => (
-              <option key={mode} value={mode}>
-                {lazyLabel(mode)}
-              </option>
-            ))}
-          </NativeSelect>
+          />
         </SettingRow>
       )}
     </div>

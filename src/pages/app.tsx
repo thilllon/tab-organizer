@@ -70,6 +70,9 @@ import type { Session, SessionSettings } from '@/types';
 
 const NEW_WINDOWS: RestoreTarget = { kind: 'newWindows' };
 
+/** Shown beside the name in the header; the manifest's version is package.json's. */
+const VERSION = chrome.runtime.getManifest().version;
+
 /** The running count and the final line of "Export everything" are one toast that changes. */
 const EXPORT_ALL_TOAST = 'export-all';
 
@@ -543,6 +546,7 @@ export function App() {
         >
           <img src="/img/logo-32.png" alt="" aria-hidden="true" className="size-5 rounded" />
           {t('extName')}
+          <span className="text-xs font-normal text-muted-foreground tabular-nums">v{VERSION}</span>
         </a>
         <div className="mx-auto flex max-w-xl flex-1 justify-center">
           <SearchBar
