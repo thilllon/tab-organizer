@@ -13,5 +13,12 @@
   "bracketSpacing": true,
   "bracketSameLine": false,
   "sortImports": {},
-  "ignorePatterns": ["dist", "release", "assets", "pnpm-lock.yaml", "site/.astro"]
+  "ignorePatterns": [
+    "dist",
+    "release",
+    "assets",
+    "pnpm-lock.yaml",
+    "site/.astro",
+    "site/public/google*.html"
+  ]
 }
