@@ -86,12 +86,19 @@ export function storageTotalLine(breakdown: StorageBreakdown): string {
   return t('storageTotalLine', formatBytes(breakdown.total));
 }
 
-/** "1.2 MB in 3 saved sessions · 3.4 MB in 12 snapshots" - the split under the headline. */
-export function storageDetailLine(breakdown: StorageBreakdown): string {
+/** "1.2 MB in 3 saved sessions" - the saved half of the split, shown after the bar's saved colour. */
+export function storageSavedPart(breakdown: StorageBreakdown): string {
   return t(
-    'storageDetailLine',
+    'storageSizeIn',
     formatBytes(breakdown.saved),
     tp('storageSavedSessionCount', breakdown.savedCount),
+  );
+}
+
+/** "3.4 MB in 12 snapshots" - the snapshot half, shown after the bar's snapshot colour. */
+export function storageSnapshotsPart(breakdown: StorageBreakdown): string {
+  return t(
+    'storageSizeIn',
     formatBytes(breakdown.snapshots),
     tp('storageSnapshotCount', breakdown.snapshotCount),
   );

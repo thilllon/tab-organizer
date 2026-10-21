@@ -1455,9 +1455,9 @@
     "message": "이 기기에 $1 저장됨",
     "description": "Storage meter headline in Settings. $1 is a size such as '4.6 MB'."
   },
-  "storageDetailLine": {
-    "message": "$2: $1 · $4: $3",
-    "description": "Storage meter breakdown under the headline. $1 is the size of saved sessions (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $3 the size of snapshots, $4 the counted phrase storageSnapshotCount (e.g. '12 snapshots'). Keep the middle dot separator."
+  "storageSizeIn": {
+    "message": "$2: $1",
+    "description": "One part of the storage meter breakdown, after a coloured dot matching the bar. $1 is a size (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount or storageSnapshotCount (e.g. '12 snapshots')."
   },
   "storageSavedSessionCount_other": {
     "message": "저장된 세션 $1개",
@@ -1468,7 +1468,7 @@
     "description": "Counted noun phrase for automatic snapshots used inside storage messages (plural). $1 is the number."
   },
   "storageSnapshotHint": {
-    "message": "자동 스냅샷이 $1를 사용합니다. “최근 스냅샷 보관” 개수를 줄이거나 보호되지 않은 스냅샷을 삭제하세요.",
+    "message": "자동 스냅샷이 $1를 사용합니다. “최근 스냅샷 보관” 개수를 줄이거나 스냅샷을 삭제하세요.",
     "description": "Hint under the storage meter when snapshots take most of the space. $1 is a size such as '3.4 MB'. The quoted label is the setting settingsKeepLast; quote its translated text exactly."
   },
   "storageHeading": {
@@ -1480,12 +1480,16 @@
     "description": "Shown in the storage meter while the used space is being measured. Short."
   },
   "storageDeleteUnprotected": {
-    "message": "보호되지 않은 항목 모두 삭제",
+    "message": "스냅샷 삭제",
     "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
   },
   "storageDeleteUnprotectedTooltip": {
-    "message": "보호되지 않은 스냅샷 모두 삭제",
+    "message": "복구된 스냅샷을 뺀 자동 스냅샷을 모두 삭제",
     "description": "Tooltip of the 'Delete all unprotected' button."
+  },
+  "storageDeleteSnapshotsNote": {
+    "message": "스냅샷을 삭제해도 저장한 세션과 복구된 스냅샷은 남습니다.",
+    "description": "Grey line beside the 'Delete snapshots' button saying what it leaves alone. 'Recovered' is the badge of the snapshot taken before the last browser restart (appNavRecoveredBadge)."
   },
   "storageDeleteAllData": {
     "message": "모든 세션 데이터 삭제",
@@ -1500,15 +1504,15 @@
     "description": "Toast shown after all session data was deleted."
   },
   "storageDeletedUnprotectedNotice_other": {
-    "message": "보호되지 않은 스냅샷 $1개를 삭제했습니다.",
+    "message": "스냅샷 $1개를 삭제했습니다.",
     "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
   },
   "storageDeleteHistoryTitle": {
-    "message": "보호되지 않은 스냅샷을 삭제할까요?",
+    "message": "스냅샷을 삭제할까요?",
     "description": "Title of the confirm dialog for 'Delete all unprotected'."
   },
   "storageDeleteHistoryBody_other": {
-    "message": "스냅샷 $1개가 이 기기에서 삭제됩니다. 보호된 스냅샷과 저장된 세션은 유지됩니다. 되돌릴 수 없습니다.",
+    "message": "스냅샷 $1개가 이 기기에서 삭제됩니다. 저장한 세션과 복구된 스냅샷은 유지됩니다. 되돌릴 수 없습니다.",
     "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
   },
   "storageDeleteHistoryConfirm": {

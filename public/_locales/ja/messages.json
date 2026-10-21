@@ -1463,9 +1463,9 @@
     "message": "この端末に $1 保存されています",
     "description": "Storage meter headline in Settings. $1 is a size such as '4.6 MB'."
   },
-  "storageDetailLine": {
-    "message": "$2: $1 · $4: $3",
-    "description": "Storage meter breakdown under the headline. $1 is the size of saved sessions (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $3 the size of snapshots, $4 the counted phrase storageSnapshotCount (e.g. '12 snapshots'). Keep the middle dot separator."
+  "storageSizeIn": {
+    "message": "$2: $1",
+    "description": "One part of the storage meter breakdown, after a coloured dot matching the bar. $1 is a size (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount or storageSnapshotCount (e.g. '12 snapshots')."
   },
   "storageSavedSessionCount_other": {
     "message": "保存したセッション $1件",
@@ -1476,7 +1476,7 @@
     "description": "Counted noun phrase for automatic snapshots used inside storage messages (plural). $1 is the number."
   },
   "storageSnapshotHint": {
-    "message": "自動スナップショットが $1 を使用しています。「保持する件数」を減らすか、保護されていないスナップショットを削除してください。",
+    "message": "自動スナップショットが $1 を使用しています。「保持する件数」を減らすか、スナップショットを削除してください。",
     "description": "Hint under the storage meter when snapshots take most of the space. $1 is a size such as '3.4 MB'. The quoted label is the setting settingsKeepLast; quote its translated text exactly."
   },
   "storageHeading": {
@@ -1488,12 +1488,16 @@
     "description": "Shown in the storage meter while the used space is being measured. Short."
   },
   "storageDeleteUnprotected": {
-    "message": "保護されていないものをすべて削除",
+    "message": "スナップショットを削除",
     "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
   },
   "storageDeleteUnprotectedTooltip": {
-    "message": "保護されていないスナップショットをすべて削除",
+    "message": "復旧したスナップショット以外の自動スナップショットをすべて削除",
     "description": "Tooltip of the 'Delete all unprotected' button."
+  },
+  "storageDeleteSnapshotsNote": {
+    "message": "スナップショットを削除しても、保存したセッションと復旧したスナップショットは残ります。",
+    "description": "Grey line beside the 'Delete snapshots' button saying what it leaves alone. 'Recovered' is the badge of the snapshot taken before the last browser restart (appNavRecoveredBadge)."
   },
   "storageDeleteAllData": {
     "message": "セッションデータをすべて削除",
@@ -1508,15 +1512,15 @@
     "description": "Toast shown after all session data was deleted."
   },
   "storageDeletedUnprotectedNotice_other": {
-    "message": "保護されていないスナップショットを$1件削除しました。",
+    "message": "スナップショットを$1件削除しました。",
     "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
   },
   "storageDeleteHistoryTitle": {
-    "message": "保護されていないスナップショットを削除しますか？",
+    "message": "スナップショットを削除しますか？",
     "description": "Title of the confirm dialog for 'Delete all unprotected'."
   },
   "storageDeleteHistoryBody_other": {
-    "message": "$1件のスナップショットをこの端末から削除します。保護されたスナップショットと保存したセッションは残ります。この操作は元に戻せません。",
+    "message": "$1件のスナップショットをこの端末から削除します。保存したセッションと復旧したスナップショットは残ります。この操作は元に戻せません。",
     "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
   },
   "storageDeleteHistoryConfirm": {

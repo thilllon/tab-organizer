@@ -1571,9 +1571,9 @@
     "message": "$1 stored on this device",
     "description": "Storage meter headline in Settings. $1 is a size such as '4.6 MB'."
   },
-  "storageDetailLine": {
-    "message": "$1 in $2 · $3 in $4",
-    "description": "Storage meter breakdown under the headline. $1 is the size of saved sessions (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount (e.g. '3 saved sessions'), $3 the size of snapshots, $4 the counted phrase storageSnapshotCount (e.g. '12 snapshots'). Keep the middle dot separator."
+  "storageSizeIn": {
+    "message": "$1 in $2",
+    "description": "One part of the storage meter breakdown, after a coloured dot matching the bar. $1 is a size (e.g. '1.2 MB'), $2 the counted phrase storageSavedSessionCount or storageSnapshotCount (e.g. '12 snapshots')."
   },
   "storageSavedSessionCount_one": {
     "message": "$1 saved session",
@@ -1592,7 +1592,7 @@
     "description": "Counted noun phrase for automatic snapshots used inside storage messages (plural). $1 is the number."
   },
   "storageSnapshotHint": {
-    "message": "Automatic snapshots use $1. Lower “Keep last” or delete unprotected snapshots.",
+    "message": "Automatic snapshots use $1. Lower “Keep last” or delete snapshots.",
     "description": "Hint under the storage meter when snapshots take most of the space. $1 is a size such as '3.4 MB'. The quoted label is the setting settingsKeepLast; quote its translated text exactly."
   },
   "storageHeading": {
@@ -1604,12 +1604,16 @@
     "description": "Shown in the storage meter while the used space is being measured. Short."
   },
   "storageDeleteUnprotected": {
-    "message": "Delete all unprotected",
-    "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
+    "message": "Delete snapshots",
+    "description": "Small button under the storage meter that deletes every automatic snapshot except the recovered one. Button, keep short."
   },
   "storageDeleteUnprotectedTooltip": {
-    "message": "Delete every snapshot that is not protected",
-    "description": "Tooltip of the 'Delete all unprotected' button."
+    "message": "Delete every automatic snapshot except the recovered one",
+    "description": "Tooltip of the 'Delete snapshots' button."
+  },
+  "storageDeleteSnapshotsNote": {
+    "message": "Deleting snapshots keeps your saved sessions and the recovered snapshot.",
+    "description": "Grey line beside the 'Delete snapshots' button saying what it leaves alone. 'Recovered' is the badge of the snapshot taken before the last browser restart (appNavRecoveredBadge)."
   },
   "storageDeleteAllData": {
     "message": "Delete all session data",
@@ -1624,28 +1628,28 @@
     "description": "Toast shown after all session data was deleted."
   },
   "storageDeletedUnprotectedNotice_one": {
-    "message": "Deleted $1 unprotected snapshot.",
-    "description": "Toast after deleting unprotected snapshots (singular). $1 is the number deleted."
+    "message": "Deleted $1 snapshot.",
+    "description": "Toast after deleting snapshots (singular). $1 is the number deleted."
   },
   "storageDeletedUnprotectedNotice_other": {
-    "message": "Deleted $1 unprotected snapshots.",
-    "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
+    "message": "Deleted $1 snapshots.",
+    "description": "Toast after deleting snapshots (plural). $1 is the number deleted."
   },
   "storageDeleteHistoryTitle": {
-    "message": "Delete unprotected snapshots?",
-    "description": "Title of the confirm dialog for 'Delete all unprotected'."
+    "message": "Delete snapshots?",
+    "description": "Title of the confirm dialog for 'Delete snapshots'."
   },
   "storageDeleteHistoryBody_one": {
-    "message": "$1 snapshot will be removed from this device. Protected snapshots and saved sessions are kept. This cannot be undone.",
-    "description": "Body of the confirm dialog for deleting unprotected snapshots (singular). $1 is the number of snapshots."
+    "message": "$1 snapshot will be removed from this device. Saved sessions and the recovered snapshot are kept. This cannot be undone.",
+    "description": "Body of the confirm dialog for deleting snapshots (singular). $1 is the number of snapshots."
   },
   "storageDeleteHistoryBody_other": {
-    "message": "$1 snapshots will be removed from this device. Protected snapshots and saved sessions are kept. This cannot be undone.",
-    "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
+    "message": "$1 snapshots will be removed from this device. Saved sessions and the recovered snapshot are kept. This cannot be undone.",
+    "description": "Body of the confirm dialog for deleting snapshots (plural). $1 is the number of snapshots."
   },
   "storageDeleteHistoryConfirm": {
     "message": "Delete snapshots",
-    "description": "Destructive confirm button in the 'Delete unprotected snapshots?' dialog. Button, keep short."
+    "description": "Destructive confirm button in the 'Delete snapshots?' dialog. Button, keep short."
   },
   "storageDeleteAllTitle": {
     "message": "Delete all session data?",

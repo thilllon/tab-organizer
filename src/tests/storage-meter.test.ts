@@ -4,7 +4,8 @@ import {
   SNAPSHOT_HINT_MIN_BYTES,
   type StorageBreakdown,
   snapshotHint,
-  storageDetailLine,
+  storageSavedPart,
+  storageSnapshotsPart,
   storageSegments,
   storageTotalLine,
   summarizeStorage,
@@ -52,10 +53,10 @@ describe('summarizeStorage', () => {
     });
   });
 
-  // The enable/disable rule for the meter's "Delete all unprotected" button: the quota
+  // The enable/disable rule for the meter's "Delete snapshots" button: the quota
   // path must offer the action that frees the space, and must not offer it when it would free
   // nothing.
-  it('counts only the snapshots "Delete all unprotected" would remove', () => {
+  it('counts only the snapshots "Delete snapshots" would remove', () => {
     const result = summarizeStorage(
       [
         entry('saved', 100),
@@ -105,25 +106,27 @@ describe('summarizeStorage', () => {
   });
 });
 
-describe('storageTotalLine / storageDetailLine', () => {
+describe('storageTotalLine / storageSavedPart / storageSnapshotsPart', () => {
   it('formats the headline and the split', () => {
     const result = summarizeStorage([entry('saved', 2048), entry('history', 4096)], 8192);
 
     expect(storageTotalLine(result)).toBe('8.0 KB stored on this device');
-    expect(storageDetailLine(result)).toBe('2.0 KB in 1 saved session · 4.0 KB in 1 snapshot');
+    expect(storageSavedPart(result)).toBe('2.0 KB in 1 saved session');
+    expect(storageSnapshotsPart(result)).toBe('4.0 KB in 1 snapshot');
   });
 
   it('pluralises both halves', () => {
     const result = summarizeStorage([], 0);
 
-    expect(storageDetailLine(result)).toBe('0 B in 0 saved sessions · 0 B in 0 snapshots');
+    expect(storageSavedPart(result)).toBe('0 B in 0 saved sessions');
+    expect(storageSnapshotsPart(result)).toBe('0 B in 0 snapshots');
   });
 });
 
 describe('snapshotHint', () => {
   it('fires when snapshots are large and outweigh everything else', () => {
     expect(snapshotHint(breakdown({ total: 6 * MB, snapshots: 4 * MB, saved: 2 * MB }))).toBe(
-      'Automatic snapshots use 4.0 MB. Lower “Keep last” or delete unprotected snapshots.',
+      'Automatic snapshots use 4.0 MB. Lower “Keep last” or delete snapshots.',
     );
   });
 
