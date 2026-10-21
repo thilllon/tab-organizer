@@ -1,5 +1,5 @@
+import { LAZY_AUTO_THRESHOLD } from '@/constants';
 import { formatNumber, t, tp } from '@/lib/i18n';
-import { LAZY_AUTO_THRESHOLD } from '@/lib/session-restore';
 import {
   HISTORY_INTERVAL_MAX_MINUTES,
   HISTORY_INTERVAL_MIN_MINUTES,

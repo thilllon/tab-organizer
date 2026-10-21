@@ -140,7 +140,7 @@ describe('labels', () => {
   });
 
   it('names each lazy-restore mode', () => {
-    expect(lazyLabel('auto')).toBe('Automatic (over 50 tabs)');
+    expect(lazyLabel('auto')).toBe('Automatic (over 10 tabs)');
     expect(lazyLabel('always')).toBe('Always');
     expect(lazyLabel('never')).toBe('Never');
   });

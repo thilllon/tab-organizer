@@ -80,7 +80,7 @@ The left column is what you have; the rest of the page is whatever you picked. E
 | `app.html#search/<q>` | **Search**: open tabs and saved sessions; `/` focuses the box from anywhere, `Esc` clears, arrows move, `Enter` opens the highlighted row. Snapshots are searched only when a search finds nothing and you ask for them.                                                                                                                               |
 | `app.html#settings`   | **Settings**: a dialog over whatever you were looking at: sorting (Sort by and Duplicate tabs as dropdowns; Custom sorting shows its own options right under Sort by; the rest under Advanced), sessions, backup (export / import / storage / delete everything) and your keyboard shortcuts. Everything saves as you change it.                       |
 
-Restores run in batches with progress and Cancel; more than 50 tabs load lazily, more than 100 ask first; unopenable URLs are skipped and reported. Export is per group / window / session: JSON (round-trips exactly), Markdown, plain text, Netscape HTML (imports into Chrome bookmarks) or CSV, plus _Copy links_ and _Copy as Markdown_; import takes a file or pasted text with a preview. Light and dark follow your system setting.
+Restores run in batches with progress and Cancel; more than 10 tabs load lazily, more than 100 ask first; unopenable URLs are skipped and reported. Export is per group / window / session: JSON (round-trips exactly), Markdown, plain text, Netscape HTML (imports into Chrome bookmarks) or CSV, plus _Copy links_ and _Copy as Markdown_; import takes a file or pasted text with a preview. Light and dark follow your system setting.
 
 Everything lives in `chrome.storage.local` on the device, never synced, never uploaded.
 
