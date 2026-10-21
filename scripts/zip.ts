@@ -15,9 +15,9 @@ async function main(): Promise<void> {
   // Not `manifest.name`: that is `__MSG_extName__` now that the name is translated.
   const filename = zipFileName(readDisplayName('./package.json'), manifest.version);
 
-  mkdirSync('package', { recursive: true });
+  mkdirSync('release', { recursive: true });
 
-  const output = createWriteStream(path.join('package', filename));
+  const output = createWriteStream(path.join('release', filename));
   const archive = new ZipArchive({ zlib: { level: 9 } });
 
   // `finalize()` resolves once the archive is written, but the file is only complete when the
@@ -36,7 +36,7 @@ async function main(): Promise<void> {
   await archive.finalize();
   await closed;
 
-  console.log(`Packaged: package/${filename} (${archive.pointer()} bytes)`);
+  console.log(`Packaged: release/${filename} (${archive.pointer()} bytes)`);
 }
 
 /*

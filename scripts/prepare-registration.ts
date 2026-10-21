@@ -35,9 +35,9 @@
  *                   started with `--lang=<code>` and LANGUAGE/LANG set (plus `-AppleLanguages`
  *                   on macOS, where Chrome ignores `--lang`), so `chrome.i18n` picks that
  *                   language; the run fails a language whose browser reports another one. English
- *                   runs the whole pipeline into `screenshots/` under today's file names; every
+ *                   runs the whole pipeline into `assets/` under today's file names; every
  *                   other language only shoots the Settings and dashboard screenshots (steps 3-4),
- *                   with the fixture session names in that language, into `screenshots/<code>/`.
+ *                   with the fixture session names in that language, into `assets/<code>/`.
  *                   The demo, mockups, promo images and video carry English text and are shared.
  */
 
@@ -81,7 +81,7 @@ interface SkipRecord {
 /** Where one language's screenshots go and how to read the UI text they look for. */
 interface CaptureTarget {
   locale: ListingLocale;
-  /** `screenshots/` for English, `screenshots/<code>/` for the others. */
+  /** `assets/` for English, `assets/<code>/` for the others. */
   dir: string;
   /** A message of the built extension in this language, `$1`.. filled in. */
   text: (key: string, ...substitutions: (string | number)[]) => string;
@@ -94,7 +94,7 @@ interface CaptureTarget {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
-const SCREENSHOTS_DIR = path.join(ROOT, 'screenshots');
+const ASSETS_DIR = path.join(ROOT, 'assets');
 const PROMO_TEMPLATE = path.join(__dirname, 'promo-template.html');
 const TAB_BAR_TEMPLATE = path.join(__dirname, 'tab-bar-template.html');
 const ICON_PATH = path.join(ROOT, 'public', 'img', 'logo-128.png');
@@ -235,7 +235,7 @@ function builtMessage(
 function captureTarget(locale: ListingLocale): CaptureTarget {
   return {
     locale,
-    dir: locale === DEFAULT_LISTING_LOCALE ? SCREENSHOTS_DIR : path.join(SCREENSHOTS_DIR, locale),
+    dir: locale === DEFAULT_LISTING_LOCALE ? ASSETS_DIR : path.join(ASSETS_DIR, locale),
     text: (key, ...substitutions) => builtMessage(locale, key, substitutions),
   };
 }
@@ -285,7 +285,7 @@ class Preparation {
   private readonly locales = requestedLocales();
 
   constructor() {
-    mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+    mkdirSync(ASSETS_DIR, { recursive: true });
   }
 
   /* Main runner */
@@ -307,7 +307,7 @@ class Preparation {
     this.report();
   }
 
-  /** The whole pipeline, as it ran before the extension was translated: English, `screenshots/`. */
+  /** The whole pipeline, as it ran before the extension was translated: English, `assets/`. */
   private async runEnglish(): Promise<void> {
     const target = captureTarget(DEFAULT_LISTING_LOCALE);
 
@@ -335,7 +335,7 @@ class Preparation {
       await Preparation.delay(3000);
       this.context?.pages()[0]?.bringToFront();
       await Preparation.delay(1000);
-      this.tryMacCapture(path.join(SCREENSHOTS_DIR, 'after-sort-native.png'), 'after-sort-native');
+      this.tryMacCapture(path.join(ASSETS_DIR, 'after-sort-native.png'), 'after-sort-native');
     }
 
     // Stop video BEFORE rendering HTML mockups
@@ -348,11 +348,11 @@ class Preparation {
     await this.generatePromoImages();
     await this.context?.close();
 
-    // Step 8: demo.gif for README.md and docs/store_listing.md
+    // Step 8: demo.gif for README.md and REGISTRATION.md
     this.generateDemoGif(ffmpeg !== null);
   }
 
-  /** Steps 3-4 in a browser whose UI language is `locale`, into `screenshots/<locale>/`. */
+  /** Steps 3-4 in a browser whose UI language is `locale`, into `assets/<locale>/`. */
   private async captureLocale(locale: ListingLocale): Promise<void> {
     Preparation.step(`Store screenshots in ${locale}`);
     const target = captureTarget(locale);
@@ -834,7 +834,7 @@ class Preparation {
     console.log(`  ${beforeTabs.length} tabs open`);
 
     const nativeBefore = this.tryMacCapture(
-      path.join(SCREENSHOTS_DIR, 'before-sort-native.png'),
+      path.join(ASSETS_DIR, 'before-sort-native.png'),
       'before-sort-native',
     );
     if (nativeBefore) {
@@ -916,7 +916,7 @@ class Preparation {
           'ultrafast',
           '-crf',
           '23',
-          path.join(SCREENSHOTS_DIR, 'demo.mp4'),
+          path.join(ASSETS_DIR, 'demo.mp4'),
         ],
         { stdio: ['pipe', 'ignore', 'ignore'] },
       );
@@ -938,7 +938,7 @@ class Preparation {
       proc.on('close', resolve);
       setTimeout(resolve, 5000);
     });
-    console.log('  Video saved: screenshots/demo.mp4');
+    console.log('  Video saved: assets/demo.mp4');
   }
 
   private async sortAndGroupTabs(): Promise<TabInfo[]> {
@@ -1065,8 +1065,8 @@ class Preparation {
       'After - Sorted and grouped by domain',
     );
 
-    const beforePath = path.join(SCREENSHOTS_DIR, 'before-sort.html');
-    const afterPath = path.join(SCREENSHOTS_DIR, 'after-sort.html');
+    const beforePath = path.join(ASSETS_DIR, 'before-sort.html');
+    const afterPath = path.join(ASSETS_DIR, 'after-sort.html');
     writeFileSync(beforePath, beforeHtml);
     writeFileSync(afterPath, afterHtml);
 
@@ -1079,18 +1079,18 @@ class Preparation {
     await page.goto(`file://${beforePath}`);
     await page.waitForTimeout(1000);
     await page.screenshot({
-      path: path.join(SCREENSHOTS_DIR, 'before-sort.png'),
+      path: path.join(ASSETS_DIR, 'before-sort.png'),
       clip: { x: 0, y: 0, width: 1280, height: 800 },
     });
-    console.log('  Saved: screenshots/before-sort.png');
+    console.log('  Saved: assets/before-sort.png');
 
     await page.goto(`file://${afterPath}`);
     await page.waitForTimeout(1000);
     await page.screenshot({
-      path: path.join(SCREENSHOTS_DIR, 'after-sort.png'),
+      path: path.join(ASSETS_DIR, 'after-sort.png'),
       clip: { x: 0, y: 0, width: 1280, height: 800 },
     });
-    console.log('  Saved: screenshots/after-sort.png');
+    console.log('  Saved: assets/after-sort.png');
   }
 
   private generateDemoGif(recorded: boolean): void {
@@ -1104,14 +1104,14 @@ class Preparation {
       this.skip('8/8  Demo GIF', 'no new recording (RECORD_VIDEO=1 to make one)');
       return;
     }
-    const video = path.join(SCREENSHOTS_DIR, 'demo.mp4');
-    const gif = path.join(SCREENSHOTS_DIR, 'demo.gif');
+    const video = path.join(ASSETS_DIR, 'demo.mp4');
+    const gif = path.join(ASSETS_DIR, 'demo.gif');
     if (!commandExists('ffmpeg')) {
       this.skip('8/8  Demo GIF', 'ffmpeg is not installed');
       return;
     }
     if (!existsSync(video)) {
-      this.skip('8/8  Demo GIF', 'screenshots/demo.mp4 does not exist');
+      this.skip('8/8  Demo GIF', 'assets/demo.mp4 does not exist');
       return;
     }
     try {
@@ -1119,7 +1119,7 @@ class Preparation {
       const filter =
         'fps=10,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5';
       execSync(`ffmpeg -y -v error -i "${video}" -vf "${filter}" "${gif}"`, { timeout: 60000 });
-      console.log('  Saved: screenshots/demo.gif');
+      console.log('  Saved: assets/demo.gif');
     } catch (err) {
       this.skip('8/8  Demo GIF', `ffmpeg failed: ${Preparation.errorMessage(err)}`);
     }
@@ -1151,14 +1151,14 @@ class Preparation {
         .replace('{{DESC_SIZE}}', String(descSize))
         .replace('{{ICON_PATH}}', `file://${ICON_PATH}`);
 
-      const htmlPath = path.join(SCREENSHOTS_DIR, `${name}.html`);
+      const htmlPath = path.join(ASSETS_DIR, `${name}.html`);
       writeFileSync(htmlPath, html);
 
       await page.setViewportSize({ width, height });
       await page.goto(`file://${htmlPath}`);
       await page.waitForTimeout(500);
 
-      const filepath = path.join(SCREENSHOTS_DIR, `${name}.png`);
+      const filepath = path.join(ASSETS_DIR, `${name}.png`);
       await page.screenshot({
         path: filepath,
         clip: { x: 0, y: 0, width, height },

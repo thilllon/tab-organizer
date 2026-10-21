@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg">
-    <img src="screenshots/promo-marquee-1400x560.png" alt="Tab Organizer: one-click tab sorting and grouping for Chrome" width="100%" />
+    <img src="assets/promo-marquee-1400x560.png" alt="Tab Organizer: one-click tab sorting and grouping for Chrome" width="100%" />
   </a>
 </p>
 
@@ -30,7 +30,7 @@
 Pin the icon, click it, and you're done. Every tab in the window is sorted and grouped by site:
 
 <p align="center">
-  <img src="screenshots/demo.gif" alt="Demo: one click sorts and groups all open tabs" width="800" />
+  <img src="assets/demo.gif" alt="Demo: one click sorts and groups all open tabs" width="800" />
 </p>
 
 <table>
@@ -39,8 +39,8 @@ Pin the icon, click it, and you're done. Every tab in the window is sorted and g
     <th width="50%">After</th>
   </tr>
   <tr>
-    <td><img src="screenshots/before-sort.png" alt="Before: tabs in random order" /></td>
-    <td><img src="screenshots/after-sort.png" alt="After: tabs sorted and grouped by domain" /></td>
+    <td><img src="assets/before-sort.png" alt="Before: tabs in random order" /></td>
+    <td><img src="assets/after-sort.png" alt="After: tabs sorted and grouped by domain" /></td>
   </tr>
 </table>
 
@@ -67,7 +67,7 @@ Everything that is not the icon click lives on one page (`app.html`), opened onc
 3. **`chrome://extensions` → Details → Extension options**.
 
 <p align="center">
-  <img src="screenshots/dashboard-sessions.png" alt="The Tab Organizer app page" width="640" />
+  <img src="assets/dashboard-sessions.png" alt="The Tab Organizer app page" width="640" />
 </p>
 
 The left column is what you have; the rest of the page is whatever you picked. Every view has its own address, so Back works and a session can be bookmarked:
@@ -95,7 +95,7 @@ English, Korean (한국어), Spanish (Español) and Japanese (日本語). There 
 - **No content scripts**: nothing is ever injected into a web page.
 - Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md), also on the [website](https://thilllon.github.io/tab-organizer/privacy/) in English, Korean, Spanish and Japanese.
 
-Everything shown on the store page (the complete description, every asset, the privacy answers) is kept in [`docs/store_listing.md`](docs/store_listing.md), with the summary and description of every language already in the plain text the store takes.
+Everything shown on the store page (the complete description, every asset, the privacy answers) is kept in [`REGISTRATION.md`](REGISTRATION.md), with the summary and description of every language already in the plain text the store takes.
 
 ## Development
 

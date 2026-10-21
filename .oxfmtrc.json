@@ -13,5 +13,5 @@
   "bracketSpacing": true,
   "bracketSameLine": false,
   "sortImports": {},
-  "ignorePatterns": ["dist", "package", "screenshots", "pnpm-lock.yaml", "site/.astro"]
+  "ignorePatterns": ["dist", "release", "assets", "pnpm-lock.yaml", "site/.astro"]
 }

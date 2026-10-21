@@ -1,5 +1,5 @@
 /**
- * Reads the Chrome Web Store text out of `docs/store_listing.md`.
+ * Reads the Chrome Web Store text out of `REGISTRATION.md`.
  *
  * The store's "Description" field takes plain text only, so that file keeps every description
  * already in store form inside a fenced block: `### Description` for English (the default
@@ -44,7 +44,7 @@ export const LOCALE_NAMES: Record<ListingLocale, string> = {
 const FENCE = '```';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const LISTING_SOURCE = path.resolve(__dirname, '..', 'docs', 'store_listing.md');
+export const LISTING_SOURCE = path.resolve(__dirname, '..', 'REGISTRATION.md');
 export const LOCALES_SOURCE = path.resolve(__dirname, '..', 'public', '_locales');
 
 export function isListingLocale(code: string): code is ListingLocale {
