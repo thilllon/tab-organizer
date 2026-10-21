@@ -1605,11 +1605,11 @@
   },
   "storageDeleteUnprotected": {
     "message": "Eliminar instantáneas",
-    "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
+    "description": "Small button under the storage meter that deletes every automatic snapshot except the recovered one. Button, keep short."
   },
   "storageDeleteUnprotectedTooltip": {
     "message": "Eliminar todas las instantáneas automáticas salvo la recuperada",
-    "description": "Tooltip of the 'Delete all unprotected' button."
+    "description": "Tooltip of the 'Delete snapshots' button."
   },
   "storageDeleteSnapshotsNote": {
     "message": "Al eliminar las instantáneas se conservan tus sesiones guardadas y la instantánea recuperada.",
@@ -1629,27 +1629,27 @@
   },
   "storageDeletedUnprotectedNotice_one": {
     "message": "Se ha eliminado $1 instantánea.",
-    "description": "Toast after deleting unprotected snapshots (singular). $1 is the number deleted."
+    "description": "Toast after deleting snapshots (singular). $1 is the number deleted."
   },
   "storageDeletedUnprotectedNotice_other": {
     "message": "Se han eliminado $1 instantáneas.",
-    "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
+    "description": "Toast after deleting snapshots (plural). $1 is the number deleted."
   },
   "storageDeleteHistoryTitle": {
     "message": "¿Eliminar las instantáneas?",
-    "description": "Title of the confirm dialog for 'Delete all unprotected'."
+    "description": "Title of the confirm dialog for 'Delete snapshots'."
   },
   "storageDeleteHistoryBody_one": {
     "message": "Se eliminará $1 instantánea de este dispositivo. Las sesiones guardadas y la instantánea recuperada se conservan. No se puede deshacer.",
-    "description": "Body of the confirm dialog for deleting unprotected snapshots (singular). $1 is the number of snapshots."
+    "description": "Body of the confirm dialog for deleting snapshots (singular). $1 is the number of snapshots."
   },
   "storageDeleteHistoryBody_other": {
     "message": "Se eliminarán $1 instantáneas de este dispositivo. Las sesiones guardadas y la instantánea recuperada se conservan. No se puede deshacer.",
-    "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
+    "description": "Body of the confirm dialog for deleting snapshots (plural). $1 is the number of snapshots."
   },
   "storageDeleteHistoryConfirm": {
     "message": "Eliminar instantáneas",
-    "description": "Destructive confirm button in the 'Delete unprotected snapshots?' dialog. Button, keep short."
+    "description": "Destructive confirm button in the 'Delete snapshots?' dialog. Button, keep short."
   },
   "storageDeleteAllTitle": {
     "message": "¿Eliminar todos los datos de sesiones?",

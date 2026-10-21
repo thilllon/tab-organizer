@@ -1481,11 +1481,11 @@
   },
   "storageDeleteUnprotected": {
     "message": "스냅샷 삭제",
-    "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
+    "description": "Small button under the storage meter that deletes every automatic snapshot except the recovered one. Button, keep short."
   },
   "storageDeleteUnprotectedTooltip": {
     "message": "복구된 스냅샷을 뺀 자동 스냅샷을 모두 삭제",
-    "description": "Tooltip of the 'Delete all unprotected' button."
+    "description": "Tooltip of the 'Delete snapshots' button."
   },
   "storageDeleteSnapshotsNote": {
     "message": "스냅샷을 삭제해도 저장한 세션과 복구된 스냅샷은 남습니다.",
@@ -1505,19 +1505,19 @@
   },
   "storageDeletedUnprotectedNotice_other": {
     "message": "스냅샷 $1개를 삭제했습니다.",
-    "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
+    "description": "Toast after deleting snapshots (plural). $1 is the number deleted."
   },
   "storageDeleteHistoryTitle": {
     "message": "스냅샷을 삭제할까요?",
-    "description": "Title of the confirm dialog for 'Delete all unprotected'."
+    "description": "Title of the confirm dialog for 'Delete snapshots'."
   },
   "storageDeleteHistoryBody_other": {
     "message": "스냅샷 $1개가 이 기기에서 삭제됩니다. 저장한 세션과 복구된 스냅샷은 유지됩니다. 되돌릴 수 없습니다.",
-    "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
+    "description": "Body of the confirm dialog for deleting snapshots (plural). $1 is the number of snapshots."
   },
   "storageDeleteHistoryConfirm": {
     "message": "스냅샷 삭제",
-    "description": "Destructive confirm button in the 'Delete unprotected snapshots?' dialog. Button, keep short."
+    "description": "Destructive confirm button in the 'Delete snapshots?' dialog. Button, keep short."
   },
   "storageDeleteAllTitle": {
     "message": "모든 세션 데이터를 삭제할까요?",

@@ -1489,11 +1489,11 @@
   },
   "storageDeleteUnprotected": {
     "message": "スナップショットを削除",
-    "description": "Small button under the storage meter that deletes every automatic snapshot that is not protected. Button, keep short."
+    "description": "Small button under the storage meter that deletes every automatic snapshot except the recovered one. Button, keep short."
   },
   "storageDeleteUnprotectedTooltip": {
     "message": "復旧したスナップショット以外の自動スナップショットをすべて削除",
-    "description": "Tooltip of the 'Delete all unprotected' button."
+    "description": "Tooltip of the 'Delete snapshots' button."
   },
   "storageDeleteSnapshotsNote": {
     "message": "スナップショットを削除しても、保存したセッションと復旧したスナップショットは残ります。",
@@ -1513,19 +1513,19 @@
   },
   "storageDeletedUnprotectedNotice_other": {
     "message": "スナップショットを$1件削除しました。",
-    "description": "Toast after deleting unprotected snapshots (plural). $1 is the number deleted."
+    "description": "Toast after deleting snapshots (plural). $1 is the number deleted."
   },
   "storageDeleteHistoryTitle": {
     "message": "スナップショットを削除しますか？",
-    "description": "Title of the confirm dialog for 'Delete all unprotected'."
+    "description": "Title of the confirm dialog for 'Delete snapshots'."
   },
   "storageDeleteHistoryBody_other": {
     "message": "$1件のスナップショットをこの端末から削除します。保存したセッションと復旧したスナップショットは残ります。この操作は元に戻せません。",
-    "description": "Body of the confirm dialog for deleting unprotected snapshots (plural). $1 is the number of snapshots."
+    "description": "Body of the confirm dialog for deleting snapshots (plural). $1 is the number of snapshots."
   },
   "storageDeleteHistoryConfirm": {
     "message": "スナップショットを削除",
-    "description": "Destructive confirm button in the 'Delete unprotected snapshots?' dialog. Button, keep short."
+    "description": "Destructive confirm button in the 'Delete snapshots?' dialog. Button, keep short."
   },
   "storageDeleteAllTitle": {
     "message": "セッションデータをすべて削除しますか？",
