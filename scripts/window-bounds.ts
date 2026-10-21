@@ -2,8 +2,7 @@
  * Where the demo browser's window is on a Mac's screen, and its window id for `screencapture -l`.
  *
  * macOS only exposes its window list through CoreGraphics. `osascript -l JavaScript` (JXA) ships
- * with the system and can call it, so this needs nothing installed -- it replaced a Python script
- * that pulled in pyobjc for the same one call.
+ * with the system and can call it, so this needs nothing installed.
  */
 
 import { execFileSync } from 'node:child_process';
