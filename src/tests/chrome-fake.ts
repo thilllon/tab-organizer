@@ -1229,3 +1229,34 @@ function localeMessages(language: string): Record<string, LocaleMessage> {
   }
   return {};
 }
+
+/**
+ * A packaged `_locales/<lang>/messages.json`, parsed, the way `readPackagedCatalog()` in
+ * src/lib/i18n.ts reads it in the extension: the reader tests pass to `applyUiLanguage()`.
+ */
+export async function readLocaleFile(locale: string): Promise<unknown> {
+  const file = new URL(`../../public/_locales/${locale}/messages.json`, import.meta.url);
+  const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
+  return parsed;
+}
+
+/**
+ * A `fetch` that serves the extension's own `_locales` files at the fake's
+ * `chrome.runtime.getURL()` addresses, and 404 for anything else: install it with
+ * `vi.stubGlobal('fetch', fetchPackagedFile)` where code under test (the service worker) uses the
+ * default reader. Node's `fetch` cannot read `chrome-extension://` URLs.
+ */
+export async function fetchPackagedFile(input: string | URL | Request): Promise<Response> {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  const match = /^chrome-extension:\/\/fakeextid\/_locales\/([A-Za-z_]+)\/messages\.json$/.exec(
+    url,
+  );
+  if (match === null) {
+    return new Response('not found', { status: 404 });
+  }
+  try {
+    return new Response(JSON.stringify(await readLocaleFile(match[1])), { status: 200 });
+  } catch {
+    return new Response('not found', { status: 404 });
+  }
+}

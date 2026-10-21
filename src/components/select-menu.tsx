@@ -9,11 +9,15 @@ import {
 export interface SelectOption {
   value: string;
   label: string;
+  /** The label's language when it differs from the page's (a language's own name), for screen readers. */
+  lang?: string;
 }
 
 interface SelectMenuProps {
   id?: string;
   title?: string;
+  /** The accessible name, for a menu that has no `<label>` of its own. */
+  label?: string;
   value: string;
   options: readonly SelectOption[];
   disabled?: boolean;
@@ -27,6 +31,7 @@ interface SelectMenuProps {
 export function SelectMenu({
   id,
   title,
+  label,
   value,
   options,
   disabled,
@@ -34,12 +39,12 @@ export function SelectMenu({
 }: SelectMenuProps) {
   return (
     <Select value={value} disabled={disabled} onValueChange={onValueChange}>
-      <SelectTrigger id={id} title={title} size="sm">
+      <SelectTrigger id={id} title={title} aria-label={label} size="sm">
         <SelectValue />
       </SelectTrigger>
       <SelectContent position="popper" align="start">
         {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
+          <SelectItem key={option.value} value={option.value} lang={option.lang}>
             {option.label}
           </SelectItem>
         ))}

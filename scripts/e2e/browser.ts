@@ -15,6 +15,8 @@ import { existsSync } from 'node:fs';
 
 import { type BrowserContext, chromium, type Worker } from '@playwright/test';
 
+import { SUPPORTED_LOCALES, type SupportedLocale } from '../../src/constants';
+
 const DEFAULT_CHROMIUM = '/opt/pw-browsers/chromium';
 
 /**
@@ -65,8 +67,11 @@ interface LaunchOptions {
   locale?: string;
 }
 
-/** POSIX locale for LANG/LANGUAGE, which Chromium on Linux reads before `--lang`. */
-const POSIX_LOCALES: Record<string, string> = {
+/**
+ * POSIX locale for LANG/LANGUAGE, which Chromium on Linux reads before `--lang`. One per shipped
+ * language (`SUPPORTED_LOCALES` in src/constants.ts), so a new language must add its own here.
+ */
+const POSIX_LOCALES: Record<SupportedLocale, string> = {
   en: 'en_US',
   ko: 'ko_KR',
   es: 'es_ES',
@@ -83,10 +88,15 @@ function languageArgs(locale: string): string[] {
   return [`--lang=${locale}`];
 }
 
+function posixLocale(locale: string): string {
+  const shipped = SUPPORTED_LOCALES.find((code) => code === locale);
+  return shipped === undefined ? locale : POSIX_LOCALES[shipped];
+}
+
 /** Sets LANGUAGE/LANG for `locale`; Playwright hands the browser this process's environment. */
 function setLanguageEnv(locale: string): void {
   process.env.LANGUAGE = locale;
-  process.env.LANG = `${POSIX_LOCALES[locale] ?? locale}.UTF-8`;
+  process.env.LANG = `${posixLocale(locale)}.UTF-8`;
 }
 
 /** The Chrome for Testing bundle Playwright launches on macOS; its defaults domain is its own. */

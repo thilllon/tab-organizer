@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 import packageJson from './package.json';
-import { DEFAULT_SHORTCUTS } from './src/constants';
+import { DEFAULT_LOCALE, DEFAULT_SHORTCUTS } from './src/constants';
 
 interface PackageJson {
   name?: string;
@@ -23,7 +23,7 @@ const manifest = defineManifest((env) => {
   return {
     // The user-visible text comes from public/_locales/<lang>/messages.json (English is the
     // default and the fallback); src/tests/i18n.test.ts keeps every language complete.
-    default_locale: 'en',
+    default_locale: DEFAULT_LOCALE,
     name: isDev ? '__MSG_extName__ Dev' : '__MSG_extName__',
     description: '__MSG_extDescription__',
     version: pkg.version ?? '0.0.0',

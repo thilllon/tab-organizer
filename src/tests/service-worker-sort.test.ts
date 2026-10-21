@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getChromeFake } from './chrome-fake';
+import { formatMessage, toCatalog } from '@/lib/i18n';
+import { UI_LANGUAGE_KEY } from '@/lib/ui-language';
+
+import { fetchPackagedFile, getChromeFake, readLocaleFile } from './chrome-fake';
 
 /** Lets every pending promise chain in the worker run to its end. */
 async function settle(): Promise<void> {
@@ -63,5 +66,43 @@ describe('icon click', () => {
     getChromeFake().fire.actionClicked();
     await settle();
     expect(await strip()).toEqual(['a', 'b', 'c', 'd']);
+  });
+});
+
+describe('duplicate tabs grouped by the icon click', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('titles the group in the language chosen in Settings, waiting for it to load', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    // A worker woken by this very click: the language files arrive only after it.
+    vi.stubGlobal('fetch', async (input: string | URL | Request) => {
+      await gate;
+      return fetchPackagedFile(input);
+    });
+    const fake = getChromeFake();
+    fake.state.sync.set(UI_LANGUAGE_KEY, 'ko');
+    fake.state.sync.set('duplicateTabHandling', 'group');
+    await openTabs(['a', 'a']);
+    vi.resetModules();
+    await import('@/service-worker');
+
+    fake.fire.actionClicked();
+    await settle();
+    // Grouped, but the title waits for the language; set now it would be in Chrome's.
+    const groups = () => [...fake.state.groups.values()];
+    expect(groups()).toHaveLength(1);
+    expect(groups()[0]?.title ?? '').toBe('');
+
+    release();
+    await settle();
+    const ko = toCatalog(await readLocaleFile('ko'));
+    const entry = ko.workerDuplicatesHostGroupTitle;
+    expect(entry).toBeDefined();
+    expect(groups()[0]?.title).toBe(formatMessage(entry ?? { message: '' }, ['example.com', '2']));
   });
 });

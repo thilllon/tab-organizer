@@ -1,6 +1,6 @@
 # Privacy Policy - Tab Organizer
 
-Last Updated: October 20, 2026
+Last Updated: October 21, 2026
 
 ## Overview
 
@@ -24,7 +24,7 @@ Incognito windows, empty windows and the extension's own pages are never capture
 
 This data never leaves your device: it is not synced through your Google account, not uploaded to any server, and not accessible to web pages. The only way session data leaves the extension is when you choose to export it: Export writes a file or copies text to your clipboard, on your explicit action only.
 
-Your sorting preferences (the grouping mode and how duplicate tabs are handled) are stored with Chrome's sync storage, together with the version number recorded when the extension was installed or updated. If you have Chrome sync enabled, those preferences, and nothing else, may sync across devices signed into the same Chrome account. Session data and session settings are never placed in sync storage.
+Your sorting preferences (the grouping mode and how duplicate tabs are handled) and the language you chose for the extension in Settings (if any) are stored with Chrome's sync storage, together with the version number recorded when the extension was installed or updated. If you have Chrome sync enabled, those preferences, and nothing else, may sync across devices signed into the same Chrome account. Session data and session settings are never placed in sync storage.
 
 ### Automatic snapshots
 
@@ -45,7 +45,7 @@ This extension requires the following permissions:
 
 - **tabs**: Used to read tab URLs and titles for sorting, for saving sessions and for the Tab Organizer page's list of open windows, and to create tabs when restoring a session.
 - **tabGroups**: Used to sort and organize tab groups within the current window and to recreate tab groups when restoring a session.
-- **storage**: Used to save your sorting preferences using Chrome's sync storage, and to store saved sessions, snapshots and session settings in local storage on this device only.
+- **storage**: Used to save your sorting preferences and language choice using Chrome's sync storage, and to store saved sessions, snapshots and session settings in local storage on this device only.
 - **contextMenus**: Used to add "Assemble!" and "Save all windows as session" to the extension icon's right-click menu. No menu items are added to web pages.
 - **unlimitedStorage**: Allows large saved sessions to exceed Chrome's default local storage quota. It does not change where data is stored: everything stays on your device.
 - **favicon**: Used to display site icons next to tabs in the Tab Organizer page from Chrome's local favicon cache. No icons are fetched from the network and no icon data is stored by the extension.

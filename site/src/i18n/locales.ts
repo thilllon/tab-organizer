@@ -1,17 +1,22 @@
 import { getAbsoluteLocaleUrl, getRelativeLocaleUrl } from 'astro:i18n';
 
-/** Must match `i18n.locales` in astro.config.ts. English is the default and has no prefix. */
-export const LOCALES = ['en', 'ko', 'es', 'ja'] as const;
-export type Locale = (typeof LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = 'en';
+import {
+  DEFAULT_LOCALE as EXTENSION_DEFAULT_LOCALE,
+  LOCALE_ENDONYMS,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+} from '../../../src/constants';
+
+/**
+ * The extension's languages (`SUPPORTED_LOCALES` in src/constants.ts), which astro.config.ts
+ * also reads for `i18n.locales`. English is the default and has no prefix.
+ */
+export const LOCALES = SUPPORTED_LOCALES;
+export type Locale = SupportedLocale;
+export const DEFAULT_LOCALE: Locale = EXTENSION_DEFAULT_LOCALE;
 
 /** Each language's name in that language, as the language switch shows it. */
-export const LOCALE_NAMES: Record<Locale, string> = {
-  en: 'English',
-  ko: '한국어',
-  es: 'Español',
-  ja: '日本語',
-};
+export const LOCALE_NAMES: Record<Locale, string> = LOCALE_ENDONYMS;
 
 /** `og:locale` values. */
 export const OG_LOCALES: Record<Locale, string> = {

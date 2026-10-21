@@ -87,6 +87,18 @@
     "message": "Los cambios se guardan al hacerlos.",
     "description": "Line under the Settings dialog title: there is no Save button, every change is stored at once."
   },
+  "settingsLanguage": {
+    "message": "Idioma",
+    "description": "Accessible name of the language dropdown in the Settings dialog's title row (next to the close button)."
+  },
+  "settingsLanguageAuto": {
+    "message": "Automático (idioma de Chrome)",
+    "description": "First choice of the language dropdown in Settings: the extension follows the language Chrome is displayed in. The other choices are the languages' own names and are not translated."
+  },
+  "settingsLanguageTitle": {
+    "message": "Idioma de esta página y del menú del icono al hacer clic derecho. «Automático» sigue el idioma de Chrome.",
+    "description": "Tooltip of the language dropdown in Settings. The extension's name and the keyboard shortcut descriptions at chrome://extensions always follow Chrome's language, so this does not mention them."
+  },
   "settingsSaved": {
     "message": "Ajuste guardado",
     "description": "Short toast shown after any setting was stored."
@@ -94,6 +106,10 @@
   "settingsSaveFailed": {
     "message": "No se pudo guardar ese ajuste: $1",
     "description": "Error line shown when Chrome refused to store a setting. $1 is Chrome's own error message (usually English) or the word for an unknown error."
+  },
+  "settingsSaveFailedPlain": {
+    "message": "No se pudo guardar ese ajuste.",
+    "description": "Error line shown when Chrome refused to store a setting and gave no reason this page can explain in the UI language."
   },
   "settingsUnknownError": {
     "message": "desconocido",
