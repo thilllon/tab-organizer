@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  compareByUrlComponents,
   extractGroupingKey,
   findDuplicateTabs,
   isSuspended,
@@ -12,7 +11,12 @@ import {
   urlSortKey,
 } from '@/lib/sort-order';
 
-describe('compareByUrlComponents', () => {
+/** How the url sort orders two urls: their `urlSortKey`s, compared as the sorter does. */
+function compareByUrlComponents(a: URL, b: URL): number {
+  return urlSortKey(a).localeCompare(urlSortKey(b));
+}
+
+describe('url sort order', () => {
   it('sorts URLs alphabetically by hostname', () => {
     const a = new URL('https://apple.com');
     const b = new URL('https://banana.com');
@@ -668,14 +672,6 @@ describe('urlSortKey', () => {
   it('drops a leading www. and keeps path, query and fragment', () => {
     expect(urlSortKey(new URL('https://www.example.com/a?b=1#c'))).toBe('example.com/a?b=1#c');
     expect(urlSortKey(new URL('https://WWW.Example.com/'))).toBe('example.com/');
-  });
-
-  it('orders urls exactly as compareByUrlComponents does', () => {
-    const a = new URL('https://www.b.com/x');
-    const b = new URL('https://a.com/y');
-    expect(Math.sign(compareByUrlComponents(a, b))).toBe(
-      Math.sign(urlSortKey(a).localeCompare(urlSortKey(b))),
-    );
   });
 });
 

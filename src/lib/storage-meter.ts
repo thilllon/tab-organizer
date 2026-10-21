@@ -3,7 +3,7 @@ import { t, tp } from '@/lib/i18n';
 import type { SessionSummary } from '@/types';
 
 /**
- * The numbers behind the dashboard's `StorageMeter` (spec §4 "Quota errors" / §12 Phase 6).
+ * The numbers behind the dashboard's `StorageMeter`.
  *
  * `chrome.storage.local.getBytesInUse()` gives one total for everything the extension stores;
  * the split between saved sessions and automatic snapshots comes from the index's per-session
@@ -27,8 +27,8 @@ export interface StorageBreakdown {
   savedCount: number;
   snapshotCount: number;
   /**
-   * Snapshots "Delete all unprotected" would actually remove (spec §4: the quota path must offer
-   * more than "delete everything"). Zero disables that button - the meter never offers an action
+   * Snapshots "Delete all unprotected" would actually remove: the quota path must offer more
+   * than "delete everything". Zero disables that button - the meter never offers an action
    * that would free nothing.
    */
   unprotectedSnapshotCount: number;
@@ -98,7 +98,7 @@ export function storageDetailLine(breakdown: StorageBreakdown): string {
 }
 
 /**
- * The pruning hint (spec §12 Phase 6): shown only when the automatic snapshots are both over
+ * The pruning hint: shown only when the automatic snapshots are both over
  * `SNAPSHOT_HINT_MIN_BYTES` and larger than everything else put together, so it appears when
  * lowering "Keep last N snapshots" would actually free something.
  */

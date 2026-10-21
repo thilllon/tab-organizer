@@ -10,7 +10,7 @@ interface QuotaNoticeProps {
 }
 
 /**
- * What a failed write says when the failure was the storage quota (spec §4 "Quota errors"): one
+ * What a failed write says when the failure was the storage quota: one
  * sentence the user can act on, and a way straight to the meter and its "Delete all session
  * data" / snapshot-pruning controls. Used by the save, import and "Save as session" paths.
  */

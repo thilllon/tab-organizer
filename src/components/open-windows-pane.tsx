@@ -113,7 +113,7 @@ export function OpenWindowsPane({
           {t('openNoWindows')}
         </p>
       ) : (
-        // The live windows are a tree too (spec §12 Phase 6): window -> group -> tab.
+        // The live windows are a tree too: window -> group -> tab.
         <div role="tree" aria-labelledby="open-windows-heading" className="mt-3 space-y-2">
           {windows.map((window, index) => (
             <WindowTree

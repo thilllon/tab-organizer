@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { t } from '@/lib/i18n';
 import { isEditableTarget } from '@/lib/search-nav';
 
-/** Spec §7: the query is committed 100 ms after the last keystroke, not on every one. */
+/** The query is committed 100 ms after the last keystroke, not on every one. */
 const SEARCH_DEBOUNCE_MS = 100;
 
 interface SearchBarProps {
@@ -24,7 +24,7 @@ interface SearchBarProps {
 }
 
 /**
- * The dashboard's search box (spec §12 Phase 4). It owns the typed text and hands the parent only
+ * The dashboard's search box. It owns the typed text and hands the parent only
  * the debounced query, so a keystroke never re-renders the result list or rebuilds the corpus.
  *
  * Keyboard: `/` focuses it from anywhere on the page, Escape clears and leaves it, the arrows move

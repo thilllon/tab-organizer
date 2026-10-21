@@ -66,7 +66,7 @@ describe('sessionNameMatches', () => {
 
   it('never offers a session this build cannot read', () => {
     // Activating a tier-1 row restores the session; a body from a newer schema cannot be
-    // restored, so it must not be offered here either (spec §3).
+    // restored, so it must not be offered here either.
     const withFuture = [
       ...summaries,
       summary({

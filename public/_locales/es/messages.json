@@ -707,26 +707,6 @@
     "message": "Exportar como CSV",
     "description": "Downloads the session as a CSV spreadsheet file. Export menu item; keep it short (at most about 30 characters)."
   },
-  "expFormatJson": {
-    "message": "JSON",
-    "description": "Name of the JSON export format, used on its own."
-  },
-  "expFormatMarkdown": {
-    "message": "Markdown",
-    "description": "Name of the Markdown export format, used on its own."
-  },
-  "expFormatText": {
-    "message": "texto",
-    "description": "Name of the plain-text export format, used on its own (lower case in English)."
-  },
-  "expFormatHtml": {
-    "message": "marcadores HTML",
-    "description": "Name of the bookmarks HTML export format, used on its own."
-  },
-  "expFormatCsv": {
-    "message": "CSV",
-    "description": "Name of the CSV export format, used on its own."
-  },
   "expExportedJson": {
     "message": "Se ha exportado «$1» como JSON.",
     "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."

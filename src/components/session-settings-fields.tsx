@@ -234,8 +234,8 @@ export function SessionSettingsFields({
 
 /**
  * One setting per line: the label (and an optional grey hint) on the left, the control on the
- * right. The same shape as `Field` in the Settings view, so these rows line up with the sorting
- * rows above them; the label is a real `<label>` pointing at the control.
+ * right. The same shape as `SettingsField` in the Settings view, so these rows line up with the
+ * sorting rows above them; the label is a real `<label>` pointing at the control.
  */
 function SettingRow({
   label,

@@ -19,7 +19,7 @@ interface UnreadableSessionRowProps {
 }
 
 /**
- * A saved-list row for a session whose body was written by a newer Tab Organizer (spec §3): the
+ * A saved-list row for a session whose body was written by a newer Tab Organizer: the
  * body is on disk and intact, this build simply cannot migrate it, so the row says so instead of
  * pretending the session is gone.
  *

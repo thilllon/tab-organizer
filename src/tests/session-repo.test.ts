@@ -47,6 +47,15 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
+/** Protects a snapshot without the crash-recovery marker (older versions stored such pins). */
+async function protect(id: string): Promise<void> {
+  await sessionRepo.update(id, (session) => {
+    const next: Session = { ...session, protected: true };
+    delete next.autoProtected;
+    return next;
+  });
+}
+
 async function readIndex(): Promise<SessionIndex | undefined> {
   const raw: Record<string, unknown> = await chrome.storage.local.get(INDEX_KEY);
   const value = raw[INDEX_KEY];
@@ -302,7 +311,7 @@ describe('sessionRepo.put / get / listSummaries', () => {
 });
 
 describe('sessionRepo.getMany', () => {
-  it('reads every body in ONE chrome.storage.local.get (spec §4)', async () => {
+  it('reads every body in ONE chrome.storage.local.get', async () => {
     await sessionRepo.put(makeSession({ id: 'id-a', name: 'A' }));
     await sessionRepo.put(makeSession({ id: 'id-b', name: 'B' }));
     await sessionRepo.put(makeSession({ id: 'id-c', name: 'C' }));
@@ -569,7 +578,7 @@ describe('sessionRepo.remove / removeAll', () => {
     await sessionRepo.removeAll();
 
     expect(requestSpy.mock.calls[0][0]).toBe(LOCK_NAME);
-    // Bodies first, then the index + historyMeta (spec §4 delete order).
+    // Bodies first, then the index + historyMeta (delete order).
     expect(removeSpy.mock.calls[0][0]).toEqual([sessionKey('id-a')]);
     expect(removeSpy.mock.calls[1][0]).toEqual([INDEX_KEY, HISTORY_META_KEY]);
   });
@@ -641,7 +650,7 @@ describe('sessionRepo.reconcile', () => {
     await expect(sessionRepo.listSummaries()).resolves.toEqual([]);
   });
 
-  it('keeps a body from a future schema and reports it as unreadable (spec §3)', async () => {
+  it('keeps a body from a future schema and reports it as unreadable', async () => {
     // The downgrade case: a v2 store opened by this v1 build. Skipping the body here would rebuild
     // the index without it, and the user would see an empty list with their sessions still on disk.
     const fake = getChromeFake();
@@ -990,7 +999,7 @@ describe('normalizeHistoryInterval', () => {
   });
 });
 
-describe('sessionRepo history (Phase 3)', () => {
+describe('sessionRepo history', () => {
   function makeHistory(overrides: Partial<Session> = {}): Session {
     return makeSession({ kind: 'history', origin: 'alarm', name: 'Snapshot', ...overrides });
   }
@@ -1106,42 +1115,6 @@ describe('sessionRepo history (Phase 3)', () => {
     });
   });
 
-  describe('setProtected', () => {
-    it('rewrites the body and the index summary, keeping updatedAt', async () => {
-      await seed(makeHistory({ id: 'h1' }));
-      vi.setSystemTime(9_000);
-
-      await sessionRepo.setProtected('h1', true);
-
-      expect(await sessionRepo.get('h1')).toMatchObject({ protected: true, updatedAt: 5_000 });
-      expect((await sessionRepo.listSummaries())[0]).toMatchObject({ id: 'h1', protected: true });
-
-      await sessionRepo.setProtected('h1', false);
-
-      expect((await sessionRepo.get('h1'))?.protected).toBe(false);
-      expect((await sessionRepo.listSummaries())[0].protected).toBe(false);
-    });
-
-    it('rejects for an unknown id', async () => {
-      await expect(sessionRepo.setProtected('ghost', true)).rejects.toThrow(
-        'Session not found: ghost',
-      );
-    });
-
-    it("clears the crash-recovery marker in either direction (the pin becomes the user's)", async () => {
-      await seed(makeHistory({ id: 'h1' }));
-      await sessionRepo.markRecovered('h1', 'Previous session (recovered)');
-      expect((await sessionRepo.get('h1'))?.autoProtected).toBe(true);
-
-      await sessionRepo.setProtected('h1', true);
-
-      expect((await sessionRepo.get('h1'))?.autoProtected).toBeUndefined();
-      expect((await sessionRepo.listSummaries())[0].autoProtected).toBeUndefined();
-      await expect(sessionRepo.demoteAutoProtected(0)).resolves.toEqual([]);
-      expect((await sessionRepo.get('h1'))?.protected).toBe(true);
-    });
-  });
-
   describe('markRecovered', () => {
     it('sets origin recovered, protected and the name in body and index, keeping updatedAt', async () => {
       await seed(makeHistory({ id: 'h1' }));
@@ -1209,11 +1182,11 @@ describe('sessionRepo history (Phase 3)', () => {
       await expect(sessionRepo.pruneHistory(0)).resolves.toEqual(['r1']);
     });
 
-    it('never touches a user pin or an ordinary snapshot', async () => {
+    it('never touches a pin without the marker or an ordinary snapshot', async () => {
       await seedPins();
       await seed(makeHistory({ id: 'plain', createdAt: 500 }));
       await sessionRepo.put(makeSession({ id: 'saved', kind: 'saved', origin: 'manual' }));
-      await sessionRepo.setProtected('r2', true);
+      await protect('r2');
 
       await expect(sessionRepo.demoteAutoProtected(1)).resolves.toEqual(['r1']);
 

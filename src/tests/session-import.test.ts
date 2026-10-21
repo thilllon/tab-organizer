@@ -426,7 +426,7 @@ describe('parseTextOrMarkdown', () => {
 
   it('parses a pathological run of trailing punctuation in well under a second', () => {
     // URL_PATTERN's `[^\s<>"']+` is unbounded, and this parse runs synchronously in the
-    // dashboard's render path: the old quadratic trim took ~12 s on 40k of these.
+    // dashboard's render path, where a quadratic trim would take ~12 s on 40k of these.
     const text = `https://x.test/${')'.repeat(50_000)}`;
     const started = performance.now();
 

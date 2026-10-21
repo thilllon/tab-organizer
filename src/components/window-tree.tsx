@@ -36,9 +36,8 @@ interface WindowTreeProps {
 
 /**
  * One window as a `role="treeitem"` holding a `role="group"` of tab (and tab-group) rows. The
- * host renders it inside a `role="tree"` (the open-windows pane, a history row) or a
- * `role="group"` (an expanded saved session), so the whole session → window → group → tab
- * structure is one ARIA tree.
+ * host renders it inside a `role="tree"` (the open-windows pane, a saved session's or a
+ * snapshot's view), so the whole window → group → tab structure is one ARIA tree.
  *
  * Large windows are paged (`tab-paging.ts`): a 10,000-tab window mounts 200 rows and grows a page
  * per click, and every mounted row carries `content-visibility: auto` (see `index.css`) so the

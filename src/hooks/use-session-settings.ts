@@ -19,7 +19,7 @@ interface SessionSettingsState {
 }
 
 /**
- * `sessionSettings` for an extension page (spec §12 Phase 3). The Settings dialog uses this; another
+ * `sessionSettings` for an extension page. The Settings dialog uses this; another
  * app tab can write while it is open, so the hook re-reads on every `chrome.storage.onChanged`
  * for the settings key. The service worker
  * watches the same key and re-arms the history alarm itself - this hook must never touch

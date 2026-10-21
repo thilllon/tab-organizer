@@ -15,7 +15,7 @@ export type MessageKey = keyof typeof enMessages;
 
 type PluralBaseOf<K> = K extends `${infer Base}_other` ? Base : never;
 /** A key family `tp()` can count with: every `<base>_other` in the English messages. */
-export type PluralBase = PluralBaseOf<MessageKey>;
+type PluralBase = PluralBaseOf<MessageKey>;
 
 type Substitution = string | number;
 

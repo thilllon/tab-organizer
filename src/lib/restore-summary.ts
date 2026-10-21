@@ -3,7 +3,7 @@ import { formatNumber, joinFacts, t, tp } from '@/lib/i18n';
 import type { RestoreResult, RestoreTarget } from '@/lib/session-restore';
 import type { Session } from '@/types';
 
-/** Spec §6: confirm (with the lazy checkbox) when a restore would open more than 100 tabs. */
+/** Confirm (with the lazy checkbox) when a restore would open more than 100 tabs. */
 export const RESTORE_CONFIRM_THRESHOLD = 100;
 
 export function countTabs(session: Session): number {
@@ -16,7 +16,7 @@ export function needsRestoreConfirm(session: Session): boolean {
 
 /**
  * One sentence for the confirm dialog: a `newWindows` restore opens windows, a `window` restore
- * appends to the one the dashboard is in and opens none (spec §6 "restore into current window").
+ * appends to the one the dashboard is in and opens none.
  */
 export function formatRestoreDestination(session: Session, target: RestoreTarget): string {
   if (target.kind === 'window') {
@@ -106,7 +106,7 @@ export function formatRestoreSummary(
     parts.push(tp('restoreSummaryDiscarded', result.discarded));
   }
   if (options.cancelled === true) {
-    // Cancel stops the restore; it never undoes it (spec §14: "already-created tabs are kept").
+    // Cancel stops the restore; it never undoes it: already-created tabs are kept.
     // Say so, or the windows left behind look like a half-failed restore to clean up by hand.
     if (result.restored > 0) {
       parts.push(t('restoreSummaryKept'));

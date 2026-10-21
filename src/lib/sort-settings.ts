@@ -188,22 +188,11 @@ export function toStoredSortSettings(draft: SortSettings): SortSettings {
 }
 
 /**
- * The settings only `sortByCustom()` reads (`src/lib/sort-order.ts`, called from `sortTabs()` in
- * `src/lib/sort-tabs.ts`): `sortByTitleOrUrl()` is not even passed them, so under "By URL" /
- * "By title" they change nothing. `groupingMode` belongs here too: it only decides which tabs
- * `sortByCustom()` keeps together (`extractGroupingKey`), and no other code reads it.
- */
-type CustomOnlySetting = 'groupingMode' | 'groupFrom' | 'preserveOrderWithinGroups';
-
-export const CUSTOM_ONLY_SETTINGS: readonly CustomOnlySetting[] = [
-  'groupingMode',
-  'groupFrom',
-  'preserveOrderWithinGroups',
-];
-
-/**
- * Whether the Settings view shows the Custom-only settings (indented under "Sort by"). They are
- * hidden rather than disabled under the other modes; their stored values are kept either way.
+ * Whether the Settings view shows the Custom-only settings (indented under "Sort by"):
+ * `groupingMode`, `groupFrom` and `preserveOrderWithinGroups`. Only `sortByCustom()` reads them -
+ * `sortByTitleOrUrl()` is not even passed them, so under "By URL" / "By title" they change
+ * nothing. They are hidden rather than disabled under the other modes; their stored values are
+ * kept either way.
  */
 export function showsCustomSortOptions(sortBy: SortBy): boolean {
   return sortBy === 'custom';

@@ -387,7 +387,7 @@ describe('listener wiring', () => {
   });
 
   it('onInstalled clears a badge left behind by a previous worker', async () => {
-    // Spec §2: the badge is browser state, the 2 s clear timer is worker state. An update starts
+    // The badge is browser state, the 2 s clear timer is worker state. An update starts
     // a new worker, so nothing else would ever clear a ✓ the old one left on the icon.
     vi.resetModules();
     await import('@/service-worker');
@@ -493,10 +493,9 @@ describe('listener wiring', () => {
 });
 
 /**
- * Spec §12 Phase 1 / §14: "plain click still only sorts". The whole feature was added on the
- * promise that the icon click keeps doing exactly what it always did, so the invariant gets a
- * test of its own - against `./index`, the module Chrome actually loads, with both
- * `action.onClicked` listeners registered (the sorter's and the snapshot one this file adds).
+ * The icon click only sorts: no tab or window is opened by it. Tested against
+ * `@/service-worker`, the module Chrome actually loads, with both `action.onClicked` listeners
+ * registered (the sorter's and the snapshot one).
  */
 describe('the icon click', () => {
   it('sorts the focused window and opens nothing', async () => {
@@ -536,7 +535,7 @@ describe('the icon click', () => {
   });
 });
 
-describe('history wiring (spec §5)', () => {
+describe('history wiring', () => {
   it(`the '${HISTORY_ALARM}' alarm takes an origin 'alarm' history snapshot`, async () => {
     await loadWorker();
     const fake = getChromeFake();

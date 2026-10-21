@@ -133,7 +133,7 @@ describe('recoveredSnapshot', () => {
   });
 });
 
-describe('unreadable sessions (spec §3)', () => {
+describe('unreadable sessions', () => {
   it('explains that the fix is an update, not a repair', () => {
     expect(unreadableSessionMessage()).toBe(
       'Saved by a newer version of Tab Organizer. Update to open it.',

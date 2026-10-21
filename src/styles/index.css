@@ -45,11 +45,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   /*
-   * `card` and `popover` were missing here until v7.3.2, while `dropdown-menu.tsx` styles itself
-   * `bg-popover text-popover-foreground`. Tailwind only emits a utility for a token it knows, so
-   * `.bg-popover` was never generated at all and every "⋯" menu in the app rendered with a
-   * transparent background. Adding the mapping is the whole fix - the component is stock shadcn
-   * and stays untouched.
+   * `dropdown-menu.tsx` styles itself `bg-popover text-popover-foreground`, and Tailwind only
+   * emits a utility for a token mapped here, so `card` and `popover` must stay mapped (the
+   * component is stock shadcn and stays untouched).
    */
   --color-card: var(--card);
   --color-popover: var(--popover);
@@ -196,7 +194,7 @@ select:not(:disabled),
 }
 
 /*
- * Large sessions (spec §12 Phase 6). A session can hold thousands of tabs, and even with the
+ * Large sessions. A session can hold thousands of tabs, and even with the
  * row paging in `tab-paging.ts` a few hundred rows are mounted at once. `content-visibility:
  * auto` lets Chrome skip layout, paint and style work for the ones scrolled out of view, while
  * keeping them in the DOM - so find-in-page, the tab order and the accessibility tree still see

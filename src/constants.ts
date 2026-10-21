@@ -1,6 +1,6 @@
 /**
- * Names and default keys that more than one place has to agree on: the manifest
- * (`vite.config.ts`), the icon's right-click menu and the Settings page.
+ * Default keys the manifest (`vite.config.ts`) and the Settings view (`src/lib/command-rows.ts`)
+ * both read.
  *
  * `vite.config.ts` imports this file while building the manifest, in Node, so it must stay plain
  * data: no `chrome.*`, no imports from the rest of `src/`.
@@ -17,7 +17,3 @@ export const DEFAULT_SHORTCUTS = {
   _execute_action: 'Alt+Shift+S',
   'assemble-tabs': 'Alt+Shift+A',
 } as const;
-
-// The action's name ("Assemble!") and its bracketed explanation are user text, so they live in
-// public/_locales as `assembleName` and `cmdAssembleTabs` (read with `t()` from src/lib/i18n.ts);
-// this file cannot hold them because it must stay free of `chrome.*`.

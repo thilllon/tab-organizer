@@ -7,7 +7,7 @@ import { App } from '@/pages/app';
 
 import '@/styles/index.css';
 
-// The stylesheet's `.dark` palette follows the OS; nothing here stores a theme (spec §12 Phase 6).
+// The stylesheet's `.dark` palette follows the OS; nothing here stores a theme.
 followSystemTheme();
 
 // app.html is static and says `lang="en"`; the page is in the browser's UI language, so screen

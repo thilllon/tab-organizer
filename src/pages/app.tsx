@@ -125,11 +125,11 @@ export function App() {
   );
   const [error, setError] = useState<string | undefined>(undefined);
   // A write that failed on the storage quota: one fixed sentence plus a way to the meter, rather
-  // than Chrome's "Resource::kQuotaBytes quota exceeded" in the error banner (spec §4).
+  // than Chrome's "Resource::kQuotaBytes quota exceeded" in the error banner.
   const [quotaFull, setQuotaFull] = useState(false);
   const [pending, setPending] = useState<PendingRestore | undefined>(undefined);
 
-  // Search (spec §7). `query` is the debounced value SearchBar commits; the typed text never
+  // Search. `query` is the debounced value SearchBar commits; the typed text never
   // reaches this component, so a keystroke re-renders nothing but the box itself. `searchEpoch`
   // remounts (and so clears) the box when a sidebar click leaves the search view.
   const query = page.view === 'search' ? page.query : '';
@@ -221,7 +221,7 @@ export function App() {
     }
   };
 
-  /** The whole store as one `ExportBundle` (spec §8), read body by body through `sessionRepo`. */
+  /** The whole store as one `ExportBundle`, read body by body through `sessionRepo`. */
   const exportAll = async () => {
     setError(undefined);
     setExporting(true);
@@ -317,8 +317,8 @@ export function App() {
   );
   const items = useMemo(() => flattenSearchItems(groups), [groups]);
 
-  // Tier 2 is lazy (spec §7): bodies the idle pre-warm did not reach are read on the first query
-  // that needs them, and history bodies only once "Also search auto-saved" is chosen.
+  // Tier 2 is lazy: bodies the idle pre-warm did not reach are read on the first query that
+  // needs them, and snapshot bodies only once "Also search snapshots" is chosen.
   useEffect(() => {
     if (!searching) {
       return;

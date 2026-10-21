@@ -6,7 +6,7 @@ import { sessionRepo } from '@/lib/session-repo';
 import type { Session, SessionId, SessionOrigin, SessionSettings, SessionSummary } from '@/types';
 
 /**
- * Automatic history snapshots & crash recovery (spec §5, §12 Phase 3). Pure orchestration over
+ * Automatic history snapshots & crash recovery. Pure orchestration over
  * `captureSession()` and `sessionRepo`, plus thin `chrome.alarms` wrappers. Nothing here registers
  * a listener: the service worker (`src/service-worker.ts`) wires `alarms.onAlarm`,
  * `runtime.onStartup` and `storage.onChanged` to these functions.
@@ -140,9 +140,8 @@ const RECOVERED_AUTO_PIN_LIMIT = 2;
  * That guard bounds one startup, not the sequence of them: with new snapshots arriving between
  * restarts, each start still pins one more, and the ring buffer skips every one of them. So the
  * pins are capped here too - the newest `RECOVERED_AUTO_PIN_LIMIT` stay protected and the rest
- * are demoted (never deleted) back into the ring. A snapshot the user protected is never
- * demoted: only pins this function made carry the `autoProtected` marker, and any use of the
- * Protect switch clears it.
+ * are demoted (never deleted) back into the ring. A snapshot protected some other way is never
+ * demoted: only pins this function made carry the `autoProtected` marker.
  */
 export async function promoteRecoveredSnapshot(): Promise<SessionId | null> {
   const summaries = await sessionRepo.listSummaries();

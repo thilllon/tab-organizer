@@ -11,7 +11,6 @@ import {
   exportedNotice,
   exportFormatItems,
   exportScopeName,
-  formatName,
   PROGRESS_NOTICE_THRESHOLD,
   PROGRESS_TICK_SIZE,
   shouldReportProgress,
@@ -123,7 +122,6 @@ describe('notices', () => {
     expect(exportedNotice('Work (Window 2)', 'html')).toBe(
       'Exported “Work (Window 2)” as HTML bookmarks.',
     );
-    expect(formatName('markdown')).toBe('Markdown');
   });
 
   it('pluralizes the copy confirmations', () => {
@@ -133,7 +131,7 @@ describe('notices', () => {
   });
 
   it('confirms a single tab row copy without counting to one', () => {
-    // SessionCard's per-tab "Copy link" button (spec §8 "Copy links ... on tab rows").
+    // The tab row's per-tab "Copy link" button.
     expect(copiedLinkNotice()).toBe('Copied link.');
     expect(copiedLinkNotice()).not.toBe(copiedLinksNotice(1));
   });

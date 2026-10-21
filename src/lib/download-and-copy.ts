@@ -5,7 +5,7 @@ import type { ExportFormat } from '@/types';
 
 /**
  * The two local sinks the dashboard's export / copy actions write to: a Blob-URL download and
- * the clipboard (spec §8). Neither leaves the device and neither needs a permission - an
+ * the clipboard. Neither leaves the device and neither needs a permission - an
  * extension page may create an `<a download>` on a Blob URL and click it itself, so the
  * `downloads` permission is deliberately NOT requested.
  *

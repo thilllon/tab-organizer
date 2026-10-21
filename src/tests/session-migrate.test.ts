@@ -55,7 +55,7 @@ describe('futureSchemaVersion', () => {
       migrateSession({ ...session, schemaVersion: 2 });
       expect.unreachable('migrateSession must reject a v2 record');
     } catch (error) {
-      // What `reconcile()` puts on the index entry, so the row can say "schema v2" (spec §3).
+      // What `reconcile()` puts on the index entry, so the row can say "schema v2".
       expect(futureSchemaVersion(error)).toBe(2);
     }
   });

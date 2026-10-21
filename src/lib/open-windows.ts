@@ -7,7 +7,7 @@ import type { GroupSnapshot, TabSnapshot, WindowSnapshot } from '@/types';
  * close tab, close window, save this window).
  *
  * These ids are **in-memory only**. Nothing here is ever written to storage - the save path goes
- * through `captureSession()`, which builds its own id-free snapshot (spec §3).
+ * through `captureSession()`, which builds its own id-free snapshot.
  */
 export interface OpenWindowView {
   windowId: number;
@@ -53,7 +53,7 @@ export async function snapshotOpenWindows(
   }));
 }
 
-/** Spec §12 Phase 2: one refetch per burst of tab/window/group activity. */
+/** One refetch per burst of tab/window/group activity. */
 export const OPEN_WINDOWS_DEBOUNCE_MS = 150;
 
 /**

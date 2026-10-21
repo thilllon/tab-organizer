@@ -63,8 +63,8 @@ interface ExportMenuProps {
 }
 
 /**
- * Export / copy menu (spec §8), reused on saved-session rows, saved window rows, group headers
- * and history rows - the scope is whatever `windowIndex` / `groupIndex` narrow it to.
+ * Export / copy menu, used in a saved session's and a snapshot's header and on each window and
+ * group of a saved session - the scope is whatever `windowIndex` / `groupIndex` narrow it to.
  *
  * Everything it does is local: `serialize()` builds the text, a Blob URL downloads it and
  * `navigator.clipboard` takes the copies. No network request, no `downloads` permission, and no

@@ -13,7 +13,7 @@ const FAVICON_REQUEST_PX = 32;
 
 /**
  * Renders the site icon from Chrome's local favicon cache (no network); falls back to Globe.
- * Spec §9: request a 32 px bitmap (crisp on HiDPI) and display it at 16×16 CSS px.
+ * Request a 32 px bitmap (crisp on HiDPI) and display it at 16×16 CSS px.
  */
 export function Favicon({ url }: FaviconProps) {
   // Tracks *which* url last failed to load, rather than a plain boolean, so a component instance

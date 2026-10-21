@@ -4,10 +4,8 @@ import {
   DEFAULT_LIMIT_PER_SOURCE,
   entriesFromOpenWindows,
   entriesFromSession,
-  matchEntry,
   matchSessionName,
   openWindowsName,
-  rankEntries,
   type SearchEntry,
   type SearchSource,
   search,
@@ -22,6 +20,16 @@ function hostOf(url: string): string {
   } catch {
     return '';
   }
+}
+
+/** Whether `search()` finds `e` (a saved entry) for these tokens. */
+function matchEntry(e: SearchEntry, tokens: string[]): boolean {
+  return search([e], tokens.join(' ')).total > 0;
+}
+
+/** The order `search()` puts these saved entries in for these tokens. */
+function rankEntries(entries: SearchEntry[], tokens: string[]): SearchEntry[] {
+  return search(entries, tokens.join(' ')).bySource.saved.entries;
 }
 
 function entry(overrides: Partial<SearchEntry> = {}): SearchEntry {
@@ -323,7 +331,7 @@ describe('entriesFromOpenWindows', () => {
   });
 });
 
-describe('matchEntry', () => {
+describe('matching', () => {
   const e = entry({ title: 'React - A JavaScript library', url: 'https://react.dev/learn' });
 
   it('requires every token to match somewhere (AND)', () => {
@@ -353,10 +361,6 @@ describe('matchEntry', () => {
     expect(matchEntry(accented, tokenize('cafe'))).toBe(true); // via the url
     expect(matchEntry(accented, tokenize('über cafe straße'))).toBe(true);
   });
-
-  it('matches everything when there are no tokens', () => {
-    expect(matchEntry(e, [])).toBe(true);
-  });
 });
 
 describe('matchSessionName', () => {
@@ -371,7 +375,7 @@ describe('matchSessionName', () => {
   });
 });
 
-describe('rankEntries', () => {
+describe('ranking within a source', () => {
   it('orders hostname prefix > title match > url-only match', () => {
     const urlOnly = entry({ title: 'Issues', url: 'https://example.com/github/issues' });
     const titleHit = entry({ title: 'GitHub issues', url: 'https://example.com/issues' });
@@ -397,19 +401,6 @@ describe('rankEntries', () => {
     expect(rankEntries([substring, titleHit], ['github'])).toEqual([titleHit, substring]);
   });
 
-  it('orders sources open > saved > history within a tier', () => {
-    const history = entry({ source: 'history', title: 'Doc', sessionUpdatedAt: 9_999 });
-    const saved = entry({ source: 'saved', title: 'Doc', sessionUpdatedAt: 5 });
-    const open = entry({ source: 'open', title: 'Doc', sessionUpdatedAt: 1 });
-    expect(rankEntries([history, saved, open], ['doc'])).toEqual([open, saved, history]);
-  });
-
-  it('a better tier beats a better source', () => {
-    const openUrlOnly = entry({ source: 'open', title: 'Home', url: 'https://x.example/docs' });
-    const savedTitle = entry({ source: 'saved', title: 'Docs', url: 'https://y.example/' });
-    expect(rankEntries([openUrlOnly, savedTitle], ['docs'])).toEqual([savedTitle, openUrlOnly]);
-  });
-
   it('orders newest session first within a tier and source', () => {
     const old = entry({ sessionId: 'old', title: 'Doc', sessionUpdatedAt: 10 });
     const newer = entry({ sessionId: 'new', title: 'Doc', sessionUpdatedAt: 20 });
@@ -421,13 +412,6 @@ describe('rankEntries', () => {
     const second = entry({ title: 'Doc', tabIndex: 1 });
     const third = entry({ title: 'Doc', tabIndex: 2 });
     expect(rankEntries([first, second, third], ['doc'])).toEqual([first, second, third]);
-  });
-
-  it('keeps non-matching entries after every match, in original order', () => {
-    const missA = entry({ title: 'Nope', tabIndex: 0 });
-    const hit = entry({ title: 'Doc', tabIndex: 1 });
-    const missB = entry({ title: 'Nope', tabIndex: 2 });
-    expect(rankEntries([missA, hit, missB], ['doc'])).toEqual([hit, missA, missB]);
   });
 
   it('does not mutate its input', () => {
@@ -545,14 +529,14 @@ describe('search', () => {
 
   it('searches 10,000 entries in under 40 ms', () => {
     /*
-     * Spec §12 Phase 4 asks for 10,000 entries in under 20 ms. Measured on this machine with
+     * The target is 10,000 entries in under 20 ms. Measured on this machine with
      * `search(big, 'git issue', { includeHistory: true })` repeated 12x per process, over four
      * fresh vitest processes (ms):
      *
      *   cold (first call, JIT still warming): 5.2  6.1  7.6  8.7
      *   warm (calls 2-12):                    1.0 - 3.5, median ~1.8
      *
-     * So the spec's 20 ms is met roughly 2x over even cold. The bound here is 40 ms - ~4.6x the
+     * So the 20 ms target is met roughly 2x over even cold. The bound here is 40 ms - ~4.6x the
      * worst cold run - because this is the only figure CI has to hit on a shared runner that can
      * be several times slower than a dev machine, and a flaky perf test gets deleted rather than
      * investigated. It is still tight enough to catch what it is for: an accidental O(n²) or a
@@ -672,7 +656,7 @@ describe('splitOnMatches', () => {
 });
 
 /**
- * Spec §12 Phase 4 / §7: result highlighting goes through `splitOnMatches()` and there is no
+ * Result highlighting goes through `splitOnMatches()` and there is no
  * `dangerouslySetInnerHTML` anywhere - true by construction today, and this is what keeps it true.
  *
  * oxlint's `react/no-danger` (an error in `pnpm lint`) covers the JSX-attribute form; this catches

@@ -12,7 +12,7 @@ export interface OpenWindowsState {
 }
 
 /**
- * Live view of the open windows (spec §12 Phase 2). The tab/window/group listeners are registered
+ * Live view of the open windows. The tab/window/group listeners are registered
  * **in this page** - never in the service worker (AGENTS.md) - so they die with the dashboard tab
  * and the worker stays idle while the pane updates.
  */

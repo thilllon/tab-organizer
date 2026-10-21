@@ -22,12 +22,12 @@ interface SearchCorpusState {
   corpus: SearchEntry[];
   /** True while the idle pre-warm is still reading bodies - the result counts are not final. */
   warming: boolean;
-  /** Loads the bodies a query needs that the pre-warm did not reach (spec §7: lazy on first use). */
+  /** Loads the bodies a query needs that the pre-warm did not reach (lazy on first use). */
   ensureLoaded(ids: readonly SessionId[]): Promise<void>;
 }
 
 /**
- * Assembles the corpus the dashboard's unified search runs over (spec §7 / §12 Phase 4):
+ * Assembles the corpus the dashboard's unified search runs over:
  * `entriesFromOpenWindows()` over the live tabs plus one cached `SearchEntry[]` per session body.
  * Everything expensive happens here - a keystroke only re-runs `search()` over `corpus`.
  *

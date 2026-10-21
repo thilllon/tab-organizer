@@ -59,7 +59,7 @@ function isOwnPage(url: string, options: CaptureOptions): boolean {
 /**
  * A captured window that still carries the Chrome runtime ids of its window, groups and tabs.
  * In-memory only, for the dashboard's live open-windows pane: `captureWindows()` - the only path
- * into a stored `Session` - strips every id first (spec §3: runtime ids are never persisted).
+ * into a stored `Session` - strips every id first: runtime ids are never persisted.
  */
 interface IdentifiedWindowSnapshot extends WindowSnapshot {
   windowId: number;
@@ -217,7 +217,7 @@ export function captureWindows(
 }
 
 /**
- * `captureWindows` with the runtime ids kept, for the dashboard's live pane (spec §12 Phase 2).
+ * `captureWindows` with the runtime ids kept, for the dashboard's live pane.
  *
  * Two deliberate differences from `captureWindows`:
  * - windows left with no capturable tabs are KEPT - for a capture there is nothing to save, but

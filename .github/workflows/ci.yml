@@ -56,10 +56,8 @@ jobs:
       # drops it is a silent, shippable break.
       - name: Verify the build emitted the extension page
         run: |
-          for page in dist/app.html; do
-            test -f "$page" || { echo "::error::$page missing from the build"; exit 1; }
-            echo "ok: $page"
-          done
+          test -f dist/app.html || { echo "::error::dist/app.html missing from the build"; exit 1; }
+          echo "ok: dist/app.html"
 
       # The real-Chrome smoke test (scripts/e2e/smoke.ts). Advisory and off the pull-request path
       # on purpose:

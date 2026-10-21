@@ -87,7 +87,7 @@ interface RestoreHooks {
   screen?: ScreenRect;
 }
 
-/** Spec §6: returns the url to open, or null when it must be skipped. Never throws. */
+/** Returns the url to open, or null when it must be skipped. Never throws. */
 export function sanitizeRestoreUrl(url: string, options: SanitizeOptions): string | null {
   const candidate = unwrapSuspendedUrl(url, options.suspendedPrefix);
   if (candidate === null || candidate === '') {
@@ -183,7 +183,7 @@ export function screenRectOf(source: Pick<Screen, 'availWidth' | 'availHeight'>)
   return rect;
 }
 
-/** Whether the `restoreLazy` setting discards tabs for a restore of `tabCount` tabs (spec §6). */
+/** Whether the `restoreLazy` setting discards tabs for a restore of `tabCount` tabs. */
 export function isLazyRestore(lazy: SessionSettings['restoreLazy'], tabCount: number): boolean {
   return lazy === 'always' || (lazy === 'auto' && tabCount > LAZY_AUTO_THRESHOLD);
 }
@@ -239,7 +239,7 @@ function planWindowTabs(
   return [...pinned, ...unpinned];
 }
 
-/** Pure planner (spec §6). Throws on snapshot invariant violations; never calls chrome. */
+/** Pure planner. Throws on snapshot invariant violations; never calls chrome. */
 export function planRestore(session: Session, options: RestoreOptions): RestorePlan {
   const chunkSize = options.chunkSize ?? DEFAULT_CHUNK_SIZE;
   if (!Number.isInteger(chunkSize) || chunkSize < 1) {
@@ -475,7 +475,7 @@ async function discardChunk(
 }
 
 /**
- * Groups and styles this window's tabs (spec §13 group-after-all-tabs). A rejection from
+ * Groups and styles this window's tabs, after every tab exists (group-after-all-tabs). A rejection from
  * `tabs.group`/`tabGroups.update` costs only that group: one `errors` entry, and the rest of the
  * window (and the rest of the restore) still proceeds. `tabs.group` gets the same drag-lock retry
  * as `tabs.create`, since Chrome raises "cannot be edited" there too.
@@ -598,7 +598,7 @@ export async function executeRestore(
     try {
       opened = await openTargetWindow(plan.target, planned.snapshot, hooks);
     } catch (err) {
-      // Spec §6 "belt and braces": a failed windows.create costs this window only.
+      // Belt and braces: a failed windows.create costs this window only.
       for (const tab of planned.tabs) {
         errors.push({ url: tab.url, message: errorMessage(err) });
       }
