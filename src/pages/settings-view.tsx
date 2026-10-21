@@ -2,7 +2,7 @@ import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 
 import { AdvancedFold } from '@/components/advanced-fold';
-import { NativeSelect } from '@/components/native-select';
+import { SelectMenu } from '@/components/select-menu';
 import { SessionSettingsFields } from '@/components/session-settings-fields';
 import { SettingsField } from '@/components/settings-field';
 import { SettingsSection } from '@/components/settings-section';
@@ -146,23 +146,17 @@ export function SettingsView({
           description={t('settingsSortingDescription')}
         >
           <SettingsField label={t('settingsSortBy')} htmlFor="sort-by">
-            <NativeSelect
+            <SelectMenu
               id="sort-by"
               title={t('settingsSortByTitle')}
               value={sort.sortBy}
-              onChange={(event) => {
-                const value = event.target.value;
+              options={sortByOptions()}
+              onValueChange={(value) => {
                 if (isSortBy(value)) {
                   write({ sortBy: value });
                 }
               }}
-            >
-              {sortByOptions().map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </NativeSelect>
+            />
           </SettingsField>
 
           {/* Only "Custom" reads these (showsCustomSortOptions), so they sit under "Sort by",
@@ -174,22 +168,16 @@ export function SettingsView({
                 hint={t('settingsTabGroupsHint')}
                 htmlFor="grouping-mode"
               >
-                <NativeSelect
+                <SelectMenu
                   id="grouping-mode"
                   value={sort.groupingMode}
-                  onChange={(event) => {
-                    const value = event.target.value;
+                  options={groupingModeOptions()}
+                  onValueChange={(value) => {
                     if (isGroupingMode(value)) {
                       write({ groupingMode: value });
                     }
                   }}
-                >
-                  {groupingModeOptions().map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </NativeSelect>
+                />
               </SettingsField>
 
               <SettingsField
@@ -197,22 +185,16 @@ export function SettingsView({
                 hint={t('settingsGroupingDirectionHint')}
                 htmlFor="group-from"
               >
-                <NativeSelect
+                <SelectMenu
                   id="group-from"
                   value={sort.groupFrom}
-                  onChange={(event) => {
-                    const value = event.target.value;
+                  options={groupFromOptions()}
+                  onValueChange={(value) => {
                     if (isGroupFrom(value)) {
                       write({ groupFrom: value });
                     }
                   }}
-                >
-                  {groupFromOptions().map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </NativeSelect>
+                />
               </SettingsField>
 
               <SettingsField
@@ -234,22 +216,16 @@ export function SettingsView({
             hint={t('settingsDuplicateTabsHint')}
             htmlFor="duplicate-tabs"
           >
-            <NativeSelect
+            <SelectMenu
               id="duplicate-tabs"
               value={sort.duplicateTabHandling}
-              onChange={(event) => {
-                const value = event.target.value;
+              options={duplicateTabOptions()}
+              onValueChange={(value) => {
                 if (isDuplicateTabHandling(value)) {
                   write({ duplicateTabHandling: value });
                 }
               }}
-            >
-              {duplicateTabOptions().map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </NativeSelect>
+            />
           </SettingsField>
 
           <AdvancedFold
@@ -387,17 +363,18 @@ export function SettingsView({
                 <ShortcutKeyChips keys={command.keys} />
               </SettingsField>
             ))}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <p className="text-xs text-muted-foreground">{changeOnlyInChrome()}</p>
             <Button
               variant="outline"
               size="sm"
+              className="ml-auto"
               onClick={() => void openShortcutSettings()}
               title={t('settingsChangeInChromeTitle')}
             >
               <Keyboard />
               {t('settingsChangeInChrome')}
             </Button>
-            <p className="text-xs text-muted-foreground">{changeOnlyInChrome()}</p>
           </div>
         </SettingsSection>
       </div>

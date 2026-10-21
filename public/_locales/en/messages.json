@@ -324,8 +324,8 @@
     "description": "Grey hint under Export everything. Keep JSON as it is."
   },
   "settingsExportButton": {
-    "message": "Export…",
-    "description": "Button that starts the export; the ellipsis means a choice follows. Short."
+    "message": "Export",
+    "description": "Button that starts the export (a choice follows). Short."
   },
   "settingsImport": {
     "message": "Import",
@@ -336,7 +336,7 @@
     "description": "Grey hint under Import: the formats it reads. Keep JSON, HTML, Markdown and URLs as they are."
   },
   "settingsImportButton": {
-    "message": "Import…",
+    "message": "Import",
     "description": "Button that opens the import dialog. Short."
   },
   "settingsBackupAdvancedDescription": {

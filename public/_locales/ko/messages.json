@@ -312,8 +312,8 @@
     "description": "Grey hint under Export everything. Keep JSON as it is."
   },
   "settingsExportButton": {
-    "message": "내보내기…",
-    "description": "Button that starts the export; the ellipsis means a choice follows. Short."
+    "message": "내보내기",
+    "description": "Button that starts the export (a choice follows). Short."
   },
   "settingsImport": {
     "message": "가져오기",
@@ -324,7 +324,7 @@
     "description": "Grey hint under Import: the formats it reads. Keep JSON, HTML, Markdown and URLs as they are."
   },
   "settingsImportButton": {
-    "message": "가져오기…",
+    "message": "가져오기",
     "description": "Button that opens the import dialog. Short."
   },
   "settingsBackupAdvancedDescription": {
