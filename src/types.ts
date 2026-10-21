@@ -64,14 +64,13 @@ export interface Session {
   origin: SessionOrigin;
   createdAt: number; // epoch ms
   updatedAt: number;
-  protected?: boolean; // history only: exempt from pruning (recovered / user-pinned)
+  protected?: boolean; // history only: exempt from pruning (recovered)
   /**
-   * The `protected` flag above was set by `markRecovered()`, not by the user's Protect switch.
-   * Crash recovery pins one snapshot per browser start, so without this marker the pins would
-   * accumulate forever and no cleanup could tell them from a pin the user asked for. Any use of
-   * the Protect switch clears it (`setProtected`), making the pin the user's for good; only
-   * still-marked snapshots beyond the newest few are demoted back to prunable
-   * (`demoteAutoProtected`). Never set on a `kind: 'saved'` session.
+   * The `protected` flag above was set by `markRecovered()`. Crash recovery pins one snapshot
+   * per browser start, so without this marker the pins would accumulate forever and no cleanup
+   * could tell them from any other protected snapshot. Only still-marked snapshots beyond the
+   * newest few are demoted back to prunable (`demoteAutoProtected`). Never set on a
+   * `kind: 'saved'` session.
    */
   autoProtected?: boolean;
   contentHash?: string; // FNV-1a over windows->tabs (url, pinned, groupIndex, group title)
@@ -79,7 +78,7 @@ export interface Session {
 }
 
 /**
- * Why the body behind an index entry cannot be read (spec §3). There is one reason today: the
+ * Why the body behind an index entry cannot be read. There is one reason today: the
  * record was written by a newer schema version than this build understands, so `migrateSession`
  * refuses it. `reconcile()` marks the entry instead of dropping it, so a store written by a newer
  * Tab Organizer and then opened by an older one still lists its sessions -- read-only, with an

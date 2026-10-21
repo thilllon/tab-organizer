@@ -117,7 +117,7 @@ pnpm dev
 ```shell
 pnpm dev                    # Start Vite dev server (port 5173)
 pnpm build                  # Vite build -> dist/ (no type check; run typecheck separately)
-pnpm typecheck              # Type check only (tsc --noEmit)
+pnpm typecheck              # Type check only (tsc --noEmit, then src/tests with Node types)
 pnpm format                 # oxfmt over the whole repository (format:check in CI)
 pnpm lint                   # oxlint
 pnpm test                   # Run tests (vitest)

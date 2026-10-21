@@ -52,7 +52,7 @@ describe('summarizeStorage', () => {
     });
   });
 
-  // The enable/disable rule for the meter's "Delete all unprotected" button (spec §4): the quota
+  // The enable/disable rule for the meter's "Delete all unprotected" button: the quota
   // path must offer the action that frees the space, and must not offer it when it would free
   // nothing.
   it('counts only the snapshots "Delete all unprotected" would remove', () => {

@@ -54,6 +54,15 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
+/** Protects a snapshot without the crash-recovery marker (older versions stored such pins). */
+async function protect(id: string): Promise<void> {
+  await sessionRepo.update(id, (session) => {
+    const next: Session = { ...session, protected: true };
+    delete next.autoProtected;
+    return next;
+  });
+}
+
 function storedSessionIds(): string[] {
   return [...getChromeFake().state.local.keys()]
     .filter((key) => key.startsWith('session:'))
@@ -232,7 +241,7 @@ describe('takeHistorySnapshot', () => {
     );
     await sessionRepo.put(makeSession({ id: 'protected-old', protected: true, createdAt: 2 }));
     await sessionRepo.put(makeSession({ id: 'recovered-old', origin: 'recovered', createdAt: 3 }));
-    await sessionRepo.setProtected('recovered-old', true);
+    await protect('recovered-old');
     const winId = await seedWindow(['https://a.com/']);
 
     const first = await takeHistorySnapshot({ origin: 'alarm' });
@@ -364,15 +373,15 @@ describe('promoteRecoveredSnapshot', () => {
     await expect(sessionRepo.pruneHistory(3)).resolves.toEqual(['s1', 's2', 's3', 's4', 's5']);
   });
 
-  it('never demotes a snapshot the user protected', async () => {
+  it('never demotes a snapshot protected without the marker', async () => {
     await sessionRepo.put(makeSession({ id: 'user-pin', createdAt: NOW }));
-    await sessionRepo.setProtected('user-pin', true);
+    await protect('user-pin');
     vi.setSystemTime(NOW + MINUTE);
     await sessionRepo.put(makeSession({ id: 'taken-over', createdAt: NOW + MINUTE }));
     await promoteRecoveredSnapshot();
-    // The user opens the dashboard and pins the recovered snapshot themselves: it stops being
-    // crash recovery's to demote, even though the switch was already on.
-    await sessionRepo.setProtected('taken-over', true);
+    // A protected snapshot without the marker stops being crash recovery's to demote, even
+    // though it was promoted first.
+    await protect('taken-over');
 
     for (let start = 2; start <= 11; start += 1) {
       vi.setSystemTime(NOW + start * MINUTE);

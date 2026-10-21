@@ -4,8 +4,8 @@ import { sessionKey, sessionRepo } from '@/lib/session-repo';
 import type { SessionId, SessionSummary } from '@/types';
 
 /**
- * How many bytes of session bodies the idle pre-warm may read (spec §7: "stop after 5 MB, rest
- * lazily on first query"). `SessionSummary.bytes` is the JSON length at the last write, so the
+ * How many bytes of session bodies the idle pre-warm may read: it stops after 5 MB and the rest
+ * is read lazily on the first query. `SessionSummary.bytes` is the JSON length at the last write, so the
  * budget is measured without touching storage.
  */
 export const PREWARM_BYTE_BUDGET = 5 * 1024 * 1024;
@@ -33,7 +33,7 @@ export function selectPrewarmIds(
     if (summary.kind !== 'saved') {
       continue;
     }
-    // A body this build cannot migrate (spec §3) has nothing to search and never will until the
+    // A body this build cannot migrate has nothing to search and never will until the
     // extension is updated; reading it would only cache an empty list and log a warning.
     if (summary.unreadable !== undefined) {
       continue;
@@ -83,12 +83,12 @@ export function scheduleIdle(callback: () => void, timeout: number = IDLE_TIMEOU
 }
 
 /**
- * The tier-2 body cache behind the dashboard's unified search (spec §7): one `SearchEntry[]` per
+ * The tier-2 body cache behind the dashboard's unified search: one `SearchEntry[]` per
  * session, built once by `entriesFromSession()` so a keystroke only tokenises and matches.
  *
  * Reads go through `sessionRepo.getMany()` (never `chrome.storage` directly) and nothing here
  * writes: every id a call needs is fetched in ONE `chrome.storage.local.get([...keys])`, so the
- * idle pre-warm costs one round trip rather than one per session (spec §4). A body that cannot be
+ * idle pre-warm costs one round trip rather than one per session. A body that cannot be
  * read at all - a record from a newer schema version - is cached as an empty list rather than
  * retried on every query: the session stays listed, it is just not searchable.
  */

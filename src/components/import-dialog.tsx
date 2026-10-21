@@ -57,10 +57,10 @@ interface ImportDialogProps {
 }
 
 /**
- * File picker + paste box for spec §8's import. The parsers are pure (`src/lib/session-import.ts`),
- * so the whole preview - detected format, warnings, the session → window → tab tree and the
- * totals - is computed from the text before a single write happens. Committing writes each
- * session through `sessionRepo.put`, which takes the Web Lock per session.
+ * File picker + paste box for importing sessions. The parsers are pure
+ * (`src/lib/session-import.ts`), so the whole preview - detected format, warnings, the session →
+ * window → tab tree and the totals - is computed from the text before a single write happens.
+ * Committing writes each session through `sessionRepo.put`, which takes the Web Lock per session.
  */
 export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogProps) {
   const [text, setText] = useState('');
@@ -149,7 +149,7 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
       onOpenChange(false);
     } catch (err) {
       // An import writes session after session, so a full disk shows up here more often than
-      // anywhere else - and the sessions written before it are kept (spec §4).
+      // anywhere else - and the sessions written before it are kept.
       if (isQuotaError(err)) {
         setError(undefined);
         setQuotaFull(true);

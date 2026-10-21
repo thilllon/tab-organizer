@@ -59,7 +59,7 @@ export function useRestore(): UseRestore {
   const [cancelled, setCancelled] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
 
-  // Spec §5: warn before leaving the page while a restore is in flight.
+  // Warn before leaving the page while a restore is in flight.
   useEffect(() => {
     if (!running) {
       return;

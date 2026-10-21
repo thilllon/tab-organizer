@@ -28,7 +28,7 @@ interface SearchResultsProps {
   warming: boolean;
 }
 
-/** Highlighted text, as `<mark>` elements - never `dangerouslySetInnerHTML` (spec §7). */
+/** Highlighted text, as `<mark>` elements - never `dangerouslySetInnerHTML`. */
 function Highlighted({ text, tokens }: { text: string; tokens: string[] }) {
   return (
     <>
@@ -169,10 +169,10 @@ function SessionResultRow({
 }
 
 /**
- * The search results, shown in place of the dashboard's normal content while a query is active
- * (spec §7). Rows are grouped by source with a per-source count and capped at
- * `DEFAULT_LIMIT_PER_SOURCE`; the highlight index is shared with `SearchBar`'s arrow keys, so the
- * same row responds to Enter and to a click.
+ * The search results, shown in place of the dashboard's normal content while a query is active.
+ * Rows are grouped by source with a per-source count and capped at `DEFAULT_LIMIT_PER_SOURCE`;
+ * the highlight index is shared with `SearchBar`'s arrow keys, so the same row responds to Enter
+ * and to a click.
  */
 export function SearchResults({
   groups,

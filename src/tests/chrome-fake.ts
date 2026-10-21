@@ -101,7 +101,7 @@ interface FakeState {
   createdTabs: chrome.tabs.CreateProperties[];
   nextId: { tab: number; window: number; group: number };
   fileAccessAllowed: boolean;
-  /** Testing-only knob (Task 8 fix round 2): when true, `tabs.create` leaves the tab
+  /** Testing-only knob: when true, `tabs.create` leaves the tab
    * uncommitted (`url: ''`, `pendingUrl` set, `status: 'loading'`) until `commitNavigation`
    * is called for it, modelling a real browser navigation that has not finished yet. */
   deferCommit: boolean;
@@ -1167,12 +1167,12 @@ export function createChromeFake(): ChromeFake {
 // ---------------------------------------------------------------------------
 
 declare global {
-  // Installed by tests/setup.ts before each test; `var` is required for a globalThis member.
+  // Installed by src/tests/setup.ts before each test; `var` is required for a globalThis member.
   var __chromeFake: ChromeFake | undefined;
 }
 
 /**
- * Returns the fake installed by `tests/setup.ts` for the current test.
+ * Returns the fake installed by `src/tests/setup.ts` for the current test.
  *
  * A module imported statically (at the top of a test file) evaluates before any
  * `beforeEach`, so listeners it registers at import time land on setup.ts's
@@ -1183,7 +1183,7 @@ declare global {
 export function getChromeFake(): ChromeFake {
   const fake = globalThis.__chromeFake;
   if (!fake) {
-    throw new Error('Chrome fake not installed; is tests/setup.ts in vitest setupFiles?');
+    throw new Error('Chrome fake not installed; is src/tests/setup.ts in vitest setupFiles?');
   }
   return fake;
 }
@@ -1197,7 +1197,7 @@ interface LocaleMessage {
 /**
  * Chrome replaces each named placeholder (`$NAME$`, case-insensitive) with its `content` when it
  * loads the file, before `$1`..`$9` are filled in at `getMessage` time; an undefined one makes the
- * whole extension fail to load (tests/i18n.test.ts checks that none is).
+ * whole extension fail to load (src/tests/i18n.test.ts checks that none is).
  */
 export function expandPlaceholders(entry: LocaleMessage): string {
   return entry.message.replace(/\$([A-Za-z0-9_@]+)\$/g, (match, name: string) => {

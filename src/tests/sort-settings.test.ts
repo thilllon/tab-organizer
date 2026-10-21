@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import {
-  CUSTOM_ONLY_SETTINGS,
   DEFAULT_SORT_SETTINGS,
   duplicateTabOptions,
   groupFromOptions,
@@ -225,15 +224,6 @@ describe('showsCustomSortOptions', () => {
     expect(showsCustomSortOptions('custom')).toBe(true);
     expect(showsCustomSortOptions('url')).toBe(false);
     expect(showsCustomSortOptions('title')).toBe(false);
-  });
-
-  it('covers every setting sortByTitleOrUrl never reads, and only those', () => {
-    expect([...CUSTOM_ONLY_SETTINGS].sort()).toEqual(
-      ['groupFrom', 'groupingMode', 'preserveOrderWithinGroups'].sort(),
-    );
-    for (const key of CUSTOM_ONLY_SETTINGS) {
-      expect(SORT_SETTING_KEYS).toContain(key);
-    }
   });
 
   it('keeps a hidden setting stored as it is', () => {

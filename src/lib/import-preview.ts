@@ -143,7 +143,7 @@ export function buildImportPreview(sessions: readonly Session[]): ImportPreview 
   return preview;
 }
 
-/** "3 sessions · 5 windows · 87 tabs" - the same shape as a session card's meta line. */
+/** "3 sessions · 5 windows · 87 tabs" - the same shape as a session's meta line. */
 export function formatImportTotals(preview: ImportPreview): string {
   return joinFacts([
     tp('expSessionCount', preview.sessionCount),

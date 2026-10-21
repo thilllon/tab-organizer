@@ -1,5 +1,5 @@
 /**
- * Dark mode (spec §12 Phase 6). The stylesheet ships a `.dark` palette behind
+ * Dark mode. The stylesheet ships a `.dark` palette behind
  * `@custom-variant dark (&:is(.dark *))`, so the only thing needed at runtime is the `dark`
  * class on `<html>` - there is no theme *setting*, the extension simply follows the OS.
  *

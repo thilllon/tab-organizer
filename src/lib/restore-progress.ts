@@ -1,6 +1,5 @@
 /**
- * The extra lines the restore toast shows while `executeRestore` runs (spec §12 Phase 6:
- * "lazy restore 'auto' UX + progress/cancel polish"). The tab counter itself stays where it was
+ * The extra lines the restore toast shows while `executeRestore` runs. The tab counter itself stays where it was
  * - this is the per-window line, the throughput and the lazy-restore explanation, all pure so
  * they can be tested without a DOM.
  */

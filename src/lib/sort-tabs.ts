@@ -120,7 +120,7 @@ async function sortTabs(
 
   // Only the tabs that are out of place move (see move-plan.ts). The plan counts positions from
   // the block's first tab, so it needs the block to be one unbroken run of known ids; anything
-  // else gets the single whole-block call this always used to make.
+  // else gets one whole-block `chrome.tabs.move` call.
   const beforeIds = before.map((tab) => tab.id).filter((id): id is number => id !== undefined);
   const plannable =
     beforeIds.length === before.length && isContiguous(before.map((tab) => tab.index));

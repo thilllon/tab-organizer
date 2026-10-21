@@ -37,11 +37,11 @@ const WINDOW_A: WindowSnapshot = {
 };
 
 /**
- * The Phase 1 acceptance fixture, verbatim (spec §12 Phase 1): "2 pinned, 2 groups one collapsed,
- * a suspended tab and one `file://` tab". The suspended tab must come back as the page it wraps,
+ * The reference fixture: 2 pinned, 2 groups one collapsed, a suspended tab and one `file://`
+ * tab. The suspended tab must come back as the page it wraps,
  * and the `file://` tab is the one skip (`fileAccessAllowed: false` in SANITIZE).
  */
-const WINDOW_PHASE_1: WindowSnapshot = {
+const REFERENCE_WINDOW: WindowSnapshot = {
   state: 'normal',
   focused: true,
   groups: [
@@ -238,13 +238,12 @@ describe('executeRestore', () => {
     expect(result).toEqual({ restored: 5, discarded: 0, skipped: [], errors: [] });
   });
 
-  it('recreates the Phase 1 acceptance fixture and reports 1 skipped', async () => {
-    // Spec §12 Phase 1 acceptance: "restore of a fixture (2 pinned, 2 groups one collapsed,
-    // suspended tab, one file:// tab) recreates order/pinned/groups/collapsed/active and reports
-    // 1 skipped". The pieces have their own tests; this is the fixture as written.
+  it('recreates the reference fixture and reports 1 skipped', async () => {
+    // A restore of the fixture recreates order/pinned/groups/collapsed/active and reports the
+    // file:// tab as skipped. The pieces have their own tests; this is the fixture as written.
     const before = snapshotWindowIds();
 
-    const result = await executeRestore(makePlan([WINDOW_PHASE_1]));
+    const result = await executeRestore(makePlan([REFERENCE_WINDOW]));
 
     const created = newWindowIds(before);
     expect(created).toHaveLength(1);
@@ -359,7 +358,7 @@ describe('executeRestore', () => {
     const groupOrder = groupSpy.mock.invocationCallOrder;
     expect(createOrder).toHaveLength(5);
     expect(groupOrder).toHaveLength(2);
-    // Spec §13 "group-after-all-tabs": every tabs.create precedes the first tabs.group.
+    // Group after all tabs: every tabs.create precedes the first tabs.group.
     expect(Math.max(...createOrder)).toBeLessThan(Math.min(...groupOrder));
 
     const updates = groupUpdateSpy.mock.calls.map((args, i) => ({
@@ -376,7 +375,7 @@ describe('executeRestore', () => {
     for (let i = 0; i < groupOrder.length; i++) {
       expect(groupOrder[i]).toBeLessThan(styleCalls[i].order);
     }
-    // Spec §13 "collapse after grouping" and "placeholder removed last".
+    // Collapse after grouping, and the placeholder is removed last.
     const lastStyle = Math.max(...styleCalls.map((call) => call.order));
     const removeOrder = removeSpy.mock.invocationCallOrder[0];
     for (const call of collapseCalls) {
@@ -895,7 +894,7 @@ describe('executeRestore', () => {
 });
 
 /**
- * Spec §12 Phase 6 acceptance: "a 1,000-tab restore completes without freezing, cancel works".
+ * A 1,000-tab restore completes without freezing, and cancel works.
  * The multi-chunk path is covered at ~26 tabs elsewhere; this pins the shape of a restore two
  * orders of magnitude larger - the chunk count, that every single tab is created, and that a
  * cancel lands on a chunk boundary with the tabs already created kept.

@@ -4,29 +4,18 @@
  * Runs the visual-asset pipeline (used as a release-it before:bump hook):
  *   1. Build the extension
  *   2. Launch Chrome with the built extension
- *   3. Generate options-page screenshots (1280x800, 640x400)
+ *   3. Generate Settings screenshots (1280x800)
  *   4. Generate Sessions dashboard screenshots (1280x800)
- *   5. Generate before/after demo screenshots            (needs an external network)
- *   6. Record demo video + sort the demo tabs            (needs ffmpeg, macOS capture)
- *   7. Render tab-bar mockups and CWS promotional images
- *   8. Convert the demo video to demo.gif                (needs ffmpeg; only after a recording)
+ *   5. Render the CWS promotional images
  *
- * Every step that depends on ffmpeg, an external network or a macOS-only tool is optional: it is
- * skipped -- loudly, but without failing the run -- when the dependency is missing or when its
- * environment flag is set. The process still exits 0 when only optional steps were skipped, and
- * exits 1 only when a step that should have worked did not.
+ * Each step can be skipped by its flag. The process still exits 0 when only optional steps were
+ * skipped, and exits 1 only when a step that should have worked did not.
  *
  * Environment flags (all `=1` to enable):
  *   SKIP_BUILD      don't run `pnpm build` (reuse whatever is in dist/)
- *   SKIP_OPTIONS    skip the options-page screenshots
+ *   SKIP_OPTIONS    skip the Settings screenshots
  *   SKIP_DASHBOARD  skip the Sessions dashboard screenshots
- *   SKIP_DEMO       skip the before/after demo tabs (auto-skipped without an external network)
- *   RECORD_VIDEO    record demo.mp4 -- OFF by default: it films the screen region, not the window,
- *                   so whatever else is in front ends up in a committed file
- *   SKIP_NATIVE     skip native macOS window captures (auto-skipped off macOS)
- *   SKIP_MOCKUPS    skip the tab-bar mockup renders
  *   SKIP_PROMO      skip the promotional images
- *   SKIP_GIF        skip demo.gif (auto-skipped without ffmpeg)
  *   HEADLESS=1      force a headless browser (the default where there is no display)
  *   PW_CHROMIUM     Chromium binary to drive (see scripts/e2e/browser.ts)
  *
@@ -35,21 +24,20 @@
  *                   started with `--lang=<code>` and LANGUAGE/LANG set (plus `-AppleLanguages`
  *                   on macOS, where Chrome ignores `--lang`), so `chrome.i18n` picks that
  *                   language; the run fails a language whose browser reports another one. English
- *                   runs the whole pipeline into `assets/` under today's file names; every
+ *                   runs every step into `assets/` under today's file names; every
  *                   other language only shoots the Settings and dashboard screenshots (steps 3-4),
  *                   with the fixture session names in that language, into `assets/<code>/`.
- *                   The demo, mockups, promo images and video carry English text and are shared.
+ *                   The promo images carry English text and are shared.
  */
 
-import { type ChildProcess, execSync, spawn } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Locator, Page } from '@playwright/test';
 
-import type { ExportBundle, Session } from '../src/types';
+import type { Session } from '../src/types';
 import { type ExtensionSession, launchExtension } from './e2e/browser';
 import { buildDashboardFixtures, seedSessions } from './e2e/fixtures';
 import {
@@ -59,19 +47,10 @@ import {
   type ListingLocale,
   readLocaleMessage,
 } from './store-listing';
-import { getChromeWindowBounds } from './window-bounds';
 
 /*
  * Types
  */
-
-interface TabInfo {
-  url: string;
-  title: string;
-  favIconUrl: string;
-  active: boolean;
-  groupColor?: string | null;
-}
 
 interface SkipRecord {
   step: string;
@@ -96,22 +75,10 @@ const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 const ASSETS_DIR = path.join(ROOT, 'assets');
 const PROMO_TEMPLATE = path.join(__dirname, 'promo-template.html');
-const TAB_BAR_TEMPLATE = path.join(__dirname, 'tab-bar-template.html');
 const ICON_PATH = path.join(ROOT, 'public', 'img', 'logo-128.png');
 
 /** How long a dashboard control is waited for before its screenshot is skipped. */
 const CONTROL_TIMEOUT = 8000;
-
-const GROUP_COLORS: Record<string, string> = {
-  blue: '#8ab4f8',
-  red: '#f28b82',
-  yellow: '#fdd663',
-  green: '#81c995',
-  pink: '#ff8bcb',
-  purple: '#c58af9',
-  cyan: '#78d9ec',
-  orange: '#fcad70',
-};
 
 /**
  * The fixture sessions' names and group titles as a person using that language would have typed
@@ -164,23 +131,8 @@ const FIXTURE_TEXT: Record<Exclude<ListingLocale, 'en'>, Record<string, string>>
   },
 };
 
-const DEMO_SITES = [
-  'https://news.ycombinator.com',
-  'https://www.youtube.com',
-  'https://www.youtube.com/feed/trending',
-  'https://github.com',
-  'https://github.com/trending',
-  'https://www.google.com',
-  'https://www.google.com/maps',
-  'https://www.amazon.com',
-  'https://en.wikipedia.org',
-  'https://stackoverflow.com',
-  'https://www.reddit.com',
-  'https://www.reddit.com/r/programming',
-];
-
 /*
- * Optional-dependency probes
+ * Helpers
  */
 
 function envFlag(name: string): boolean {
@@ -257,15 +209,6 @@ function localizeFixtures(sessions: Session[], locale: ListingLocale): Session[]
   }));
 }
 
-function commandExists(command: string): boolean {
-  try {
-    execSync(`command -v ${command}`, { stdio: 'ignore', shell: '/bin/sh' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /*
  * Entry point
  */
@@ -277,7 +220,6 @@ async function main(): Promise<void> {
 class Preparation {
   private context: ExtensionSession['context'] | null = null;
   private ext: ExtensionSession | null = null;
-  private serviceWorker: ExtensionSession['serviceWorker'] | null = null;
   private extensionId = '';
   private screenshotPage: Page | null = null;
   private readonly skipped: SkipRecord[] = [];
@@ -307,7 +249,7 @@ class Preparation {
     this.report();
   }
 
-  /** The whole pipeline, as it ran before the extension was translated: English, `assets/`. */
+  /** English: Settings, dashboard and promo images into `assets/`. */
   private async runEnglish(): Promise<void> {
     const target = captureTarget(DEFAULT_LISTING_LOCALE);
 
@@ -316,40 +258,16 @@ class Preparation {
     const languageOk = await this.checkUiLanguage(target.locale);
 
     if (languageOk) {
-      // Step 3: Options screenshots
+      // Step 3: Settings screenshots
       await this.takeOptionsScreenshots(target);
 
       // Step 4: Sessions dashboard screenshots
       await this.takeDashboardScreenshots(target);
     }
 
-    // Step 5: Demo screenshots (before/after)
-    const { beforeTabs } = await this.takeDemoScreenshots();
-    const demoRan = beforeTabs.length > 0;
-
-    // Step 6: Video recording + sort
-    const ffmpeg = await this.startVideoRecording(demoRan);
-    const afterTabs = demoRan ? await this.sortAndGroupTabs() : [];
-
-    if (demoRan) {
-      await Preparation.delay(3000);
-      this.context?.pages()[0]?.bringToFront();
-      await Preparation.delay(1000);
-      this.tryMacCapture(path.join(ASSETS_DIR, 'after-sort-native.png'), 'after-sort-native');
-    }
-
-    // Stop video BEFORE rendering HTML mockups
-    if (ffmpeg) {
-      await this.stopVideoRecording(ffmpeg);
-    }
-
-    // Render mockups + promo images
-    await this.renderMockupScreenshots(beforeTabs, afterTabs);
+    // Step 5: Promo images
     await this.generatePromoImages();
     await this.context?.close();
-
-    // Step 8: demo.gif for README.md and REGISTRATION.md
-    this.generateDemoGif(ffmpeg !== null);
   }
 
   /** Steps 3-4 in a browser whose UI language is `locale`, into `assets/<locale>/`. */
@@ -365,7 +283,6 @@ class Preparation {
     await this.context?.close();
     this.context = null;
     this.ext = null;
-    this.serviceWorker = null;
     this.screenshotPage = null;
   }
 
@@ -430,10 +347,6 @@ class Preparation {
     console.log('='.repeat(50));
   }
 
-  private static delay(ms: number): Promise<void> {
-    return new Promise((r) => setTimeout(r, ms));
-  }
-
   private static errorMessage(err: unknown): string {
     return err instanceof Error ? err.message.split('\n')[0] : String(err);
   }
@@ -448,83 +361,14 @@ class Preparation {
     }
   }
 
-  /**
-   * Probes the demo network from inside the browser, which is the thing that has to reach it --
-   * Node may well have a proxy the browser does not. Returns `null` when the page loaded, and the
-   * reason it did not otherwise.
-   */
-  private async browserCanReach(url: string): Promise<string | null> {
-    if (!this.context) {
-      return 'no browser context';
-    }
-    const page = await this.context.newPage();
-    try {
-      const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      if (response === null) {
-        return 'no response';
-      }
-      return response.ok() ? null : `HTTP ${response.status()}`;
-    } catch (err) {
-      return Preparation.errorMessage(err);
-    } finally {
-      await page.close();
-    }
-  }
-
-  /**
-   * `screencapture` is macOS-only and needs a real window server; off macOS (or with
-   * SKIP_NATIVE=1) the capture is skipped rather than silently swallowed, so the run log says
-   * why `*-native.png` did not change.
-   */
-  private tryMacCapture(filename: string, label: string): boolean {
-    if (envFlag('SKIP_NATIVE')) {
-      this.skip(`native capture (${label})`, 'SKIP_NATIVE=1');
-      return false;
-    }
-    if (process.platform !== 'darwin') {
-      this.skip(
-        `native capture (${label})`,
-        `macOS-only (screencapture); platform is ${process.platform}`,
-      );
-      return false;
-    }
-    try {
-      const bounds = getChromeWindowBounds();
-      if (!bounds) {
-        this.skip(`native capture (${label})`, 'the demo browser has no window on screen');
-        return false;
-      }
-      execSync(`screencapture -l${bounds.id} -x "${filename}"`, { timeout: 5000 });
-      return true;
-    } catch (err) {
-      this.skip(`native capture (${label})`, Preparation.errorMessage(err));
-      return false;
-    }
-  }
-
-  private buildTabBarHtml(tabs: TabInfo[], title: string): string {
-    const template = readFileSync(TAB_BAR_TEMPLATE, 'utf-8');
-    const tabItems = tabs
-      .map(
-        (t) => `
-    <div class="tab ${t.active ? 'active' : ''}" ${t.groupColor ? `style="border-top: 3px solid ${t.groupColor}"` : ''}>
-      <img src="${t.favIconUrl || `https://www.google.com/s2/favicons?domain=${new URL(t.url).hostname}&sz=32`}" width="16" height="16" onerror="this.style.display='none'"/>
-      <span class="title">${t.title?.slice(0, 28) || new URL(t.url).hostname}</span>
-    </div>`,
-      )
-      .join('\n');
-
-    return template.replace(/\{\{TITLE\}\}/g, title).replace('{{TABS}}', tabItems);
-  }
-
   /* Pipeline steps */
 
   private buildExtension(): void {
-    Preparation.step('1/8  Building extension');
+    Preparation.step('1/5  Building extension');
     if (envFlag('SKIP_BUILD')) {
-      this.skip('1/8  Building extension', 'SKIP_BUILD=1');
+      this.skip('1/5  Building extension', 'SKIP_BUILD=1');
       if (!existsSync(path.join(DIST, 'manifest.json'))) {
-        this.fail('1/8  Building extension', `SKIP_BUILD=1 but there is no build in ${DIST}`);
+        this.fail('1/5  Building extension', `SKIP_BUILD=1 but there is no build in ${DIST}`);
       }
       return;
     }
@@ -533,12 +377,11 @@ class Preparation {
   }
 
   private async launchBrowser(locale: ListingLocale = DEFAULT_LISTING_LOCALE): Promise<void> {
-    Preparation.step(`2/8  Launching browser for screenshots & demo (${locale})`);
+    Preparation.step(`2/5  Launching browser for screenshots (${locale})`);
     const session = await launchExtension({
       dist: DIST,
       preferHeaded: true,
       locale,
-      args: ['--window-size=1400,900', '--window-position=100,50'],
     }).catch((err: unknown) => {
       console.error('Could not launch Chrome with the extension:', Preparation.errorMessage(err));
       process.exit(1);
@@ -546,7 +389,6 @@ class Preparation {
 
     this.ext = session;
     this.context = session.context;
-    this.serviceWorker = session.serviceWorker;
     this.extensionId = session.extensionId;
     console.log(`Extension ID: ${this.extensionId}`);
   }
@@ -555,17 +397,14 @@ class Preparation {
     if (!this.context) {
       return;
     }
-    Preparation.step(`3/8  Options page screenshots (${target.locale})`);
+    Preparation.step(`3/5  Settings screenshots (${target.locale})`);
     if (envFlag('SKIP_OPTIONS')) {
-      this.skip('3/8  Options page screenshots', 'SKIP_OPTIONS=1');
+      this.skip('3/5  Settings screenshots', 'SKIP_OPTIONS=1');
       return;
     }
     const optionsUrl = `chrome-extension://${this.extensionId}/app.html#settings`;
 
-    for (const { width, height } of [
-      { width: 1280, height: 800 },
-      { width: 640, height: 400 },
-    ]) {
+    for (const { width, height } of [{ width: 1280, height: 800 }]) {
       const page = await this.context.newPage();
       await page.setViewportSize({ width, height });
       await page.goto(optionsUrl);
@@ -585,18 +424,17 @@ class Preparation {
    * straight into `chrome.storage.local` through the extension service worker -- no Chrome
    * runtime ids are ever stored, so the records are exactly what a real save would leave behind.
    *
-   * Parts of the dashboard (search, import, the history section) are still being built; every
-   * capture locates its control by role/accessible name and skips itself with a warning when that
-   * control is not there, so this step never fails a release run.
+   * Every capture finds its control by role or accessible name and skips itself with a warning
+   * when that control is missing, so this step never fails a release run.
    */
   private async takeDashboardScreenshots(target: CaptureTarget): Promise<void> {
     if (!this.context || !this.ext) {
       return;
     }
     const { text } = target;
-    Preparation.step(`4/8  Sessions dashboard screenshots (${target.locale})`);
+    Preparation.step(`4/5  Sessions dashboard screenshots (${target.locale})`);
     if (envFlag('SKIP_DASHBOARD')) {
-      this.skip('4/8  Sessions dashboard screenshots', 'SKIP_DASHBOARD=1');
+      this.skip('4/5  Sessions dashboard screenshots', 'SKIP_DASHBOARD=1');
       return;
     }
 
@@ -709,53 +547,10 @@ class Preparation {
         .or(page.getByPlaceholder(/search|filter/i))
         .or(page.getByPlaceholder(text('searchPlaceholder')));
       if (!(await Preparation.isVisible(search))) {
-        return 'no search field on the dashboard yet';
+        return 'no search field on the dashboard';
       }
       await search.first().fill('github');
       await page.waitForTimeout(500);
-      return null;
-    });
-
-    await shot('import', async () => {
-      // Import moved into Settings with the one-page redesign (v7.2.0).
-      await page.goto(`${dashboardUrl}#settings`);
-      // Settings is a dialog over the open-tabs view since v7.8.0; its title is the heading.
-      await page
-        .getByRole('dialog')
-        .getByRole('heading', { name: text('settingsTitle') })
-        .waitFor({
-          timeout: CONTROL_TIMEOUT,
-        });
-      const importButton = page.getByRole('button', {
-        name: new RegExp(`^${escapeRegExp(text('settingsImport'))}`, 'i'),
-      });
-      if (!(await Preparation.isVisible(importButton))) {
-        return 'no Import control on the dashboard yet';
-      }
-      await importButton.first().click();
-      const dialog = page.getByRole('dialog');
-      if (!(await Preparation.isVisible(dialog))) {
-        return 'the import dialog did not open';
-      }
-      const fileInput = dialog.locator('input[type="file"]');
-      if ((await fileInput.count()) === 0) {
-        return 'the import dialog has no file input to build a preview from';
-      }
-      const bundle: ExportBundle = {
-        app: 'tab-organizer',
-        schemaVersion: 1,
-        exportedAt: Date.now(),
-        sessions: fixtures.slice(0, 2),
-      };
-      const bundlePath = path.join(os.tmpdir(), 'tab-organizer-import-preview.json');
-      writeFileSync(bundlePath, JSON.stringify(bundle, null, 2));
-      await fileInput.first().setInputFiles(bundlePath);
-      const preview = dialog.getByText(
-        new RegExp(escapeRegExp(fixtures[0].name.slice(0, 12)), 'i'),
-      );
-      if (!(await Preparation.isVisible(preview))) {
-        return 'the import dialog never showed a preview of the chosen file';
-      }
       return null;
     });
 
@@ -767,7 +562,7 @@ class Preparation {
         .getByRole('navigation', { name: text('appNavLabel') })
         .locator('button[aria-expanded]');
       if (!(await Preparation.isVisible(toggle))) {
-        return 'no snapshots control in the sidebar yet';
+        return 'no snapshots control in the sidebar';
       }
       if ((await toggle.first().getAttribute('aria-expanded')) === 'false') {
         await toggle.first().click();
@@ -788,242 +583,7 @@ class Preparation {
     await page.close();
   }
 
-  private async takeDemoScreenshots(): Promise<{ beforeTabs: TabInfo[]; nativeBefore: boolean }> {
-    if (!this.context || !this.serviceWorker) {
-      return { beforeTabs: [], nativeBefore: false };
-    }
-    Preparation.step('5/8  Demo screenshots (before/after tab sorting)');
-
-    if (envFlag('SKIP_DEMO')) {
-      this.skip('5/8  Demo screenshots', 'SKIP_DEMO=1');
-      return { beforeTabs: [], nativeBefore: false };
-    }
-    const reachable = await this.browserCanReach(DEMO_SITES[0]);
-    if (reachable !== null) {
-      this.skip('5/8  Demo screenshots', `the browser cannot reach ${DEMO_SITES[0]}: ${reachable}`);
-      return { beforeTabs: [], nativeBefore: false };
-    }
-
-    console.log('  Opening tabs...');
-    for (const url of DEMO_SITES) {
-      const page = await this.context.newPage();
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
-    }
-
-    const allPages = this.context.pages();
-    if (allPages.length > DEMO_SITES.length) {
-      await allPages[0].close();
-    }
-
-    console.log('  Waiting for pages to settle...');
-    await Preparation.delay(5000);
-    await this.context.pages()[0].bringToFront();
-    await Preparation.delay(1000);
-
-    const worker = this.ext === null ? this.serviceWorker : await this.ext.worker();
-    const beforeTabs: TabInfo[] = await worker.evaluate(async () => {
-      const win = await chrome.windows.getCurrent();
-      const tabs = await chrome.tabs.query({ windowId: win.id });
-      return tabs.map((t) => ({
-        url: t.url ?? '',
-        title: t.title ?? '',
-        favIconUrl: t.favIconUrl ?? '',
-        active: t.active,
-      }));
-    });
-    console.log(`  ${beforeTabs.length} tabs open`);
-
-    const nativeBefore = this.tryMacCapture(
-      path.join(ASSETS_DIR, 'before-sort-native.png'),
-      'before-sort-native',
-    );
-    if (nativeBefore) {
-      console.log('  Native BEFORE screenshot captured');
-    }
-
-    return { beforeTabs, nativeBefore };
-  }
-
-  /**
-   * Screen recording is macOS-only (ffmpeg's `avfoundation` input) and needs ffmpeg on PATH.
-   * Missing either -- or a skipped demo step, which leaves nothing worth filming -- means no
-   * video, and later `demo.gif` sees no `demo.mp4` and skips too.
-   *
-   * It is off unless RECORD_VIDEO=1. avfoundation films the *screen*, cropped to where the Chrome
-   * window is, not the window itself: anything that comes to the front during those 15 seconds --
-   * a terminal, a messenger -- is recorded in its place, and this file is committed to a public
-   * repository. Releases of v7.3.1, v7.4.0 and v7.6.0 published exactly that. Only run it with
-   * nothing else on that screen, and watch demo.mp4 through before committing it.
-   */
-  private async startVideoRecording(demoRan: boolean): Promise<ChildProcess | null> {
-    Preparation.step('6/8  Video recording & tab sorting');
-    if (!envFlag('RECORD_VIDEO')) {
-      this.skip('6/8  Video recording', 'off unless RECORD_VIDEO=1 (it films the screen)');
-      return null;
-    }
-    if (!demoRan) {
-      this.skip('6/8  Video recording', 'the demo step was skipped, so there is nothing to record');
-      return null;
-    }
-    if (!commandExists('ffmpeg')) {
-      this.skip('6/8  Video recording', 'ffmpeg is not installed');
-      return null;
-    }
-    if (process.platform !== 'darwin') {
-      this.skip(
-        '6/8  Video recording',
-        `ffmpeg avfoundation capture is macOS-only; platform is ${process.platform}`,
-      );
-      return null;
-    }
-
-    try {
-      const deviceInfo = execSync('ffmpeg -f avfoundation -list_devices true -i "" 2>&1 || true', {
-        encoding: 'utf-8',
-      });
-      const screenMatch = deviceInfo.match(/\[(\d+)] Capture screen/);
-      const screenIndex = screenMatch ? screenMatch[1] : '1';
-
-      const bounds = getChromeWindowBounds();
-      const isRetina = execSync('system_profiler SPDisplaysDataType 2>/dev/null || true', {
-        encoding: 'utf-8',
-      }).includes('Retina');
-      const scale = isRetina ? 2 : 1;
-      const cropFilter = bounds
-        ? `-vf crop=${bounds.width * scale}:${bounds.height * scale}:${bounds.x * scale}:${bounds.y * scale}`
-        : '';
-
-      const proc = spawn(
-        'ffmpeg',
-        [
-          '-y',
-          '-f',
-          'avfoundation',
-          '-capture_cursor',
-          '0',
-          '-framerate',
-          '30',
-          '-i',
-          `${screenIndex}:none`,
-          '-t',
-          '15',
-          ...(cropFilter ? cropFilter.split(' ') : []),
-          '-vcodec',
-          'libx264',
-          '-pix_fmt',
-          'yuv420p',
-          '-preset',
-          'ultrafast',
-          '-crf',
-          '23',
-          path.join(ASSETS_DIR, 'demo.mp4'),
-        ],
-        { stdio: ['pipe', 'ignore', 'ignore'] },
-      );
-      console.log(
-        `  Recording started${bounds ? ` (cropped to ${bounds.width}x${bounds.height})` : ''}`,
-      );
-      await Preparation.delay(2000);
-      return proc;
-    } catch (err) {
-      this.skip('6/8  Video recording', Preparation.errorMessage(err));
-      return null;
-    }
-  }
-
-  private async stopVideoRecording(proc: ChildProcess): Promise<void> {
-    await Preparation.delay(2000);
-    proc.stdin?.write('q');
-    await new Promise<void>((resolve) => {
-      proc.on('close', resolve);
-      setTimeout(resolve, 5000);
-    });
-    console.log('  Video saved: assets/demo.mp4');
-  }
-
-  private async sortAndGroupTabs(): Promise<TabInfo[]> {
-    if (!this.serviceWorker) {
-      return [];
-    }
-    console.log('  Sorting and grouping tabs...');
-    const worker = this.ext === null ? this.serviceWorker : await this.ext.worker();
-
-    return worker.evaluate(async () => {
-      const currentWindow = await chrome.windows.getCurrent();
-      const tabs = await chrome.tabs.query({ windowId: currentWindow.id });
-
-      const sorted = [...tabs].sort((a, b) => {
-        try {
-          const hostA = new URL(a.url || '').hostname.replace('www.', '');
-          const hostB = new URL(b.url || '').hostname.replace('www.', '');
-          return hostA.localeCompare(hostB);
-        } catch {
-          return 0;
-        }
-      });
-
-      for (let i = 0; i < sorted.length; i++) {
-        const tabId = sorted[i].id;
-        if (tabId !== undefined) {
-          await chrome.tabs.move(tabId, { index: i });
-        }
-      }
-
-      const domainMap = new Map<string, number[]>();
-      const updatedTabs = await chrome.tabs.query({ windowId: currentWindow.id });
-      for (const tab of updatedTabs) {
-        try {
-          const host = new URL(tab.url || '').hostname.replace('www.', '');
-          if (!domainMap.has(host)) {
-            domainMap.set(host, []);
-          }
-          const ids = domainMap.get(host);
-          if (ids && tab.id !== undefined) {
-            ids.push(tab.id);
-          }
-        } catch {
-          /* skip */
-        }
-      }
-
-      const colors = [
-        'blue',
-        'red',
-        'yellow',
-        'green',
-        'pink',
-        'purple',
-        'cyan',
-        'orange',
-      ] as const;
-      const groupInfo: { domain: string; color: string }[] = [];
-      let idx = 0;
-      for (const [domain, tabIds] of domainMap) {
-        if (tabIds.length > 1 && tabIds.every((id) => id !== undefined)) {
-          const groupId = await chrome.tabs.group({ tabIds: tabIds as [number, ...number[]] });
-          const color = colors[idx % colors.length];
-          await chrome.tabGroups.update(groupId, { title: domain.split('.')[0], color });
-          groupInfo.push({ domain, color });
-          idx++;
-        }
-      }
-
-      const finalTabs = await chrome.tabs.query({ windowId: currentWindow.id });
-      return finalTabs.map((t) => {
-        const host = new URL(t.url || '').hostname.replace('www.', '');
-        const group = groupInfo.find((g) => g.domain === host);
-        return {
-          url: t.url ?? '',
-          title: t.title ?? '',
-          favIconUrl: t.favIconUrl ?? '',
-          active: t.active,
-          groupColor: group?.color || null,
-        };
-      });
-    });
-  }
-
-  /** The page promo images are rendered on; created lazily so a skipped mockup step is fine. */
+  /** The page promo images are rendered on; created lazily. */
   private async ensureScreenshotPage(): Promise<Page | null> {
     if (this.screenshotPage) {
       return this.screenshotPage;
@@ -1036,98 +596,10 @@ class Preparation {
     return this.screenshotPage;
   }
 
-  private async renderMockupScreenshots(
-    beforeTabs: TabInfo[],
-    afterTabs: TabInfo[],
-  ): Promise<void> {
-    if (!this.context) {
-      return;
-    }
-    Preparation.step('7/8  Tab-bar mockups & promotional images');
-    if (envFlag('SKIP_MOCKUPS')) {
-      this.skip('7/8  Tab-bar mockups', 'SKIP_MOCKUPS=1');
-      return;
-    }
-    if (beforeTabs.length === 0 && afterTabs.length === 0) {
-      this.skip('7/8  Tab-bar mockups', 'the demo step produced no tabs to draw');
-      return;
-    }
-    console.log('  Rendering tab bar mockups...');
-
-    const afterTabsWithColors = afterTabs.map((t) => ({
-      ...t,
-      groupColor: t.groupColor ? GROUP_COLORS[t.groupColor] || t.groupColor : null,
-    }));
-
-    const beforeHtml = this.buildTabBarHtml(beforeTabs, 'Before - Tabs in random order');
-    const afterHtml = this.buildTabBarHtml(
-      afterTabsWithColors,
-      'After - Sorted and grouped by domain',
-    );
-
-    const beforePath = path.join(ASSETS_DIR, 'before-sort.html');
-    const afterPath = path.join(ASSETS_DIR, 'after-sort.html');
-    writeFileSync(beforePath, beforeHtml);
-    writeFileSync(afterPath, afterHtml);
-
-    const page = await this.ensureScreenshotPage();
-    if (page === null) {
-      return;
-    }
-    await page.setViewportSize({ width: 1280, height: 800 });
-
-    await page.goto(`file://${beforePath}`);
-    await page.waitForTimeout(1000);
-    await page.screenshot({
-      path: path.join(ASSETS_DIR, 'before-sort.png'),
-      clip: { x: 0, y: 0, width: 1280, height: 800 },
-    });
-    console.log('  Saved: assets/before-sort.png');
-
-    await page.goto(`file://${afterPath}`);
-    await page.waitForTimeout(1000);
-    await page.screenshot({
-      path: path.join(ASSETS_DIR, 'after-sort.png'),
-      clip: { x: 0, y: 0, width: 1280, height: 800 },
-    });
-    console.log('  Saved: assets/after-sort.png');
-  }
-
-  private generateDemoGif(recorded: boolean): void {
-    Preparation.step('8/8  Demo GIF');
-    if (envFlag('SKIP_GIF')) {
-      this.skip('8/8  Demo GIF', 'SKIP_GIF=1');
-      return;
-    }
-    // Without a new recording the committed demo.gif already matches the committed demo.mp4.
-    if (!recorded) {
-      this.skip('8/8  Demo GIF', 'no new recording (RECORD_VIDEO=1 to make one)');
-      return;
-    }
-    const video = path.join(ASSETS_DIR, 'demo.mp4');
-    const gif = path.join(ASSETS_DIR, 'demo.gif');
-    if (!commandExists('ffmpeg')) {
-      this.skip('8/8  Demo GIF', 'ffmpeg is not installed');
-      return;
-    }
-    if (!existsSync(video)) {
-      this.skip('8/8  Demo GIF', 'assets/demo.mp4 does not exist');
-      return;
-    }
-    try {
-      // 10 fps, 800px wide, 128-colour palette: ~170 KB for the 8 s demo
-      const filter =
-        'fps=10,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5';
-      execSync(`ffmpeg -y -v error -i "${video}" -vf "${filter}" "${gif}"`, { timeout: 60000 });
-      console.log('  Saved: assets/demo.gif');
-    } catch (err) {
-      this.skip('8/8  Demo GIF', `ffmpeg failed: ${Preparation.errorMessage(err)}`);
-    }
-  }
-
   private async generatePromoImages(): Promise<void> {
+    Preparation.step('5/5  Promotional images');
     if (envFlag('SKIP_PROMO')) {
-      this.skip('7/8  Promotional images', 'SKIP_PROMO=1');
+      this.skip('5/5  Promotional images', 'SKIP_PROMO=1');
       return;
     }
     const page = await this.ensureScreenshotPage();

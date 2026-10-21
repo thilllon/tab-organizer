@@ -687,26 +687,6 @@
     "message": "CSV로 내보내기",
     "description": "Downloads the session as a CSV spreadsheet file. Export menu item; keep it short (at most about 30 characters)."
   },
-  "expFormatJson": {
-    "message": "JSON",
-    "description": "Name of the JSON export format, used on its own."
-  },
-  "expFormatMarkdown": {
-    "message": "Markdown",
-    "description": "Name of the Markdown export format, used on its own."
-  },
-  "expFormatText": {
-    "message": "텍스트",
-    "description": "Name of the plain-text export format, used on its own (lower case in English)."
-  },
-  "expFormatHtml": {
-    "message": "HTML 북마크",
-    "description": "Name of the bookmarks HTML export format, used on its own."
-  },
-  "expFormatCsv": {
-    "message": "CSV",
-    "description": "Name of the CSV export format, used on its own."
-  },
   "expExportedJson": {
     "message": "“$1”을(를) JSON으로 내보냈습니다.",
     "description": " Toast after an export. $1 is the name of what was exported (a session name, possibly narrowed like 'Work (Window 2)')."

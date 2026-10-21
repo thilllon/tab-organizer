@@ -165,7 +165,7 @@ export function SettingsView({
             </NativeSelect>
           </SettingsField>
 
-          {/* Only "Custom" reads these (CUSTOM_ONLY_SETTINGS), so they sit under "Sort by",
+          {/* Only "Custom" reads these (showsCustomSortOptions), so they sit under "Sort by",
               indented, while it is chosen, and are not shown at all otherwise. */}
           {showCustomOptions && (
             <div className="space-y-5 border-l-2 border-border pl-4">

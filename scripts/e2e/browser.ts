@@ -6,7 +6,8 @@
  *    `/opt/pw-browsers/chromium`) points at a Chromium that is; when neither exists we fall back
  *    to Playwright's default resolution and let it report its own error.
  *  - Extensions do load in headless Chrome, so headless is the default anywhere without a
- *    display. `HEADLESS=0` forces a headed run (needed for native screen capture / recording).
+ *    display. `HEADLESS=0` forces a headed run (the sort and selection checks need one: sorting acts on the
+ *    last-focused window).
  */
 
 import { execFileSync } from 'node:child_process';
@@ -51,7 +52,8 @@ interface LaunchOptions {
   /** Extra Chrome switches, appended after the extension-loading ones. */
   args?: string[];
   /**
-   * `true` when the caller would rather have a visible window (screen recording, native capture).
+   * `true` when the caller would rather have a visible window (the sort and selection checks,
+   * release screenshots).
    * Ignored when there is no display - see {@link resolveHeadless}.
    */
   preferHeaded?: boolean;
@@ -77,12 +79,12 @@ const POSIX_LOCALES: Record<string, string> = {
  * Testing 156 still reports en-US) and takes the Cocoa `AppleLanguages` default instead, see
  * {@link pinMacLanguage}. Playwright refuses the `-AppleLanguages (ko)` argument pair outright.
  */
-export function languageArgs(locale: string): string[] {
+function languageArgs(locale: string): string[] {
   return [`--lang=${locale}`];
 }
 
 /** Sets LANGUAGE/LANG for `locale`; Playwright hands the browser this process's environment. */
-export function setLanguageEnv(locale: string): void {
+function setLanguageEnv(locale: string): void {
   process.env.LANGUAGE = locale;
   process.env.LANG = `${POSIX_LOCALES[locale] ?? locale}.UTF-8`;
 }
@@ -133,8 +135,6 @@ const SERVICE_WORKER_TIMEOUT_MS = 15_000;
 
 export interface ExtensionSession {
   context: BrowserContext;
-  /** The extension's MV3 service worker as it was at launch - prefer {@link worker}. */
-  serviceWorker: Worker;
   extensionId: string;
   /**
    * The *current* service worker, with its extension API bindings confirmed present. Chrome may
@@ -235,7 +235,6 @@ export async function launchExtension(options: LaunchOptions): Promise<Extension
 
   return {
     context,
-    serviceWorker,
     extensionId,
     async worker(): Promise<Worker> {
       return workerWithApis(context, SERVICE_WORKER_TIMEOUT_MS);

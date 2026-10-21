@@ -42,7 +42,7 @@ const ROOT = path.resolve(__dirname, '..');
  *
  * `screenshot-1280x800.png` is captured from `app.html#settings` with nothing seeded, so it is the
  * Settings dialog over an empty page: useful as context, useless as a first impression. It goes
- * last. (The file name predates v7.2.0, when Options was still a page of its own.)
+ * last.
  */
 const SCREENSHOTS: { from: string; as: string; caption: string }[] = [
   {

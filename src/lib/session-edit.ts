@@ -6,7 +6,7 @@ import type { Session, TabSnapshot, WindowSnapshot } from '@/types';
  * remaining `groupIndex` values are remapped. Filtering alone cannot do it - `groupIndex` is a
  * position in `groups`, so removing the last tab of group 0 would leave every other tab pointing at
  * the wrong group. Relative order is preserved, so the surviving groups stay in first-appearance
- * order (spec §3).
+ * order.
  */
 function compactGroups(
   groups: WindowSnapshot['groups'],
@@ -67,7 +67,7 @@ function requireWindow(session: Session, windowIndex: number): WindowSnapshot {
 }
 
 /**
- * Removes one tab from a saved session (spec §12 Phase 2, "Remove from session").
+ * Removes one tab from a saved session ("Remove from session").
  *
  * Removing the last tab of a window removes the window; removing the last window returns `null`,
  * which `sessionRepo.update` turns into a delete - the dashboard asks first.

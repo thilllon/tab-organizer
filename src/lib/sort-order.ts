@@ -32,14 +32,9 @@ export function urlSortKey(url: URL): string {
   return url.hostname.replace(/^www\./i, '') + url.pathname + url.search + url.hash;
 }
 
-export function compareByUrlComponents(urlA: URL, urlB: URL): number {
-  return collator.compare(urlSortKey(urlA), urlSortKey(urlB));
-}
-
 /**
- * A stable sort that derives each item's key exactly once, then compares keys only. The sorts
- * below used to parse both urls inside the comparator, so a tab's url was parsed once per
- * comparison it took part in rather than once. Returns a new array; `items` is left alone.
+ * A stable sort that derives each item's key exactly once, then compares keys only, so a tab's
+ * url is parsed once rather than once per comparison. Returns a new array; `items` is left alone.
  */
 export function sortedByKey<T, K>(
   items: readonly T[],
@@ -104,7 +99,7 @@ export function isSuspended(tab: chrome.tabs.Tab, suspendedPrefix: string): bool
 /**
  * Where a tab with no usable url sorts. Chrome hands us `url: ''` with no `pendingUrl` for a tab
  * that has not committed a navigation yet, and `new URL('')` throws - which would abort the whole
- * sort. Every real key `compareByUrlComponents` builds is lowercase ASCII (Chrome punycodes
+ * sort. Every real key `urlSortKey` builds is lowercase ASCII (Chrome punycodes
  * hostnames and percent-encodes the rest), so a host of `z`s collates after all of them: unknown
  * tabs land together at the end, and `.invalid` (RFC 6761) can never be a real host.
  */

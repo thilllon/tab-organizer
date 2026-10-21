@@ -37,8 +37,8 @@ interface SnapshotDetailProps {
 
 /**
  * One automatic snapshot. Two actions only: open it, or keep it - "keep" moves it into the saved
- * list, which is the whole of what the old `protected` flag meant, without a word the user has to
- * learn. Snapshots are not editable: they are a record of what was open, not a document.
+ * list, where pruning never reaches it. Snapshots are not editable: they are a record of what was
+ * open, not a document.
  */
 export function SnapshotDetail({
   summary,

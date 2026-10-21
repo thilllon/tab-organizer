@@ -164,8 +164,6 @@ export function tokenize(query: string): string[] {
 /** 0 = a token is a prefix of the hostname, 1 = a token is in the title, 2 = url-only. */
 type MatchTier = 0 | 1 | 2;
 const NO_MATCH = -1;
-/** Sort key for entries that do not match at all (after every tier) in `rankEntries`. */
-const UNMATCHED_RANK = 3;
 
 function isHostnamePrefix(hostname: string, token: string): boolean {
   if (hostname.startsWith(token)) {
@@ -203,11 +201,6 @@ function classify(entry: SearchEntry, tokens: string[]): MatchTier | typeof NO_M
   return tier;
 }
 
-/** Every token is a substring of title, url or hostname. No tokens matches everything. */
-export function matchEntry(entry: SearchEntry, tokens: string[]): boolean {
-  return classify(entry, tokens) !== NO_MATCH;
-}
-
 /** Tier-1 (index only) match: every token is a substring of the session name. */
 export function matchSessionName(name: string, tokens: string[]): boolean {
   const lower = name.toLowerCase();
@@ -235,20 +228,6 @@ function compareRanked(a: Ranked, b: Ranked): number {
     return b.entry.sessionUpdatedAt - a.entry.sessionUpdatedAt;
   }
   return a.index - b.index;
-}
-
-/**
- * Stable order: hostname prefix > title match > url-only match, then source
- * open > saved > history, then newest session first. Entries that do not match at all are
- * kept after every match, in their original order.
- */
-export function rankEntries(entries: SearchEntry[], tokens: string[]): SearchEntry[] {
-  const ranked: Ranked[] = entries.map((entry, index) => {
-    const tier = classify(entry, tokens);
-    return { entry, tier: tier === NO_MATCH ? UNMATCHED_RANK : tier, index };
-  });
-  ranked.sort(compareRanked);
-  return ranked.map((item) => item.entry);
 }
 
 function emptySourceResult(): SearchSourceResult {

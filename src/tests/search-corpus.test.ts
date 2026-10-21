@@ -159,7 +159,7 @@ describe('SearchCorpusCache', () => {
     get.mockRestore();
   });
 
-  it('reads a whole pre-warm batch in one storage request (spec §4)', async () => {
+  it('reads a whole pre-warm batch in one storage request', async () => {
     await sessionRepo.put(makeSession('a', ['https://a.example/']));
     await sessionRepo.put(makeSession('b', ['https://b.example/']));
     await sessionRepo.put(makeSession('c', ['https://c.example/']));

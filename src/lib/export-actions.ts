@@ -31,19 +31,6 @@ export function exportFormatItems(): ExportFormatItem[] {
   return EXPORT_FORMATS.map((format) => ({ format, label: t(FORMAT_ITEM_KEYS[format]) }));
 }
 
-/** How a format is named on its own ("HTML bookmarks"). */
-const FORMAT_NAME_KEYS: Record<ExportFormat, MessageKey> = {
-  json: 'expFormatJson',
-  markdown: 'expFormatMarkdown',
-  text: 'expFormatText',
-  html: 'expFormatHtml',
-  csv: 'expFormatCsv',
-};
-
-export function formatName(format: ExportFormat): string {
-  return t(FORMAT_NAME_KEYS[format]);
-}
-
 /** One whole sentence per format, so a translation can put the name where its grammar wants. */
 const EXPORTED_NOTICE_KEYS: Record<ExportFormat, MessageKey> = {
   json: 'expExportedJson',
@@ -108,7 +95,7 @@ export function copiedMarkdownNotice(count: number): string {
 }
 
 /**
- * The tab row's own "Copy link" (spec §8): one url, so it is a sentence rather than a count -
+ * The tab row's own "Copy link": one url, so it is a sentence rather than a count -
  * "Copied 1 link." would be counting to one. The multi-link notices above stay as they are.
  */
 export function copiedLinkNotice(): string {

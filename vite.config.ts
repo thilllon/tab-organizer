@@ -52,12 +52,6 @@ const manifest = defineManifest((env) => {
       service_worker: 'src/service-worker.ts',
       type: 'module',
     },
-    web_accessible_resources: [
-      {
-        resources: ['img/logo-16.png', 'img/logo-32.png', 'img/logo-48.png', 'img/logo-128.png'],
-        matches: [],
-      },
-    ],
     // `alarms` is touched at module-evaluation time (`chrome.alarms.onAlarm.addListener` in
     // src/service-worker.ts), so it must ship with that listener - see AGENTS.md.
     permissions: [

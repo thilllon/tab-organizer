@@ -8,7 +8,7 @@
  * `extDescription` in `public/_locales/<code>/messages.json`: the store reads the Summary out of
  * the package, so the block in the listing is only a copy for review. What is in a block is what
  * gets pasted, nothing is generated from it. This module finds the blocks and holds the length
- * limits the store enforces; `tests/store-listing.test.ts` checks the real files on every
+ * limits the store enforces; `src/tests/store-listing.test.ts` checks the real files on every
  * `pnpm test`.
  */
 
@@ -65,7 +65,7 @@ export function summaryHeading(locale: ListingLocale = DEFAULT_LISTING_LOCALE): 
  * Returns the text of the first fenced block under `heading` (matched as the whole line), without
  * the fences. Throws when the heading or a complete block is missing before the next heading.
  */
-export function extractBlock(markdown: string, heading: string): string {
+function extractBlock(markdown: string, heading: string): string {
   const lines = markdown.split('\n');
   const start = lines.findIndex((line) => line.trim() === heading);
   if (start === -1) {

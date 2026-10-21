@@ -26,15 +26,14 @@ interface StorageMeterProps {
 }
 
 /**
- * How much of this device the extension is using (spec §4, §12 Phase 6): one `getBytesInUse()`
- * total, split into saved sessions and automatic snapshots from the index's `bytes` fields, plus
- * the hint that names the snapshots when they are what is filling the disk.
+ * How much of this device the extension is using: one `getBytesInUse()` total, split into saved
+ * sessions and automatic snapshots from the index's `bytes` fields, plus the hint that names the
+ * snapshots when they are what is filling the disk.
  *
- * Two remedies sit below it, bottom-left, because this is where a quota notice sends the user
- * (spec §4: the toast links to the meter *and* to "Delete old history"): "Delete all unprotected", the one that
- * actually frees the space and keeps every saved session, and only then the all-or-nothing
- * "Delete all session data". The first clears every snapshot that is not protected, behind its own
- * confirm (`DeleteAllHistoryDialog`).
+ * Two remedies sit below it, bottom-left, because this is where a quota notice sends the user:
+ * "Delete all unprotected", the one that actually frees the space and keeps every saved session,
+ * and only then the all-or-nothing "Delete all session data". The first clears every snapshot
+ * that is not protected, behind its own confirm (`DeleteAllHistoryDialog`).
  *
  * The total is re-read whenever the index changes - every write goes through `sessionRepo`, which
  * rewrites `sessionIndex`, and `useSessionIndex` turns that `storage.onChanged` into a new

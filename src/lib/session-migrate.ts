@@ -25,7 +25,7 @@ export class MalformedRecordError extends TypeError {
  * The schema version of a body written by a *newer* Tab Organizer, or `undefined` when `err` is
  * anything else (a malformed record, or a version this build cannot place). Callers use it to
  * tell "I am too old to read this" -- which the UI can explain and the user can fix by updating
- * -- from "this record is damaged", which it cannot (spec §3).
+ * -- from "this record is damaged", which it cannot.
  */
 export function futureSchemaVersion(err: unknown): number | undefined {
   if (!(err instanceof UnknownSchemaVersionError)) {

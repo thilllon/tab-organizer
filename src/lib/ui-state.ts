@@ -6,7 +6,7 @@
  * keys at all).
  */
 
-/** Open/closed state of the dashboard's History disclosure. */
+/** Open/closed state of the sidebar's snapshots fold. */
 export const HISTORY_OPEN_KEY = 'tab-organizer:history-open';
 /** Width of the app's sidebar, in pixels - a preference, so it outlives the tab. */
 export const SIDEBAR_WIDTH_KEY = 'tab-organizer:sidebar-width';

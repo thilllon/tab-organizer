@@ -1,5 +1,5 @@
 /**
- * Quota classification (spec §4 "Quota errors"). Every session write goes through
+ * Quota classification. Every session write goes through
  * `sessionRepo` → `chrome.storage.local.set`, which rejects when the area is full. Chrome words
  * that rejection several ways depending on where it comes from:
  *

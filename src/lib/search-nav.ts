@@ -46,7 +46,7 @@ export interface SearchGroup {
  * body reads). History snapshots only take part once "Also search auto-saved" is chosen, exactly like
  * the tier-2 entries. Order is the index's (newest first).
  *
- * A session this build cannot read (spec §3) is never a result: activating a tier-1 row restores
+ * A session this build cannot read is never a result: activating a tier-1 row restores
  * it, and the whole point of the read-only row in the saved list is that this build cannot. Its
  * tier-2 entries do not exist either - nothing could read the body to build them.
  */
@@ -173,7 +173,7 @@ type ActivationDecision =
   | { action: 'none' };
 
 /**
- * Resolves an Enter press against the render it is resolved in (spec §7 keyboard rules).
+ * Resolves an Enter press against the render it is resolved in.
  *
  * Two things make a naive `items[highlight] ?? items[0]` wrong:
  * - the search box commits the typed query and asks for the activation in the same event handler,

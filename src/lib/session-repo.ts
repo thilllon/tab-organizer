@@ -118,7 +118,7 @@ async function readBody(id: SessionId): Promise<Session | undefined> {
 }
 
 /**
- * Body first, then index (spec §4): an interruption between the two writes leaves an orphan body
+ * Body first, then index: an interruption between the two writes leaves an orphan body
  * (re-indexed by `reconcile()`), never a dangling index entry. The index is read -- and thereby
  * validated -- before the body is written, so an unreadable index fails the call without leaving
  * behind a body nothing can list. Must be called inside withLock.
@@ -161,7 +161,7 @@ function sameUnreadable(a: SessionSummary['unreadable'], b: SessionSummary['unre
 }
 
 /**
- * The index entry for a body this build is too old to read (spec §3). An existing entry is kept
+ * The index entry for a body this build is too old to read. An existing entry is kept
  * and merely marked -- it was written by this schema and its name and counts are true -- while a
  * body with no entry gets a minimal one built from whatever top-level fields survived: only the
  * `name` is worth showing, and `bytes` is real, so the storage meter still accounts for it.
@@ -277,9 +277,9 @@ export const sessionRepo = {
   },
 
   /**
-   * Several bodies in ONE `chrome.storage.local.get([...keys])` (spec §4: "a read that needs more
-   * than one body batches them into a single request"). The search corpus's idle pre-warm is the
-   * caller this exists for -- it used to make one round trip per session.
+   * Several bodies in ONE `chrome.storage.local.get([...keys])`: a read that needs more than one
+   * body batches them into a single request. The search corpus's idle pre-warm is the caller this
+   * exists for.
    *
    * Each record is migrated on its own, so one bad body cannot fail the batch: ids whose body is
    * gone are simply absent from `bodies`, and ids whose record could not be migrated are in
@@ -328,7 +328,7 @@ export const sessionRepo = {
   },
 
   /**
-   * Read-modify-write of one session under the lock (spec §12 Phase 2 - editing a saved session).
+   * Read-modify-write of one session under the lock (editing a saved session).
    * `mutate` receives the stored body and returns the replacement, or `null` to delete the session
    * (removing the last window of a session is a delete). The body is rewritten first and the index
    * entry re-derived from it, so counts and `bytes` always describe what is stored.
@@ -380,13 +380,13 @@ export const sessionRepo = {
   },
 
   /**
-   * Repairs the index from the bodies (spec §4): drops entries whose body is gone, re-indexes
+   * Repairs the index from the bodies: drops entries whose body is gone, re-indexes
    * orphan bodies (a `put` interrupted between its two writes) and re-derives entries that no
    * longer describe their body (a `rename` interrupted the same way). A malformed body is
    * skipped, keeping whatever index entry it had.
    *
    * A body written by a *newer* schema version is the one failure that is kept rather than
-   * skipped (spec §3): its entry is marked `unreadable` -- synthesising one when the body has no
+   * skipped: its entry is marked `unreadable` -- synthesising one when the body has no
    * entry at all -- so the dashboard can list it as an inert row the user can still delete.
    * Skipping it instead was the real hazard: after a downgrade the index is itself unreadable,
    * this pass rebuilds it from the bodies, and every skipped body would vanish from the list
@@ -521,7 +521,7 @@ export const sessionRepo = {
     });
   },
 
-  // ---- Phase 3: history snapshots (spec §4 `historyMeta`, §12 Phase 3) -------------------
+  // ---- History snapshots (`historyMeta`) ----
 
   /** `historyMeta` - dedupe baseline for `takeHistorySnapshot()`; `undefined` until the first snapshot. */
   getHistoryMeta(): Promise<HistoryMeta | undefined> {
@@ -554,24 +554,9 @@ export const sessionRepo = {
   },
 
   /**
-   * Protected snapshots are exempt from pruning (recovered / user-pinned). `updatedAt` is kept.
-   *
-   * Either direction of the switch clears `autoProtected`: the user has now made an explicit
-   * decision about this snapshot, so it stops being crash recovery's to demote (`demoteAutoProtected`).
-   */
-  setProtected(id: SessionId, value: boolean): Promise<void> {
-    return updateBody(id, (existing) => {
-      const next: Session = { ...existing, protected: value };
-      delete next.autoProtected;
-      return next;
-    });
-  },
-
-  /**
    * Turns a history snapshot into the crash-recovery entry: `origin: 'recovered'`, protected,
    * renamed. `updatedAt` is kept so the snapshot stays in its chronological place in the index.
-   * The pin is marked `autoProtected` so `demoteAutoProtected()` can later tell it from one the
-   * user asked for.
+   * The pin is marked `autoProtected` so `demoteAutoProtected()` can later tell it apart.
    */
   markRecovered(id: SessionId, name: string): Promise<void> {
     return updateBody(id, (existing) => ({
@@ -591,9 +576,8 @@ export const sessionRepo = {
    * add one permanently exempt snapshot: total history would be `historyMaxSnapshots` + one per
    * start, growing without bound, and neither remedy the storage meter names could touch them.
    *
-   * A snapshot the user protected is never touched: `setProtected` clears the marker, and
-   * `isPromotable` never nominates an already-protected snapshot, so `autoProtected` can only
-   * ever be true on a pin nobody asked for. Newest is by capture time, like the ring buffer.
+   * A snapshot protected some other way is never touched: `isPromotable` never nominates an
+   * already-protected snapshot, so `autoProtected` can only ever be true on a pin nobody asked for. Newest is by capture time, like the ring buffer.
    * One lock for the whole pass: N body writes, then a single index write. Returns the demoted
    * ids (newest first).
    */
@@ -686,10 +670,10 @@ export const sessionRepo = {
 };
 
 // ---------------------------------------------------------------------------
-// Phase 3 helpers (history snapshots)
+// History snapshot helpers
 // ---------------------------------------------------------------------------
 
-/** `chrome.storage.local` key `historyMeta` (spec §4). */
+/** `chrome.storage.local` key `historyMeta`. */
 interface HistoryMeta {
   /** `contentHash` of the newest history snapshot; identical captures are skipped. */
   lastHash: string;
@@ -741,7 +725,7 @@ function updateBody(id: SessionId, update: (existing: Session) => Session): Prom
 }
 
 /**
- * Delete order: bodies first, then the index (spec §4), then drop `historyMeta` when the
+ * Delete order: bodies first, then the index, then drop `historyMeta` when the
  * snapshot it fingerprints is gone - otherwise the next `takeHistorySnapshot()` would skip a
  * state that no stored snapshot holds any more. Must be called inside withLock.
  */
