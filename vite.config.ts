@@ -49,7 +49,7 @@ const manifest = defineManifest((env) => {
     // everything (a fragment is allowed here; verified in Chrome for Testing 151).
     options_page: 'app.html#settings',
     background: {
-      service_worker: 'src/service-worker.ts',
+      service_worker: 'service-worker.ts',
       type: 'module',
     },
     // `alarms` is touched at module-evaluation time (`chrome.alarms.onAlarm.addListener` in
@@ -86,7 +86,12 @@ const manifest = defineManifest((env) => {
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   return {
+    // The source tree is the root, so the page is src/app.html yet still builds to dist/app.html
+    // (and the extension URL stays app.html); public/ and dist/ stay at the repository root.
+    root: path.resolve(__dirname, 'src'),
+    publicDir: path.resolve(__dirname, 'public'),
     build: {
+      outDir: path.resolve(__dirname, 'dist'),
       emptyOutDir: true,
       // Chrome has supported `<link rel="modulepreload">` natively since long before the
       // `minimum_chrome_version` this extension declares, so the polyfill is dead code - and it
@@ -97,7 +102,7 @@ export default defineConfig(() => {
         input: {
           // The one page. crxjs only builds the pages the manifest names, and `options_page` carries a
           // `#settings` fragment, so the entry is listed here rather than trusted to be picked up.
-          app: 'app.html',
+          app: path.resolve(__dirname, 'src/app.html'),
         },
         output: {
           chunkFileNames: 'assets/chunk-[hash].js',
@@ -131,6 +136,8 @@ export default defineConfig(() => {
       skipWebSocketTokenCheck: true,
     },
     test: {
+      // Tests resolve their paths from the repository root, as they did before the root moved.
+      root: __dirname,
       setupFiles: ['src/tests/setup.ts'],
       // Only this tree's suites: Claude Code worktrees under .claude/ carry their own copies.
       exclude: [...configDefaults.exclude, '.claude/**'],
