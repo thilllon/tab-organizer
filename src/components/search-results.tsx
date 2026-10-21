@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { formatSessionMeta, hostnameOf } from '@/lib/display-format';
 import { formatNumber, t, tp } from '@/lib/i18n';
 import { browserHandlesClick, hrefFor } from '@/lib/row-link';
-import { splitOnMatches } from '@/lib/search-engine';
+import { resultPlace, splitOnMatches } from '@/lib/search-engine';
 import type { SearchGroup, SearchItem } from '@/lib/search-nav';
 
 interface SearchResultsProps {
@@ -73,7 +73,7 @@ function TabResultRow({
   onActivate(index: number): void;
 }) {
   const { entry } = item;
-  const place = t('searchResultPlace', entry.sessionName, formatNumber(entry.windowIndex + 1));
+  const place = resultPlace(entry);
   // Same deal as TabRow: the href is there for the status bar, ⌘-click and "Copy link address".
   // Enter on the highlighted row still goes through onActivate, so the keyboard path is unchanged.
   const href = hrefFor(entry.url);

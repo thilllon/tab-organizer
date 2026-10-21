@@ -1,4 +1,4 @@
-import { t } from '@/lib/i18n';
+import { formatNumber, t } from '@/lib/i18n';
 import type { Session } from '@/types';
 
 export type SearchSource = 'open' | 'saved' | 'history';
@@ -6,9 +6,18 @@ export type SearchSource = 'open' | 'saved' | 'history';
 /** Result and ranking order of the sources: live tabs, then saved sessions, then history. */
 export const SEARCH_SOURCES: readonly SearchSource[] = ['open', 'saved', 'history'];
 
-/** `sessionName` of the pseudo-session that holds the live tabs, in the UI language. */
-export function openWindowsName(): string {
-  return t('searchOpenWindowsName');
+/**
+ * Where a matching tab is, shown beside it in the results. A saved or snapshot tab names its
+ * session and window ("Work · Window 2"); an open tab is already in the one place everyone means
+ * by "open", so it names just its window ("Window 2"), numbered like the Open tabs list.
+ */
+export function resultPlace(
+  entry: Pick<SearchEntry, 'source' | 'sessionName' | 'windowIndex'>,
+): string {
+  const windowNumber = formatNumber(entry.windowIndex + 1);
+  return entry.source === 'open'
+    ? t('treeWindowLabel', windowNumber)
+    : t('searchResultPlace', entry.sessionName, windowNumber);
 }
 
 /**
@@ -19,6 +28,7 @@ export interface SearchEntry {
   source: SearchSource;
   /** Owning session; absent for open tabs. */
   sessionId?: string;
+  /** The owning session's name; '' for open tabs, which belong to no session. */
   sessionName: string;
   /** Last ranking key (newest first). `Date.now()` at build time for open tabs. */
   sessionUpdatedAt: number;
@@ -109,7 +119,6 @@ export function entriesFromOpenWindows(
 ): SearchEntry[] {
   const excludePrefix = opts.excludeUrlPrefix ?? '';
   const now = Date.now();
-  const sessionName = openWindowsName();
 
   const entries: SearchEntry[] = [];
   // Counts only the windows that are kept, so "Window N" numbers them exactly like the
@@ -135,7 +144,7 @@ export function entriesFromOpenWindows(
       }
       const entry: SearchEntry = {
         source: 'open',
-        sessionName,
+        sessionName: '',
         sessionUpdatedAt: now,
         windowIndex,
         tabIndex: tab.index,

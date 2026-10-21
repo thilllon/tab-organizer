@@ -1231,6 +1231,14 @@
     "message": "Clear selection",
     "description": "Icon button (label and tooltip) that unticks every selected tab."
   },
+  "openSelectAll": {
+    "message": "Select all",
+    "description": "Visible label beside the tick box in the row under each window's header in the Open tabs list. Ticking it selects every tab of that window; it clears them when all are ticked. Very short."
+  },
+  "openSelectWindowTabs": {
+    "message": "Select all tabs in window $1",
+    "description": "Screen-reader label and tooltip of the select-all tick box under one window's header in the Open tabs list. $1 is the window's number (1, 2, 3...). Short."
+  },
   "openSelectedTabs_one": {
     "message": "$1 selected tab",
     "description": "Heading of the bar shown while tabs are ticked. $1 is the formatted number of ticked tabs."
@@ -1423,10 +1431,6 @@
     "message": "$1 MB",
     "description": "A storage size in megabytes (1024 x 1024 bytes). $1 is the formatted number with one decimal. Keep the unit symbol short."
   },
-  "searchOpenWindowsName": {
-    "message": "Open windows",
-    "description": "Name shown for the browser's currently open windows in search results, where a saved session's name would otherwise appear (e.g. \"Open windows · Window 2\"). Short."
-  },
   "searchGroupMatchingSessions": {
     "message": "Matching sessions",
     "description": "Heading of the search results group listing saved sessions whose name matches the query. Shown in small capitals; short."
@@ -1461,7 +1465,7 @@
   },
   "searchResultPlace": {
     "message": "$1 · Window $2",
-    "description": "Where a matching tab is, shown beside it in search results. $1 is the session name (or the name for the open windows), $2 is the window's number (1, 2, ...). Short; it is cut off when too long."
+    "description": "Where a matching tab is, shown beside a saved session's or a snapshot's tab in search results. $1 is the session name, $2 is the window's number (1, 2, ...). Short; it is cut off when too long."
   },
   "searchRestoreSession": {
     "message": "Restore session",

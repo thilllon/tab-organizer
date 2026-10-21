@@ -6,6 +6,7 @@ import { TabRow, type TabRowSelection } from '@/components/tab-row';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { groupChipClass, groupRailClass } from '@/lib/group-colors';
 import { t, tp } from '@/lib/i18n';
+import { ROW_ACTIONS_CLASS } from '@/lib/row-actions';
 import type { GroupSnapshot, TabSnapshot } from '@/types';
 
 interface GroupSectionProps {
@@ -39,7 +40,9 @@ export function GroupSection({
     <li role="treeitem" aria-expanded={open} aria-label={label} tabIndex={-1}>
       <Collapsible open={open} onOpenChange={setOpen}>
         {/* The actions sit beside the trigger, never inside it: a button may not nest buttons. */}
-        <div className="flex items-center gap-1 rounded-md pr-1 hover:bg-accent">
+        <div
+          className={`flex items-center gap-1 rounded-md pr-1 hover:bg-accent ${ROW_ACTIONS_CLASS}`}
+        >
           <CollapsibleTrigger asChild>
             <button
               type="button"

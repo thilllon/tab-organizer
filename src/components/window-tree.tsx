@@ -6,6 +6,7 @@ import { TabRow, type TabRowSelection } from '@/components/tab-row';
 import { Button } from '@/components/ui/button';
 import { windowStateLabel } from '@/lib/display-format';
 import { formatNumber, t, tp } from '@/lib/i18n';
+import { ROW_ACTIONS_CLASS } from '@/lib/row-actions';
 import { hiddenTabCount, initialTabPage, nextTabPage, showMoreLabel } from '@/lib/tab-paging';
 import { segmentTabs } from '@/lib/tab-segments';
 import type { WindowSnapshot } from '@/types';
@@ -17,6 +18,11 @@ interface WindowTreeProps {
    */
   window: Pick<WindowSnapshot, 'state' | 'groups' | 'tabs'>;
   index: number;
+  /**
+   * A row between the header and the tabs: the Open tabs list's select-all box for this window.
+   * Left out (saved sessions, snapshots), the tree is exactly as before.
+   */
+  subheader?: ReactNode;
   /** Shown after the tab count, e.g. the open-windows pane's "This window" marker. */
   badge?: ReactNode;
   /** Header buttons, right-aligned (Restore window / Save this window / Close window / …). */
@@ -46,6 +52,7 @@ interface WindowTreeProps {
 export function WindowTree({
   window,
   index,
+  subheader,
   badge,
   actions,
   onOpenTab,
@@ -93,8 +100,11 @@ export function WindowTree({
             : tabCount}
         </span>
         {badge}
-        {actions !== undefined && <div className="ml-auto flex items-center gap-1">{actions}</div>}
+        {actions !== undefined && (
+          <div className={`ml-auto flex items-center gap-1 ${ROW_ACTIONS_CLASS}`}>{actions}</div>
+        )}
       </header>
+      {subheader}
       {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- <fieldset> is for form controls; this is the ARIA group of tab rows under a window node. */}
       <ul role="group" className="p-1">
         {segments.map((segment, segmentIndex) => {

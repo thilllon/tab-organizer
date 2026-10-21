@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import type { OpenWindowsState } from '@/hooks/use-open-windows';
 import { copyText } from '@/lib/download-and-copy';
 import { t, tp } from '@/lib/i18n';
+import type { OpenWindowView } from '@/lib/open-windows';
 import {
   type CopyFormat,
   closedTabsNotice,
@@ -21,6 +22,7 @@ import {
   selectRange,
   type TabSelection,
   toggleSelected,
+  toggleWindow,
 } from '@/lib/tab-selection';
 import { closeTabs } from '@/lib/window-actions';
 
@@ -107,6 +109,12 @@ export function OpenTabsView({
         ? selectRange(openWindows.windows, current, from, tabId)
         : toggleSelected(current, tabId),
     );
+  };
+
+  // A window's select-all box. The anchor is dropped: a shift-click after it starts afresh.
+  const toggleWholeWindow = (window: OpenWindowView) => {
+    anchor.current = undefined;
+    setSelection((current) => toggleWindow(window, current));
   };
 
   const clearSelection = () => {
@@ -250,6 +258,7 @@ export function OpenTabsView({
           busy={busy}
           selection={selection}
           onToggleTab={toggleTab}
+          onToggleWindow={toggleWholeWindow}
         />
       </div>
 
