@@ -1219,7 +1219,7 @@ function localeMessages(language: string): Record<string, LocaleMessage> {
       return cached;
     }
     try {
-      const file = new URL(`../public/_locales/${candidate}/messages.json`, import.meta.url);
+      const file = new URL(`../../public/_locales/${candidate}/messages.json`, import.meta.url);
       const parsed = JSON.parse(readFileSync(file, 'utf8')) as Record<string, LocaleMessage>;
       messageCache.set(candidate, parsed);
       return parsed;

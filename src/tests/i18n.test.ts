@@ -15,7 +15,7 @@ interface LocaleMessage {
   placeholders?: Record<string, { content: string }>;
 }
 
-const LOCALES_DIR = new URL('../public/_locales/', import.meta.url);
+const LOCALES_DIR = new URL('../../public/_locales/', import.meta.url);
 
 function load(locale: string): Record<string, LocaleMessage> {
   return JSON.parse(
@@ -130,7 +130,9 @@ describe('_locales', () => {
   }
 
   it('keeps the English summary equal to package.json, which the store listing reads', () => {
-    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+    const pkg = JSON.parse(
+      readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
+    ) as {
       description: string;
     };
     expect(en.extDescription.message).toBe(pkg.description);

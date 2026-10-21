@@ -22,7 +22,7 @@ const manifest = defineManifest((env) => {
 
   return {
     // The user-visible text comes from public/_locales/<lang>/messages.json (English is the
-    // default and the fallback); tests/i18n.test.ts keeps every language complete.
+    // default and the fallback); src/tests/i18n.test.ts keeps every language complete.
     default_locale: 'en',
     name: isDev ? '__MSG_extName__ Dev' : '__MSG_extName__',
     description: '__MSG_extDescription__',
@@ -137,7 +137,7 @@ export default defineConfig(() => {
       skipWebSocketTokenCheck: true,
     },
     test: {
-      setupFiles: ['tests/setup.ts'],
+      setupFiles: ['src/tests/setup.ts'],
       // Only this tree's suites: Claude Code worktrees under .claude/ carry their own copies.
       exclude: [...configDefaults.exclude, '.claude/**'],
     },

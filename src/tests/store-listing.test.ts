@@ -17,7 +17,7 @@ import {
   summaryHeading,
   validateDescription,
   validateSummary,
-} from '../scripts/store-listing';
+} from '../../scripts/store-listing';
 
 const SAMPLE = [
   '## Store listing',
