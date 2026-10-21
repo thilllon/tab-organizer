@@ -106,6 +106,7 @@ Sort settings are persisted in `chrome.storage.sync` and loaded fresh on every s
 ```
 tab-organizer/
 ├── src/
+│   ├── app.html                # The extension page, the only HTML entry (Vite `root` is src/, so it builds to dist/app.html)
 │   ├── service-worker.ts       # The manifest's service worker, the only file loaded there: every chrome event listener
 │   │                           #   (icon click: sort + history snapshot; install/startup; menus; commands; alarms;
 │   │                           #   storage.onChanged), badges, MENU_IDS / COMMAND_IDS. Wiring only; the work is in lib/
@@ -226,8 +227,7 @@ tab-organizer/
 │   │   ├── pages.yml          # Builds site/ and deploys it to GitHub Pages
 │   │   └── dependabot-auto-merge.yml # Turns auto-merge on for Dependabot's minor/patch PRs
 │   └── dependabot.yml         # Weekly npm + GitHub Actions updates (minor/patch grouped)
-├── app.html                   # The extension page (the only real HTML entry)
-├── vite.config.ts             # Vite + CRX plugin config (manifest defined here)
+├── vite.config.ts             # Vite + CRX plugin config (manifest defined here); `root: src`, `publicDir` and `outDir` back at the repository root
 ├── tsconfig.json              # TypeScript config (strict mode)
 ├── tsconfig.node.json         # TypeScript config for vite.config.ts
 ├── .oxfmtrc.json              # oxfmt: formats every file type it knows (TS/TSX/JS, JSON, Markdown, YAML, TOML, CSS, HTML)
@@ -373,7 +373,7 @@ Keyboard shortcuts are shown through `src/lib/command-rows.ts` (`commandRows(com
 
 The Chrome extension manifest is **defined inline** in `vite.config.ts` using `@crxjs/vite-plugin`'s `defineManifest()`. There is no separate `manifest.json` file. When modifying extension metadata, permissions, or entry points, edit this file.
 
-Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`, `favicon`, `alarms`. `minimum_chrome_version: '123'` (promise-form `contextMenus.removeAll()` is awaited unguarded; `favicon` needs 104; `storage.local.getKeys()` (130) is behind a `typeof` guard so it does not raise the floor). Commands: `_execute_action`, `save-session`, `open-dashboard`, `assemble-tabs` - `save-session` and `open-dashboard` ship without `suggested_key`; `_execute_action` suggests `Alt+Shift+S` and `assemble-tabs` `Alt+Shift+A` - both read from `DEFAULT_SHORTCUTS` in `src/constants.ts`, the one place to change a default key (Option+Shift+S / Option+Shift+A on a Mac; Chrome drops it silently if another extension holds the key, so the UI shows what `chrome.commands.getAll()` reports rather than promising it). `_execute_action` is Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked` exactly as a click does, so the shortcut sorts through the same two listeners with no second code path. Chrome gives it no description (and calls it "Activate the extension" on its shortcuts page); `commandRows()` in `src/lib/command-rows.ts` names it for Settings. `app.html` is registered via `build.rollupOptions.input` because crxjs only auto-builds manifest-referenced pages and `options_page` carries a `#settings` fragment. `defineConfig` comes from `vitest/config` so `test.setupFiles: ['src/tests/setup.ts']` applies.
+Permissions: `tabs`, `tabGroups`, `storage`, `contextMenus`, `unlimitedStorage`, `favicon`, `alarms`. `minimum_chrome_version: '123'` (promise-form `contextMenus.removeAll()` is awaited unguarded; `favicon` needs 104; `storage.local.getKeys()` (130) is behind a `typeof` guard so it does not raise the floor). Commands: `_execute_action`, `save-session`, `open-dashboard`, `assemble-tabs` - `save-session` and `open-dashboard` ship without `suggested_key`; `_execute_action` suggests `Alt+Shift+S` and `assemble-tabs` `Alt+Shift+A` - both read from `DEFAULT_SHORTCUTS` in `src/constants.ts`, the one place to change a default key (Option+Shift+S / Option+Shift+A on a Mac; Chrome drops it silently if another extension holds the key, so the UI shows what `chrome.commands.getAll()` reports rather than promising it). `_execute_action` is Chrome's built-in command for the toolbar icon: a key bound to it fires `action.onClicked` exactly as a click does, so the shortcut sorts through the same two listeners with no second code path. Chrome gives it no description (and calls it "Activate the extension" on its shortcuts page); `commandRows()` in `src/lib/command-rows.ts` names it for Settings. `src/app.html` is registered via `build.rollupOptions.input` (Vite's `root` is `src/`, with `publicDir` = `public/` and `build.outDir` = `dist/` at the repository root, so the page still builds to `dist/app.html` and the extension URL is `app.html`; `test.root` stays the repository root, and a CLI `--outDir` is relative to `src/`) because crxjs only auto-builds manifest-referenced pages and `options_page` carries a `#settings` fragment. `defineConfig` comes from `vitest/config` so `test.setupFiles: ['src/tests/setup.ts']` applies.
 
 ---
 
