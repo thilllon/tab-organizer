@@ -594,7 +594,7 @@ Builds `site/` with `pnpm site:build` and deploys `site/dist` to GitHub Pages (`
 
 ### CodeQL (`codeql.yml`)
 
-Security scanning for JavaScript/TypeScript on every push and pull request to main, and weekly (Fridays at 19:42 UTC).
+Security scanning for JavaScript/TypeScript on every push and pull request to main, and weekly (Sundays at 20:00 UTC).
 
 ### Release procedure (Chrome Web Store)
 
