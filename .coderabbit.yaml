@@ -13,8 +13,8 @@ reviews:
     base_branches: []
   path_filters:
     - '!dist/**'
-    - '!package/**'
-    - '!screenshots/**'
+    - '!release/**'
+    - '!assets/**'
     - '!pnpm-lock.yaml'
   path_instructions:
     - path: 'src/service-worker.ts'

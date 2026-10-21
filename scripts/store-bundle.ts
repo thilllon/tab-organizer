@@ -3,8 +3,8 @@
  *
  * Nothing here *produces* an asset. `prepare-registration.ts` shoots the screenshots and promo
  * images and `zip.ts` packages `dist/`; this step gathers those, takes every language's
- * description out of `docs/store_listing.md`, puts the screenshots in the order they should be
- * uploaded (per language when `screenshots/<lang>/` exists), and writes a SUBMIT.md whose every
+ * description out of `REGISTRATION.md`, puts the screenshots in the order they should be
+ * uploaded (per language when `assets/<lang>/` exists), and writes a SUBMIT.md whose every
  * field is read from the built manifest and its `_locales` rather than retyped - a listing that
  * disagrees with the manifest it ships beside is the sort of thing a reviewer bounces.
  *
@@ -13,7 +13,7 @@
  *
  *     pnpm store:bundle
  *
- * Output: `package/store-<version>/` (git-ignored, like everything else under `package/`).
+ * Output: `release/store-<version>/` (git-ignored, like everything else under `release/`).
  */
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -74,13 +74,13 @@ const SCREENSHOTS: { from: string; as: string; caption: string }[] = [
 
 const PROMOS: { from: string; as: string; slot: string; size: string }[] = [
   {
-    from: 'screenshots/promo-small-440x280.png',
+    from: 'assets/promo-small-440x280.png',
     as: 'small-tile-440x280.png',
     slot: 'Small promo tile',
     size: '440×280',
   },
   {
-    from: 'screenshots/promo-marquee-1400x560.png',
+    from: 'assets/promo-marquee-1400x560.png',
     as: 'marquee-1400x560.png',
     slot: 'Marquee',
     size: '1400×560',
@@ -90,7 +90,7 @@ const PROMOS: { from: string; as: string; slot: string; size: string }[] = [
 
 /**
  * Why each permission is requested, keyed by the manifest name. Kept here rather than parsed out
- * of `docs/store_listing.md`: the store wants one sentence per permission, the listing explains
+ * of `REGISTRATION.md`: the store wants one sentence per permission, the listing explains
  * them in prose, and a missing justification is the most common reason a submission is rejected - so this
  * script fails loudly on a permission it has no wording for instead of emitting a blank row.
  */
@@ -144,9 +144,9 @@ function resolveMessages(value: string, locale: string, fallback: string): strin
   });
 }
 
-/** The localized screenshots of one language, if `screenshots/<lang>/` holds any of them. */
+/** The localized screenshots of one language, if `assets/<lang>/` holds any of them. */
 function hasLocalizedScreenshots(locale: ListingLocale): boolean {
-  return SCREENSHOTS.some((shot) => existsSync(path.join(ROOT, 'screenshots', locale, shot.from)));
+  return SCREENSHOTS.some((shot) => existsSync(path.join(ROOT, 'assets', locale, shot.from)));
 }
 
 function copyInto(from: string, to: string, missing: string[]): void {
@@ -179,7 +179,7 @@ ${section.title}
 ${section.summary}
 \`\`\`
 
-**Description** (${section.description.length.toLocaleString('en-US')} / 500 characters) - copied from \`docs/store_listing.md\`; edit it there, never in this file.
+**Description** (${section.description.length.toLocaleString('en-US')} / 500 characters) - copied from \`REGISTRATION.md\`; edit it there, never in this file.
 
 \`\`\`text
 ${section.description}
@@ -360,7 +360,7 @@ function main(): void {
     );
   }
 
-  const out = path.join(ROOT, 'package', `store-${manifest.version}`);
+  const out = path.join(ROOT, 'release', `store-${manifest.version}`);
   rmSync(out, { recursive: true, force: true });
   mkdirSync(path.join(out, 'screenshots'), { recursive: true });
   mkdirSync(path.join(out, 'promo'), { recursive: true });
@@ -370,7 +370,7 @@ function main(): void {
   // The same name zip.ts gives the file: package.json's displayName, never the manifest's
   // `__MSG_extName__`.
   const zipName = zipFileName(readDisplayName(path.join(ROOT, 'package.json')), manifest.version);
-  copyInto(path.join(ROOT, 'package', zipName), path.join(out, zipName), missing);
+  copyInto(path.join(ROOT, 'release', zipName), path.join(out, zipName), missing);
 
   // Both limits count characters (`.length`), not bytes: measured with `wc -c` the Korean and
   // Japanese texts read about three times their real length.
@@ -381,7 +381,7 @@ function main(): void {
       validateSummary(summary);
       if (summary !== listing.summary) {
         throw new Error(
-          `The ${listing.locale} Summary in docs/store_listing.md differs from extDescription in ` +
+          `The ${listing.locale} Summary in REGISTRATION.md differs from extDescription in ` +
             `dist/_locales/${listing.locale}/messages.json. Rebuild, or bring the two in line.`,
         );
       }
@@ -407,8 +407,8 @@ function main(): void {
     }
     const from =
       section.locale === DEFAULT_LISTING_LOCALE
-        ? path.join(ROOT, 'screenshots')
-        : path.join(ROOT, 'screenshots', section.locale);
+        ? path.join(ROOT, 'assets')
+        : path.join(ROOT, 'assets', section.locale);
     mkdirSync(path.join(out, section.screenshotDir), { recursive: true });
     for (const shot of SCREENSHOTS) {
       copyInto(path.join(from, shot.from), path.join(out, section.screenshotDir, shot.as), missing);

@@ -7,4 +7,4 @@ useDefault = true
 
 [[allowlists]]
 description = "Generated output: build, store packages, screenshots, lockfile"
-paths = ['''^dist/''', '''^package/''', '''^screenshots/''', '''^pnpm-lock\.yaml$''']
+paths = ['''^dist/''', '''^release/''', '''^assets/''', '''^pnpm-lock\.yaml$''']

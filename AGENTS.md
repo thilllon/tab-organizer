@@ -193,23 +193,23 @@ tab-organizer/
 │   │   ├── browser.ts         # launchExtension() - a real Chromium with dist/ loaded (shared with screenshots)
 │   │   ├── server.ts          # startDemoServer() - 127.0.0.1 fixture pages (the QA browser has no network)
 │   │   └── fixtures.ts        # Session fixtures seeded straight into chrome.storage.local
-│   ├── zip.ts                 # Packages dist/ into package/Tab-Organizer-<version>.zip for Web Store (archiver 8)
+│   ├── zip.ts                 # Packages dist/ into release/Tab-Organizer-<version>.zip for Web Store (archiver 8)
 │   ├── zip-name.ts            # zipFileName(): the zip's name from package.json displayName, never the manifest's
 │   │                          #   __MSG_extName__ (shared with store-bundle.ts; test in src/tests/)
 │   ├── generate-ico.ts        # Generates multi-size .ico from SVG (macOS: qlmanage + sips)
 │   ├── prepare-registration.ts # Full visual-asset pipeline (build, sort + the five dashboard-*.png screenshots,
 │   │                          #   promo images); every optional step has a SKIP_* flag, the demo video/GIF need RECORD_VIDEO=1;
-│   │                          #   LOCALES=en,ko,es,ja shoots Settings + dashboard per UI language into screenshots/<code>/
+│   │                          #   LOCALES=en,ko,es,ja shoots Settings + dashboard per UI language into assets/<code>/
 │   ├── check-dashes.ts        # Fails on an em or en dash in any tracked file (run by `pnpm lint`)
-│   ├── store-listing.ts       # Reads every language's Summary and Description block out of docs/store_listing.md,
+│   ├── store-listing.ts       # Reads every language's Summary and Description block out of REGISTRATION.md,
 │   │                          #   LISTING_LOCALES, the store's length limits (test in src/tests/)
 │   ├── window-bounds.ts       # macOS: the demo browser's window id and bounds through `osascript -l JavaScript` (no install);
 │   │                          #   only Chromium / Chrome for Testing - never the owner's own Google Chrome
-│   ├── store-bundle.ts        # Gathers zip, screenshots (screenshots/<lang>/ per language), promo images and a
-│   │                          #   per-language SUBMIT.md into package/store-<version>/
+│   ├── store-bundle.ts        # Gathers zip, screenshots (assets/<lang>/ per language), promo images and a
+│   │                          #   per-language SUBMIT.md into release/store-<version>/
 │   ├── promo-template.html    # HTML template for CWS promotional images
 │   └── tab-bar-template.html  # HTML template for tab bar mockup screenshots
-├── screenshots/               # Generated CWS assets (sort + dashboard-*.png screenshots, promo images, demo video);
+├── assets/                    # Generated CWS assets (sort + dashboard-*.png screenshots, promo images, demo video);
 │                              #   <code>/ holds another UI language's Settings + dashboard screenshots, same names
 ├── site/                      # The project website (Astro, static), its own pnpm workspace package
 │   │                          #   `tab-organizer-site`; see "Project website" below
@@ -222,9 +222,6 @@ tab-organizer/
 │       ├── components/    # header, footer, language switch, Add to Chrome button, icons
 │       ├── layouts/       # base-layout.astro: head (canonical, hreflang, Open Graph), header, footer
 │       └── styles/global.css  # the extension's colour tokens, light and dark by prefers-color-scheme
-├── docs/
-│   └── store_listing.md       # Chrome Web Store listing - single source of truth (text, assets, privacy answers);
-│                              #   one plain-text Summary and Description block per language, pasted as it is
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml             # CI pipeline (typecheck, format, build; tools via mise)
@@ -233,8 +230,6 @@ tab-organizer/
 │   │   └── dependabot-auto-merge.yml # Turns auto-merge on for Dependabot's minor/patch PRs
 │   └── dependabot.yml         # Weekly npm + GitHub Actions updates (minor/patch grouped)
 ├── app.html                   # The extension page (the only real HTML entry)
-├── docs/superpowers/          # Design specs and plans - local only, git-ignored ("spec §N" in comments refers to
-│                              #   specs/2026-08-29-sessions-design.md there)
 ├── vite.config.ts             # Vite + CRX plugin config (manifest defined here)
 ├── tsconfig.json              # TypeScript config (strict mode)
 ├── tsconfig.node.json         # TypeScript config for vite.config.ts
@@ -246,6 +241,8 @@ tab-organizer/
 ├── mise.toml                  # Tool versions (Node, pnpm, lefthook, gitleaks)
 ├── components.json            # shadcn/ui configuration
 ├── PRIVACY_POLICY.md          # Privacy policy (update when permissions change)
+├── REGISTRATION.md            # Chrome Web Store registration - single source of truth (listing text, assets, privacy
+│                              #   answers); one plain-text Summary and Description block per language, pasted as it is
 └── package.json
 ```
 
@@ -419,7 +416,7 @@ pnpm exec tsx scripts/e2e/smoke.ts   # Real-Chrome sessions smoke test (run `pnp
 pnpm e2e:assemble                    # e2e build (in node_modules/.cache) + real-Chrome assemble-tabs checks
 pnpm e2e:sort                        # Real-Chrome sort checks against dist/ (run `pnpm build` first; headed)
 pnpm e2e:selection                   # Real-Chrome checks of the Open tabs selection (run `pnpm build` first; headed)
-pnpm exec tsx scripts/zip.ts        # Package the current dist/ into package/Tab-Organizer-<version>.zip
+pnpm exec tsx scripts/zip.ts        # Package the current dist/ into release/Tab-Organizer-<version>.zip
 
 pnpm site:dev                        # The project website on a local dev server (http://localhost:4321/tab-organizer/)
 pnpm site:build                      # astro check + astro build -> site/dist/
@@ -500,7 +497,7 @@ The manifest is generated at build time from `vite.config.ts`. Key points:
 | `favicon`          | `chrome-extension://<id>/_favicon/?pageUrl=…` on the app page, from Chrome's local cache - zero network                                         |
 | `alarms`           | Timer for automatic history snapshots (`history-snapshot` periodic + one-shot `history-first`); no alarm exists while `historyEnabled` is false |
 
-No `host_permissions`, no `downloads` (export uses a Blob URL + `<a download>` in the page), no `default_popup`, no `side_panel`. Every permission change must be mirrored in the same PR in `docs/store_listing.md` (Description permissions list + Privacy justifications table + the CWS privacy-form note), `PRIVACY_POLICY.md` (Permissions + Last Updated), `README.md` (Privacy bullet) and this table (spec §10).
+No `host_permissions`, no `downloads` (export uses a Blob URL + `<a download>` in the page), no `default_popup`, no `side_panel`. Every permission change must be mirrored in the same PR in `REGISTRATION.md` (Description permissions list + Privacy justifications table + the CWS privacy-form note), `PRIVACY_POLICY.md` (Permissions + Last Updated), `README.md` (Privacy bullet) and this table (spec §10).
 
 ### Storage Schema
 
@@ -556,11 +553,11 @@ The extension speaks English (`en`, the manifest's `default_locale`), Korean (`k
 - Every token the importer parses back, such as `(pinned)` in text exports and the Netscape HTML structure: an export made in one language must import in another, byte for byte. Only the human-readable parts of Markdown/Text/HTML exports (headings, "Window N" labels) are translated.
 - Text already stored: a session or snapshot name is created in the UI language at that moment and then kept as it was saved; switching Chrome's language does not rename it.
 
-**Adding a key.** Add it to `en/messages.json` with a description, then to `ko`, `es` and `ja` with the same `$n` (a language may reorder them); use it through `t()` / `tp()`. **Adding a language.** Add `public/_locales/<code>/messages.json` with every English key, add the code to `LOCALES` in `src/tests/i18n.test.ts`, to `LISTING_LOCALES` (and `LOCALE_NAMES`) in `scripts/store-listing.ts` and to `POSIX_LOCALES` / `FIXTURE_TEXT` in `scripts/prepare-registration.ts`, write its `### Summary (<code>)` and `### Description (<code>)` blocks in `docs/store_listing.md`, and add it to README's language list.
+**Adding a key.** Add it to `en/messages.json` with a description, then to `ko`, `es` and `ja` with the same `$n` (a language may reorder them); use it through `t()` / `tp()`. **Adding a language.** Add `public/_locales/<code>/messages.json` with every English key, add the code to `LOCALES` in `src/tests/i18n.test.ts`, to `LISTING_LOCALES` (and `LOCALE_NAMES`) in `scripts/store-listing.ts` and to `POSIX_LOCALES` / `FIXTURE_TEXT` in `scripts/prepare-registration.ts`, write its `### Summary (<code>)` and `### Description (<code>)` blocks in `REGISTRATION.md`, and add it to README's language list.
 
 **What guards it.** `src/tests/i18n.test.ts`: exactly the shipped folders; every language has every English key and nothing else (plural forms aside), the same `$n`, no empty message, no long dash; every English entry has a description and a Chrome-valid name; every `_one`/`_many` has its `_other`; every file's `localeCode` names its own language. `src/tests/chrome-fake.ts` implements `chrome.i18n` by reading `public/_locales` (`getMessage` with substitutions and Chrome's per-key fallback to English, `getUILanguage`), English by default, and `setUiLanguage(code)` switches a test to another language (`'fr'` for one that is not shipped), so tests compare real English output and can check another language. `src/tests/store-listing.test.ts`: every language's store Description and Summary (below).
 
-**The Web Store listing is localized too.** `docs/store_listing.md` holds one plain-text Summary and Description block per language (`### Summary` / `### Description` for English, `### Summary (<code>)` / `### Description (<code>)` for the others). The store reads each language's Title and Summary from the package (the manifest's `__MSG_` references), so the Summary blocks are copies and `src/tests/store-listing.test.ts` fails when one differs from that locale's `extDescription`, when a Description passes 500 characters (the owner's limit: a hook, a few lines, the privacy line and the support link; details go to the website and README, permission justifications to the Privacy answers) or a Summary 132, or when a block holds Markdown or a long dash. Description, screenshots and promo images are entered per language in the dashboard's language menu; a language without its own shows the English ones. `LOCALES=en,ko,es,ja pnpm exec tsx scripts/prepare-registration.ts` shoots the Settings and dashboard screenshots per language (it opens a visible browser: ask the owner first), and `pnpm store:bundle` writes a per-language `SUBMIT.md` with `screenshots/<code>/` folders.
+**The Web Store listing is localized too.** `REGISTRATION.md` holds one plain-text Summary and Description block per language (`### Summary` / `### Description` for English, `### Summary (<code>)` / `### Description (<code>)` for the others). The store reads each language's Title and Summary from the package (the manifest's `__MSG_` references), so the Summary blocks are copies and `src/tests/store-listing.test.ts` fails when one differs from that locale's `extDescription`, when a Description passes 500 characters (the owner's limit: a hook, a few lines, the privacy line and the support link; details go to the website and README, permission justifications to the Privacy answers) or a Summary 132, or when a block holds Markdown or a long dash. Description, screenshots and promo images are entered per language in the dashboard's language menu; a language without its own shows the English ones. `LOCALES=en,ko,es,ja pnpm exec tsx scripts/prepare-registration.ts` shoots the Settings and dashboard screenshots per language (it opens a visible browser: ask the owner first), and `pnpm store:bundle` writes a per-language `SUBMIT.md` with `screenshots/<code>/` folders.
 
 ---
 
@@ -570,8 +567,8 @@ The extension speaks English (`en`, the manifest's `default_locale`), Korean (`k
 
 - **Run it**: `pnpm site:dev` (dev server) or `pnpm site:build` (`astro check && astro build` into `site/dist/`), then `pnpm --filter tab-organizer-site preview` to serve the build.
 - **Pages**: home, support (FAQ, how to report a problem, the current version read from the root `package.json`) and privacy, in English (no prefix), Korean (`/ko/`), Spanish (`/es/`) and Japanese (`/ja/`) through Astro's i18n routing. Every page has a language switch that keeps the page, `hreflang` alternates, a canonical URL and Open Graph tags; `@astrojs/sitemap` writes the sitemap and `robots.txt` points at it.
-- **Copy stays in step with the product.** The strings are in `site/src/i18n/copy-*.ts`, one file per language, each written natively with Chrome's own terms (탭, 창, 탭 그룹, 고정 탭 / タブ, ウィンドウ, タブグループ, 固定タブ / pestaña, ventana, grupo de pestañas, pestañas fijadas). When a feature, default or FAQ answer changes in `docs/store_listing.md`, change all four. The English privacy page renders `PRIVACY_POLICY.md` itself and says it is the authoritative version; `site/src/privacy/{ko,es,ja}.md` are translations of it and must be updated whenever it changes.
-- **Screenshots** are imported from `screenshots/` through `astro:assets` (optimized to WebP at build time, never copied into `site/`); the favicon is `public/img/logo.svg`. Same zero-network rule as the extension: no external fonts, CDNs, analytics, cookies or trackers (Inter comes from `@fontsource-variable/inter`, served by the site itself).
+- **Copy stays in step with the product.** The strings are in `site/src/i18n/copy-*.ts`, one file per language, each written natively with Chrome's own terms (탭, 창, 탭 그룹, 고정 탭 / タブ, ウィンドウ, タブグループ, 固定タブ / pestaña, ventana, grupo de pestañas, pestañas fijadas). When a feature, default or FAQ answer changes in `REGISTRATION.md`, change all four. The English privacy page renders `PRIVACY_POLICY.md` itself and says it is the authoritative version; `site/src/privacy/{ko,es,ja}.md` are translations of it and must be updated whenever it changes.
+- **Screenshots** are imported from `assets/` through `astro:assets` (optimized to WebP at build time, never copied into `site/`); the favicon is `public/img/logo.svg`. Same zero-network rule as the extension: no external fonts, CDNs, analytics, cookies or trackers (Inter comes from `@fontsource-variable/inter`, served by the site itself).
 - **Chrome Web Store dashboard URLs**: Homepage URL https://thilllon.github.io/tab-organizer/ , Support URL https://thilllon.github.io/tab-organizer/support/ , Privacy policy URL https://thilllon.github.io/tab-organizer/privacy/ .
 
 ---
@@ -597,7 +594,7 @@ Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions update
 
 ### Website (`pages.yml`)
 
-Builds `site/` with `pnpm site:build` and deploys `site/dist` to GitHub Pages (`actions/configure-pages`, `actions/upload-pages-artifact`, `actions/deploy-pages`; concurrency group `pages`). Runs on a push to `main` that touches `site/**`, `screenshots/**`, `public/img/**`, `PRIVACY_POLICY.md`, `docs/store_listing.md`, `package.json` (the version the support page shows), the lockfile, `pnpm-workspace.yaml`, `mise.toml` or the workflow itself, and on manual dispatch. The repository's Pages source must be "GitHub Actions" (Settings > Pages).
+Builds `site/` with `pnpm site:build` and deploys `site/dist` to GitHub Pages (`actions/configure-pages`, `actions/upload-pages-artifact`, `actions/deploy-pages`; concurrency group `pages`). Runs on a push to `main` that touches `site/**`, `assets/**`, `public/img/**`, `PRIVACY_POLICY.md`, `REGISTRATION.md`, `package.json` (the version the support page shows), the lockfile, `pnpm-workspace.yaml`, `mise.toml` or the workflow itself, and on manual dispatch. The repository's Pages source must be "GitHub Actions" (Settings > Pages).
 
 ### CodeQL (`codeql.yml`)
 
@@ -605,11 +602,11 @@ Scheduled security scanning for JavaScript/TypeScript (Fridays at 19:42 UTC).
 
 ### Release procedure (Chrome Web Store)
 
-`pnpm release` runs release-it (`.release-it.json`): `before:bump` executes `scripts/prepare-registration.ts` (build, options + the five `screenshots/dashboard-*.png` captures, promo tiles), then the version is bumped, `after:bump` runs `pnpm build` + `scripts/zip.ts` (→ `package/Tab-Organizer-<version>.zip`, named from `package.json` `displayName`) + `scripts/store-bundle.ts` (→ `package/store-<version>/`, whose `SUBMIT.md` carries the description copied out of `docs/store_listing.md`), and a GitHub release is created. It requires the `main` branch and hooks/CI green. Every optional step of `prepare-registration.ts` is skippable on its own (`SKIP_BUILD`, `SKIP_OPTIONS`, `SKIP_DASHBOARD`, `SKIP_DEMO`, `SKIP_NATIVE`, `SKIP_MOCKUPS`, `SKIP_PROMO`, `SKIP_GIF`), so one asset can be regenerated without a full run. The demo video is the reverse - recorded only with `RECORD_VIDEO=1`, because ffmpeg films the screen region where the Chrome window sits, not the window, and whatever else comes to the front lands in a committed file (it did, in v7.3.1, v7.4.0 and v7.6.0); without the flag `demo.mp4` and `demo.gif` stay as committed; `pnpm exec tsx scripts/zip.ts` packages an existing `dist/` on its own.
+`pnpm release` runs release-it (`.release-it.json`): `before:bump` executes `scripts/prepare-registration.ts` (build, options + the five `assets/dashboard-*.png` captures, promo tiles), then the version is bumped, `after:bump` runs `pnpm build` + `scripts/zip.ts` (→ `release/Tab-Organizer-<version>.zip`, named from `package.json` `displayName`) + `scripts/store-bundle.ts` (→ `release/store-<version>/`, whose `SUBMIT.md` carries the description copied out of `REGISTRATION.md`), and a GitHub release is created. It requires the `main` branch and hooks/CI green. Every optional step of `prepare-registration.ts` is skippable on its own (`SKIP_BUILD`, `SKIP_OPTIONS`, `SKIP_DASHBOARD`, `SKIP_DEMO`, `SKIP_NATIVE`, `SKIP_MOCKUPS`, `SKIP_PROMO`, `SKIP_GIF`), so one asset can be regenerated without a full run. The demo video is the reverse - recorded only with `RECORD_VIDEO=1`, because ffmpeg films the screen region where the Chrome window sits, not the window, and whatever else comes to the front lands in a committed file (it did, in v7.3.1, v7.4.0 and v7.6.0); without the flag `demo.mp4` and `demo.gif` stay as committed; `pnpm exec tsx scripts/zip.ts` packages an existing `dist/` on its own.
 
-1. Release through a pull request like any change: on a `release/vX.Y.Z` branch regenerate whatever store assets changed (`tsx scripts/prepare-registration.ts` with the `SKIP_*` flags for the rest), set the version with `npm version X.Y.Z --no-git-tag-version`, and open a `chore: release vX.Y.Z` pull request. Before merging it, make sure `docs/store_listing.md`, `PRIVACY_POLICY.md` (Last Updated), `README.md` and this file describe what ships, and that `package.json` `description` (the store Summary) is ≤ 132 characters.
-2. After the merge, on an up-to-date `main`: `pnpm release --ci --no-increment --no-git.commit` with every `SKIP_*` flag set (the assets are already committed). release-it then only builds, zips, writes `package/store-<version>/`, and pushes the `vX.Y.Z` tag; nothing is committed to `main`. If it prints a "releases/new" link instead of creating the GitHub release (no `GITHUB_TOKEN`), create it with `gh release create vX.Y.Z --title vX.Y.Z --notes …`.
-3. In the CWS Developer Dashboard: upload `package/*.zip`, then for each language in the Store listing tab's language menu copy that language's Description block of `docs/store_listing.md` into Description and upload its screenshots (`package/store-<version>/SUBMIT.md` lists both per language), upload the promo tiles listed in that file (Graphic assets), copy the Privacy answers, and re-review the privacy form's data-type rows ("Web history": stored locally on the device, not transmitted).
+1. Release through a pull request like any change: on a `release/vX.Y.Z` branch regenerate whatever store assets changed (`tsx scripts/prepare-registration.ts` with the `SKIP_*` flags for the rest), set the version with `npm version X.Y.Z --no-git-tag-version`, and open a `chore: release vX.Y.Z` pull request. Before merging it, make sure `REGISTRATION.md`, `PRIVACY_POLICY.md` (Last Updated), `README.md` and this file describe what ships, and that `package.json` `description` (the store Summary) is ≤ 132 characters.
+2. After the merge, on an up-to-date `main`: `pnpm release --ci --no-increment --no-git.commit` with every `SKIP_*` flag set (the assets are already committed). release-it then only builds, zips, writes `release/store-<version>/`, and pushes the `vX.Y.Z` tag; nothing is committed to `main`. If it prints a "releases/new" link instead of creating the GitHub release (no `GITHUB_TOKEN`), create it with `gh release create vX.Y.Z --title vX.Y.Z --notes …`.
+3. In the CWS Developer Dashboard: upload `release/*.zip`, then for each language in the Store listing tab's language menu copy that language's Description block of `REGISTRATION.md` into Description and upload its screenshots (`release/store-<version>/SUBMIT.md` lists both per language), upload the promo tiles listed in that file (Graphic assets), copy the Privacy answers, and re-review the privacy form's data-type rows ("Web history": stored locally on the device, not transmitted).
 4. Submit for review. Never run `pnpm release` from a feature branch or a worktree.
 
 ---
@@ -681,7 +678,7 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 ### Modifying extension permissions
 
 1. Edit the `permissions` array in the `defineManifest()` call in `vite.config.ts`
-2. In the same PR update `docs/store_listing.md` (Description permissions bullets + Privacy justifications table), `PRIVACY_POLICY.md` (Permissions + Last Updated), `README.md` (the Privacy bullet's permission count and list) and the Permissions Explained table above
+2. In the same PR update `REGISTRATION.md` (Description permissions bullets + Privacy justifications table), `PRIVACY_POLICY.md` (Permissions + Last Updated), `README.md` (the Privacy bullet's permission count and list) and the Permissions Explained table above
 
 ### Adding a sessions feature
 
@@ -696,7 +693,7 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 2. Read/write through `sessionRepo.getSettings()` / `setSettings(patch)` - `useSessionSettings` on the app page; never `chrome.storage.local` directly
 3. Add the control once, in `src/components/session-settings-fields.tsx` (parsing/clamping in `src/lib/session-settings.ts`), and pick its `subset`: `basic` shows it next to the snapshot switch, `advanced` folds it away in the Settings view
 4. If the setting affects the alarm, `ensureHistoryAlarm()` already re-runs on every `sessionSettings` change via the worker's `storage.onChanged` listener - do not add another listener
-5. Document the new setting in `docs/store_listing.md` (Settings + FAQ) and, if it changes what is stored or for how long, in `PRIVACY_POLICY.md`
+5. Document the new setting in `REGISTRATION.md` (Settings + FAQ) and, if it changes what is stored or for how long, in `PRIVACY_POLICY.md`
 
 ### Adding a new sort mode
 
@@ -715,7 +712,7 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 - **Tab ID arrays**: Chrome's `tabs.move()` and `tabs.group()` require `[number, ...number[]]` tuple type for non-empty arrays.
 - **`scripts/zip.ts` and archiver 8**: archiver 8 is ESM and exports no callable default - the archive classes come by name (`import { ZipArchive } from 'archiver'`). `finalize()` resolves before the file is complete, so the script also waits for the write stream's `close` event; don't "simplify" either back.
 - **`pnpm-workspace.yaml`**: Lists one workspace package, `site` (the project website); the extension is the root package. It also holds pnpm's install policy: `allowBuilds` (only `esbuild` may run install scripts) and `minimumReleaseAge: 10080` (minutes - only versions published at least 7 days ago are installed; pnpm's default is 1 day). A lockfile entry younger than that makes `pnpm install --frozen-lockfile` fail, in CI too, so `dependabot.yml` carries the matching `cooldown: default-days: 7` for npm. `minimumReleaseAgeExclude` is the escape hatch (exact `name@version`) for a release that must be installed sooner; there is none at the moment.
-- **The store description is plain text, by hand**: the code block under `### Description` (and under `### Description (<code>)` for each translation) in `docs/store_listing.md` is pasted into the store as it is - no Markdown inside it, and nothing is generated from it. `src/tests/store-listing.test.ts` holds the 500 / 132 character limits for every language and keeps each Summary block equal to its `extDescription`.
+- **The store description is plain text, by hand**: the code block under `### Description` (and under `### Description (<code>)` for each translation) in `REGISTRATION.md` is pasted into the store as it is - no Markdown inside it, and nothing is generated from it. `src/tests/store-listing.test.ts` holds the 500 / 132 character limits for every language and keeps each Summary block equal to its `extDescription`.
 - **No Python** (set by the owner): every script is TypeScript run with `tsx`; no `.py` file, virtualenv, ruff or pip config in this repository. A macOS system call goes through `osascript -l JavaScript` (see `scripts/window-bounds.ts`).
 - **Pre-push `update-docs` hook amends commits**: on feature branches push with `LEFTHOOK_EXCLUDE=update-docs git push …` and do one manual docs pass per phase.
 - **`chrome.tabs.Tab.id` and `chrome.windows.Window.id/state/type/left/top/width/height` are optional** in `@types/chrome` 0.2.x - always narrow before use; never `!`. `Tab.windowId`/`groupId` are required (`-1` = no group).

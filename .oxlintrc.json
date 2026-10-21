@@ -15,5 +15,5 @@
     "react/purity": "off",
     "react/no-danger": "error"
   },
-  "ignorePatterns": ["dist", "package", "screenshots", "site/.astro"]
+  "ignorePatterns": ["dist", "release", "assets", "site/.astro"]
 }

@@ -1,8 +1,8 @@
 ---
 import { Image } from 'astro:assets';
 
-import afterSort from '../../../../screenshots/after-sort.png';
-import beforeSort from '../../../../screenshots/before-sort.png';
+import afterSort from '../../../../assets/after-sort.png';
+import beforeSort from '../../../../assets/before-sort.png';
 import AddToChrome from '../../components/add-to-chrome.astro';
 import Icon from '../../components/icon.astro';
 import { localePaths, pageUrl, type Locale } from '../../i18n/locales';
@@ -21,7 +21,7 @@ interface Props {
 const { locale } = Astro.props;
 const copy = copyFor(locale);
 
-// The extension in this page's language (screenshots/<code>/), English where none was taken.
+// The extension in this page's language (assets/<code>/), English where none was taken.
 const shotSessions = screenshot(locale, 'dashboard-sessions');
 const SHOTS: Record<FeatureShot, ImageMetadata> = {
   restore: screenshot(locale, 'dashboard-restore'),

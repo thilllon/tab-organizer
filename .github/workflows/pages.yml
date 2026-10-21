@@ -9,10 +9,10 @@ on:
     branches: ['main']
     paths:
       - 'site/**'
-      - 'screenshots/**'
+      - 'assets/**'
       - 'public/img/**'
       - 'PRIVACY_POLICY.md'
-      - 'docs/store_listing.md'
+      - 'REGISTRATION.md'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'

@@ -145,7 +145,7 @@ describe('the store listing in this repository', () => {
   });
 
   it('keeps package.json description equal to the English summary', () => {
-    const pkgPath = path.resolve(path.dirname(LISTING_SOURCE), '..', 'package.json');
+    const pkgPath = path.resolve(path.dirname(LISTING_SOURCE), 'package.json');
     const pkg: { description?: string } = JSON.parse(readFileSync(pkgPath, 'utf-8'));
     expect(pkg.description).toBe(extractSummary(markdown));
   });

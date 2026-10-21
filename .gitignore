@@ -8,7 +8,7 @@
 
 # production
 /dist
-/package
+/release
 
 # misc
 .DS_Store
@@ -23,14 +23,11 @@
 # Claude Code worktrees
 .claude/worktrees/
 
-# Design specs and plans: kept on disk, not in the repository
-docs/superpowers/
-
 # TypeScript incremental build info
 *.tsbuildinfo
 
 # Throw-away pages prepare-registration.ts writes and screenshots on every run
-screenshots/*.html
+assets/*.html
 
 # The website (site/): its dependencies, build output and Astro's generated types
 site/node_modules
