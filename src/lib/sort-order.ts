@@ -1,3 +1,4 @@
+import { isSuspendedUrl, unwrapSuspendedUrl } from '@/lib/suspended-url';
 import type { GroupFrom, GroupingMode, SortBy } from '@/types';
 
 const TAB_GROUP_COLORS: `${chrome.tabGroups.Color}`[] = [
@@ -92,8 +93,9 @@ export function extractGroupingKey(hostname: string, mode: GroupingMode): string
   return parts.slice(-2).join('.');
 }
 
-export function isSuspended(tab: chrome.tabs.Tab, suspendedPrefix: string): boolean {
-  return !!tab.url?.startsWith(suspendedPrefix);
+/** Whether the tab shows a tab suspender's placeholder page (any suspender; see suspended-url.ts). */
+export function isSuspended(tab: chrome.tabs.Tab): boolean {
+  return isSuspendedUrl(tab.url);
 }
 
 /**
@@ -117,11 +119,7 @@ function toUrlOrUnknown(raw: string | undefined): URL {
   }
 }
 
-export function tabToUrl(
-  tab: chrome.tabs.Tab,
-  groupSuspendedTabs: boolean,
-  suspendedPrefixLen: number,
-): URL {
+export function tabToUrl(tab: chrome.tabs.Tab, groupSuspendedTabs: boolean): URL {
   // A still-loading tab reports `url: ''` and its destination in `pendingUrl`, so both exits
   // resolve the url the same way: without this the same tab sorted two different ways (and threw)
   // depending on `groupSuspendedTabs`.
@@ -131,14 +129,9 @@ export function tabToUrl(
     return toUrlOrUnknown(tabUrl);
   }
 
-  const suspendedSuffix = tab.url?.slice(suspendedPrefixLen);
-  if (suspendedSuffix) {
-    const params = new URLSearchParams(suspendedSuffix);
-    for (const [param, val] of params) {
-      if (param === 'uri') {
-        return toUrlOrUnknown(val);
-      }
-    }
+  // A suspended tab sorts by the page it stands for, read verbatim (see suspended-url.ts).
+  if (isSuspended(tab)) {
+    return toUrlOrUnknown(unwrapSuspendedUrl(tab.url ?? ''));
   }
   return toUrlOrUnknown(tabUrl);
 }
@@ -148,9 +141,8 @@ function updateTabGroupMap(
   tab: chrome.tabs.Tab,
   groupSuspendedTabs: boolean,
   groupingMode: GroupingMode,
-  suspendedPrefixLen: number,
 ): void {
-  const urlParser = tabToUrl(tab, groupSuspendedTabs, suspendedPrefixLen);
+  const urlParser = tabToUrl(tab, groupSuspendedTabs);
   const host = extractGroupingKey(urlParser.hostname, groupingMode);
   if (!tabGroupMap.has(host)) {
     tabGroupMap.set(host, tabGroupMap.size);
@@ -189,16 +181,11 @@ export function sortByTitleOrUrl(
   sortBy: SortBy,
   groupSuspendedTabs: boolean,
   sortPinnedTabs: boolean,
-  suspendedPrefix: string,
-  suspendedPrefixLen: number,
 ): void {
   const keyOf = (tab: chrome.tabs.Tab): TabSortKey => ({
     pinned: tab.pinned,
-    suspended: groupSuspendedTabs && isSuspended(tab, suspendedPrefix),
-    text:
-      sortBy === 'title'
-        ? (tab.title ?? '')
-        : urlSortKey(tabToUrl(tab, groupSuspendedTabs, suspendedPrefixLen)),
+    suspended: groupSuspendedTabs && isSuspended(tab),
+    text: sortBy === 'title' ? (tab.title ?? '') : urlSortKey(tabToUrl(tab, groupSuspendedTabs)),
   });
   const compare = (a: TabSortKey, b: TabSortKey): number =>
     compareHeldAndSuspended(a, b, sortPinnedTabs) ?? collator.compare(a.text, b.text);
@@ -213,48 +200,30 @@ export function sortByCustom(
   preserveOrderWithinGroups: boolean,
   sortPinnedTabs: boolean,
   groupingMode: GroupingMode,
-  tabSuspenderExtensionId: string,
-  suspendedPrefix: string,
-  suspendedPrefixLen: number,
 ): void {
   const tabGroupMap = new Map<string, number>();
   let left = 0;
   let suspendedTabCount = 0;
   let right = tabs.length;
 
+  // Suspended tabs never compete with the others for a host group position: while they are kept
+  // together the suspended / normal split decides every pair across the two, and their own order
+  // is worked out again below from the pages they stand for.
   if (groupFrom === 'leftToRight') {
-    if (groupSuspendedTabs) {
-      tabGroupMap.set(tabSuspenderExtensionId, 0);
-    }
     while (left !== right) {
-      if (isSuspended(tabs[left], suspendedPrefix)) {
+      if (isSuspended(tabs[left])) {
         suspendedTabCount += 1;
       }
-      updateTabGroupMap(
-        tabGroupMap,
-        tabs[left],
-        groupSuspendedTabs,
-        groupingMode,
-        suspendedPrefixLen,
-      );
+      updateTabGroupMap(tabGroupMap, tabs[left], groupSuspendedTabs, groupingMode);
       left += 1;
     }
   } else {
     while (left !== right) {
       right -= 1;
-      if (isSuspended(tabs[right], suspendedPrefix)) {
+      if (isSuspended(tabs[right])) {
         suspendedTabCount += 1;
       }
-      updateTabGroupMap(
-        tabGroupMap,
-        tabs[right],
-        groupSuspendedTabs,
-        groupingMode,
-        suspendedPrefixLen,
-      );
-    }
-    if (groupSuspendedTabs) {
-      tabGroupMap.set(tabSuspenderExtensionId, tabGroupMap.size);
+      updateTabGroupMap(tabGroupMap, tabs[right], groupSuspendedTabs, groupingMode);
     }
   }
 
@@ -262,10 +231,10 @@ export function sortByCustom(
   const keyOf =
     (gsSuspended: boolean) =>
     (tab: chrome.tabs.Tab): TabSortKey => {
-      const url = tabToUrl(tab, gsSuspended, suspendedPrefixLen);
+      const url = tabToUrl(tab, gsSuspended);
       return {
         pinned: tab.pinned,
-        suspended: gsSuspended && isSuspended(tab, suspendedPrefix),
+        suspended: gsSuspended && isSuspended(tab),
         groupPos: tabGroupMap.get(extractGroupingKey(url.hostname, groupingMode)),
         text: preserveOrderWithinGroups ? '' : urlSortKey(url),
       };
@@ -298,13 +267,13 @@ export function sortByCustom(
     right = suspendedTabCount;
     if (groupFrom === 'leftToRight') {
       while (left !== right) {
-        updateTabGroupMap(tabGroupMap, tabs[left], false, groupingMode, suspendedPrefixLen);
+        updateTabGroupMap(tabGroupMap, tabs[left], false, groupingMode);
         left += 1;
       }
     } else {
       while (left !== right) {
         right -= 1;
-        updateTabGroupMap(tabGroupMap, tabs[right], false, groupingMode, suspendedPrefixLen);
+        updateTabGroupMap(tabGroupMap, tabs[right], false, groupingMode);
       }
     }
 

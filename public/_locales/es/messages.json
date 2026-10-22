@@ -231,18 +231,6 @@
     "message": "Activado: las pestañas suspendidas pasan al principio como un solo bloque.",
     "description": "Grey hint under the Group suspended tabs together switch."
   },
-  "settingsSuspenderId": {
-    "message": "ID de la extensión de suspensión de pestañas",
-    "description": "Label of a text field holding another extension's 32-letter id."
-  },
-  "settingsSuspenderIdHint": {
-    "message": "La extensión cuyas páginas suspendidas se reconocen. Si está vacío, se usa The Marvellous Suspender.",
-    "description": "Grey hint under the Tab suspender extension ID field. Keep the extension name The Marvellous Suspender as it is."
-  },
-  "settingsSuspenderIdInvalid": {
-    "message": "32 letras de la a a la p",
-    "description": "Short red error beside the extension id field: an id is exactly 32 letters from a to p. Keep the letters a and p."
-  },
   "settingsSessionsTitle": {
     "message": "Sesiones",
     "description": "Heading of the Settings section about saved sessions and automatic snapshots."

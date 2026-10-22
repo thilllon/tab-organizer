@@ -629,8 +629,8 @@ export function App() {
           if (open) {
             return;
           }
-          // A field that writes on blur (the suspender ID) would otherwise be unmounted with its
-          // text unsaved: Escape closes the dialog without moving focus first.
+          // A field that writes on blur (a snapshot interval or limit) would otherwise be unmounted
+          // with its text unsaved: Escape closes the dialog without moving focus first.
           if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
           }

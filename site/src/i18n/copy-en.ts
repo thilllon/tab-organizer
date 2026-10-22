@@ -125,7 +125,7 @@ export const en: SiteCopy = {
       {
         icon: 'grouping',
         title: 'Works with what you use',
-        body: 'Tabs suspended by The Marvellous Suspender sort by their real address. Name your tab groups 1-Work, 2-Reading to set their order.',
+        body: 'Tabs suspended by The Marvellous Suspender or a similar suspender sort by their real address. Name your tab groups 1-Work, 2-Reading to set their order.',
       },
     ],
   },

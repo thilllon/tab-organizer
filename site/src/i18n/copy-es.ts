@@ -126,7 +126,7 @@ export const es: SiteCopy = {
       {
         icon: 'grouping',
         title: 'Se lleva bien con lo que ya usas',
-        body: 'Las pestañas suspendidas por The Marvellous Suspender se ordenan por su dirección real. Llama a tus grupos de pestañas 1-Trabajo, 2-Lectura para fijar su orden.',
+        body: 'Las pestañas suspendidas por The Marvellous Suspender o una extensión similar se ordenan por su dirección real. Llama a tus grupos de pestañas 1-Trabajo, 2-Lectura para fijar su orden.',
       },
     ],
   },

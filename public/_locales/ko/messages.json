@@ -223,18 +223,6 @@
     "message": "켜면 일시 중지된 탭이 한 묶음으로 맨 앞으로 이동합니다.",
     "description": "Grey hint under the Group suspended tabs together switch."
   },
-  "settingsSuspenderId": {
-    "message": "탭 일시 중지 확장 프로그램 ID",
-    "description": "Label of a text field holding another extension's 32-letter id."
-  },
-  "settingsSuspenderIdHint": {
-    "message": "일시 중지된 페이지를 인식할 확장 프로그램입니다. 비워 두면 The Marvellous Suspender를 사용합니다.",
-    "description": "Grey hint under the Tab suspender extension ID field. Keep the extension name The Marvellous Suspender as it is."
-  },
-  "settingsSuspenderIdInvalid": {
-    "message": "a-p 소문자 32자",
-    "description": "Short red error beside the extension id field: an id is exactly 32 letters from a to p. Keep the letters a and p."
-  },
   "settingsSessionsTitle": {
     "message": "세션",
     "description": "Heading of the Settings section about saved sessions and automatic snapshots."

@@ -41,7 +41,6 @@ describe('openTabInBackground', () => {
 
   it('unwraps a suspended url before opening it', async () => {
     const fake = getChromeFake();
-    fake.state.sync.set('tabSuspenderExtensionId', 'abcdefghijklmnopabcdefghijklmnop');
 
     const result = await openTabInBackground(
       'chrome-extension://abcdefghijklmnopabcdefghijklmnop/suspended.html#uri=https://real.example/x',

@@ -1,5 +1,4 @@
 import { t } from '@/lib/i18n';
-import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 import type { DuplicateTabHandling, GroupFrom, GroupingMode, SortBy, SortSettings } from '@/types';
 
 /**
@@ -19,7 +18,6 @@ export const DEFAULT_SORT_SETTINGS: SortSettings = {
   groupFrom: 'leftToRight',
   preserveOrderWithinGroups: false,
   groupSuspendedTabs: false,
-  tabSuspenderExtensionId: THE_MARVELLOUS_SUSPENDER_EXTENSION_ID,
   sortPinnedTabs: false,
   duplicateTabHandling: 'closeAllButOne',
   groupingMode: 'subdomain',
@@ -31,7 +29,6 @@ export const SORT_SETTING_KEYS: readonly (keyof SortSettings)[] = [
   'groupFrom',
   'preserveOrderWithinGroups',
   'groupSuspendedTabs',
-  'tabSuspenderExtensionId',
   'sortPinnedTabs',
   'duplicateTabHandling',
   'groupingMode',
@@ -95,45 +92,6 @@ export function groupFromOptions(): SortOption<GroupFrom>[] {
   ];
 }
 
-/** A Chrome extension id: exactly 32 characters from the alphabet a-p, lower case. */
-const EXTENSION_ID_PATTERN = /^[a-p]{32}$/;
-
-export function isExtensionId(value: string): boolean {
-  return EXTENSION_ID_PATTERN.test(value);
-}
-
-/**
- * What the suspender-id input currently holds:
- * - `'default'` - empty, i.e. "use the built-in default" (see `normalizeSuspenderId`);
- * - `'valid'` - a well-formed extension id;
- * - `'invalid'` - anything else; the page shows an error and writes nothing instead of
- *   storing an id that could never match a tab.
- */
-type SuspenderIdStatus = 'default' | 'valid' | 'invalid';
-
-export function suspenderIdStatus(draft: string): SuspenderIdStatus {
-  const trimmed = draft.trim();
-  if (trimmed === '') {
-    return 'default';
-  }
-  return isExtensionId(trimmed) ? 'valid' : 'invalid';
-}
-
-/**
- * The id to store for a given input value: the trimmed text when it is a valid extension id, and
- * the default otherwise.
- *
- * An empty field means "use the default", and must resolve to the default id *before* it reaches
- * storage. `loadSuspendedPrefix()` (`src/lib/session-capture.ts`, the sessions side) already falls
- * back to the default for an empty stored id, but the sort engine does not: it interpolates
- * whatever it read into `chrome-extension://<id>/suspended.html#`, so an empty or malformed id
- * there yields a prefix that matches no tab and silently disables suspended-tab handling.
- */
-export function normalizeSuspenderId(draft: string): string {
-  const trimmed = draft.trim();
-  return isExtensionId(trimmed) ? trimmed : THE_MARVELLOUS_SUSPENDER_EXTENSION_ID;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -161,10 +119,6 @@ export function parseSortSettings(raw: unknown): SortSettings {
       stored.groupSuspendedTabs,
       DEFAULT_SORT_SETTINGS.groupSuspendedTabs,
     ),
-    tabSuspenderExtensionId:
-      typeof stored.tabSuspenderExtensionId === 'string'
-        ? normalizeSuspenderId(stored.tabSuspenderExtensionId)
-        : DEFAULT_SORT_SETTINGS.tabSuspenderExtensionId,
     sortPinnedTabs: parseBoolean(stored.sortPinnedTabs, DEFAULT_SORT_SETTINGS.sortPinnedTabs),
     duplicateTabHandling: isDuplicateTabHandling(stored.duplicateTabHandling)
       ? stored.duplicateTabHandling
@@ -172,18 +126,6 @@ export function parseSortSettings(raw: unknown): SortSettings {
     groupingMode: isGroupingMode(stored.groupingMode)
       ? stored.groupingMode
       : DEFAULT_SORT_SETTINGS.groupingMode,
-  };
-}
-
-/**
- * The exact object a change writes. Only the suspender id needs resolving; the custom-only settings
- * are stored as they are even under "By URL"/"By title" - the engine ignores them there, and
- * keeping them means switching back to "Custom grouping" restores the user's own choice.
- */
-export function toStoredSortSettings(draft: SortSettings): SortSettings {
-  return {
-    ...draft,
-    tabSuspenderExtensionId: normalizeSuspenderId(draft.tabSuspenderExtensionId),
   };
 }
 

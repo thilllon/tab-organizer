@@ -92,10 +92,9 @@ describe('snapshotOpenWindows', () => {
     expect(views.find((entry) => entry.windowId === windowId)?.tabs).toHaveLength(1);
   });
 
-  it('unwraps a suspended tab to the page it stands for', async () => {
-    await chrome.storage.sync.set({ tabSuspenderExtensionId: 'suspenderid' });
+  it('unwraps a suspended tab to the page it stands for, with no configured suspender', async () => {
     const windowId = await seedWindow([
-      'chrome-extension://suspenderid/suspended.html#ttl=Hi&uri=https://real.example/page',
+      'chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/suspended.html#ttl=Hi&uri=https://real.example/page',
     ]);
 
     const views = await snapshotOpenWindows({ excludeUrlPrefix: OWN_PREFIX });

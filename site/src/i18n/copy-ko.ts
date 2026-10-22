@@ -125,7 +125,7 @@ export const ko: SiteCopy = {
       {
         icon: 'grouping',
         title: '쓰던 도구와 함께',
-        body: 'The Marvellous Suspender로 일시 중지된 탭도 실제 주소로 정렬합니다. 탭 그룹 이름 앞에 1-업무, 2-읽을거리처럼 숫자를 붙이면 순서를 정할 수 있습니다.',
+        body: 'The Marvellous Suspender 같은 확장 프로그램으로 일시 중지된 탭도 실제 주소로 정렬합니다. 탭 그룹 이름 앞에 1-업무, 2-읽을거리처럼 숫자를 붙이면 순서를 정할 수 있습니다.',
       },
     ],
   },
