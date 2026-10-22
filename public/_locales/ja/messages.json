@@ -231,18 +231,6 @@
     "message": "オン: 休止中のタブを1つのまとまりとして先頭に移動します。",
     "description": "Grey hint under the Group suspended tabs together switch."
   },
-  "settingsSuspenderId": {
-    "message": "タブ休止拡張機能の ID",
-    "description": "Label of a text field holding another extension's 32-letter id."
-  },
-  "settingsSuspenderIdHint": {
-    "message": "どの拡張機能で休止されたページを認識するかを指定します。空欄の場合は The Marvellous Suspender を対象にします。",
-    "description": "Grey hint under the Tab suspender extension ID field. Keep the extension name The Marvellous Suspender as it is."
-  },
-  "settingsSuspenderIdInvalid": {
-    "message": "a-p の32文字",
-    "description": "Short red error beside the extension id field: an id is exactly 32 letters from a to p. Keep the letters a and p."
-  },
   "settingsSessionsTitle": {
     "message": "セッション",
     "description": "Heading of the Settings section about saved sessions and automatic snapshots."

@@ -18,12 +18,14 @@ import {
   type WindowSnapshot,
 } from '@/types';
 
-const SUSPENDED_PREFIX = 'chrome-extension://suspenderid/suspended.html#';
+/** The Marvellous Suspender's placeholder page; any suspender of its family is recognised. */
+const SUSPENDED_PREFIX = 'chrome-extension://noogafoofpebimajpfpamcfhoaifemoa/suspended.html#';
+const OTHER_SUSPENDER_PREFIX =
+  'chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/suspended.html#';
 
 const SANITIZE: SanitizeOptions = {
   ownExtensionId: 'fakeextid',
   fileAccessAllowed: false,
-  suspendedPrefix: SUSPENDED_PREFIX,
 };
 
 function tab(overrides: Partial<TabSnapshot> = {}): TabSnapshot {
@@ -124,10 +126,34 @@ describe('sanitizeRestoreUrl', () => {
     expect(sanitizeRestoreUrl(`${SUSPENDED_PREFIX}ttl=Docs`, SANITIZE)).toBeNull();
   });
 
-  it('does not unwrap when suspendedPrefix is empty', () => {
+  it('unwraps any suspender of the family, with no configured id', () => {
+    const wrapped = `${OTHER_SUSPENDER_PREFIX}ttl=Docs&pos=0&uri=https://docs.example.com/`;
+
+    expect(sanitizeRestoreUrl(wrapped, SANITIZE)).toBe('https://docs.example.com/');
+  });
+
+  it('never unwraps a uri= in the query of an ordinary page', () => {
     const url = 'https://a.com/?uri=https://b.com/';
 
-    expect(sanitizeRestoreUrl(url, { ...SANITIZE, suspendedPrefix: '' })).toBe(url);
+    expect(sanitizeRestoreUrl(url, SANITIZE)).toBe(url);
+  });
+
+  it('rejects a foreign chrome-extension page that is not a suspended page', () => {
+    expect(
+      sanitizeRestoreUrl(
+        'chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/options.html#uri=https://a.com/',
+        SANITIZE,
+      ),
+    ).toBeNull();
+  });
+
+  it('opens our own extension pages as they are, never unwrapped', () => {
+    const own =
+      'chrome-extension://abcdefghijklmnopabcdefghijklmnop/suspended.html#uri=https://a.com/';
+
+    expect(
+      sanitizeRestoreUrl(own, { ...SANITIZE, ownExtensionId: 'abcdefghijklmnopabcdefghijklmnop' }),
+    ).toBe(own);
   });
 
   it('does not alter the url text (no normalization)', () => {

@@ -12,10 +12,12 @@ import type { Session, WindowSnapshot } from '@/types';
 
 import { getChromeFake } from './chrome-fake';
 
+/** The Marvellous Suspender's placeholder page. */
+const SUSPENDED_PAGE = 'chrome-extension://noogafoofpebimajpfpamcfhoaifemoa/suspended.html#';
+
 const SANITIZE: RestoreOptions['sanitize'] = {
   ownExtensionId: 'fakeextid',
   fileAccessAllowed: false,
-  suspendedPrefix: 'chrome-extension://noogafoofpebimajpfpamcfhoaifemoa/suspended.html#',
 };
 
 /** 1 pinned, group "Work" (blue, open) with 2 tabs, group "News" (red, collapsed) with 1 tab, 1 loose. */
@@ -54,7 +56,7 @@ const REFERENCE_WINDOW: WindowSnapshot = {
     { url: 'https://work.example/a', title: 'Work A', pinned: false, active: true, groupIndex: 0 },
     {
       // Saved by the suspender, so the stored url is the wrapper; the restore opens the real page.
-      url: `${SANITIZE.suspendedPrefix}ttl=Suspended&uri=https://work.example/b`,
+      url: `${SUSPENDED_PAGE}ttl=Suspended&uri=https://work.example/b`,
       title: 'Work B (suspended)',
       pinned: false,
       active: false,

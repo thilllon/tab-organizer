@@ -8,11 +8,13 @@ import {
   captureWindowsWithIds,
 } from '@/lib/session-capture';
 
-const SUSPENDED_PREFIX = 'chrome-extension://suspenderid/suspended.html#';
+/** The Marvellous Suspender's placeholder page; any suspender of its family is recognised. */
+const SUSPENDED_PREFIX = 'chrome-extension://noogafoofpebimajpfpamcfhoaifemoa/suspended.html#';
+const OTHER_SUSPENDER_PREFIX =
+  'chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/suspended.html#';
 
 const OPTIONS: CaptureOptions = {
   ownUrlPrefix: 'chrome-extension://fakeextid/',
-  suspendedPrefix: SUSPENDED_PREFIX,
 };
 
 function makeTab(overrides: Partial<chrome.tabs.Tab> = {}): chrome.tabs.Tab {
@@ -248,12 +250,37 @@ describe('captureWindows', () => {
     expect(snapshot.groups).toEqual([{ title: 'G', color: 'blue', collapsed: false }]);
   });
 
-  it('never treats tabs as suspended when suspendedPrefix is empty', () => {
+  it('never reads a uri= parameter out of a page that is not suspended', () => {
     const win = makeWindow({ tabs: tabsInOrder({ url: 'https://a.com/?uri=https://evil.com/' }) });
 
-    const result = captureWindows([win], [], { ...OPTIONS, suspendedPrefix: '' });
+    const result = captureWindows([win], [], OPTIONS);
 
     expect(result[0].tabs[0].url).toBe('https://a.com/?uri=https://evil.com/');
+  });
+
+  it('unwraps a tab of any suspender of the family, with no configured id', () => {
+    const win = makeWindow({
+      tabs: tabsInOrder(
+        { url: `${SUSPENDED_PREFIX}ttl=A&pos=0&uri=https://a.example/` },
+        { url: `${OTHER_SUSPENDER_PREFIX}ttl=B&pos=1&uri=https://b.example/?x=1&y=2` },
+      ),
+    });
+
+    const [snapshot] = captureWindows([win], [], OPTIONS);
+
+    expect(snapshot.tabs.map((tab) => tab.url)).toEqual([
+      'https://a.example/',
+      'https://b.example/?x=1&y=2',
+    ]);
+  });
+
+  it('keeps a foreign extension page that is not a suspended page as it is', () => {
+    const url = 'chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/options.html#uri=https://a/';
+    const win = makeWindow({ tabs: tabsInOrder({ url }) });
+
+    const [snapshot] = captureWindows([win], [], OPTIONS);
+
+    expect(snapshot.tabs[0].url).toBe(url);
   });
 
   it('builds groups in first-appearance order and references them by index', () => {

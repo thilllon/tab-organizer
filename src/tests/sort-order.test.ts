@@ -118,104 +118,127 @@ describe('extractGroupingKey', () => {
   });
 });
 
-describe('isSuspended', () => {
-  const prefix = 'chrome-extension://testid/suspended.html#';
+/** The Marvellous Suspender's placeholder page, and another suspender's (any 32-letter a-p id). */
+const MARVELLOUS = 'chrome-extension://noogafoofpebimajpfpamcfhoaifemoa/suspended.html#';
+const OTHER_SUSPENDER = 'chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/suspended.html#';
 
-  it('returns true for suspended tab', () => {
-    const tab = makeTab({ url: `${prefix}uri=https://example.com` });
-    expect(isSuspended(tab, prefix)).toBe(true);
+describe('isSuspended', () => {
+  it('returns true for a tab suspended by The Marvellous Suspender', () => {
+    const tab = makeTab({ url: `${MARVELLOUS}ttl=Example&pos=0&uri=https://example.com` });
+    expect(isSuspended(tab)).toBe(true);
+  });
+
+  it('returns true for a tab suspended by another suspender of the same family', () => {
+    const tab = makeTab({ url: `${OTHER_SUSPENDER}ttl=Example&pos=0&uri=https://example.com` });
+    expect(isSuspended(tab)).toBe(true);
   });
 
   it('returns false for normal tab', () => {
     const tab = makeTab({ url: 'https://example.com' });
-    expect(isSuspended(tab, prefix)).toBe(false);
+    expect(isSuspended(tab)).toBe(false);
   });
 
   it('returns false for tab without URL', () => {
     const tab = makeTab({ url: undefined });
-    expect(isSuspended(tab, prefix)).toBe(false);
+    expect(isSuspended(tab)).toBe(false);
   });
 
   it('returns false for chrome:// URL', () => {
     const tab = makeTab({ url: 'chrome://settings/' });
-    expect(isSuspended(tab, prefix)).toBe(false);
+    expect(isSuspended(tab)).toBe(false);
   });
 
-  it('returns false for chrome-extension:// URL that is not the suspender', () => {
-    const tab = makeTab({ url: 'chrome-extension://otherid/popup.html' });
-    expect(isSuspended(tab, prefix)).toBe(false);
+  it('returns false for chrome-extension:// URL that is not a suspended page', () => {
+    const tab = makeTab({ url: 'chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/popup.html' });
+    expect(isSuspended(tab)).toBe(false);
   });
 });
 
 describe('tabToUrl', () => {
-  const prefixLen = 'chrome-extension://testid/suspended.html#'.length;
-
   it('returns tab URL directly when groupSuspendedTabs is true', () => {
     const tab = makeTab({ url: 'https://example.com/page' });
-    const result = tabToUrl(tab, true, prefixLen);
+    const result = tabToUrl(tab, true);
     expect(result.href).toBe('https://example.com/page');
   });
 
   it('returns pendingUrl when url is not available', () => {
     const tab = makeTab({ url: undefined, pendingUrl: 'https://pending.com' });
-    const result = tabToUrl(tab, false, prefixLen);
+    const result = tabToUrl(tab, false);
     expect(result.href).toBe('https://pending.com/');
   });
 
   it('returns tab url for normal tabs', () => {
     const tab = makeTab({ url: 'https://example.com' });
-    const result = tabToUrl(tab, false, prefixLen);
+    const result = tabToUrl(tab, false);
     expect(result.href).toBe('https://example.com/');
   });
 
   it('handles chrome:// URLs', () => {
     const tab = makeTab({ url: 'chrome://extensions/' });
-    const result = tabToUrl(tab, false, prefixLen);
+    const result = tabToUrl(tab, false);
     expect(result.href).toBe('chrome://extensions/');
   });
 
   it('handles chrome-extension:// URLs', () => {
     const tab = makeTab({ url: 'chrome-extension://abcdef/options.html' });
-    const result = tabToUrl(tab, false, prefixLen);
+    const result = tabToUrl(tab, false);
     expect(result.href).toBe('chrome-extension://abcdef/options.html');
   });
 
   it('handles about:blank', () => {
     const tab = makeTab({ url: 'about:blank' });
-    const result = tabToUrl(tab, false, prefixLen);
+    const result = tabToUrl(tab, false);
     expect(result.href).toBe('about:blank');
   });
 
   // Chrome reports a still-loading tab as `url: ''` with the destination in `pendingUrl`.
   it('prefers pendingUrl over an empty url with groupSuspendedTabs off', () => {
     const tab = makeTab({ url: '', pendingUrl: 'https://loading.example/page' });
-    expect(tabToUrl(tab, false, prefixLen).href).toBe('https://loading.example/page');
+    expect(tabToUrl(tab, false).href).toBe('https://loading.example/page');
   });
 
   it('prefers pendingUrl over an empty url with groupSuspendedTabs on', () => {
     const tab = makeTab({ url: '', pendingUrl: 'https://loading.example/page' });
-    expect(tabToUrl(tab, true, prefixLen).href).toBe('https://loading.example/page');
+    expect(tabToUrl(tab, true).href).toBe('https://loading.example/page');
   });
 
   it('both exits agree on a navigating tab that still has its old url', () => {
     const tab = makeTab({ url: 'https://old.example/', pendingUrl: 'https://new.example/' });
-    expect(tabToUrl(tab, true, prefixLen).href).toBe(tabToUrl(tab, false, prefixLen).href);
+    expect(tabToUrl(tab, true).href).toBe(tabToUrl(tab, false).href);
   });
 
   it('returns the sentinel instead of throwing when a tab has no url at all', () => {
     const tab = makeTab({ url: '', pendingUrl: undefined });
-    expect(() => tabToUrl(tab, false, prefixLen)).not.toThrow();
-    expect(() => tabToUrl(tab, true, prefixLen)).not.toThrow();
-    expect(tabToUrl(tab, false, prefixLen).href).toBe(tabToUrl(tab, true, prefixLen).href);
+    expect(() => tabToUrl(tab, false)).not.toThrow();
+    expect(() => tabToUrl(tab, true)).not.toThrow();
+    expect(tabToUrl(tab, false).href).toBe(tabToUrl(tab, true).href);
     // The sentinel sorts after every real url rather than aborting the whole sort.
     expect(
-      compareByUrlComponents(tabToUrl(tab, false, prefixLen), new URL('https://zoo.com/')),
+      compareByUrlComponents(tabToUrl(tab, false), new URL('https://zoo.com/')),
     ).toBeGreaterThan(0);
   });
 
   it('returns the sentinel for an unparseable suspended uri parameter', () => {
-    const tab = makeTab({ url: 'chrome-extension://testid/suspended.html#uri=not a url' });
-    expect(() => tabToUrl(tab, false, prefixLen)).not.toThrow();
+    const tab = makeTab({ url: `${MARVELLOUS}uri=not a url` });
+    expect(() => tabToUrl(tab, false)).not.toThrow();
+  });
+
+  it('reads a suspended tab as the page it stands for, whichever suspender made it', () => {
+    const real = 'https://www.youtube.com/watch?v=abc&list=PL1#t=42';
+    for (const prefix of [MARVELLOUS, OTHER_SUSPENDER]) {
+      const tab = makeTab({ url: `${prefix}ttl=Video&pos=3&uri=${real}` });
+      // Verbatim: the `&list=` and the fragment of the real url survive.
+      expect(tabToUrl(tab, false).href).toBe(real);
+      // While suspended tabs are kept together they sort by the placeholder itself.
+      expect(tabToUrl(tab, true).href).toBe(`${prefix}ttl=Video&pos=3&uri=${real}`);
+    }
+  });
+
+  it('never reads a uri= parameter out of a page that is not suspended', () => {
+    const tab = makeTab({ url: 'https://search.example/?uri=https://elsewhere.example/' });
+    expect(tabToUrl(tab, false).href).toBe(
+      'https://search.example/?uri=https://elsewhere.example/',
+    );
   });
 });
 
@@ -280,9 +303,6 @@ describe('findDuplicateTabs', () => {
 });
 
 describe('sortByTitleOrUrl', () => {
-  const noSuspend = '';
-  const noSuspendLen = 0;
-
   it('sorts tabs alphabetically by title (A→Z)', () => {
     const tabs = [
       makeTab({ title: 'Zebra', url: 'https://z.com' }),
@@ -290,7 +310,7 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ title: 'Mango', url: 'https://m.com' }),
     ];
 
-    sortByTitleOrUrl(tabs, 'title', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'title', false, false);
 
     expect(tabs.map((t) => t.title)).toEqual(['Apple', 'Mango', 'Zebra']);
   });
@@ -302,7 +322,7 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ url: 'https://banana.com' }),
     ];
 
-    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'url', false, false);
 
     expect(tabs.map((t) => t.url)).toEqual([
       'https://apple.com',
@@ -318,7 +338,7 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ title: 'Mango', pinned: false }),
     ];
 
-    sortByTitleOrUrl(tabs, 'title', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'title', false, false);
 
     // Pinned tab should stay in place relative to others
     expect(tabs[0].pinned).toBe(true);
@@ -330,7 +350,7 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ title: 'Apple', pinned: true }),
     ];
 
-    sortByTitleOrUrl(tabs, 'title', false, true, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'title', false, true);
 
     expect(tabs.map((t) => t.title)).toEqual(['Apple', 'Zebra']);
   });
@@ -342,20 +362,20 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ title: 'Alpha' }),
     ];
 
-    sortByTitleOrUrl(tabs, 'title', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'title', false, false);
 
     expect(tabs.map((t) => t.title ?? '')).toEqual(['', 'Alpha', 'Beta']);
   });
 
   it('handles single tab array', () => {
     const tabs = [makeTab({ title: 'Only' })];
-    sortByTitleOrUrl(tabs, 'title', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'title', false, false);
     expect(tabs[0].title).toBe('Only');
   });
 
   it('handles empty array', () => {
     const tabs: chrome.tabs.Tab[] = [];
-    sortByTitleOrUrl(tabs, 'title', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'title', false, false);
     expect(tabs).toEqual([]);
   });
 
@@ -367,7 +387,7 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ url: 'https://apple.com' }),
     ];
 
-    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'url', false, false);
 
     expect(tabs.map((t) => t.url)).toEqual([
       'https://apple.com',
@@ -380,7 +400,7 @@ describe('sortByTitleOrUrl', () => {
   it('sorts tabs with about:blank by URL', () => {
     const tabs = [makeTab({ url: 'https://example.com' }), makeTab({ url: 'about:blank' })];
 
-    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'url', false, false);
 
     // about:blank has empty hostname, so it sorts before any domain
     expect(tabs[0].url).toBe('about:blank');
@@ -392,7 +412,7 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ url: 'chrome-extension://aaa/options.html' }),
     ];
 
-    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'url', false, false);
 
     expect(tabs.map((t) => t.url)).toEqual([
       'chrome-extension://aaa/options.html',
@@ -406,7 +426,7 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ title: 'About', url: 'file:///about.html' }),
     ];
 
-    sortByTitleOrUrl(tabs, 'title', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'title', false, false);
 
     expect(tabs.map((t) => t.title)).toEqual(['About', 'Readme']);
   });
@@ -440,7 +460,7 @@ describe('sortByTitleOrUrl', () => {
       makeTab({ url: 'https://maps.google.com/maps?q=seoul' }),
     ];
 
-    sortByTitleOrUrl(tabs, 'url', false, false, noSuspend, noSuspendLen);
+    sortByTitleOrUrl(tabs, 'url', false, false);
 
     const urls = tabs.map((t) => {
       const u = new URL(t.url ?? '');
@@ -486,9 +506,6 @@ describe('sortByTitleOrUrl', () => {
 });
 
 describe('sorting tabs that have no committed url', () => {
-  const noSuspend = 'chrome-extension://none/suspended.html#';
-  const noSuspendLen = noSuspend.length;
-
   // Reproduces the icon-click crash: with `groupSuspendedTabs` on, a loading tab (url '') used to
   // reach `new URL('')` and throw, aborting the sort half-way through the window.
   for (const groupSuspendedTabs of [false, true]) {
@@ -499,9 +516,7 @@ describe('sorting tabs that have no committed url', () => {
         makeTab({ id: 3, url: 'https://mango.com/' }),
       ];
 
-      expect(() =>
-        sortByTitleOrUrl(tabs, 'url', groupSuspendedTabs, false, noSuspend, noSuspendLen),
-      ).not.toThrow();
+      expect(() => sortByTitleOrUrl(tabs, 'url', groupSuspendedTabs, false)).not.toThrow();
 
       expect(tabs.map((t) => t.id)).toEqual([2, 3, 1]);
     });
@@ -514,9 +529,7 @@ describe('sorting tabs that have no committed url', () => {
         makeTab({ id: 4, url: 'https://apple.com/' }),
       ];
 
-      expect(() =>
-        sortByTitleOrUrl(tabs, 'url', groupSuspendedTabs, false, noSuspend, noSuspendLen),
-      ).not.toThrow();
+      expect(() => sortByTitleOrUrl(tabs, 'url', groupSuspendedTabs, false)).not.toThrow();
 
       // Real urls first, then the unknown tabs - in their original relative order (stable sort).
       expect(tabs.map((t) => t.id)).toEqual([4, 2, 1, 3]);
@@ -531,19 +544,7 @@ describe('sorting tabs that have no committed url', () => {
       makeTab({ id: 4, url: '', pendingUrl: undefined }),
     ];
 
-    expect(() =>
-      sortByCustom(
-        tabs,
-        'leftToRight',
-        true,
-        false,
-        false,
-        'subdomain',
-        'none',
-        noSuspend,
-        noSuspendLen,
-      ),
-    ).not.toThrow();
+    expect(() => sortByCustom(tabs, 'leftToRight', true, false, false, 'subdomain')).not.toThrow();
 
     // Custom sort keeps groups in first-appearance order: zoo.com, then the two tabs with no url
     // (one group, since they share the sentinel host), then the loading tab's apple.com.
@@ -552,32 +553,21 @@ describe('sorting tabs that have no committed url', () => {
 });
 
 describe('sortByCustom preserveOrderWithinGroups with groupSuspendedTabs on', () => {
-  const suspenderId = 'testid';
-  const prefix = `chrome-extension://${suspenderId}/suspended.html#`;
-  const prefixLen = prefix.length;
-
-  /** Two normal tabs of one host in reverse url order, plus two suspended tabs of the same. */
+  /**
+   * Two normal tabs of one host in reverse url order, plus two suspended tabs of the same, each
+   * suspended by a different suspender: both are recognised without any configured id.
+   */
   function fixture(): chrome.tabs.Tab[] {
     return [
       makeTab({ id: 1, url: 'https://example.com/zebra' }),
       makeTab({ id: 2, url: 'https://example.com/apple' }),
-      makeTab({ id: 3, url: `${prefix}ttl=S&pos=0&uri=https://example.com/mango` }),
-      makeTab({ id: 4, url: `${prefix}ttl=S&pos=1&uri=https://example.com/banana` }),
+      makeTab({ id: 3, url: `${MARVELLOUS}ttl=S&pos=0&uri=https://example.com/mango` }),
+      makeTab({ id: 4, url: `${OTHER_SUSPENDER}ttl=S&pos=1&uri=https://example.com/banana` }),
     ];
   }
 
   function sort(tabs: chrome.tabs.Tab[], preserveOrderWithinGroups: boolean): void {
-    sortByCustom(
-      tabs,
-      'leftToRight',
-      true,
-      preserveOrderWithinGroups,
-      false,
-      'subdomain',
-      suspenderId,
-      prefix,
-      prefixLen,
-    );
+    sortByCustom(tabs, 'leftToRight', true, preserveOrderWithinGroups, false, 'subdomain');
   }
 
   it('url-sorts within a group when preserveOrderWithinGroups is off', () => {
@@ -619,28 +609,8 @@ describe('sortByCustom preserveOrderWithinGroups with groupSuspendedTabs on', ()
     ];
     const withoutGrouping = withGrouping.map((tab) => ({ ...tab }));
 
-    sortByCustom(
-      withGrouping,
-      'leftToRight',
-      true,
-      false,
-      false,
-      'subdomain',
-      suspenderId,
-      prefix,
-      prefixLen,
-    );
-    sortByCustom(
-      withoutGrouping,
-      'leftToRight',
-      false,
-      false,
-      false,
-      'subdomain',
-      suspenderId,
-      prefix,
-      prefixLen,
-    );
+    sortByCustom(withGrouping, 'leftToRight', true, false, false, 'subdomain');
+    sortByCustom(withoutGrouping, 'leftToRight', false, false, false, 'subdomain');
 
     expect(withGrouping.map((t) => t.id)).toEqual([2, 1]);
     expect(withoutGrouping.map((t) => t.id)).toEqual([2, 1]);

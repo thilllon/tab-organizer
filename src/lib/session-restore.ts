@@ -11,8 +11,6 @@ export interface SanitizeOptions {
   ownExtensionId: string;
   /** Result of `chrome.extension.isAllowedFileSchemeAccess()`. */
   fileAccessAllowed: boolean;
-  /** Suspender wrapper prefix, or '' when no suspender is configured. */
-  suspendedPrefix: string;
 }
 
 export type RestoreTarget = { kind: 'newWindows' } | { kind: 'window'; windowId: number };
@@ -89,8 +87,10 @@ interface RestoreHooks {
 
 /** Returns the url to open, or null when it must be skipped. Never throws. */
 export function sanitizeRestoreUrl(url: string, options: SanitizeOptions): string | null {
-  const candidate = unwrapSuspendedUrl(url, options.suspendedPrefix);
-  if (candidate === null || candidate === '') {
+  // A suspended tab opens as the page it stands for. A placeholder that cannot be unwrapped stays
+  // a foreign `chrome-extension://` url and is skipped below.
+  const candidate = unwrapSuspendedUrl(url, options.ownExtensionId);
+  if (candidate === '') {
     return null;
   }
 

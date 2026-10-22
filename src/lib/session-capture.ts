@@ -1,14 +1,11 @@
 import { contentHash } from '@/lib/session-hash';
 import { defaultSessionName } from '@/lib/session-naming';
-import { isSuspended } from '@/lib/sort-order';
-import { unwrapSuspendedUrl } from '@/lib/suspended-url';
+import { isSuspendedUrl, unwrapSuspendedUrl } from '@/lib/suspended-url';
 import type { GroupSnapshot, Session, TabSnapshot, WindowSnapshot } from '@/types';
 
 export interface CaptureOptions {
   /** `chrome.runtime.getURL('')` - tabs whose url starts with this are our own pages. */
   ownUrlPrefix: string;
-  /** Suspender wrapper prefix (`chrome-extension://<id>/suspended.html#`), or '' when none. */
-  suspendedPrefix: string;
 }
 
 function toWindowState(state: chrome.windows.Window['state']): WindowSnapshot['state'] {
@@ -36,18 +33,18 @@ function isAbsoluteUrl(value: string): boolean {
   }
 }
 
-function resolveTabUrl(tab: chrome.tabs.Tab, options: CaptureOptions): string | undefined {
+function resolveTabUrl(tab: chrome.tabs.Tab): string | undefined {
   const raw = tab.pendingUrl ?? tab.url;
   if (raw === undefined || raw === '') {
     return undefined;
   }
-  if (options.suspendedPrefix !== '' && isSuspended(tab, options.suspendedPrefix)) {
-    // `isSuspended` matched `tab.url`, so that is the wrapper to unwrap (verbatim -- see
-    // suspended-url.ts). A malformed wrapper (missing/empty/relative `uri`) keeps the tab on the raw
-    // wrapper url rather than dropping it silently; `sanitizeRestoreUrl` (restore path) decides
+  if (isSuspendedUrl(tab.url)) {
+    // `tab.url` is a suspender's placeholder page, so that is the one to unwrap (verbatim - see
+    // suspended-url.ts). A target that is not an absolute url (`uri=/foo`) keeps the tab on the raw
+    // placeholder url rather than dropping it silently; `sanitizeRestoreUrl` (restore path) decides
     // what to do with a raw `chrome-extension://` url later.
-    const inner = unwrapSuspendedUrl(tab.url ?? '', options.suspendedPrefix);
-    return inner !== null && isAbsoluteUrl(inner) ? inner : raw;
+    const inner = unwrapSuspendedUrl(tab.url ?? '');
+    return isAbsoluteUrl(inner) ? inner : raw;
   }
   return raw;
 }
@@ -94,7 +91,7 @@ function captureWindow(
   let activeSeen = false;
 
   for (const tab of sourceTabs) {
-    const url = resolveTabUrl(tab, options);
+    const url = resolveTabUrl(tab);
     if (url === undefined || isOwnPage(url, options)) {
       continue;
     }
@@ -239,25 +236,8 @@ export function captureWindowsWithIds(
     }));
 }
 
-// Default to "The Marvellous Suspender". This is the single source of truth for the id: the sort
-// engine (src/lib/sort-tabs.ts), the restore sanitiser (src/lib/sanitize-options.ts) and the
-// settings view all import it from here.
-export const THE_MARVELLOUS_SUSPENDER_EXTENSION_ID = 'noogafoofpebimajpfpamcfhoaifemoa';
-
-/** `chrome-extension://<suspender id>/suspended.html#`, honouring the Options-page override. */
-export async function loadSuspendedPrefix(): Promise<string> {
-  const stored = await chrome.storage.sync.get<{ tabSuspenderExtensionId: string }>({
-    tabSuspenderExtensionId: THE_MARVELLOUS_SUSPENDER_EXTENSION_ID,
-  });
-  const suspenderId =
-    typeof stored.tabSuspenderExtensionId === 'string' && stored.tabSuspenderExtensionId !== ''
-      ? stored.tabSuspenderExtensionId
-      : THE_MARVELLOUS_SUSPENDER_EXTENSION_ID;
-  return `chrome-extension://${suspenderId}/suspended.html#`;
-}
-
-async function loadCaptureOptions(): Promise<CaptureOptions> {
-  return { ownUrlPrefix: chrome.runtime.getURL(''), suspendedPrefix: await loadSuspendedPrefix() };
+function captureOptions(): CaptureOptions {
+  return { ownUrlPrefix: chrome.runtime.getURL('') };
 }
 
 /**
@@ -314,12 +294,12 @@ export async function captureSession(scope: CaptureScope): Promise<Session> {
 export async function captureSessionWithTabIds(
   scope: CaptureScope,
 ): Promise<{ session: Session; tabIds: number[] }> {
-  const [allWindows, groups, focused, options] = await Promise.all([
+  const [allWindows, groups, focused] = await Promise.all([
     chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }),
     chrome.tabGroups.query({}),
     chrome.windows.getLastFocused({ windowTypes: ['normal'] }),
-    loadCaptureOptions(),
   ]);
+  const options = captureOptions();
 
   const windows = scopeWindows(scope, allWindows, focused.id);
 

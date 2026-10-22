@@ -1,35 +1,29 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { loadSanitizeOptions } from '@/lib/sanitize-options';
-import { THE_MARVELLOUS_SUSPENDER_EXTENSION_ID } from '@/lib/session-capture';
 
 import { getChromeFake } from './chrome-fake';
 
 describe('loadSanitizeOptions', () => {
-  it('defaults to the Marvellous Suspender id and no file access', async () => {
+  it('reports our own id and no file access by default', async () => {
     const options = await loadSanitizeOptions();
-    expect(options.ownExtensionId).toBe('fakeextid');
-    expect(options.fileAccessAllowed).toBe(false);
-    expect(options.suspendedPrefix).toBe(
-      `chrome-extension://${THE_MARVELLOUS_SUSPENDER_EXTENSION_ID}/suspended.html#`,
-    );
+    expect(options).toEqual({ ownExtensionId: 'fakeextid', fileAccessAllowed: false });
   });
 
-  it('honours the configured suspender id and file-scheme access', async () => {
-    const fake = getChromeFake();
-    fake.state.sync.set('tabSuspenderExtensionId', 'abcdefghijklmnopabcdefghijklmnop');
-    fake.state.fileAccessAllowed = true;
+  it('honours file-scheme access', async () => {
+    getChromeFake().state.fileAccessAllowed = true;
 
     const options = await loadSanitizeOptions();
-    expect(options.suspendedPrefix).toBe(
-      'chrome-extension://abcdefghijklmnopabcdefghijklmnop/suspended.html#',
-    );
     expect(options.fileAccessAllowed).toBe(true);
   });
 
-  it('ignores an empty stored id', async () => {
-    getChromeFake().state.sync.set('tabSuspenderExtensionId', '');
+  it('reads nothing from chrome.storage.sync, not even a suspender id an older version stored', async () => {
+    const fake = getChromeFake();
+    fake.state.sync.set('tabSuspenderExtensionId', 'abcdefghijklmnopabcdefghijklmnop');
+    const get = vi.spyOn(fake.chrome.storage.sync, 'get');
+
     const options = await loadSanitizeOptions();
-    expect(options.suspendedPrefix).toContain(THE_MARVELLOUS_SUSPENDER_EXTENSION_ID);
+    expect(options).toEqual({ ownExtensionId: 'fakeextid', fileAccessAllowed: false });
+    expect(get).not.toHaveBeenCalled();
   });
 });

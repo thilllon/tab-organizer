@@ -75,12 +75,6 @@ async function sortTabs(
     return;
   }
 
-  // `tabSuspenderExtensionId` defaults to "The Marvellous Suspender" (DEFAULT_SORT_SETTINGS);
-  // `loadSuspendedPrefix()` in session-capture.ts reads the same stored setting for sessions.
-  const tabSuspenderExtensionId = settings.tabSuspenderExtensionId;
-  const suspendedPrefix = `chrome-extension://${tabSuspenderExtensionId}/suspended.html#`;
-  const suspendedPrefixLen = suspendedPrefix.length;
-
   const firstTabIndex = tabs[0].index;
   // The order on the strip right now; the sort functions below reorder `tabs` in place.
   const before = tabs.map((tab) => ({ id: tab.id, index: tab.index }));
@@ -88,14 +82,7 @@ async function sortTabs(
   switch (settings.sortBy) {
     case 'url':
     case 'title':
-      sortByTitleOrUrl(
-        tabs,
-        settings.sortBy,
-        settings.groupSuspendedTabs,
-        settings.sortPinnedTabs,
-        suspendedPrefix,
-        suspendedPrefixLen,
-      );
+      sortByTitleOrUrl(tabs, settings.sortBy, settings.groupSuspendedTabs, settings.sortPinnedTabs);
       break;
     case 'custom':
       sortByCustom(
@@ -105,9 +92,6 @@ async function sortTabs(
         settings.preserveOrderWithinGroups,
         settings.sortPinnedTabs,
         settings.groupingMode,
-        tabSuspenderExtensionId,
-        suspendedPrefix,
-        suspendedPrefixLen,
       );
       break;
   }

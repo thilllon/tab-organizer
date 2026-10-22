@@ -11,7 +11,6 @@ export interface SortSettings {
   groupFrom: GroupFrom;
   preserveOrderWithinGroups: boolean;
   groupSuspendedTabs: boolean;
-  tabSuspenderExtensionId: string;
   sortPinnedTabs: boolean;
   duplicateTabHandling: DuplicateTabHandling;
   groupingMode: GroupingMode;

@@ -10,7 +10,6 @@ import { ShortcutKeyChips } from '@/components/shortcut-key-chips';
 import { StorageMeter } from '@/components/storage-meter';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useSessionSettings } from '@/hooks/use-session-settings';
 import {
@@ -37,8 +36,6 @@ import {
   sortByOptions,
   SORT_SETTING_KEYS,
   showsCustomSortOptions,
-  suspenderIdStatus,
-  toStoredSortSettings,
 } from '@/lib/sort-settings';
 import {
   isUiLanguage,
@@ -71,7 +68,7 @@ interface SettingsViewProps {
  * very view (`app.html#settings`). It is the content of the Settings dialog in `app.tsx` - a
  * fixed title row over a scrolling body - so it must be rendered inside a `DialogContent`. Sort by and Duplicate tabs are visible because they change what a
  * click on the icon visibly does, with the three Custom-only choices indented under Sort by while
- * Custom is chosen; the other three sit under "Advanced". Nothing has a Save button
+ * Custom is chosen; the other two sit under "Advanced". Nothing has a Save button
  * - a setting is written the moment it changes, as it already was for the session settings.
  */
 export function SettingsView({
@@ -85,9 +82,6 @@ export function SettingsView({
   children,
 }: SettingsViewProps) {
   const [sort, setSort] = useState<SortSettings>(DEFAULT_SORT_SETTINGS);
-  const [suspenderDraft, setSuspenderDraft] = useState(
-    DEFAULT_SORT_SETTINGS.tabSuspenderExtensionId,
-  );
   // `null` until Chrome answers; `'failed'` when it does not.
   const [commands, setCommands] = useState<CommandRow[] | null | 'failed'>(null);
   // The language the page is actually in (index.tsx put it in use before the first render), not a
@@ -97,9 +91,7 @@ export function SettingsView({
 
   useEffect(() => {
     chrome.storage.sync.get<Partial<SortSettings>>([...SORT_SETTING_KEYS], (result) => {
-      const stored = parseSortSettings(result);
-      setSort(stored);
-      setSuspenderDraft(stored.tabSuspenderExtensionId);
+      setSort(parseSortSettings(result));
     });
     // The real keys, read from Chrome rather than promised by this page: they are unbound until
     // the user assigns them at chrome://extensions/shortcuts.
@@ -119,7 +111,7 @@ export function SettingsView({
   const write = (patch: Partial<SortSettings>) => {
     const next = { ...sort, ...patch };
     setSort(next);
-    chrome.storage.sync.set(toStoredSortSettings(next), () => {
+    chrome.storage.sync.set(next, () => {
       if (chrome.runtime.lastError !== undefined) {
         onError(
           t('settingsSaveFailed', chrome.runtime.lastError.message ?? t('settingsUnknownError')),
@@ -162,7 +154,6 @@ export function SettingsView({
   };
 
   const showCustomOptions = showsCustomSortOptions(sort.sortBy);
-  const suspenderStatus = suspenderIdStatus(suspenderDraft);
 
   return (
     <>
@@ -298,38 +289,6 @@ export function SettingsView({
                 checked={sort.groupSuspendedTabs}
                 onCheckedChange={(checked) => write({ groupSuspendedTabs: checked })}
               />
-            </SettingsField>
-
-            <SettingsField
-              label={t('settingsSuspenderId')}
-              htmlFor="suspender-id"
-              hint={t('settingsSuspenderIdHint')}
-            >
-              <div className="flex items-center gap-2">
-                <Input
-                  id="suspender-id"
-                  value={suspenderDraft}
-                  aria-invalid={suspenderStatus === 'invalid'}
-                  className="h-8 w-72 font-mono text-xs"
-                  onChange={(event) => setSuspenderDraft(event.target.value)}
-                  onBlur={() => {
-                    if (suspenderStatus === 'invalid') {
-                      return;
-                    }
-                    const stored = toStoredSortSettings({
-                      ...sort,
-                      tabSuspenderExtensionId: suspenderDraft,
-                    });
-                    setSuspenderDraft(stored.tabSuspenderExtensionId);
-                    write({ tabSuspenderExtensionId: stored.tabSuspenderExtensionId });
-                  }}
-                />
-                {suspenderStatus === 'invalid' && (
-                  <span className="text-xs text-destructive">
-                    {t('settingsSuspenderIdInvalid')}
-                  </span>
-                )}
-              </div>
             </SettingsField>
           </AdvancedFold>
         </SettingsSection>

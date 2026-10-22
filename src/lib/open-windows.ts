@@ -1,4 +1,4 @@
-import { captureWindowsWithIds, loadSuspendedPrefix } from '@/lib/session-capture';
+import { captureWindowsWithIds } from '@/lib/session-capture';
 import type { GroupSnapshot, TabSnapshot, WindowSnapshot } from '@/types';
 
 /**
@@ -34,16 +34,14 @@ interface SnapshotOpenWindowsOptions {
 export async function snapshotOpenWindows(
   options: SnapshotOpenWindowsOptions = {},
 ): Promise<OpenWindowView[]> {
-  // The suspender prefix is read too, so a suspended tab shows the page it stands for rather than
+  // A suspended tab shows the page it stands for rather than
   // `chrome-extension://<suspender>/suspended.html#…` - the same url a save of it would store.
-  const [windows, groups, suspendedPrefix] = await Promise.all([
+  const [windows, groups] = await Promise.all([
     chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }),
     chrome.tabGroups.query({}),
-    loadSuspendedPrefix(),
   ]);
   return captureWindowsWithIds(windows, groups, {
     ownUrlPrefix: options.excludeUrlPrefix ?? '',
-    suspendedPrefix,
   }).map((window) => ({
     windowId: window.windowId,
     focused: window.focused,

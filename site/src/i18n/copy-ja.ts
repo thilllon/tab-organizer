@@ -125,7 +125,7 @@ export const ja: SiteCopy = {
       {
         icon: 'grouping',
         title: 'いつもの道具と一緒に',
-        body: 'The Marvellous Suspender で休止中のタブも本来の URL で並べ替えます。タブグループの名前を「1-仕事」「2-読み物」のようにすれば、並ぶ順番を決められます。',
+        body: 'The Marvellous Suspender などで休止中のタブも本来の URL で並べ替えます。タブグループの名前を「1-仕事」「2-読み物」のようにすれば、並ぶ順番を決められます。',
       },
     ],
   },
