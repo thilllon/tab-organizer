@@ -5,8 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { configDefaults, defineConfig } from 'vitest/config';
 
-import packageJson from './package.json';
-import { DEFAULT_LOCALE, DEFAULT_SHORTCUTS } from './src/constants';
+import packageJson from './package.json' with { type: 'json' };
+import { DEFAULT_LOCALE, DEFAULT_SHORTCUTS } from './src/constants.ts';
 
 interface PackageJson {
   name?: string;
@@ -88,10 +88,10 @@ export default defineConfig(() => {
   return {
     // The source tree is the root, so the page is src/app.html yet still builds to dist/app.html
     // (and the extension URL stays app.html); public/ and dist/ stay at the repository root.
-    root: path.resolve(__dirname, 'src'),
-    publicDir: path.resolve(__dirname, 'public'),
+    root: path.resolve(import.meta.dirname, 'src'),
+    publicDir: path.resolve(import.meta.dirname, 'public'),
     build: {
-      outDir: path.resolve(__dirname, 'dist'),
+      outDir: path.resolve(import.meta.dirname, 'dist'),
       emptyOutDir: true,
       // Chrome has supported `<link rel="modulepreload">` natively since long before the
       // `minimum_chrome_version` this extension declares, so the polyfill is dead code - and it
@@ -102,10 +102,15 @@ export default defineConfig(() => {
         input: {
           // The one page. crxjs only builds the pages the manifest names, and `options_page` carries a
           // `#settings` fragment, so the entry is listed here rather than trusted to be picked up.
-          app: path.resolve(__dirname, 'src/app.html'),
+          app: path.resolve(import.meta.dirname, 'src/app.html'),
         },
         output: {
           chunkFileNames: 'assets/chunk-[hash].js',
+          // The libraries (React, Radix) get a chunk of their own, so neither half passes Vite's
+          // 500 kB warning. The page loads both from disk either way; nothing is lazy-loaded.
+          codeSplitting: {
+            groups: [{ name: 'vendor', test: /node_modules/ }],
+          },
         },
       },
     },
@@ -128,7 +133,7 @@ export default defineConfig(() => {
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        '@': path.resolve(import.meta.dirname, './src'),
       },
     },
     plugins: [crx({ manifest }), react(), tailwindcss()],
@@ -137,7 +142,7 @@ export default defineConfig(() => {
     },
     test: {
       // Tests resolve their paths from the repository root, as they did before the root moved.
-      root: __dirname,
+      root: import.meta.dirname,
       setupFiles: ['src/tests/setup.ts'],
       // Only this tree's suites: Claude Code worktrees under .claude/ carry their own copies.
       exclude: [...configDefaults.exclude, '.claude/**'],
