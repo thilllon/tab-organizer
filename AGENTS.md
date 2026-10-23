@@ -461,6 +461,7 @@ pnpm site:build                      # astro check + astro build -> site/dist/
 ### Git Conventions
 
 - **Every change goes issue → pull request → merge (set by the owner).** Code, docs, config, CI, screenshots and version bumps alike: open a GitHub issue first, do the work on a branch (`<type>/<short-name>`, e.g. `feat/store-i18n`), open a pull request whose body says `Fixes #<issue>`, and merge it (squash) into `main` only once the required `ci` check is green. Never commit or push to `main` directly, not even a one-line fix. Independent issues may run in parallel on separate branches; dependent ones merge in order. The only thing pushed outside a pull request is a release tag (see Release procedure)
+- **Keep this checkout in step with upstream (set by the owner).** Whenever work happens anywhere but this checkout (a worktree, a clone in the scratchpad), once its pull request is merged bring this checkout back too: `git checkout main && git pull` here, then `git worktree prune`. The owner reads the code in this folder, so a merged change must be visible here, not only on GitHub
 - **Commit format**: Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - **DO NOT** add `Co-Authored-By` lines to commit messages
 - **Pre-commit hook**: gitleaks on the staged changes first (a secret stops the commit; `.gitleaks.toml`), then oxfmt on the staged files (re-staged when fixed), then oxlint on the staged JS/TS files
