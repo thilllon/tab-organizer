@@ -4,90 +4,36 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  DESCRIPTION_MAX_CHARS,
   CWS_SUMMARY_MAX_CHARS,
-  descriptionHeading,
-  extractDescription,
-  extractListings,
-  extractSummary,
+  DATA_CERTIFICATIONS,
+  DATA_TYPES,
+  DATA_USAGE,
+  DESCRIPTION_MAX_CHARS,
+  HOST_PERMISSIONS_AND_REMOTE_CODE,
   LISTING_LOCALES,
-  LISTING_SOURCE,
   LOCALES_SOURCE,
+  PERMISSION_JUSTIFICATIONS,
+  PRODUCT_DETAILS,
   readLocaleMessage,
-  summaryHeading,
+  SINGLE_PURPOSE,
+  STORE_DESCRIPTIONS,
+  TEST_INSTRUCTIONS,
   validateDescription,
   validateSummary,
 } from '../../scripts/store-listing';
 
-const SAMPLE = [
-  '## Store listing',
-  '',
-  '### Description',
-  '',
-  'Paste the block below.',
-  '',
-  '```text',
-  'Title line',
-  '',
-  'FEATURES',
-  '# not a heading, just store text',
-  '• one',
-  '```',
-  '',
-  '### Graphic assets',
-  '',
-  '```',
-  'another block',
-  '```',
-].join('\n');
+const ROOT = path.resolve(LOCALES_SOURCE, '..', '..');
+const LONG_DASH = new RegExp(`[${String.fromCodePoint(0x2013, 0x2014)}]`);
 
-describe('extractDescription', () => {
-  it('returns the fenced block under the Description heading, without the fences', () => {
-    expect(extractDescription(SAMPLE)).toBe(
-      'Title line\n\nFEATURES\n# not a heading, just store text\n• one',
-    );
-  });
-
-  it('throws when the heading is missing', () => {
-    expect(() => extractDescription('# Title\n\n```\ntext\n```')).toThrow(/not found/);
-  });
-
-  it('does not borrow a block from a later section', () => {
-    const markdown = '### Description\n\nNo block here.\n\n### Graphic assets\n\n```\nx\n```';
-    expect(() => extractDescription(markdown)).toThrow(/No fenced block/);
-  });
-
-  it('finds a translation under its own heading, not the English block', () => {
-    const markdown = [
-      '### Summary',
-      '```text',
-      'English summary',
-      '```',
-      '### Description',
-      '```text',
-      'English',
-      '```',
-      '### Summary (ko)',
-      '```text',
-      '한국어 요약',
-      '```',
-      '### Description (ko)',
-      '```text',
-      '한국어',
-      '```',
-    ].join('\n');
-    expect(extractDescription(markdown)).toBe('English');
-    expect(extractDescription(markdown, 'ko')).toBe('한국어');
-    expect(extractSummary(markdown)).toBe('English summary');
-    expect(extractSummary(markdown, 'ko')).toBe('한국어 요약');
-  });
-
-  it('throws on a block that is never closed', () => {
-    expect(() => extractDescription('### Description\n\n```text\nunfinished')).toThrow(
-      /No fenced block/,
-    );
-  });
-});
+/** The `permissions` array of the manifest in vite.config.ts, read as text (no plugins loaded). */
+function manifestPermissions(): string[] {
+  const config = readFileSync(path.join(ROOT, 'vite.config.ts'), 'utf-8');
+  const block = /^\s*permissions:\s*\[([^\]]*)\]/m.exec(config);
+  if (block === null) {
+    throw new Error('No permissions array in vite.config.ts');
+  }
+  return [...block[1].matchAll(/'([^']+)'/g)].map((match) => match[1]);
+}
 
 describe('validateDescription', () => {
   it('accepts a description at the limit', () => {
@@ -109,20 +55,15 @@ describe('validateSummary', () => {
   });
 });
 
-// The real files: this is what keeps an over-long or stale listing from being committed.
-describe('the store listing in this repository', () => {
-  const markdown = readFileSync(LISTING_SOURCE, 'utf-8');
-  const listings = extractListings(markdown);
-
-  it('has a Summary and a Description for every language of public/_locales', () => {
-    expect(listings.map((listing) => listing.locale)).toEqual([...LISTING_LOCALES]);
-    for (const locale of LISTING_LOCALES) {
-      expect(markdown).toContain(`\n${summaryHeading(locale)}\n`);
-      expect(markdown).toContain(`\n${descriptionHeading(locale)}\n`);
-    }
+describe('the store listing', () => {
+  it('has a Description for exactly the shipped languages', () => {
+    expect(Object.keys(STORE_DESCRIPTIONS)).toEqual([...LISTING_LOCALES]);
   });
 
-  describe.each(listings)('$locale', ({ locale, summary, description }) => {
+  describe.each([...LISTING_LOCALES])('%s', (locale) => {
+    const description = STORE_DESCRIPTIONS[locale];
+    const summary = readLocaleMessage(LOCALES_SOURCE, locale, 'extDescription');
+
     it('has a description the store will accept', () => {
       expect(description.trim()).not.toBe('');
       expect(() => validateDescription(description)).not.toThrow();
@@ -131,22 +72,74 @@ describe('the store listing in this repository', () => {
     it('keeps Markdown out of the description, since it is pasted as it is', () => {
       expect(description).not.toMatch(/^#{1,6}\s/m);
       expect(description).not.toMatch(/\*\*|`/);
+      expect(description).not.toMatch(/\[[^\]]*\]\([^)]*\)/);
+    });
+
+    it('links its own language’s support page', () => {
+      const prefix = locale === 'en' ? '' : `${locale}/`;
+      expect(description).toContain(`https://thilllon.github.io/tab-organizer/${prefix}support/`);
+    });
+
+    it('has a Summary (extDescription) the store will accept', () => {
+      expect(summary).toBeDefined();
+      expect(() => validateSummary(summary ?? '')).not.toThrow();
+    });
+
+    it('quotes the Assemble! button in that language’s wording', () => {
+      const assembleName = readLocaleMessage(LOCALES_SOURCE, locale, 'assembleName');
+      expect(assembleName).toBeDefined();
+      expect(description).toContain(assembleName);
     });
 
     it('has no em or en dash', () => {
-      expect(summary).not.toMatch(/[\u2013\u2014]/);
-      expect(description).not.toMatch(/[\u2013\u2014]/);
-    });
-
-    it("has the Summary the package carries (that locale's extDescription)", () => {
-      expect(summary).toBe(readLocaleMessage(LOCALES_SOURCE, locale, 'extDescription'));
-      expect(() => validateSummary(summary)).not.toThrow();
+      expect(description).not.toMatch(LONG_DASH);
+      expect(summary).not.toMatch(LONG_DASH);
     });
   });
 
-  it('keeps package.json description equal to the English summary', () => {
-    const pkgPath = path.resolve(path.dirname(LISTING_SOURCE), 'package.json');
-    const pkg: { description?: string } = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-    expect(pkg.description).toBe(extractSummary(markdown));
+  it('keeps package.json description equal to the English Summary', () => {
+    const pkg: { description?: string } = JSON.parse(
+      readFileSync(path.join(ROOT, 'package.json'), 'utf-8'),
+    );
+    expect(pkg.description).toBe(readLocaleMessage(LOCALES_SOURCE, 'en', 'extDescription'));
+  });
+
+  it('justifies exactly the permissions the manifest requests', () => {
+    expect(Object.keys(PERMISSION_JUSTIFICATIONS).toSorted()).toEqual(
+      manifestPermissions().toSorted(),
+    );
+  });
+
+  it('quotes UI labels in the test instructions exactly as the English messages say them', () => {
+    const english: Record<string, { message: string }> = JSON.parse(
+      readFileSync(path.join(LOCALES_SOURCE, 'en', 'messages.json'), 'utf-8'),
+    );
+    const messages = new Set(Object.values(english).map((entry) => entry.message));
+    // "Options" is Chrome's own menu item, not one of ours.
+    const quoted = [...TEST_INSTRUCTIONS.matchAll(/"([^"]+)"/g)]
+      .map((match) => match[1])
+      .filter((label) => label !== 'Options');
+    expect(quoted.length).toBeGreaterThan(0);
+    for (const label of quoted) {
+      expect(messages, label).toContain(label);
+    }
+  });
+
+  it('fills every privacy answer and the test instructions, without a long dash', () => {
+    const texts = [
+      SINGLE_PURPOSE,
+      ...Object.values(PERMISSION_JUSTIFICATIONS),
+      HOST_PERMISSIONS_AND_REMOTE_CODE,
+      DATA_USAGE,
+      ...DATA_CERTIFICATIONS,
+      DATA_TYPES.justification,
+      TEST_INSTRUCTIONS,
+      ...Object.values(PRODUCT_DETAILS),
+    ];
+    for (const text of texts) {
+      expect(text.trim()).not.toBe('');
+      expect(text).not.toMatch(LONG_DASH);
+    }
+    expect(DATA_CERTIFICATIONS).toHaveLength(3);
   });
 });

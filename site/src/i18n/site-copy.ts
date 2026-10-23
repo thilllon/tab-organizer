@@ -32,7 +32,7 @@ export interface Faq {
 /**
  * Every string the site shows, per language. Each language is written on its own terms, not
  * translated line by line, but they all say the same things: keep them in step with
- * REGISTRATION.md (features, FAQ) and PRIVACY_POLICY.md.
+ * the store Descriptions in scripts/store-listing.ts and PRIVACY_POLICY.md.
  */
 export interface SiteCopy {
   meta: {
