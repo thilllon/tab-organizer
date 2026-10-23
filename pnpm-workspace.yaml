@@ -2,6 +2,4 @@ packages:
   - site
 allowBuilds:
   esbuild: true
-# Minutes. Only versions published at least 7 days ago are installed: a hijacked release is
-# usually caught and unpublished within days. pnpm's own default is 1 day.
 minimumReleaseAge: 10080
