@@ -95,7 +95,7 @@ English, Korean (한국어), Spanish (Español) and Japanese (日本語). By def
 - **No content scripts**: nothing is ever injected into a web page.
 - Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md), also on the [website](https://thilllon.github.io/tab-organizer/privacy/) in English, Korean, Spanish and Japanese.
 
-Everything shown on the store page (the complete description, every asset, the privacy answers) is kept in [`REGISTRATION.md`](REGISTRATION.md), with the summary and description of every language already in the plain text the store takes.
+Everything typed into the store dashboard (each language's description, the privacy answers, the reviewers' test instructions) is kept as data at the top of [`scripts/store-listing.ts`](scripts/store-listing.ts); `pnpm store:bundle` gathers it with the screenshots into one `SUBMIT.md`.
 
 ## Development
 

@@ -14,7 +14,6 @@ on:
       # The site's languages are the extension's: SUPPORTED_LOCALES and their names.
       - 'src/constants.ts'
       - 'PRIVACY_POLICY.md'
-      - 'REGISTRATION.md'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
