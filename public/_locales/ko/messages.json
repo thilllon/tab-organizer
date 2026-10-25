@@ -27,6 +27,10 @@
     "message": "모두 모으기 (모든 창의 탭을 이 창으로 이동)",
     "description": "Keyboard command and right-click menu item: the action name, then what it does in brackets."
   },
+  "cmdPauseYoutube": {
+    "message": "모든 YouTube 동영상 일시중지",
+    "description": "Keyboard command (listed at chrome://extensions/shortcuts) and item in the toolbar icon's right-click menu: pauses the video in every YouTube tab of every window. Menu item, keep it short (under 40 characters)."
+  },
   "assembleName": {
     "message": "모두 모으기",
     "description": "Short name of the action that moves every window's tabs into the current one. Shown on a button."
@@ -122,6 +126,50 @@
   "settingsSortingDescription": {
     "message": "툴바 아이콘을 클릭했을 때의 동작입니다.",
     "description": "Explanation under the Sorting heading in Settings."
+  },
+  "settingsYoutubeTitle": {
+    "message": "YouTube",
+    "description": "Heading of the Settings section about pausing YouTube videos. The site name; keep it as is unless your language writes it differently."
+  },
+  "settingsYoutubeDescription": {
+    "message": "아이콘을 마우스 오른쪽 버튼으로 클릭해 “$1”를 선택하거나 단축키를 누르면 모든 창의 YouTube 탭에서 동영상이 일시중지됩니다. 재생 위치는 그대로이며 다시 재생되지 않습니다.",
+    "description": "Explanation under the YouTube heading in Settings. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAccess": {
+    "message": "YouTube 접근 권한",
+    "description": "Label of the Settings row that allows or removes the extension's access to youtube.com, needed to pause videos."
+  },
+  "settingsYoutubeAccessOffHint": {
+    "message": "아직 허용되지 않았습니다. 동영상을 일시중지하려면 필요하며, Chrome이 먼저 묻습니다. Tab Organizer는 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
+    "description": "Grey hint under \"Access to YouTube\" while the access is not granted."
+  },
+  "settingsYoutubeAccessOnHint": {
+    "message": "허용됨. 아이콘을 마우스 오른쪽 버튼으로 클릭해 “$1”를 선택하거나 단축키를 누르면 모든 동영상이 일시중지됩니다. Tab Organizer는 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
+    "description": "Grey hint under \"Access to YouTube\" once the access is granted. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAccessAskedHint": {
+    "message": "“$1”를 사용하려면 먼저 이 접근을 허용해야 합니다. 여기서 허용한 뒤 “$1”를 다시 선택하거나 단축키를 누르세요. Tab Organizer는 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
+    "description": "Grey hint under \"Access to YouTube\" when the person arrived from the menu item or shortcut without the access yet: explains why Settings opened. $1 (twice) is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAllowed": {
+    "message": "YouTube 접근이 허용되었습니다. “$1”를 다시 선택하면 동영상이 일시중지됩니다.",
+    "description": "Short notice after the person allowed access to youtube.com in Chrome's prompt: tells them to run the command again. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAllow": {
+    "message": "접근 허용",
+    "description": "Button in the YouTube section of Settings: asks Chrome for access to youtube.com (Chrome then shows its own prompt). Short."
+  },
+  "settingsYoutubeRemove": {
+    "message": "접근 해제",
+    "description": "Button in the YouTube section of Settings, shown once access is granted: gives the access to youtube.com back. Short."
+  },
+  "settingsYoutubeDeclined": {
+    "message": "YouTube 접근이 허용되지 않아 아직 동영상을 일시중지할 수 없습니다.",
+    "description": "Short notice after the person declined Chrome's prompt for access to youtube.com."
+  },
+  "settingsYoutubeAccessFailed": {
+    "message": "Chrome이 YouTube 접근 권한을 바꾸지 못했습니다. 다시 시도하세요.",
+    "description": "Error line shown when Chrome refused to grant or remove the access to youtube.com."
   },
   "settingsSortBy": {
     "message": "정렬 기준",
@@ -340,8 +388,8 @@
     "description": "Heading of the Settings section listing the extension's keyboard commands."
   },
   "settingsShortcutsDescription": {
-    "message": "새로 설치하면 다른 확장 프로그램이 해당 키를 사용하지 않는 한 Chrome이 정렬에는 $1, $2에는 $3 키를 지정합니다. 나머지 명령은 키 없이 시작합니다.",
-    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A)."
+    "message": "새로 설치하면 다른 확장 프로그램이 해당 키를 사용하지 않는 한 Chrome이 정렬에는 $1, $2에는 $3, YouTube 일시중지에는 $4 키를 지정합니다. 나머지 명령은 키 없이 시작합니다.",
+    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A), $4 is the key that pauses every YouTube video (e.g. Alt + Shift + P)."
   },
   "settingsSortCommand": {
     "message": "이 창의 탭 정렬(아이콘 클릭과 동일)",

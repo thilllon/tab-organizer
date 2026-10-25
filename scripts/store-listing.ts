@@ -12,7 +12,12 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '../src/constants';
+import {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+  YOUTUBE_ORIGINS,
+} from '../src/constants';
 
 /** Store listing > Description, per language: pasted as it is (no Markdown, at most 500). */
 export const STORE_DESCRIPTIONS: Record<ListingLocale, string> = {
@@ -77,25 +82,33 @@ export const DISTRIBUTION = {
 
 /** Privacy tab > Single purpose. */
 export const SINGLE_PURPOSE =
-  'Organize browser tabs: sort and group the tabs of the current window (by URL, title or domain, optionally removing or grouping duplicates), and save, restore, search, import and export sets of windows and tabs as sessions, all stored locally on the device.';
+  'Organize browser tabs: sort and group the tabs of the current window (by URL, title or domain, optionally removing or grouping duplicates), gather every window into one, pause the videos of every YouTube tab on request, and save, restore, search, import and export sets of windows and tabs as sessions, all stored locally on the device.';
 
 /** Privacy tab > one justification per manifest permission (the test keeps the two lists equal). */
 export const PERMISSION_JUSTIFICATIONS: Record<string, string> = {
   tabs: `Required to read tab URLs and titles for sorting, for saving sessions and for the dashboard's live list of open windows, and to create tabs when restoring. Uses chrome.tabs.query()/chrome.windows.getAll() to read, chrome.tabs.move() to reorder and chrome.tabs.create()/chrome.tabs.discard() to restore. Tab data is stored only in local extension storage on the device when the user saves a session or while automatic snapshots run; it is never transmitted.`,
   tabGroups: `Required to sort existing tab groups by title, to group duplicate tabs when the user enables that option, and to recreate a session's tab groups (title, color, collapsed state) on restore. Uses chrome.tabGroups.query(), move() and update().`,
   storage: `Required to persist user preferences (sort method, grouping mode, duplicate handling, the extension's display language) via chrome.storage.sync, and to store saved sessions, automatic snapshots and session settings (tab URLs, titles, pinned state, group names/colors and window layout) via chrome.storage.local on this device only. Session data is never synced or transmitted; the user can delete any session, or all session data, from the dashboard.`,
-  contextMenus: `Adds "Assemble!" (gather every window's tabs into the current one) and "Save all windows as session" to the extension icon's right-click menu (contexts: ['action'] only; no menu items are added to web pages).`,
+  contextMenus: `Adds "Assemble!" (gather every window's tabs into the current one), "Save all windows as session" and "Pause all YouTube videos" to the extension icon's right-click menu (contexts: ['action'] only; no menu items are added to web pages).`,
   unlimitedStorage: `Lets saved sessions and snapshots exceed the default 10 MB chrome.storage.local quota for users with thousands of tabs. Data stays in local extension storage on the device; nothing is uploaded.`,
   favicon: `Displays site icons next to tabs in the dashboard by reading Chrome's local favicon cache through chrome-extension://<id>/_favicon/. No favicon is fetched from the network and no favicon data is stored.`,
+  scripting: `Used only by "Pause all YouTube videos", which the user chooses from the icon's right-click menu or its keyboard shortcut: chrome.scripting.executeScript() runs one function packaged with the extension in each open YouTube tab. It calls pause() on every video and audio element that is playing and returns only how many it paused; it reads nothing from the page, and nothing is stored or transmitted. It can run only on the optional host permission https://*.youtube.com/*, which the user grants in Settings and can remove there; without it no script runs anywhere.`,
   alarms: `A chrome.alarms timer that wakes the service worker on the user's chosen interval (any whole number of minutes from 1 to 1440; 5 by default) to take an automatic local snapshot of open windows for crash recovery. When the user turns snapshots off, no alarm exists. The worker still wakes briefly at browser start, on install or update, and when a setting changes, in every case to do local bookkeeping only.`,
 };
 
+/**
+ * Privacy tab > host permission justification, one per optional host permission of the manifest
+ * (the test keeps the two lists equal). Nothing is requested at install.
+ */
+export const OPTIONAL_HOST_PERMISSION_JUSTIFICATIONS: Record<string, string> = {
+  [YOUTUBE_ORIGINS[0]]: `Optional, never requested at install: the user grants it with "Allow access" in Settings when they want to use "Pause all YouTube videos" (the right-click menu item opens Settings until it is granted), and can remove it there at any time. With it, the extension pauses the video and audio elements of open YouTube tabs when the user asks; it reads nothing from YouTube pages and stores or transmits nothing about them. It covers youtube.com and its subdomains (www, m, music).`,
+};
+
 /** Privacy tab > host permissions, content scripts and remote code. */
-export const HOST_PERMISSIONS_AND_REMOTE_CODE =
-  'Host permissions: none. Content scripts: none. Remote code: not used.';
+export const HOST_PERMISSIONS_AND_REMOTE_CODE = `Host permissions: none at install; one optional host permission, ${YOUTUBE_ORIGINS.join(', ')}, granted only by the user in Settings (see its justification). Content scripts: none declared; on the user's command, chrome.scripting injects one function packaged with the extension into YouTube tabs to pause their videos. Remote code: not used.`;
 
 /** Privacy tab > Data usage. */
-export const DATA_USAGE = `The extension does not collect or transmit any user data. When the user saves a session, or while automatic snapshots are enabled (the default), tab URLs, titles and window/group layout are written to chrome.storage.local on the user's device only; they are never sent anywhere, and the user can delete them at any time (per session, per snapshot, or all at once with "Delete all session data"). Export creates a file or clipboard text only when the user explicitly asks for it.`;
+export const DATA_USAGE = `The extension does not collect or transmit any user data. When the user saves a session, or while automatic snapshots are enabled (the default), tab URLs, titles and window/group layout are written to chrome.storage.local on the user's device only; they are never sent anywhere, and the user can delete them at any time (per session, per snapshot, or all at once with "Delete all session data"). Export creates a file or clipboard text only when the user explicitly asks for it. "Pause all YouTube videos" runs only in YouTube tabs, only after the user allowed access to YouTube, and only presses pause; it reads no page content.`;
 
 /** Privacy tab > the three certifications: all apply, tick every one. */
 export const DATA_CERTIFICATIONS: readonly string[] = [
@@ -121,6 +134,7 @@ export const TEST_INSTRUCTIONS = `No account, login or server is needed; leave t
 4. Right-click the icon and choose "Options". The Tab Organizer page opens; its sidebar has Open tabs, Saved and Automatic snapshots. Pick the saved session and click Open to restore it.
 5. With two or more windows open, right-click the icon and choose "Assemble! (move every window's tabs into this one)". Every tab moves into the current window.
 6. On that page, the Settings button at the top opens Settings: set Sort by to Custom and click the toolbar icon again; tabs from the same site now sit next to each other, the first site seen first. Set Duplicate tabs to "Group them" to put duplicate tabs into a tab group instead of closing them. Automatic snapshots, the language and Backup (export, import) are there too.
+7. Open two YouTube videos, in different windows, and play both. Right-click the icon and choose "Pause all YouTube videos". The first time, Settings opens instead: in its YouTube section click "Allow access" and accept Chrome's prompt, then choose the menu item again. Both videos pause where they were; choosing it again resumes nothing. "Remove access" in the same place takes the access back.
 
 No data leaves the device.`;
 

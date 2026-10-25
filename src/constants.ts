@@ -1,6 +1,7 @@
 /**
  * Plain values the owner tunes: the default keys the manifest (`vite.config.ts`) and the Settings
- * view (`src/lib/command-rows.ts`) both read, and the automatic lazy-restore threshold.
+ * view (`src/lib/command-rows.ts`) both read, the optional YouTube host permission, and the
+ * automatic lazy-restore threshold.
  *
  * `vite.config.ts` imports this file while building the manifest, in Node, so it must stay plain
  * data: no `chrome.*`, no imports from the rest of `src/`.
@@ -16,7 +17,16 @@ export const DEFAULT_SHORTCUTS = {
   /** Chrome's built-in command for a click on the toolbar icon, which sorts. */
   _execute_action: 'Alt+Shift+S',
   'assemble-tabs': 'Alt+Shift+A',
+  'pause-youtube': 'Alt+Shift+P',
 } as const;
+
+/**
+ * The sites "Pause all YouTube videos" may run on: the manifest's `optional_host_permissions`
+ * (vite.config.ts) and what `src/lib/pause-youtube.ts` asks Chrome for, queries and checks. Chrome
+ * grants it only when the person allows it in Settings, never at install. `*.youtube.com` also
+ * covers youtube.com itself, www, m and music.
+ */
+export const YOUTUBE_ORIGINS = ['https://*.youtube.com/*'] as const;
 
 /**
  * "Load tabs lazily: Automatic" leaves the tabs of a restore unloaded (discarded until clicked)

@@ -121,7 +121,7 @@ export const es: SiteCopy = {
       {
         icon: 'keyboard',
         title: 'Combinaciones de teclas',
-        body: 'Ordena con Alt+Mayús+S y ¡Reunir! con Alt+Mayús+A (Opción en Mac). Guardar una sesión y abrir Tab Organizer pueden tener sus propias teclas.',
+        body: 'En una instalación nueva, ordenar usa Alt+Mayús+S, ¡Reunir! Alt+Mayús+A y pausar todos los vídeos de YouTube Alt+Mayús+P (Opción en Mac); puedes asignarlas o cambiarlas en chrome://extensions/shortcuts. Guardar una sesión y abrir Tab Organizer pueden tener sus propias teclas.',
       },
       {
         icon: 'grouping',
@@ -144,7 +144,7 @@ export const es: SiteCopy = {
       },
       {
         title: 'Sin red',
-        body: 'Sin analíticas, sin rastreo, sin peticiones de ningún tipo. No lee ni modifica el contenido de las páginas que visitas.',
+        body: 'Sin analíticas, sin rastreo, sin peticiones de ningún tipo. No lee el contenido de las páginas que visitas; lo único que ejecuta en una página es la pausa de los vídeos de YouTube, si lo permites.',
       },
     ],
     link: 'Leer la política de privacidad',
@@ -160,7 +160,7 @@ export const es: SiteCopy = {
     startSteps: [
       'Agrega Tab Organizer desde Chrome Web Store y fija su icono en la barra de herramientas.',
       'Haz clic en el icono para ordenar la ventana en la que estás.',
-      'Haz clic con el botón derecho en el icono para ver ¡Reunir! y Guardar todas las ventanas como sesión. Opciones abre la página de Tab Organizer, con tus sesiones y tu configuración.',
+      'Haz clic con el botón derecho en el icono para ver ¡Reunir!, Guardar todas las ventanas como sesión y Pausar todos los vídeos de YouTube. Opciones abre la página de Tab Organizer, con tus sesiones y tu configuración.',
     ],
     reportTitle: 'Avisar de un problema',
     reportLead:
@@ -209,6 +209,10 @@ export const es: SiteCopy = {
       {
         q: '¿Y si no me gusta cómo queda?',
         a: 'Ordenar solo mueve pestañas, así que no se pierde nada. Una duplicada cerrada vuelve con Ctrl+Mayús+T (Cmd+Mayús+T en Mac).',
+      },
+      {
+        q: '¿Puede pausar todos mis vídeos de YouTube a la vez?',
+        a: 'Sí. Haz clic con el botón derecho en el icono y elige Pausar todos los vídeos de YouTube, o pulsa su combinación de teclas (Alt+Mayús+P en una instalación nueva, Opción+Mayús+P en Mac; puedes asignarla o cambiarla en chrome://extensions/shortcuts). Todas las pestañas de YouTube de todas las ventanas se pausan donde estaban; nada se silencia ni se cierra, y repetirlo no reanuda nada. La primera vez se abre Configuración en su sección de YouTube para que permitas el acceso; después vuelve a elegirlo. Tab Organizer solo pulsa pausa allí y no lee nada de la página. Puedes quitar el acceso en Configuración cuando quieras.',
       },
       {
         q: '¿Funciona en otros navegadores Chromium?',

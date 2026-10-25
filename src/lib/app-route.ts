@@ -6,9 +6,15 @@
  * resolve a path against.
  */
 
+/**
+ * A part of Settings the dialog brings into view and focuses on arrival: `youtube` is where
+ * "Pause all YouTube videos" sends a person who has not allowed access to YouTube yet.
+ */
+export type SettingsFocus = 'youtube';
+
 export type Route =
   | { view: 'open' }
-  | { view: 'settings' }
+  | { view: 'settings'; focus?: SettingsFocus }
   | { view: 'saved'; id: string }
   | { view: 'auto'; id: string }
   | { view: 'search'; query: string };
@@ -39,6 +45,10 @@ export function parseRoute(hash: string): Route {
   }
   const head = raw.slice(0, slash);
   const tail = decode(raw.slice(slash + 1));
+  if (head === 'settings') {
+    // An unknown part is still Settings, just without anything to bring into view.
+    return tail === 'youtube' ? { view: 'settings', focus: 'youtube' } : { view: 'settings' };
+  }
   if (tail === '') {
     return HOME;
   }
@@ -59,7 +69,7 @@ export function formatRoute(route: Route): string {
     case 'open':
       return '#open';
     case 'settings':
-      return '#settings';
+      return route.focus === undefined ? '#settings' : `#settings/${route.focus}`;
     case 'saved':
       return `#saved/${encodeURIComponent(route.id)}`;
     case 'auto':

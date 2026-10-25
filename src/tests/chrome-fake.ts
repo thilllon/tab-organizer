@@ -78,7 +78,32 @@ interface FakeTab {
   groupId: number;
   discarded: boolean;
   incognito: boolean;
+  /** Chrome froze the page (`Tab.frozen`, Chrome 132+): it runs no task until thawed. */
+  frozen?: boolean;
   status: FakeTabStatus;
+}
+
+/** A `<video>` or `<audio>` element of a fake page: only what pausing reads and calls. */
+export interface FakeMediaElement {
+  tagName: 'VIDEO' | 'AUDIO';
+  paused: boolean;
+  currentTime: number;
+  pause(): void;
+}
+
+/** A playing (or paused) media element at `currentTime`, for `state.pageMedia`. */
+export function fakeMedia(
+  tagName: FakeMediaElement['tagName'],
+  { paused = false, currentTime = 0 }: { paused?: boolean; currentTime?: number } = {},
+): FakeMediaElement {
+  return {
+    tagName,
+    paused,
+    currentTime,
+    pause() {
+      this.paused = true;
+    },
+  };
 }
 
 interface FakeGroup {
@@ -101,6 +126,22 @@ interface FakeState {
   createdTabs: chrome.tabs.CreateProperties[];
   nextId: { tab: number; window: number; group: number };
   fileAccessAllowed: boolean;
+  /**
+   * Host permissions Chrome has granted, as match patterns (`chrome.permissions`). Empty at
+   * install, like the real optional `https://*.youtube.com/*`.
+   */
+  grantedOrigins: Set<string>;
+  /** The match patterns the manifest lists under `optional_host_permissions`: all that may be requested. */
+  optionalOrigins: string[];
+  /** What the person answers to Chrome's permission prompt (`chrome.permissions.request`). */
+  permissionAnswer: boolean;
+  /**
+   * The media elements of each tab's page, by tab id: what a function injected with
+   * `chrome.scripting.executeScript` sees as `document.querySelectorAll('video, audio')`.
+   */
+  pageMedia: Map<number, FakeMediaElement[]>;
+  /** Every `chrome.scripting.executeScript` call that reached a page, by tab id. */
+  injectedTabs: number[];
   /** Testing-only knob: when true, `tabs.create` leaves the tab
    * uncommitted (`url: ''`, `pendingUrl` set, `status: 'loading'`) until `commitNavigation`
    * is called for it, modelling a real browser navigation that has not finished yet. */
@@ -113,7 +154,8 @@ type FailableApi =
   | 'tabs.move'
   | 'tabGroups.move'
   | 'windows.create'
-  | 'storage.local.set';
+  | 'storage.local.set'
+  | 'scripting.executeScript';
 
 interface FakeFire {
   installed(details: chrome.runtime.InstalledDetails): void;
@@ -138,6 +180,13 @@ interface ChromeFake {
   setUiLanguage(language: string): void;
   /** Moves `pendingUrl` -> `url` and sets `status: 'complete'`, as Chrome does on commit. */
   commitNavigation(tabId: number): void;
+  /**
+   * Freezes a tab's page, as Chrome does to some background tabs: `Tab.frozen` reads true and an
+   * injection into it waits, unanswered, until `thawTab` (the page runs no task meanwhile).
+   */
+  freezeTab(tabId: number): void;
+  /** Thaws a frozen tab; the injections waiting on it then run. */
+  thawTab(tabId: number): void;
 }
 
 const NO_GROUP = -1;
@@ -163,7 +212,7 @@ function toChromeTab(tab: FakeTab): chrome.tabs.Tab {
     groupId: tab.groupId,
     discarded: tab.discarded,
     incognito: tab.incognito,
-    frozen: false,
+    frozen: tab.frozen ?? false,
     autoDiscardable: true,
     lastAccessed: 0,
     status: tab.status,
@@ -186,6 +235,28 @@ function globToRegExp(pattern: string): RegExp {
   return new RegExp(`^${escaped}$`);
 }
 
+/**
+ * A Chrome match pattern (`<scheme>://<host><path>`) as a RegExp, the way `tabs.query({ url })`
+ * and host permissions read it: a `*.` host prefix also matches the bare domain
+ * (`https://*.youtube.com/*` matches `https://youtube.com/`). Anything else is read as a glob.
+ */
+function matchPatternToRegExp(pattern: string): RegExp {
+  const parts = /^([a-z*][a-z0-9+.*-]*):\/\/([^/]*)(\/.*)$/.exec(pattern);
+  if (parts === null) {
+    return globToRegExp(pattern);
+  }
+  const [, scheme = '', host = '', path = ''] = parts;
+  const glob = (text: string) => text.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+  const schemePart = scheme === '*' ? 'https?' : glob(scheme);
+  const hostPart =
+    host === '*'
+      ? '[^/]*'
+      : host.startsWith('*.')
+        ? `([^/]*\\.)?${glob(host.slice(2))}`
+        : glob(host);
+  return new RegExp(`^${schemePart}://${hostPart}(:\\d+)?${glob(path)}$`);
+}
+
 // ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
@@ -203,6 +274,11 @@ export function createChromeFake(): ChromeFake {
     createdTabs: [],
     nextId: { tab: 1, window: 1, group: 1 },
     fileAccessAllowed: false,
+    grantedOrigins: new Set(),
+    optionalOrigins: ['https://*.youtube.com/*'],
+    permissionAnswer: true,
+    pageMedia: new Map(),
+    injectedTabs: [],
     deferCommit: false,
   };
 
@@ -564,7 +640,7 @@ export function createChromeFake(): ChromeFake {
       const urlPatterns =
         info.url === undefined
           ? []
-          : (Array.isArray(info.url) ? info.url : [info.url]).map(globToRegExp);
+          : (Array.isArray(info.url) ? info.url : [info.url]).map(matchPatternToRegExp);
       const focusedId =
         info.currentWindow || info.lastFocusedWindow ? focusedWindow().id : undefined;
       return [...state.tabs.values()]
@@ -1075,6 +1151,131 @@ export function createChromeFake(): ChromeFake {
     },
   };
 
+  // ---- permissions / scripting -----------------------------------------------
+
+  const onPermissionsAdded = makeEvent<(permissions: chrome.permissions.Permissions) => void>();
+  const onPermissionsRemoved = makeEvent<(permissions: chrome.permissions.Permissions) => void>();
+
+  /**
+   * Host permissions only: the API permissions of the manifest are all required ones here. Like
+   * Chrome, `request` refuses an origin the manifest does not list as optional, resolves `true`
+   * without asking when everything is granted already, and `onAdded` / `onRemoved` fire only for
+   * a real change. The user gesture Chrome requires for `request` is not modelled.
+   */
+  const permissions = {
+    async contains(request: chrome.permissions.Permissions): Promise<boolean> {
+      return (request.origins ?? []).every((origin) => state.grantedOrigins.has(origin));
+    },
+    async getAll(): Promise<chrome.permissions.Permissions> {
+      return { origins: [...state.grantedOrigins], permissions: [] };
+    },
+    async request(request: chrome.permissions.Permissions): Promise<boolean> {
+      const origins = request.origins ?? [];
+      const unknown = origins.filter((origin) => !state.optionalOrigins.includes(origin));
+      if (unknown.length > 0) {
+        throw new Error('Only permissions specified in the manifest may be requested.');
+      }
+      const missing = origins.filter((origin) => !state.grantedOrigins.has(origin));
+      if (missing.length === 0) {
+        return true;
+      }
+      if (!state.permissionAnswer) {
+        return false;
+      }
+      for (const origin of missing) {
+        state.grantedOrigins.add(origin);
+      }
+      onPermissionsAdded.emit({ origins: missing, permissions: [] });
+      return true;
+    },
+    async remove(request: chrome.permissions.Permissions): Promise<boolean> {
+      const removed = (request.origins ?? []).filter((origin) => state.grantedOrigins.has(origin));
+      for (const origin of removed) {
+        state.grantedOrigins.delete(origin);
+      }
+      if (removed.length > 0) {
+        onPermissionsRemoved.emit({ origins: removed, permissions: [] });
+      }
+      return true;
+    },
+    onAdded: onPermissionsAdded,
+    onRemoved: onPermissionsRemoved,
+  };
+
+  function hostAllowed(url: string): boolean {
+    return [...state.grantedOrigins].some((origin) => matchPatternToRegExp(origin).test(url));
+  }
+
+  /**
+   * `chrome.scripting.executeScript` with `func`, top frame only. Chrome serializes the function
+   * and runs it in the page, so the fake rebuilds it from its source text: a function that leans
+   * on anything outside itself (an import, a closure) throws here as it would there. It then runs
+   * with `document.querySelectorAll` answering from `state.pageMedia` for that tab. Like Chrome it
+   * rejects for a missing tab, a discarded one and a page whose host was not granted. An injection
+   * into a frozen tab waits, unanswered, until `thawTab`.
+   */
+  /** Injections waiting on a frozen tab, by tab id; `thawTab` lets them run. */
+  const frozenWaiters = new Map<number, (() => void)[]>();
+
+  const scripting = {
+    async executeScript<Args extends unknown[], Result>(
+      injection: chrome.scripting.ScriptInjection<Args, Result>,
+    ): Promise<chrome.scripting.InjectionResult<Awaited<Result>>[]> {
+      maybeFail('scripting.executeScript');
+      const tabId = injection.target.tabId;
+      const tab = requireTab(tabId);
+      if (tab.discarded) {
+        throw new Error(`Cannot access contents of the discarded tab ${tabId}.`);
+      }
+      if (tab.frozen === true) {
+        await new Promise<void>((resolve) => {
+          frozenWaiters.set(tabId, [...(frozenWaiters.get(tabId) ?? []), resolve]);
+        });
+      }
+      if (!hostAllowed(tab.url)) {
+        throw new Error(
+          'Cannot access contents of the page. Extension manifest must request permission to access the respective host.',
+        );
+      }
+      if (!('func' in injection) || typeof injection.func !== 'function') {
+        throw new Error('The fake only runs `func` injections.');
+      }
+      const rebuilt: unknown = new Function(`return (${injection.func.toString()});`)();
+      if (typeof rebuilt !== 'function') {
+        throw new Error('The injected function did not survive serialization.');
+      }
+      const media = state.pageMedia.get(tabId) ?? [];
+      const pageDocument = {
+        querySelectorAll(selector: string) {
+          const wanted = selector
+            .split(',')
+            .map((part) => part.trim().toUpperCase())
+            .filter((part) => part !== '');
+          return media.filter((element) => wanted.includes(element.tagName));
+        },
+      };
+      const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+      Object.defineProperty(globalThis, 'document', { value: pageDocument, configurable: true });
+      let result: unknown;
+      try {
+        const args: unknown[] =
+          'args' in injection && Array.isArray(injection.args) ? injection.args : [];
+        result = Reflect.apply(rebuilt, undefined, args);
+      } finally {
+        if (previous === undefined) {
+          Reflect.deleteProperty(globalThis, 'document');
+        } else {
+          Object.defineProperty(globalThis, 'document', previous);
+        }
+      }
+      state.injectedTabs.push(tabId);
+      // CAST: the fake ran the caller's own function, so its result is the caller's `Result`.
+      return [
+        { documentId: `doc-${tabId}`, frameId: 0, result: (await result) as Awaited<Result> },
+      ];
+    },
+  };
+
   let uiLanguage = 'en';
   const i18n = {
     getUILanguage(): string {
@@ -1106,6 +1307,8 @@ export function createChromeFake(): ChromeFake {
     action,
     alarms,
     extension,
+    permissions,
+    scripting,
   };
 
   const fire: FakeFire = {
@@ -1158,6 +1361,17 @@ export function createChromeFake(): ChromeFake {
         tab.pendingUrl = undefined;
       }
       tab.status = 'complete';
+    },
+    freezeTab(tabId) {
+      requireTab(tabId).frozen = true;
+    },
+    thawTab(tabId) {
+      requireTab(tabId).frozen = false;
+      const waiting = frozenWaiters.get(tabId) ?? [];
+      frozenWaiters.delete(tabId);
+      for (const resume of waiting) {
+        resume();
+      }
     },
   };
 }

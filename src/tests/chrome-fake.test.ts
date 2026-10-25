@@ -778,3 +778,67 @@ describe('chrome fake: tab / window / group events', () => {
     expect(calls).toBe(1);
   });
 });
+
+describe('chrome fake: match patterns, permissions and scripting', () => {
+  const YOUTUBE = 'https://*.youtube.com/*';
+
+  it('reads a `*.` host in tabs.query as the domain and every subdomain', async () => {
+    await chrome.tabs.create({ url: 'https://youtube.com/', active: false });
+    await chrome.tabs.create({ url: 'https://www.youtube.com/watch?v=a', active: false });
+    await chrome.tabs.create({ url: 'https://notyoutube.com/', active: false });
+    await chrome.tabs.create({ url: 'http://www.youtube.com/', active: false });
+
+    const found = await chrome.tabs.query({ url: [YOUTUBE] });
+
+    expect(found.map((tab) => tab.url)).toEqual([
+      'https://youtube.com/',
+      'https://www.youtube.com/watch?v=a',
+    ]);
+  });
+
+  it('refuses to request an origin the manifest does not list as optional', async () => {
+    await expect(
+      chrome.permissions.request({ origins: ['https://example.com/*'] }),
+    ).rejects.toThrow(/specified in the manifest/);
+  });
+
+  it('fires onAdded only for a real change', async () => {
+    const calls: chrome.permissions.Permissions[] = [];
+    chrome.permissions.onAdded.addListener((permissions) => calls.push(permissions));
+
+    await chrome.permissions.request({ origins: [YOUTUBE] });
+    await chrome.permissions.request({ origins: [YOUTUBE] });
+
+    expect(calls).toEqual([{ origins: [YOUTUBE], permissions: [] }]);
+  });
+
+  it('refuses to inject into a page whose host was not granted', async () => {
+    const tab = await chrome.tabs.create({ url: 'https://www.youtube.com/', active: false });
+    if (tab.id === undefined) {
+      throw new Error('no id');
+    }
+    await expect(
+      chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => 1 }),
+    ).rejects.toThrow(/Cannot access contents of the page/);
+    expect(getChromeFake().state.injectedTabs).toEqual([]);
+  });
+
+  it('runs the injected function from its source text, as Chrome serializes it', async () => {
+    getChromeFake().state.grantedOrigins.add(YOUTUBE);
+    const tab = await chrome.tabs.create({ url: 'https://www.youtube.com/', active: false });
+    if (tab.id === undefined) {
+      throw new Error('no id');
+    }
+    const outside = 41;
+
+    await expect(
+      chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => outside + 1 }),
+    ).rejects.toThrow(/outside/);
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (a: number, b: number) => a + b,
+      args: [40, 2],
+    });
+    expect(result?.result).toBe(42);
+  });
+});

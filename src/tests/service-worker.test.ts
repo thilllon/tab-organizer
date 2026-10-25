@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HISTORY_ALARM, HISTORY_FIRST_ALARM } from '@/lib/history-snapshots';
@@ -17,7 +20,7 @@ import {
 } from '@/service-worker';
 import { SESSION_SCHEMA_VERSION, type Session, type SessionIndex } from '@/types';
 
-import { fetchPackagedFile, getChromeFake, readLocaleFile } from './chrome-fake';
+import { fakeMedia, fetchPackagedFile, getChromeFake, readLocaleFile } from './chrome-fake';
 
 const APP_URL = 'chrome-extension://fakeextid/app.html';
 
@@ -94,18 +97,23 @@ afterEach(() => {
 });
 
 describe('registerContextMenus', () => {
-  it('is idempotent: removeAll then exactly the 2 items, no separators', async () => {
+  it('is idempotent: removeAll then exactly the 3 items, no separators', async () => {
     await registerContextMenus();
     await registerContextMenus();
 
     const menus = getChromeFake().state.menus;
-    expect(menus).toHaveLength(2);
-    expect(menus.map((m) => m.id)).toEqual([MENU_IDS.assembleTabs, MENU_IDS.saveAll]);
+    expect(menus).toHaveLength(3);
+    expect(menus.map((m) => m.id)).toEqual([
+      MENU_IDS.assembleTabs,
+      MENU_IDS.saveAll,
+      MENU_IDS.pauseYoutube,
+    ]);
     // Opening the app is Chrome's own "Options" item (options_page = app.html#settings) plus the
     // `open-dashboard` command; this menu does not repeat it.
     expect(menus.filter((m) => m.type !== 'separator').map((m) => m.title)).toEqual([
       "Assemble! (move every window's tabs into this one)",
       'Save all windows as session',
+      'Pause all YouTube videos',
     ]);
     for (const menu of menus) {
       expect(menu.contexts).toEqual(['action']);
@@ -236,6 +244,143 @@ describe('COMMAND_IDS', () => {
     expect(COMMAND_IDS.openDashboard).toBe('open-dashboard');
     expect(COMMAND_IDS.assembleTabs).toBe('assemble-tabs');
     expect(COMMAND_IDS.assembleTabs).toBe(MENU_IDS.assembleTabs);
+    expect(COMMAND_IDS.pauseYoutube).toBe('pause-youtube');
+    expect(COMMAND_IDS.pauseYoutube).toBe(MENU_IDS.pauseYoutube);
+  });
+
+  it('declares every command id in the manifest', () => {
+    const config = readFileSync(
+      path.join(import.meta.dirname, '..', '..', 'vite.config.ts'),
+      'utf8',
+    );
+    for (const id of Object.values(COMMAND_IDS)) {
+      expect(config).toContain(`'${id}': {`);
+    }
+  });
+});
+
+describe('pausing YouTube', () => {
+  const YOUTUBE = 'https://*.youtube.com/*';
+
+  /** A YouTube tab in the focused window with one playing video; returns that video. */
+  async function playingYoutubeTab(url = 'https://www.youtube.com/watch?v=a') {
+    const fake = getChromeFake();
+    await seedWindow(['https://a.example/'], true);
+    const tab = await chrome.tabs.create({ url, active: false });
+    if (tab.id === undefined) {
+      throw new Error('fake tabs.create returned no id');
+    }
+    const video = fakeMedia('VIDEO', { currentTime: 30 });
+    fake.state.pageMedia.set(tab.id, [video]);
+    return { tabId: tab.id, video };
+  }
+
+  it.each([
+    ['the menu item', MENU_IDS.pauseYoutube],
+    ['the command', COMMAND_IDS.pauseYoutube],
+  ])(
+    'without access, %s opens Settings at its YouTube row and runs in no page',
+    async (_name, id) => {
+      const fake = getChromeFake();
+      const { video } = await playingYoutubeTab();
+
+      await handleMenuOrCommand(id);
+
+      expect(fake.state.injectedTabs).toEqual([]);
+      expect(video.paused).toBe(false);
+      const appTabs = [...fake.state.tabs.values()].filter((tab) => tab.url.startsWith(APP_URL));
+      expect(appTabs.map((tab) => tab.url)).toEqual([`${APP_URL}#settings/youtube`]);
+      expect(appTabs[0]?.active).toBe(true);
+      expect(fake.state.badge.text).toBe('');
+    },
+  );
+
+  it('without access, points an open app tab at Settings instead of opening a second one', async () => {
+    const fake = getChromeFake();
+    await playingYoutubeTab();
+    await chrome.tabs.create({ url: `${APP_URL}#open`, active: false });
+
+    await handleMenuOrCommand(COMMAND_IDS.pauseYoutube);
+
+    const appTabs = [...fake.state.tabs.values()].filter((tab) => tab.url.startsWith(APP_URL));
+    expect(appTabs.map((tab) => tab.url)).toEqual([`${APP_URL}#settings/youtube`]);
+  });
+
+  it.each([
+    ['the menu item', MENU_IDS.pauseYoutube],
+    ['the command', COMMAND_IDS.pauseYoutube],
+  ])('with access, %s pauses every YouTube video and shows ✓', async (_name, id) => {
+    const fake = getChromeFake();
+    fake.state.grantedOrigins.add(YOUTUBE);
+    const { video } = await playingYoutubeTab();
+    const { video: music } = await playingYoutubeTab('https://music.youtube.com/watch?v=b');
+
+    await handleMenuOrCommand(id);
+
+    expect(video).toMatchObject({ paused: true, currentTime: 30 });
+    expect(music.paused).toBe(true);
+    expect(fake.state.badge.text).toBe('✓');
+    const appTabs = [...fake.state.tabs.values()].filter((tab) => tab.url.startsWith(APP_URL));
+    expect(appTabs).toEqual([]);
+  });
+
+  it('shows ✓ when nothing was playing, and no badge when no YouTube tab is open', async () => {
+    const fake = getChromeFake();
+    fake.state.grantedOrigins.add(YOUTUBE);
+    await seedWindow(['https://a.example/'], true);
+
+    await handleMenuOrCommand(COMMAND_IDS.pauseYoutube);
+    expect(fake.state.badge.text).toBe('');
+
+    const { video } = await playingYoutubeTab();
+    video.paused = true;
+    await handleMenuOrCommand(COMMAND_IDS.pauseYoutube);
+    expect(fake.state.badge.text).toBe('✓');
+  });
+
+  it('shows ! and logs when every YouTube tab failed', async () => {
+    const fake = getChromeFake();
+    fake.state.grantedOrigins.add(YOUTUBE);
+    await playingYoutubeTab();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    fake.failNext('scripting.executeScript', 1, 'Frame with ID 0 is showing error page');
+
+    await handleMenuOrCommand(COMMAND_IDS.pauseYoutube);
+
+    expect(fake.state.badge.text).toBe('!');
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it('shows ✓ when only some tabs failed', async () => {
+    const fake = getChromeFake();
+    fake.state.grantedOrigins.add(YOUTUBE);
+    await playingYoutubeTab();
+    const { video } = await playingYoutubeTab('https://www.youtube.com/watch?v=b');
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    fake.failNext('scripting.executeScript', 1, 'No tab with id: 2.');
+
+    await handleMenuOrCommand(COMMAND_IDS.pauseYoutube);
+
+    expect(video.paused).toBe(true);
+    expect(fake.state.badge.text).toBe('✓');
+  });
+
+  it('is reached through the real menu and command listeners', async () => {
+    await loadWorker();
+    const fake = getChromeFake();
+    fake.state.grantedOrigins.add(YOUTUBE);
+    const { video } = await playingYoutubeTab();
+
+    fake.fire.menuClicked(MENU_IDS.pauseYoutube);
+    await vi.waitFor(() => {
+      expect(video.paused).toBe(true);
+    });
+
+    video.paused = false;
+    fake.fire.command(COMMAND_IDS.pauseYoutube);
+    await vi.waitFor(() => {
+      expect(video.paused).toBe(true);
+    });
   });
 });
 
@@ -368,7 +513,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'install' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(2);
+      expect(fake.state.menus).toHaveLength(3);
     });
   });
 
@@ -383,7 +528,7 @@ describe('listener wiring', () => {
     fake.fire.installed({ reason: 'update', previousVersion: '6.0.0' });
 
     await vi.waitFor(() => {
-      expect(fake.state.menus).toHaveLength(2);
+      expect(fake.state.menus).toHaveLength(3);
       expect(migrateSpy).toHaveBeenCalledTimes(1);
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
     });
@@ -447,6 +592,7 @@ describe('listener wiring', () => {
       expect(fake.state.menus.map((menu) => menu.title)).toEqual([
         t('cmdAssembleTabs'),
         t('workerMenuSaveAll'),
+        t('cmdPauseYoutube'),
       ]);
     });
     expect(t('workerMenuSaveAll')).not.toBe('Save all windows as session');
@@ -766,7 +912,7 @@ describe('history wiring', () => {
       expect(getChromeFake().state.alarms.get(HISTORY_ALARM)).toEqual({ periodInMinutes: 5 });
     });
     expect(alarmNames()).toEqual([HISTORY_ALARM]);
-    expect(fake.state.menus).toHaveLength(2);
+    expect(fake.state.menus).toHaveLength(3);
     expect(reconcileSpy).toHaveBeenCalledTimes(1);
     expect(reconcileSpy.mock.invocationCallOrder[0]).toBeLessThan(
       createSpy.mock.invocationCallOrder[0],
@@ -800,7 +946,7 @@ describe('history wiring', () => {
 
     await vi.waitFor(() => {
       expect(reconcileSpy).toHaveBeenCalledTimes(1);
-      expect(fake.state.menus).toHaveLength(2);
+      expect(fake.state.menus).toHaveLength(3);
     });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(alarmNames()).toEqual([]);
@@ -973,10 +1119,14 @@ describe('history wiring', () => {
 });
 
 describe('the language chosen in Settings', () => {
-  /** The two menu titles as a language's own messages.json has them. */
+  /** The menu titles as a language's own messages.json has them. */
   async function menuTitles(locale: string): Promise<(string | undefined)[]> {
     const catalog = toCatalog(await readLocaleFile(locale));
-    return [catalog.cmdAssembleTabs?.message, catalog.workerMenuSaveAll?.message];
+    return [
+      catalog.cmdAssembleTabs?.message,
+      catalog.workerMenuSaveAll?.message,
+      catalog.cmdPauseYoutube?.message,
+    ];
   }
 
   it('titles the menus in the stored language, whatever Chrome is in', async () => {

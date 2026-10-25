@@ -120,7 +120,7 @@ export const ko: SiteCopy = {
       {
         icon: 'keyboard',
         title: '단축키',
-        body: '정렬은 Alt+Shift+S, 모두 모으기는 Alt+Shift+A(Mac은 Option). 세션 저장과 Tab Organizer 열기에도 원하는 키를 지정할 수 있습니다.',
+        body: '새로 설치하면 정렬은 Alt+Shift+S, 모두 모으기는 Alt+Shift+A, 모든 YouTube 동영상 일시중지는 Alt+Shift+P(Mac은 Option)로 지정됩니다. chrome://extensions/shortcuts에서 언제든 지정하거나 바꿀 수 있습니다. 세션 저장과 Tab Organizer 열기에도 원하는 키를 지정할 수 있습니다.',
       },
       {
         icon: 'grouping',
@@ -143,7 +143,7 @@ export const ko: SiteCopy = {
       },
       {
         title: '네트워크 없음',
-        body: '분석 도구도, 추적도, 어떤 종류의 요청도 없습니다. 방문하는 웹페이지의 내용을 읽거나 코드를 넣지 않습니다.',
+        body: '분석 도구도, 추적도, 어떤 종류의 요청도 없습니다. 방문하는 웹페이지의 내용을 읽지 않으며, 웹페이지에서 실행하는 것은 허용한 뒤의 YouTube 동영상 일시중지뿐입니다.',
       },
     ],
     link: '개인정보처리방침 읽기',
@@ -159,7 +159,7 @@ export const ko: SiteCopy = {
     startSteps: [
       'Chrome 웹 스토어에서 Tab Organizer를 추가하고, 아이콘을 툴바에 고정합니다.',
       '아이콘을 클릭하면 현재 창의 탭이 정렬됩니다.',
-      '아이콘을 마우스 오른쪽 버튼으로 클릭하면 "모두 모으기"와 "모든 창을 세션으로 저장" 메뉴가 있습니다. 옵션을 누르면 세션과 설정이 있는 Tab Organizer 화면이 열립니다.',
+      '아이콘을 마우스 오른쪽 버튼으로 클릭하면 "모두 모으기", "모든 창을 세션으로 저장", "모든 YouTube 동영상 일시중지" 메뉴가 있습니다. 옵션을 누르면 세션과 설정이 있는 Tab Organizer 화면이 열립니다.',
     ],
     reportTitle: '문제 알리기',
     reportLead:
@@ -208,6 +208,10 @@ export const ko: SiteCopy = {
       {
         q: '정렬 결과가 마음에 들지 않으면요?',
         a: '정렬은 탭을 옮기기만 하므로 잃어버리는 것은 없습니다. 닫힌 중복 탭은 Ctrl+Shift+T(Mac은 Cmd+Shift+T)로 되살릴 수 있습니다.',
+      },
+      {
+        q: '모든 YouTube 동영상을 한 번에 일시중지할 수 있나요?',
+        a: '네. 아이콘을 마우스 오른쪽 버튼으로 클릭해 "모든 YouTube 동영상 일시중지"를 선택하거나 단축키를 누르세요(새로 설치하면 Alt+Shift+P, Mac은 Option+Shift+P이며 chrome://extensions/shortcuts에서 지정하거나 바꿀 수 있습니다). 모든 창의 YouTube 탭이 재생 위치 그대로 멈춥니다. 음소거하거나 탭을 닫지 않으며, 다시 실행해도 다시 재생되지 않습니다. 처음에는 YouTube 접근을 허용할 수 있도록 설정의 YouTube 항목이 열립니다. 허용한 뒤 다시 선택하세요. Tab Organizer는 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다. 접근 권한은 설정에서 언제든 해제할 수 있습니다.',
       },
       {
         q: '다른 Chromium 브라우저에서도 되나요?',

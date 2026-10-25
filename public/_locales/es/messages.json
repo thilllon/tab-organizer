@@ -27,6 +27,10 @@
     "message": "¡Reunir! (mover las pestañas de todas las ventanas a esta)",
     "description": "Keyboard command and right-click menu item: the action name, then what it does in brackets."
   },
+  "cmdPauseYoutube": {
+    "message": "Pausar todos los vídeos de YouTube",
+    "description": "Keyboard command (listed at chrome://extensions/shortcuts) and item in the toolbar icon's right-click menu: pauses the video in every YouTube tab of every window. Menu item, keep it short (under 40 characters)."
+  },
   "assembleName": {
     "message": "¡Reunir!",
     "description": "Short name of the action that moves every window's tabs into the current one. Shown on a button."
@@ -130,6 +134,50 @@
   "settingsSortingDescription": {
     "message": "Lo que hace un clic en el icono de la barra de herramientas.",
     "description": "Explanation under the Sorting heading in Settings."
+  },
+  "settingsYoutubeTitle": {
+    "message": "YouTube",
+    "description": "Heading of the Settings section about pausing YouTube videos. The site name; keep it as is unless your language writes it differently."
+  },
+  "settingsYoutubeDescription": {
+    "message": "Haz clic derecho en el icono y elige «$1», o pulsa su combinación de teclas, para pausar el vídeo de cada pestaña de YouTube en todas las ventanas. Cada vídeo conserva su posición y nada vuelve a reproducirse.",
+    "description": "Explanation under the YouTube heading in Settings. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAccess": {
+    "message": "Acceso a YouTube",
+    "description": "Label of the Settings row that allows or removes the extension's access to youtube.com, needed to pause videos."
+  },
+  "settingsYoutubeAccessOffHint": {
+    "message": "Aún no está permitido. Hace falta para pausar vídeos; Chrome te lo pregunta antes. Tab Organizer solo pulsa pausa en YouTube y no lee nada de la página.",
+    "description": "Grey hint under \"Access to YouTube\" while the access is not granted."
+  },
+  "settingsYoutubeAccessOnHint": {
+    "message": "Permitido. Haz clic derecho en el icono y elige «$1», o pulsa su combinación de teclas, para pausar todos los vídeos. Tab Organizer solo pulsa pausa en YouTube y no lee nada de la página.",
+    "description": "Grey hint under \"Access to YouTube\" once the access is granted. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAccessAskedHint": {
+    "message": "«$1» necesita antes este acceso. Permítelo aquí y luego vuelve a elegir «$1» o pulsa su combinación de teclas. Tab Organizer solo pulsa pausa en YouTube y no lee nada de la página.",
+    "description": "Grey hint under \"Access to YouTube\" when the person arrived from the menu item or shortcut without the access yet: explains why Settings opened. $1 (twice) is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAllowed": {
+    "message": "Acceso a YouTube permitido. Vuelve a elegir «$1» para pausar los vídeos.",
+    "description": "Short notice after the person allowed access to youtube.com in Chrome's prompt: tells them to run the command again. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAllow": {
+    "message": "Permitir acceso",
+    "description": "Button in the YouTube section of Settings: asks Chrome for access to youtube.com (Chrome then shows its own prompt). Short."
+  },
+  "settingsYoutubeRemove": {
+    "message": "Quitar acceso",
+    "description": "Button in the YouTube section of Settings, shown once access is granted: gives the access to youtube.com back. Short."
+  },
+  "settingsYoutubeDeclined": {
+    "message": "No se permitió el acceso a YouTube, así que aún no se puede pausar ningún vídeo.",
+    "description": "Short notice after the person declined Chrome's prompt for access to youtube.com."
+  },
+  "settingsYoutubeAccessFailed": {
+    "message": "Chrome no cambió el acceso a YouTube. Inténtalo de nuevo.",
+    "description": "Error line shown when Chrome refused to grant or remove the access to youtube.com."
   },
   "settingsSortBy": {
     "message": "Ordenar por",
@@ -352,8 +400,8 @@
     "description": "Heading of the Settings section listing the extension's keyboard commands."
   },
   "settingsShortcutsDescription": {
-    "message": "En una instalación nueva, Chrome asigna $1 a ordenar y $3 a $2 si ninguna otra extensión usa esas teclas. Los demás comandos empiezan sin tecla.",
-    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A)."
+    "message": "En una instalación nueva, Chrome asigna $1 a ordenar, $3 a $2 y $4 a pausar YouTube si ninguna otra extensión usa esas teclas. Los demás comandos empiezan sin tecla.",
+    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A), $4 is the key that pauses every YouTube video (e.g. Alt + Shift + P)."
   },
   "settingsSortCommand": {
     "message": "Ordenar las pestañas de esta ventana (igual que hacer clic en el icono)",

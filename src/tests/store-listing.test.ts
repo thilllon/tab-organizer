@@ -12,6 +12,7 @@ import {
   HOST_PERMISSIONS_AND_REMOTE_CODE,
   LISTING_LOCALES,
   LOCALES_SOURCE,
+  OPTIONAL_HOST_PERMISSION_JUSTIFICATIONS,
   PERMISSION_JUSTIFICATIONS,
   PRODUCT_DETAILS,
   readLocaleMessage,
@@ -21,6 +22,7 @@ import {
   validateDescription,
   validateSummary,
 } from '../../scripts/store-listing';
+import { YOUTUBE_ORIGINS } from '../constants';
 
 const ROOT = path.resolve(LOCALES_SOURCE, '..', '..');
 const LONG_DASH = new RegExp(`[${String.fromCodePoint(0x2013, 0x2014)}]`);
@@ -110,6 +112,20 @@ describe('the store listing', () => {
     );
   });
 
+  it('justifies exactly the optional host permissions the manifest declares, and asks for none at install', () => {
+    const config = readFileSync(path.join(ROOT, 'vite.config.ts'), 'utf-8');
+    // The manifest spreads the one list in src/constants.ts; this pins that it still does.
+    expect(config).toMatch(/^\s*optional_host_permissions: \[\.\.\.YOUTUBE_ORIGINS\],$/m);
+    expect(config).not.toMatch(/^\s*host_permissions:/m);
+    expect(config).not.toMatch(/^\s*content_scripts:/m);
+    expect(Object.keys(OPTIONAL_HOST_PERMISSION_JUSTIFICATIONS).toSorted()).toEqual(
+      [...YOUTUBE_ORIGINS].toSorted(),
+    );
+    for (const origin of YOUTUBE_ORIGINS) {
+      expect(HOST_PERMISSIONS_AND_REMOTE_CODE).toContain(origin);
+    }
+  });
+
   it('quotes UI labels in the test instructions exactly as the English messages say them', () => {
     const english: Record<string, { message: string }> = JSON.parse(
       readFileSync(path.join(LOCALES_SOURCE, 'en', 'messages.json'), 'utf-8'),
@@ -129,6 +145,7 @@ describe('the store listing', () => {
     const texts = [
       SINGLE_PURPOSE,
       ...Object.values(PERMISSION_JUSTIFICATIONS),
+      ...Object.values(OPTIONAL_HOST_PERMISSION_JUSTIFICATIONS),
       HOST_PERMISSIONS_AND_REMOTE_CODE,
       DATA_USAGE,
       ...DATA_CERTIFICATIONS,

@@ -111,5 +111,6 @@ export function commandRows(
 export function shortcutsDescription(isMac: boolean): string {
   const sort = shortcutText(DEFAULT_SHORTCUTS._execute_action, isMac);
   const assemble = shortcutText(DEFAULT_SHORTCUTS['assemble-tabs'], isMac);
-  return t('settingsShortcutsDescription', sort, t('assembleName'), assemble);
+  const pauseYoutube = shortcutText(DEFAULT_SHORTCUTS['pause-youtube'], isMac);
+  return t('settingsShortcutsDescription', sort, t('assembleName'), assemble, pauseYoutube);
 }

@@ -27,6 +27,10 @@
     "message": "集合！（すべてのウィンドウのタブをこのウィンドウに移動）",
     "description": "Keyboard command and right-click menu item: the action name, then what it does in brackets."
   },
+  "cmdPauseYoutube": {
+    "message": "YouTube の動画をすべて一時停止",
+    "description": "Keyboard command (listed at chrome://extensions/shortcuts) and item in the toolbar icon's right-click menu: pauses the video in every YouTube tab of every window. Menu item, keep it short (under 40 characters)."
+  },
   "assembleName": {
     "message": "集合！",
     "description": "Short name of the action that moves every window's tabs into the current one. Shown on a button."
@@ -130,6 +134,50 @@
   "settingsSortingDescription": {
     "message": "ツールバーのアイコンをクリックしたときの動作です。",
     "description": "Explanation under the Sorting heading in Settings."
+  },
+  "settingsYoutubeTitle": {
+    "message": "YouTube",
+    "description": "Heading of the Settings section about pausing YouTube videos. The site name; keep it as is unless your language writes it differently."
+  },
+  "settingsYoutubeDescription": {
+    "message": "アイコンを右クリックして「$1」を選ぶか、ショートカットキーを押すと、すべてのウィンドウの YouTube タブで動画が一時停止します。再生位置はそのままで、再生が再開されることはありません。",
+    "description": "Explanation under the YouTube heading in Settings. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAccess": {
+    "message": "YouTube へのアクセス",
+    "description": "Label of the Settings row that allows or removes the extension's access to youtube.com, needed to pause videos."
+  },
+  "settingsYoutubeAccessOffHint": {
+    "message": "まだ許可されていません。動画の一時停止に必要で、Chrome が先に確認します。Tab Organizer は YouTube で一時停止を押すだけで、ページの内容は読み取りません。",
+    "description": "Grey hint under \"Access to YouTube\" while the access is not granted."
+  },
+  "settingsYoutubeAccessOnHint": {
+    "message": "許可済み。アイコンを右クリックして「$1」を選ぶか、ショートカットキーを押すと、すべての動画が一時停止します。Tab Organizer は YouTube で一時停止を押すだけで、ページの内容は読み取りません。",
+    "description": "Grey hint under \"Access to YouTube\" once the access is granted. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAccessAskedHint": {
+    "message": "「$1」を使うには、先にこのアクセスを許可してください。許可したら、もう一度「$1」を選ぶかショートカットキーを押してください。Tab Organizer は YouTube で一時停止を押すだけで、ページの内容は読み取りません。",
+    "description": "Grey hint under \"Access to YouTube\" when the person arrived from the menu item or shortcut without the access yet: explains why Settings opened. $1 (twice) is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAllowed": {
+    "message": "YouTube へのアクセスを許可しました。もう一度「$1」を選ぶと動画が一時停止します。",
+    "description": "Short notice after the person allowed access to youtube.com in Chrome's prompt: tells them to run the command again. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAllow": {
+    "message": "アクセスを許可",
+    "description": "Button in the YouTube section of Settings: asks Chrome for access to youtube.com (Chrome then shows its own prompt). Short."
+  },
+  "settingsYoutubeRemove": {
+    "message": "アクセスを解除",
+    "description": "Button in the YouTube section of Settings, shown once access is granted: gives the access to youtube.com back. Short."
+  },
+  "settingsYoutubeDeclined": {
+    "message": "YouTube へのアクセスが許可されなかったため、まだ動画を一時停止できません。",
+    "description": "Short notice after the person declined Chrome's prompt for access to youtube.com."
+  },
+  "settingsYoutubeAccessFailed": {
+    "message": "Chrome で YouTube へのアクセスを変更できませんでした。もう一度お試しください。",
+    "description": "Error line shown when Chrome refused to grant or remove the access to youtube.com."
   },
   "settingsSortBy": {
     "message": "並べ替えの基準",
@@ -348,8 +396,8 @@
     "description": "Heading of the Settings section listing the extension's keyboard commands."
   },
   "settingsShortcutsDescription": {
-    "message": "新しくインストールすると、ほかの拡張機能がそのキーを使っていなければ、Chrome は並べ替えに $1、$2 に $3 を割り当てます。ほかのコマンドには最初はキーが割り当てられていません。",
-    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A)."
+    "message": "新しくインストールすると、ほかの拡張機能がそのキーを使っていなければ、Chrome は並べ替えに $1、$2 に $3、YouTube の一時停止に $4 を割り当てます。ほかのコマンドには最初はキーが割り当てられていません。",
+    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A), $4 is the key that pauses every YouTube video (e.g. Alt + Shift + P)."
   },
   "settingsSortCommand": {
     "message": "このウィンドウのタブを並べ替える（アイコンのクリックと同じ）",
