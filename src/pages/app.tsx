@@ -660,6 +660,7 @@ export function App() {
             onExportAll={() => void exportAll()}
             onImport={() => setImportOpen(true)}
             exporting={exporting}
+            focus={route.view === 'settings' ? route.focus : undefined}
           >
             {banners}
           </SettingsView>

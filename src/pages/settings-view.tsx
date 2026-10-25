@@ -11,7 +11,9 @@ import { StorageMeter } from '@/components/storage-meter';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { YoutubeAccessField } from '@/components/youtube-access-field';
 import { useSessionSettings } from '@/hooks/use-session-settings';
+import type { SettingsFocus } from '@/lib/app-route';
 import {
   changeOnlyInChrome,
   type CommandRow,
@@ -59,6 +61,8 @@ interface SettingsViewProps {
   onExportAll(): void;
   onImport(): void;
   exporting: boolean;
+  /** The part to bring into view on arrival (`#settings/youtube`), if the address names one. */
+  focus?: SettingsFocus;
   /** The page's error lines, shown at the top of the scrolling body. */
   children?: ReactNode;
 }
@@ -68,7 +72,8 @@ interface SettingsViewProps {
  * very view (`app.html#settings`). It is the content of the Settings dialog in `app.tsx` - a
  * fixed title row over a scrolling body - so it must be rendered inside a `DialogContent`. Sort by and Duplicate tabs are visible because they change what a
  * click on the icon visibly does, with the three Custom-only choices indented under Sort by while
- * Custom is chosen; the other two sit under "Advanced". Nothing has a Save button
+ * Custom is chosen; the other two sit under "Advanced". YouTube (access for "Pause all YouTube
+ * videos") follows Sorting, since the right-click menu item sends people here. Nothing has a Save button
  * - a setting is written the moment it changes, as it already was for the session settings.
  */
 export function SettingsView({
@@ -79,6 +84,7 @@ export function SettingsView({
   onExportAll,
   onImport,
   exporting,
+  focus,
   children,
 }: SettingsViewProps) {
   const [sort, setSort] = useState<SortSettings>(DEFAULT_SORT_SETTINGS);
@@ -291,6 +297,20 @@ export function SettingsView({
               />
             </SettingsField>
           </AdvancedFold>
+        </SettingsSection>
+
+        {/* Its own small section, not under Advanced: the access is needed before the menu item and
+            the shortcut do anything, and the menu item opens this dialog to ask for it. */}
+        <SettingsSection
+          title={t('settingsYoutubeTitle')}
+          description={t('settingsYoutubeDescription', t('cmdPauseYoutube'))}
+        >
+          <YoutubeAccessField
+            sentHere={focus === 'youtube'}
+            onSaved={onSaved}
+            onNotice={onNotice}
+            onError={onError}
+          />
         </SettingsSection>
 
         <SettingsSection

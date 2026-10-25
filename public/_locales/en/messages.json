@@ -27,6 +27,10 @@
     "message": "Assemble! (move every window's tabs into this one)",
     "description": "Keyboard command and right-click menu item: the action name, then what it does in brackets."
   },
+  "cmdPauseYoutube": {
+    "message": "Pause all YouTube videos",
+    "description": "Keyboard command (listed at chrome://extensions/shortcuts) and item in the toolbar icon's right-click menu: pauses the video in every YouTube tab of every window. Menu item, keep it short (under 40 characters)."
+  },
   "assembleName": {
     "message": "Assemble!",
     "description": "Short name of the action that moves every window's tabs into the current one. Shown on a button."
@@ -130,6 +134,50 @@
   "settingsSortingDescription": {
     "message": "What clicking the toolbar icon does.",
     "description": "Explanation under the Sorting heading in Settings."
+  },
+  "settingsYoutubeTitle": {
+    "message": "YouTube",
+    "description": "Heading of the Settings section about pausing YouTube videos. The site name; keep it as is unless your language writes it differently."
+  },
+  "settingsYoutubeDescription": {
+    "message": "Right-click the icon and choose “$1”, or press its shortcut, to pause the video in every YouTube tab of every window. Each video keeps its place, and nothing starts playing again.",
+    "description": "Explanation under the YouTube heading in Settings. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAccess": {
+    "message": "Access to YouTube",
+    "description": "Label of the Settings row that allows or removes the extension's access to youtube.com, needed to pause videos."
+  },
+  "settingsYoutubeAccessOffHint": {
+    "message": "Not allowed yet. Needed to pause videos; Chrome asks you first. Tab Organizer only presses pause on YouTube and reads nothing from the page.",
+    "description": "Grey hint under \"Access to YouTube\" while the access is not granted."
+  },
+  "settingsYoutubeAccessOnHint": {
+    "message": "Allowed. Choose “$1” in the icon's right-click menu, or press its shortcut, to pause every video. Tab Organizer only presses pause on YouTube and reads nothing from the page.",
+    "description": "Grey hint under \"Access to YouTube\" once the access is granted. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAccessAskedHint": {
+    "message": "“$1” needs this access first. Allow it here, then choose “$1” again or press its shortcut. Tab Organizer only presses pause on YouTube and reads nothing from the page.",
+    "description": "Grey hint under \"Access to YouTube\" when the person arrived from the menu item or shortcut without the access yet: explains why Settings opened. $1 (twice) is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAllowed": {
+    "message": "Access to YouTube allowed. Choose “$1” again to pause the videos.",
+    "description": "Short notice after the person allowed access to youtube.com in Chrome's prompt: tells them to run the command again. $1 is the right-click menu item (cmdPauseYoutube), quoted."
+  },
+  "settingsYoutubeAllow": {
+    "message": "Allow access",
+    "description": "Button in the YouTube section of Settings: asks Chrome for access to youtube.com (Chrome then shows its own prompt). Short."
+  },
+  "settingsYoutubeRemove": {
+    "message": "Remove access",
+    "description": "Button in the YouTube section of Settings, shown once access is granted: gives the access to youtube.com back. Short."
+  },
+  "settingsYoutubeDeclined": {
+    "message": "Access to YouTube was not allowed, so no video can be paused yet.",
+    "description": "Short notice after the person declined Chrome's prompt for access to youtube.com."
+  },
+  "settingsYoutubeAccessFailed": {
+    "message": "Chrome did not change the access to YouTube. Try again.",
+    "description": "Error line shown when Chrome refused to grant or remove the access to youtube.com."
   },
   "settingsSortBy": {
     "message": "Sort by",
@@ -352,8 +400,8 @@
     "description": "Heading of the Settings section listing the extension's keyboard commands."
   },
   "settingsShortcutsDescription": {
-    "message": "On a new install Chrome sets sorting to $1 and $2 to $3 when no other extension holds those keys. The other commands start without a key.",
-    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A)."
+    "message": "On a new install Chrome sets sorting to $1, $2 to $3 and pausing YouTube to $4 when no other extension holds those keys. The other commands start without a key.",
+    "description": "Explanation under the Keyboard shortcuts heading. $1 is the sort key (e.g. Alt + Shift + S), $2 is the name of the Assemble! action, $3 is its key (e.g. Alt + Shift + A), $4 is the key that pauses every YouTube video (e.g. Alt + Shift + P)."
   },
   "settingsSortCommand": {
     "message": "Sort the tabs in this window (same as clicking the icon)",

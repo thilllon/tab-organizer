@@ -26,6 +26,7 @@ import {
   DEFAULT_LISTING_LOCALE,
   DISTRIBUTION,
   HOST_PERMISSIONS_AND_REMOTE_CODE,
+  OPTIONAL_HOST_PERMISSION_JUSTIFICATIONS,
   LISTING_LOCALES,
   type ListingLocale,
   LOCALE_NAMES,
@@ -102,6 +103,7 @@ interface Manifest {
   default_locale?: string;
   permissions?: string[];
   host_permissions?: string[];
+  optional_host_permissions?: string[];
   minimum_chrome_version?: string;
 }
 
@@ -198,6 +200,16 @@ function submitDoc(
         'HOST_PERMISSIONS_AND_REMOTE_CODE in scripts/store-listing.ts says none.',
     );
   }
+  const optionalHosts = manifest.optional_host_permissions ?? [];
+  const unjustifiedHosts = optionalHosts.filter(
+    (origin) => OPTIONAL_HOST_PERMISSION_JUSTIFICATIONS[origin] === undefined,
+  );
+  if (unjustifiedHosts.length > 0) {
+    throw new Error(
+      `No store justification for optional host permission(s): ${unjustifiedHosts.join(', ')}. ` +
+        'Add one to OPTIONAL_HOST_PERMISSION_JUSTIFICATIONS in scripts/store-listing.ts.',
+    );
+  }
 
   const shots = SCREENSHOTS.map((s, i) => `| ${i + 1} | \`${s.as}\` | ${s.caption} |`).join('\n');
   const shotFolders = sections
@@ -215,6 +227,12 @@ function submitDoc(
   const promos = PROMOS.map((p) => `| ${p.slot} | \`promo/${p.as}\` | ${p.size} |`).join('\n');
   const perms = permissions
     .map((name) => `**${name}**\n\n\`\`\`\n${PERMISSION_JUSTIFICATIONS[name]}\n\`\`\``)
+    .join('\n\n');
+  const hostPerms = optionalHosts
+    .map(
+      (origin) =>
+        `**\`${origin}\`** (optional)\n\n\`\`\`\n${OPTIONAL_HOST_PERMISSION_JUSTIFICATIONS[origin]}\n\`\`\``,
+    )
     .join('\n\n');
   const certifications = DATA_CERTIFICATIONS.map((line) => `- [x] ${line}`).join('\n');
   const warning =
@@ -299,6 +317,10 @@ ${SINGLE_PURPOSE}
 **Permission justifications** - one per permission the manifest requests:
 
 ${perms}
+
+**Host permission justification** - one per optional host permission:
+
+${hostPerms === '' ? 'None.' : hostPerms}
 
 ${HOST_PERMISSIONS_AND_REMOTE_CODE} Minimum Chrome version: ${manifest.minimum_chrome_version ?? 'none'} (\`minimum_chrome_version\` in the manifest).
 

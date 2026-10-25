@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 import packageJson from './package.json' with { type: 'json' };
-import { DEFAULT_LOCALE, DEFAULT_SHORTCUTS } from './src/constants.ts';
+import { DEFAULT_LOCALE, DEFAULT_SHORTCUTS, YOUTUBE_ORIGINS } from './src/constants.ts';
 
 interface PackageJson {
   name?: string;
@@ -53,7 +53,9 @@ const manifest = defineManifest((env) => {
       type: 'module',
     },
     // `alarms` is touched at module-evaluation time (`chrome.alarms.onAlarm.addListener` in
-    // src/service-worker.ts), so it must ship with that listener - see AGENTS.md.
+    // src/service-worker.ts), so it must ship with that listener - see AGENTS.md. `scripting` is
+    // only called inside a handler ("Pause all YouTube videos", src/lib/pause-youtube.ts) and is
+    // useless without the optional YouTube host permission below.
     permissions: [
       'tabs',
       'tabGroups',
@@ -62,9 +64,14 @@ const manifest = defineManifest((env) => {
       'unlimitedStorage',
       'favicon',
       'alarms',
+      'scripting',
     ],
-    // Sorting and assembling suggest a key (DEFAULT_SHORTCUTS in src/constants.ts); the other two
-    // ship unbound. Chrome silently drops a suggested_key that conflicts with another extension,
+    // No `host_permissions` and no `content_scripts`: access to YouTube is asked for in Settings,
+    // when the person first wants to pause YouTube (chrome.permissions.request needs a click in a
+    // page), and can be taken back there. Without it, nothing runs in any web page.
+    optional_host_permissions: [...YOUTUBE_ORIGINS],
+    // Sorting, assembling and pausing YouTube suggest a key (DEFAULT_SHORTCUTS in src/constants.ts;
+    // Chrome takes at most four); the other two ship unbound. Chrome silently drops a suggested_key that conflicts with another extension,
     // so the UI must not promise a key - Settings shows what Chrome actually assigned. Users bind
     // and rebind them at chrome://extensions/shortcuts.
     commands: {
@@ -78,6 +85,10 @@ const manifest = defineManifest((env) => {
       'assemble-tabs': {
         suggested_key: { default: DEFAULT_SHORTCUTS['assemble-tabs'] },
         description: '__MSG_cmdAssembleTabs__',
+      },
+      'pause-youtube': {
+        suggested_key: { default: DEFAULT_SHORTCUTS['pause-youtube'] },
+        description: '__MSG_cmdPauseYoutube__',
       },
     },
   };

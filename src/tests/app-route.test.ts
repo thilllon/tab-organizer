@@ -31,6 +31,14 @@ describe('parseRoute', () => {
     expect(parseRoute('#search/')).toEqual(HOME);
   });
 
+  it('reads the part of Settings to bring into view, and ignores one it does not know', () => {
+    expect(parseRoute('#settings/youtube')).toEqual({ view: 'settings', focus: 'youtube' });
+    expect(parseRoute('#settings/nope')).toEqual({ view: 'settings' });
+    expect(parseRoute('#settings/')).toEqual({ view: 'settings' });
+    expect(formatRoute({ view: 'settings', focus: 'youtube' })).toBe('#settings/youtube');
+    expect(formatRoute({ view: 'settings' })).toBe('#settings');
+  });
+
   it('keeps a malformed escape as typed instead of throwing', () => {
     expect(parseRoute('#search/%E0%A4%A')).toEqual({ view: 'search', query: '%E0%A4%A' });
   });
@@ -39,6 +47,7 @@ describe('parseRoute', () => {
     for (const route of [
       HOME,
       { view: 'settings' },
+      { view: 'settings', focus: 'youtube' },
       { view: 'saved', id: 'a/b #c' },
       { view: 'auto', id: '0914-0912' },
       { view: 'search', query: '모두의 창업 #1' },
@@ -62,6 +71,7 @@ describe('viewBehind', () => {
     const saved = { view: 'saved', id: 'abc' } as const;
     expect(viewBehind({ view: 'settings' }, saved)).toEqual(saved);
     expect(viewBehind({ view: 'settings' }, HOME)).toEqual(HOME);
+    expect(viewBehind({ view: 'settings', focus: 'youtube' }, saved)).toEqual(saved);
   });
 
   it('shows every other route as itself, whatever came before', () => {
@@ -86,6 +96,7 @@ describe('routeOfEntryBelow', () => {
 
   it('is undefined when the entry below is Settings itself', () => {
     expect(routeOfEntryBelow(`${base}#settings`, page)).toBeUndefined();
+    expect(routeOfEntryBelow(`${base}#settings/youtube`, page)).toBeUndefined();
   });
 
   it('reads the view the entry below shows', () => {

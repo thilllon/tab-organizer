@@ -120,7 +120,7 @@ export const en: SiteCopy = {
       {
         icon: 'keyboard',
         title: 'Keyboard shortcuts',
-        body: 'Sort with Alt+Shift+S and Assemble! with Alt+Shift+A (Option on a Mac). Saving a session and opening Tab Organizer can have keys of their own.',
+        body: 'On a new install, sorting gets Alt+Shift+S, Assemble! Alt+Shift+A and pausing every YouTube video Alt+Shift+P (Option on a Mac); set or change any of them at chrome://extensions/shortcuts. Saving a session and opening Tab Organizer can have keys of their own.',
       },
       {
         icon: 'grouping',
@@ -143,7 +143,7 @@ export const en: SiteCopy = {
       },
       {
         title: 'No network',
-        body: 'No analytics, no tracking, no requests of any kind. Nothing is read from or injected into the pages you visit.',
+        body: 'No analytics, no tracking, no requests of any kind. Nothing is read from the pages you visit; the one thing ever run in a page is pausing YouTube videos, once you allow it.',
       },
     ],
     link: 'Read the privacy policy',
@@ -159,7 +159,7 @@ export const en: SiteCopy = {
     startSteps: [
       'Add Tab Organizer from the Chrome Web Store, then pin its icon to the toolbar.',
       'Click the icon to sort the window you are in.',
-      'Right-click the icon for Assemble! and Save all windows as session. Options opens Tab Organizer itself, with your sessions and settings.',
+      'Right-click the icon for Assemble!, Save all windows as session and Pause all YouTube videos. Options opens Tab Organizer itself, with your sessions and settings.',
     ],
     reportTitle: 'Report a problem',
     reportLead:
@@ -208,6 +208,10 @@ export const en: SiteCopy = {
       {
         q: 'What if I do not like the result of a sort?',
         a: 'Sorting only moves tabs, so nothing is lost. A closed duplicate comes back with Ctrl+Shift+T (Cmd+Shift+T on a Mac).',
+      },
+      {
+        q: 'Can it pause all my YouTube videos at once?',
+        a: 'Yes. Right-click the icon and choose Pause all YouTube videos, or press its keyboard shortcut (Alt+Shift+P on a new install, Option+Shift+P on a Mac; set or change it at chrome://extensions/shortcuts). Every YouTube tab in every window pauses where it was; nothing is muted or closed, and running it again resumes nothing. The first time, Settings opens at its YouTube section so you can allow access to YouTube; then choose it again. Tab Organizer only presses pause there and reads nothing from the page. You can remove the access in Settings at any time.',
       },
       {
         q: 'Does it work in other Chromium browsers?',

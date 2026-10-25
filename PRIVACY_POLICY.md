@@ -1,14 +1,14 @@
 # Privacy Policy - Tab Organizer
 
-Last Updated: October 21, 2026
+Last Updated: October 25, 2026
 
 ## Overview
 
-Tab Organizer is a Chrome extension that sorts and organizes your browser tabs and lets you save, restore, search, import and export sets of windows and tabs as sessions. Your privacy is important to us: everything the extension does happens inside your browser, on your device.
+Tab Organizer is a Chrome extension that sorts and organizes your browser tabs and lets you save, restore, search, import and export sets of windows and tabs as sessions. On request it also pauses the videos in your YouTube tabs. Your privacy is important to us: everything the extension does happens inside your browser, on your device.
 
 ## Data Collection
 
-Tab Organizer does **not** collect or transmit any personal data. It makes no network requests, has no host permissions, injects no scripts into web pages, and uses no analytics, tracking or telemetry. All operations are performed locally within your browser.
+Tab Organizer does **not** collect or transmit any personal data. It makes no network requests, reads nothing from the pages you visit, and uses no analytics, tracking or telemetry. All operations are performed locally within your browser. The only thing it ever runs inside a web page is a pause for YouTube videos, and only after you allow it (see "Pausing YouTube videos" below).
 
 ### What is stored, and where
 
@@ -32,6 +32,12 @@ Automatic snapshots are **on by default**. Every 5 minutes (or another interval 
 
 To turn snapshots off, open Tab Organizer (right-click the icon → Options) and switch automatic snapshots off in Settings. With snapshots off, no timer exists. The extension still wakes briefly when Chrome starts, when it is installed or updated, and when you change a setting, to keep its own saved data tidy; none of that touches the network.
 
+### Pausing YouTube videos
+
+"Pause all YouTube videos", in the icon's right-click menu and as a keyboard shortcut, pauses every video and audio that is playing in your open YouTube tabs, in every window. Each video keeps its place; nothing is muted, closed or reloaded.
+
+For this the extension needs access to youtube.com (`https://*.youtube.com/*`, which covers www, m and music). It is never requested at install: Chrome asks you when you click "Allow access" in Settings (choosing the menu item before that opens Settings), and you can remove the access there, or at chrome://extensions, at any time. With that access, each time you ask, the extension runs one small function that is part of the extension itself in each YouTube tab: it presses pause and counts how many videos it paused. It does not read the page, what you watch or anything else on YouTube, and nothing about YouTube is stored or transmitted. Without the access, nothing runs in any web page.
+
 ## Data Retention
 
 - Saved sessions are kept until you delete them in the Tab Organizer page.
@@ -46,19 +52,21 @@ This extension requires the following permissions:
 - **tabs**: Used to read tab URLs and titles for sorting, for saving sessions and for the Tab Organizer page's list of open windows, and to create tabs when restoring a session.
 - **tabGroups**: Used to sort and organize tab groups within the current window and to recreate tab groups when restoring a session.
 - **storage**: Used to save your sorting preferences and language choice using Chrome's sync storage, and to store saved sessions, snapshots and session settings in local storage on this device only.
-- **contextMenus**: Used to add "Assemble!" and "Save all windows as session" to the extension icon's right-click menu. No menu items are added to web pages.
+- **contextMenus**: Used to add "Assemble!", "Save all windows as session" and "Pause all YouTube videos" to the extension icon's right-click menu. No menu items are added to web pages.
 - **unlimitedStorage**: Allows large saved sessions to exceed Chrome's default local storage quota. It does not change where data is stored: everything stays on your device.
 - **favicon**: Used to display site icons next to tabs in the Tab Organizer page from Chrome's local favicon cache. No icons are fetched from the network and no icon data is stored by the extension.
 - **alarms**: Used as the timer for automatic snapshots on the interval you choose. When automatic snapshots are turned off, no timer exists.
+- **scripting**: Used only to pause YouTube videos when you ask, as described in "Pausing YouTube videos". It works only on the sites you allowed below.
+- **Access to youtube.com** (optional, `https://*.youtube.com/*`): requested only when you click "Allow access" in Settings, and removable there. Used only to pause videos; nothing is read from YouTube pages.
 
-The extension requests no host permissions and uses no content scripts. It requires Chrome 123 or newer.
+The extension requests no host permissions at install and declares no content scripts; access to youtube.com is optional and only yours to grant. It requires Chrome 123 or newer.
 
 ## Data Usage
 
 - Tab URLs and titles are read during sorting and are **not** stored as part of sorting.
 - When you save a session, or while automatic snapshots are enabled, the data listed above is stored **only** in local extension storage on your device and is **not** transmitted to any external server.
 - Sorting preferences are stored using Chrome's built-in storage API and are never shared with third parties or external servers.
-- Nothing is ever sold, shared, or used for any purpose other than sorting tabs and saving, restoring, searching, importing and exporting sessions.
+- Nothing is ever sold, shared, or used for any purpose other than sorting tabs, pausing YouTube videos when you ask, and saving, restoring, searching, importing and exporting sessions.
 
 ## Third-Party Services
 

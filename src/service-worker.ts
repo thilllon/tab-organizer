@@ -1,3 +1,4 @@
+import { formatRoute } from '@/lib/app-route';
 import { assembleTabs } from '@/lib/assemble-tabs';
 import {
   ensureHistoryAlarm,
@@ -9,6 +10,7 @@ import {
 } from '@/lib/history-snapshots';
 import { applyUiLanguage, t, uiLanguageReady } from '@/lib/i18n';
 import { openDashboard } from '@/lib/open-app-page';
+import { hasYoutubeAccess, pauseYoutubeTabs } from '@/lib/pause-youtube';
 import { captureSession } from '@/lib/session-capture';
 import { ensureUniqueName } from '@/lib/session-naming';
 import { SETTINGS_KEY, sessionRepo } from '@/lib/session-repo';
@@ -27,13 +29,15 @@ import { applyStoredUiLanguage, parseUiLanguage, UI_LANGUAGE_KEY } from '@/lib/u
 export const MENU_IDS = {
   assembleTabs: 'assemble-tabs',
   saveAll: 'save-all',
+  pauseYoutube: 'pause-youtube',
 } as const;
 
 /**
  * Keyboard-command ids. These must stay in lockstep with the `commands` block of
  * `defineManifest()` in `vite.config.ts` - Chrome delivers exactly those strings to
  * `commands.onCommand`, and a rename on one side silently stops the shortcut working.
- * `assembleTabs` deliberately shares its id with `MENU_IDS.assembleTabs`. `openDashboard` has no
+ * `assembleTabs` and `pauseYoutube` deliberately share their ids with the menu items of the same
+ * name, so one `case` serves both. `openDashboard` has no
  * menu item: Chrome adds its own "Options" entry (it opens `app.html#settings`), and a second
  * entry onto the same page would only make the menu longer.
  */
@@ -41,6 +45,7 @@ export const COMMAND_IDS = {
   saveSession: 'save-session',
   openDashboard: 'open-dashboard',
   assembleTabs: 'assemble-tabs',
+  pauseYoutube: 'pause-youtube',
 } as const;
 
 const SAVED_BADGE_COLOR = '#16a34a';
@@ -109,6 +114,12 @@ export async function registerContextMenus(): Promise<void> {
     title: t('workerMenuSaveAll'),
     contexts: ['action'],
   });
+  // One message for the menu item and the keyboard command, like Assemble! above.
+  chrome.contextMenus.create({
+    id: MENU_IDS.pauseYoutube,
+    title: t('cmdPauseYoutube'),
+    contexts: ['action'],
+  });
 }
 
 async function saveSession(scope: 'window' | 'all'): Promise<void> {
@@ -156,6 +167,40 @@ async function runAssembleTabs(): Promise<void> {
   }
 }
 
+/**
+ * Pauses every YouTube video in every window (src/lib/pause-youtube.ts). Without access to
+ * YouTube, which Chrome grants only from a click in a page, it opens Settings at its YouTube row
+ * (`#settings/youtube`), where the person can allow it, and runs nothing. With it: no badge when no YouTube tab is open (nothing to do,
+ * like a single-window Assemble!), ! when every tab failed, and ✓ otherwise, also when nothing
+ * was playing - afterwards every YouTube video is paused either way. A failing tab is logged. A
+ * tab that did not answer in time (one Chrome froze) is not a failure: its pause stays queued.
+ */
+async function runPauseYoutube(): Promise<void> {
+  try {
+    if (!(await hasYoutubeAccess())) {
+      // `#settings/youtube`: the dialog brings the YouTube row into view, focuses Allow access
+      // and says why it opened, so the person is not left wondering what the command did.
+      await openDashboard(formatRoute({ view: 'settings', focus: 'youtube' }));
+      return;
+    }
+    const result = await pauseYoutubeTabs();
+    for (const failure of result.failures) {
+      report(failure.error);
+    }
+    if (result.tabs === 0) {
+      return;
+    }
+    if (result.failed === result.tabs) {
+      showErrorBadge();
+    } else {
+      showSavedBadge();
+    }
+  } catch (err) {
+    report(err);
+    showErrorBadge();
+  }
+}
+
 export async function handleMenuOrCommand(id: string): Promise<void> {
   clearBadge();
   switch (id) {
@@ -171,6 +216,10 @@ export async function handleMenuOrCommand(id: string): Promise<void> {
     // Also `COMMAND_IDS.assembleTabs`, the same id.
     case MENU_IDS.assembleTabs:
       await runAssembleTabs();
+      return;
+    // Also `COMMAND_IDS.pauseYoutube`, the same id.
+    case MENU_IDS.pauseYoutube:
+      await runPauseYoutube();
       return;
     default:
       return;

@@ -82,6 +82,7 @@ describe('shortcutsDescription', () => {
     const mac = shortcutsDescription(true);
     expect(mac).toContain('Option + Shift + S');
     expect(mac).toContain('Option + Shift + A');
+    expect(mac).toContain('Option + Shift + P');
     expect(mac).not.toContain('Alt');
     expect(mac).not.toContain(' - ');
     const other = shortcutsDescription(false);
