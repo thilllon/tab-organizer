@@ -423,6 +423,28 @@ describe('records', () => {
     ).toBe(400);
   });
 
+  it('refuses a body over 4 MiB with 413 and CORS, storing none of it, and accepts one under', async () => {
+    const token = await signIn();
+    const max = 'A'.repeat(1024 * 1024);
+    const make = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ ...sessionRecord(`r${i}`, 1), ciphertext: max }));
+    const over = await call(
+      request('POST', '/v1/records', { token, body: { records: make(4) }, origin: ORIGIN }),
+    );
+    expect(over.status).toBe(413);
+    expect(over.body).toEqual({ error: 'payload_too_large' });
+    expect(over.res.headers.get('Access-Control-Allow-Origin')).toBe(ORIGIN);
+    expect((await get(token)).body.records).toEqual([]);
+    expect((await post(token, make(3))).status).toBe(200);
+  });
+
+  it('refuses a body whose Content-Length is over 4 MiB without reading it', async () => {
+    const token = await signIn();
+    const req = request('POST', '/v1/records', { token, body: { records: [] } });
+    req.headers.set('Content-Length', String(4 * 1024 * 1024 + 1));
+    expect((await call(req)).status).toBe(413);
+  });
+
   it('refuses a body that is not { records: [...] }', async () => {
     const token = await signIn();
     for (const rawBody of ['[]', '{"records":{}}', '{}', 'null', '{"records":[],"x":1}']) {

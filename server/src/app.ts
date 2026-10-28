@@ -3,7 +3,13 @@ import type { VerifyGoogleIdToken } from './google-auth.js';
 import type { Store } from './store.js';
 import { bearerToken, hashToken, mintToken, TOKEN_TTL_MS } from './tokens.js';
 import type { StoredRecord, User } from './types.js';
-import { parseIdToken, parseKeySetup, parseRecordsBody, parseRecordsQuery } from './validation.js';
+import {
+  MAX_BODY_BYTES,
+  parseIdToken,
+  parseKeySetup,
+  parseRecordsBody,
+  parseRecordsQuery,
+} from './validation.js';
 
 /** Everything the router reaches outside itself, injected so tests run without network. */
 export interface Deps {
@@ -22,6 +28,7 @@ type ErrorCode =
   | 'not_found'
   | 'method_not_allowed'
   | 'key_exists'
+  | 'payload_too_large'
   | 'internal';
 
 interface Context {
@@ -52,10 +59,23 @@ function noContent(status = 204): Response {
   return new Response(null, { status, headers: { 'Cache-Control': 'no-store' } });
 }
 
-/** The parsed JSON body, or undefined when it is not JSON at all. */
+// Thrown by readJson for a body over MAX_BODY_BYTES; handle() answers it with a 413.
+class PayloadTooLargeError extends Error {
+  override name = 'PayloadTooLargeError';
+}
+
+/** The parsed JSON body, or undefined when it is not JSON at all. Throws over MAX_BODY_BYTES. */
 async function readJson(request: Request): Promise<unknown> {
+  // Content-Length first, so an honest oversized request is refused without reading it.
+  if (Number(request.headers.get('Content-Length') ?? 0) > MAX_BODY_BYTES) {
+    throw new PayloadTooLargeError();
+  }
+  const text = await request.text();
+  if (new TextEncoder().encode(text).length > MAX_BODY_BYTES) {
+    throw new PayloadTooLargeError();
+  }
   try {
-    return JSON.parse(await request.text());
+    return JSON.parse(text);
   } catch {
     return undefined;
   }
@@ -181,6 +201,9 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
   try {
     response = await route(request, new URL(request.url), deps);
   } catch (err) {
+    if (err instanceof PayloadTooLargeError) {
+      return withCors(error(413, 'payload_too_large'), origin, deps.allowedOrigins, false);
+    }
     // The name only: a message or stack could carry a token, a hash or a record's ciphertext.
     console.error(
       'tabinet-server: request failed',

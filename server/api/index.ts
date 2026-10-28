@@ -1,16 +1,8 @@
 // The Vercel function: every /v1/* request is rewritten here (vercel.json) and handed to the router
 // with its original url.
-import { type Deps, handle } from '../src/app.js';
-import { createProductionDeps } from '../src/production.js';
+import { createServer } from '../src/production.js';
 
-let deps: Deps | undefined;
-
-// Built on first use, not at import, so a missing environment variable fails the request (500)
-// instead of the whole function's cold start.
-function serve(request: Request): Promise<Response> {
-  deps ??= createProductionDeps();
-  return handle(request, deps);
-}
+const serve = createServer();
 
 export const GET = serve;
 export const POST = serve;

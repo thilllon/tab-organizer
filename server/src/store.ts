@@ -53,29 +53,26 @@ function toRecord(row: Record<string, unknown>): StoredRecord {
   };
 }
 
-// One statement, so one transaction: the upsert only overwrites an older row (the WHERE on the
-// conflict branch runs under the row lock, so two writers cannot both win), and when it does not
-// apply, the second half returns the row that stopped it.
+// One statement, so one transaction. It first locks the user's row, so a user's writes run one
+// after another and each takes its seq only after the one before it has committed: the seq order
+// of a user's records is their commit order. Without the lock two writes could take seq 10 and 11
+// and commit 11 first, and a reader that paged past 11 would never see 10. The upsert only
+// overwrites an older row (the WHERE on the conflict branch runs under the row lock, so two
+// writers cannot both win). It returns the new seq, or no row when the write did not apply.
 const APPLY_SQL = `
-WITH applied AS (
-  INSERT INTO records (user_id, kind, id, updated_at, deleted, iv, ciphertext)
-  VALUES ($1, $2, $3, $4, $5, $6, $7)
-  ON CONFLICT (user_id, kind, id) DO UPDATE SET
-    updated_at = EXCLUDED.updated_at,
-    deleted = EXCLUDED.deleted,
-    iv = EXCLUDED.iv,
-    ciphertext = EXCLUDED.ciphertext,
-    seq = nextval('record_seq')
-  WHERE records.updated_at < EXCLUDED.updated_at
-  RETURNING seq
+WITH locked AS (
+  SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE
 )
-SELECT true AS applied, seq, NULL::text AS kind, NULL::text AS id, NULL::bigint AS updated_at,
-  NULL::boolean AS deleted, NULL::text AS iv, NULL::text AS ciphertext
-FROM applied
-UNION ALL
-SELECT false, r.seq, r.kind, r.id, r.updated_at, r.deleted, r.iv, r.ciphertext
-FROM records r
-WHERE r.user_id = $1 AND r.kind = $2 AND r.id = $3 AND NOT EXISTS (SELECT 1 FROM applied)`;
+INSERT INTO records (user_id, kind, id, updated_at, deleted, iv, ciphertext, seq)
+SELECT locked.id, $2, $3, $4, $5, $6, $7, nextval('record_seq') FROM locked
+ON CONFLICT (user_id, kind, id) DO UPDATE SET
+  updated_at = EXCLUDED.updated_at,
+  deleted = EXCLUDED.deleted,
+  iv = EXCLUDED.iv,
+  ciphertext = EXCLUDED.ciphertext,
+  seq = nextval('record_seq')
+WHERE records.updated_at < EXCLUDED.updated_at
+RETURNING seq`;
 
 export function createSqlStore(query: Query): Store {
   return {
@@ -140,23 +137,20 @@ export function createSqlStore(query: Query): Store {
         record.ciphertext,
       ];
       const rows = await query(APPLY_SQL, params);
-      const row = rows[0];
-      if (row?.applied === true) {
-        return { status: 'applied', seq: toNumber(row.seq) };
+      if (rows.length > 0) {
+        return { status: 'applied', seq: toNumber(rows[0].seq) };
       }
-      if (row !== undefined) {
-        return { status: 'stale', current: toRecord(row) };
-      }
-      // Under READ COMMITTED the second half reads the statement's snapshot, which can miss a row
-      // that a concurrent insert committed while the upsert waited on it. Read it again.
-      const again = await query(
+      // A statement of its own, so a fresh snapshot: under READ COMMITTED the upsert's snapshot
+      // predates its wait for the locks, and could show a row older than the one that stopped it.
+      const current = await query(
         `SELECT ${RECORD_COLUMNS} FROM records WHERE user_id = $1 AND kind = $2 AND id = $3`,
         [userId, record.kind, record.id],
       );
-      if (again.length === 0) {
+      if (current.length === 0) {
+        // Only when the user was deleted while the write waited for the lock.
         throw new Error('Record neither applied nor found');
       }
-      return { status: 'stale', current: toRecord(again[0]) };
+      return { status: 'stale', current: toRecord(current[0]) };
     },
 
     async deleteUser(userId) {

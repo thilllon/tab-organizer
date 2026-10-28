@@ -126,6 +126,26 @@ describe('the SQL store on Postgres (PGlite, real migration)', () => {
     }
   });
 
+  it('writes nothing for a user that no longer exists', async () => {
+    const user = await store.upsertUser('a', 'a@example.com');
+    await store.deleteUser(user.id);
+    await expect(store.applyRecord(user.id, record('x', 1))).rejects.toThrow();
+    expect(await query('SELECT count(*)::int AS n FROM records')).toEqual([{ n: 0 }]);
+  });
+
+  it("takes the user's row lock, so a user's writes commit in seq order", async () => {
+    // PGlite has one connection, so two writers cannot really race here: check instead that the
+    // write locks the user's row before it takes a seq.
+    const user = await store.upsertUser('a', 'a@example.com');
+    const seen: string[] = [];
+    const spying = createSqlStore(async (text, params) => {
+      seen.push(text);
+      return query(text, params);
+    });
+    await spying.applyRecord(user.id, record('x', 1));
+    expect(seen[0]).toMatch(/FROM users WHERE id = \$1 FOR NO KEY UPDATE/);
+  });
+
   it('refuses at the database what validation should have caught', async () => {
     const user = await store.upsertUser('a', 'a@example.com');
     await expect(
@@ -135,8 +155,8 @@ describe('the SQL store on Postgres (PGlite, real migration)', () => {
   });
 });
 
-describe('applyRecord when the upsert loses a race', () => {
-  it('reads the winning row again when the statement saw neither its own write nor the row', async () => {
+describe('applyRecord when the write does not apply', () => {
+  it('reads the current row in a statement of its own, after the upsert', async () => {
     const row = {
       kind: 'session',
       id: 'x',
@@ -147,11 +167,18 @@ describe('applyRecord when the upsert loses a race', () => {
       seq: '42',
     };
     const answers: Record<string, unknown>[][] = [[], [row]];
-    const raced = createSqlStore(async () => answers.shift() ?? []);
+    const statements: string[] = [];
+    const raced = createSqlStore(async (text) => {
+      statements.push(text);
+      return answers.shift() ?? [];
+    });
     expect(await raced.applyRecord('u', record('x', 7))).toEqual({
       status: 'stale',
       current: { ...record('x', 7), seq: 42 },
     });
+    expect(statements).toHaveLength(2);
+    expect(statements[0]).toMatch(/FOR NO KEY UPDATE/);
+    expect(statements[1]).toMatch(/^SELECT /);
     await expect(raced.applyRecord('u', record('x', 7))).rejects.toThrow();
   });
 });

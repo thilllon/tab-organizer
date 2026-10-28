@@ -1,6 +1,12 @@
 import { type KeySetup, RECORD_KINDS, type RecordInput, type RecordKind } from './types.js';
 
 export const MAX_RECORDS_PER_REQUEST = 100;
+/**
+ * The largest request body accepted, in bytes (4 MiB). Vercel refuses a body over 4.5 MB before
+ * the function runs, with no CORS headers and no JSON, so the limit a client sizes its batches to
+ * sits below that: up to 100 records and 4 MiB, whichever comes first.
+ */
+export const MAX_BODY_BYTES = 4 * 1024 * 1024;
 /** The longest ciphertext accepted, counted in base64 characters (1 MiB). */
 export const MAX_CIPHERTEXT_CHARS = 1024 * 1024;
 export const MIN_ITERATIONS = 100_000;

@@ -19,7 +19,7 @@ The extension does not talk to it yet (stage 1 of cloud sync: the server only).
 | `src/google-auth.ts`      | Google ID token verification with `jose` against Google's published keys            |
 | `src/tokens.ts`           | Bearer tokens: 32 random bytes, stored only as their sha256                         |
 | `src/cors.ts`             | CORS for the origins in `ALLOWED_ORIGINS` only                                      |
-| `src/production.ts`       | The real dependencies: Neon over HTTP, Google, the clock, `crypto.randomBytes`      |
+| `src/production.ts`       | The real dependencies (Neon, Google, clock, random bytes) and `createServer()`      |
 | `src/migrations.ts`       | Applies `migrations/NNN_*.sql` once each, recorded in `schema_migrations`           |
 | `migrations/001_init.sql` | `users`, `auth_tokens`, `records` and the `record_seq` sequence                     |
 | `scripts/migrate.ts`      | `pnpm --filter tabinet-server migrate`                                              |
@@ -29,7 +29,8 @@ The extension does not talk to it yet (stage 1 of cloud sync: the server only).
 
 JSON, base path `/v1`. Every route but `POST /v1/auth/google` and `OPTIONS` needs
 `Authorization: Bearer <token>`; a missing, unknown or expired token gets 401
-`{"error":"unauthorized"}`. Any bad input gets 400 `{"error":"bad_request"}`.
+`{"error":"unauthorized"}`. Any bad input gets 400 `{"error":"bad_request"}`, a body over 4 MiB
+413 `{"error":"payload_too_large"}`.
 
 | Route                                      | Answer                                                                                        |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------- |
@@ -48,12 +49,16 @@ Limits and rules:
 - A record's `kind` is `session` or `settings`, its `id` matches `[A-Za-z0-9_-]{1,64}`,
   `updatedAt` is a non-negative integer (ms). A live record has an `iv` of 12..32 bytes and a
   non-empty `ciphertext` of at most 1 MiB of base64; a tombstone (`deleted: true`) has both empty.
-- At most 100 records per request, and unknown fields are refused. One bad record refuses the whole
-  request. Vercel caps a request body at 4.5 MB, so a client sends large records in smaller batches.
+- At most 100 records and at most 4 MiB of body per request, whichever comes first, so a client
+  splits its batches by size as well as by count; unknown fields are refused. One bad record
+  refuses the whole request. (Vercel itself refuses a body over 4.5 MB before the function runs,
+  with no CORS headers and no JSON, which the 4 MiB limit keeps a client clear of.)
 - Last writer wins per `(kind, id)`: a write applies only when its `updatedAt` is greater than the
-  stored one; a tie or an older one comes back `stale` with the stored record. Each record is one
-  conditional upsert statement, so concurrent writers cannot lose an update, and every applied
-  write takes a new `seq` from one global sequence.
+  stored one; a tie or an older one comes back `stale` with the stored record, read after the
+  write. Each record is one conditional upsert statement, so concurrent writers cannot lose an
+  update, and every applied write takes a new `seq` from one global sequence. The statement locks
+  the user's row first, so a user's writes commit in `seq` order and paging by `since` never
+  skips one.
 - CORS headers go only to an `Origin` listed in `ALLOWED_ORIGINS`; preflight allows GET, POST, PUT,
   DELETE with `Authorization` and `Content-Type`. Every answer carries `Vary: Origin` and
   `Cache-Control: no-store`.
@@ -71,7 +76,8 @@ pnpm server:test                      # vitest, against PGlite
 
 1. **Create the Vercel project.** In Vercel, "Add New... > Project", import this repository and set
    **Root Directory** to `server`. Framework preset "Other"; no build command. The function runs on
-   the Node.js runtime.
+   the Node.js runtime. Vercel compiles `api/index.ts` with the `typescript` it finds in `server/`,
+   which needs the compiler API that TypeScript 7 no longer ships, so `server/` pins TypeScript 6.
 2. **Add Postgres.** In the project's **Storage** tab, add **Neon** from the Vercel Marketplace and
    connect it to the project. This sets `DATABASE_URL` for every environment.
 3. **Set the environment variables** (Settings > Environment Variables):
