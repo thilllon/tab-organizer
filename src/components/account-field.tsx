@@ -29,7 +29,7 @@ interface AccountFieldProps {
  * Settings > Account: one row for each state of the cloud sync account (`accountState()` in
  * `src/lib/cloud-auth.ts`). Signed out, a Google sign-in button; signed in without a passphrase
  * on the server, a form creating one (typed twice, with the warning that it cannot be
- * recovered); with one on the server but not on this computer, a form entering it; ready, the
+ * recovered); with one on the server but not on this device, a form entering it; ready, the
  * address, Sign out and Delete cloud data. Rendered only when cloud sync is configured.
  */
 export function AccountField({ onNotice, onError }: AccountFieldProps) {
@@ -52,7 +52,7 @@ export function AccountField({ onNotice, onError }: AccountFieldProps) {
     run('cloud sign-in failed', async () => {
       const result = await signIn();
       if (result.outcome === 'signedIn') {
-        cloud.setKeySetup(result.keySetup);
+        cloud.setKeySetup(result.keySetup, result.account.token);
       }
     });
   };
@@ -154,11 +154,12 @@ export function AccountField({ onNotice, onError }: AccountFieldProps) {
           onSubmit={(passphrase) =>
             run('sync passphrase not created', async () => {
               const result = await setUpPassphrase(passphrase);
-              if (result === 'ready') {
+              if (result.outcome === 'ready') {
+                cloud.setKeySetup(result.setup, cloud.account?.token);
                 onNotice(t('settingsAccountReady'));
               } else {
-                // Another computer was first: its passphrase is the one to enter now.
-                cloud.setKeySetup(undefined);
+                // Another device was first: its passphrase is the one to enter now.
+                cloud.setKeySetup(undefined, undefined);
                 onNotice(t('settingsAccountPassphraseExists'));
               }
             })
@@ -256,7 +257,7 @@ interface UnlockFormProps {
   onError(err: unknown): void;
 }
 
-/** The existing passphrase on a new computer; a wrong one is said under the field. */
+/** The existing passphrase on a new device; a wrong one is said under the field. */
 function UnlockForm({ setup, busy, setBusy, onUnlocked, onError }: UnlockFormProps) {
   const [passphrase, setPassphrase] = useState('');
   const [wrong, setWrong] = useState(false);

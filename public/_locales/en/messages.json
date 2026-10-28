@@ -1880,7 +1880,7 @@
     "description": "Heading of the Settings section for signing in to cloud sync. One or two words."
   },
   "settingsAccountDescription": {
-    "message": "Sign in to keep your saved sessions and settings in step across computers. They are encrypted on this computer with a passphrase only you know.",
+    "message": "Sign in to keep your saved sessions and settings in step across devices. They are encrypted on this device with a passphrase only you know.",
     "description": "Explanation under the Account heading in Settings."
   },
   "settingsAccountGoogle": {
@@ -1904,7 +1904,7 @@
     "description": "Label of the Settings row where a new cloud sync passphrase is typed twice."
   },
   "settingsAccountCreatePassphraseHint": {
-    "message": "Everything is encrypted with this passphrase before it leaves this computer. Nobody can recover it for you: if you forget it, the copy in the cloud is lost.",
+    "message": "Everything is encrypted with this passphrase before it leaves this device. Nobody can recover it for you: if you forget it, the copy in the cloud is lost.",
     "description": "Warning under \"Create a sync passphrase\" in Settings. It must say clearly that a forgotten passphrase cannot be recovered and the cloud copy is then lost."
   },
   "settingsAccountPassphrase": {
@@ -1932,15 +1932,15 @@
     "description": "Button that saves a new sync passphrase. Keep it short."
   },
   "settingsAccountPassphraseExists": {
-    "message": "This account already has a sync passphrase, made on another computer. Enter it below.",
-    "description": "Notice when the person tried to create a sync passphrase but another computer had already created one."
+    "message": "This account already has a sync passphrase, made on another device. Enter it below.",
+    "description": "Notice when the person tried to create a sync passphrase but another device had already created one."
   },
   "settingsAccountUnlock": {
     "message": "Enter your sync passphrase",
-    "description": "Label of the Settings row where the existing sync passphrase is typed on a new computer."
+    "description": "Label of the Settings row where the existing sync passphrase is typed on a new device."
   },
   "settingsAccountUnlockHint": {
-    "message": "This account already has a sync passphrase. Enter it to use sync on this computer.",
+    "message": "This account already has a sync passphrase. Enter it to use sync on this device.",
     "description": "Grey hint under \"Enter your sync passphrase\" in Settings."
   },
   "settingsAccountUnlockButton": {
@@ -1952,7 +1952,7 @@
     "description": "Inline error when the typed sync passphrase does not match the account."
   },
   "settingsAccountReady": {
-    "message": "Sync passphrase saved on this computer.",
+    "message": "Sync passphrase saved on this device.",
     "description": "Toast after a sync passphrase was created or entered correctly."
   },
   "settingsAccountReadyHint": {
@@ -1961,10 +1961,10 @@
   },
   "settingsAccountSignOut": {
     "message": "Sign out",
-    "description": "Button in Settings that signs out of cloud sync on this computer. Keep it short."
+    "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
   },
   "settingsAccountSignedOut": {
-    "message": "Signed out. Your sessions on this computer are still here.",
+    "message": "Signed out. Your sessions on this device are still here.",
     "description": "Toast after signing out of cloud sync."
   },
   "settingsAccountDelete": {
@@ -1976,7 +1976,7 @@
     "description": "Title of the dialog that asks before deleting the cloud sync account."
   },
   "settingsAccountDeleteBody": {
-    "message": "This deletes your account and everything stored for it on the sync server. It cannot be undone. The sessions on this computer stay.",
+    "message": "This deletes your account and everything stored for it on the sync server. It cannot be undone. The sessions on this device stay.",
     "description": "Body of the dialog that asks before deleting the cloud sync account."
   },
   "settingsAccountDeleted": {
@@ -1997,7 +1997,7 @@
   },
   "errorCloudSignedOut": {
     "message": "You were signed out. Sign in again.",
-    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this computer."
+    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this device."
   },
   "errorCloudSignInFailed": {
     "message": "Signing in with Google did not work. Try again.",
@@ -2005,7 +2005,7 @@
   },
   "errorCloudDecrypt": {
     "message": "Some synced data could not be decrypted.",
-    "description": "Error when data from the sync server does not decrypt with this computer's sync key."
+    "description": "Error when data from the sync server does not decrypt with this device's sync key."
   },
   "errorCloudBadResponse": {
     "message": "The sync server sent an answer this version cannot read.",

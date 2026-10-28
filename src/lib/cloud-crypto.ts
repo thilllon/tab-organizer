@@ -12,8 +12,15 @@ export const KDF_ITERATIONS = 600_000;
 /** The text encrypted into `check`: decrypting it back proves the passphrase. */
 export const KEY_CHECK_TEXT = 'tabinet-key-check-v1';
 
+/** The PBKDF2 rounds a key setup may ask for (the sync server refuses any other). */
+export const KDF_MIN_ITERATIONS = 100_000;
+export const KDF_MAX_ITERATIONS = 10_000_000;
+/** The salt lengths, in bytes, a key setup may carry (the sync server refuses any other). */
+export const SALT_MIN_BYTES = 16;
+export const SALT_MAX_BYTES = 64;
+
 const SALT_BYTES = 16;
-const IV_BYTES = 12;
+export const IV_BYTES = 12;
 const KEY_BITS = 256;
 
 /** A record that does not decrypt (tampered, cut short, or made with another key). */
@@ -40,6 +47,18 @@ export function fromBase64(text: string): Uint8Array<ArrayBuffer> {
     bytes[index] = binary.charCodeAt(index);
   }
   return bytes;
+}
+
+/** The length in bytes of `text` when it is canonical base64, else `undefined`. Pure. */
+export function base64ByteLength(text: string): number | undefined {
+  if (text.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(text)) {
+    return undefined;
+  }
+  try {
+    return atob(text).length;
+  } catch {
+    return undefined;
+  }
 }
 
 function randomBytes(length: number): Uint8Array<ArrayBuffer> {
@@ -135,6 +154,20 @@ export async function unlockKeySetup(
     return null;
   }
   return toBase64(raw);
+}
+
+/**
+ * Whether `rawKey` (base64) is the key `setup` was made with: the check text decrypts under it.
+ * `false` for anything else, a key that is not base64 included.
+ */
+export async function keyMatchesSetup(rawKey: string, setup: CloudKeySetup): Promise<boolean> {
+  try {
+    const key = await importAesKey(fromBase64(rawKey));
+    const plain = await decryptBytes(key, { iv: setup.checkIv, ciphertext: setup.check });
+    return plain !== null && new TextDecoder().decode(plain) === KEY_CHECK_TEXT;
+  } catch {
+    return false;
+  }
 }
 
 /** `value` as JSON, UTF-8, then AES-GCM under `rawKey` with a fresh 12-byte iv. */

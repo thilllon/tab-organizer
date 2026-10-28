@@ -20,7 +20,7 @@ interface DeleteCloudDataDialogProps {
 
 /**
  * Asks before "Delete cloud data": the account and everything on the sync server go, the
- * sessions on this computer stay, and the copy says both.
+ * sessions on this device stay, and the copy says both.
  */
 export function DeleteCloudDataDialog({
   open,

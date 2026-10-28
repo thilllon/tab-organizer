@@ -1708,7 +1708,7 @@
     "description": "Heading of the Settings section for signing in to cloud sync. One or two words."
   },
   "settingsAccountDescription": {
-    "message": "로그인하면 저장한 세션과 설정을 여러 컴퓨터에서 맞춰 둘 수 있습니다. 데이터는 나만 아는 암호 문구로 이 컴퓨터에서 암호화됩니다.",
+    "message": "로그인하면 저장한 세션과 설정을 여러 기기에서 맞춰 둘 수 있습니다. 데이터는 나만 아는 암호 문구로 이 기기에서 암호화됩니다.",
     "description": "Explanation under the Account heading in Settings."
   },
   "settingsAccountGoogle": {
@@ -1732,7 +1732,7 @@
     "description": "Label of the Settings row where a new cloud sync passphrase is typed twice."
   },
   "settingsAccountCreatePassphraseHint": {
-    "message": "모든 데이터는 이 컴퓨터를 떠나기 전에 이 암호 문구로 암호화됩니다. 누구도 대신 찾아 줄 수 없으므로, 잊어버리면 클라우드에 있는 사본을 잃게 됩니다.",
+    "message": "모든 데이터는 이 기기를 떠나기 전에 이 암호 문구로 암호화됩니다. 누구도 대신 찾아 줄 수 없으므로, 잊어버리면 클라우드에 있는 사본을 잃게 됩니다.",
     "description": "Warning under \"Create a sync passphrase\" in Settings. It must say clearly that a forgotten passphrase cannot be recovered and the cloud copy is then lost."
   },
   "settingsAccountPassphrase": {
@@ -1756,15 +1756,15 @@
     "description": "Button that saves a new sync passphrase. Keep it short."
   },
   "settingsAccountPassphraseExists": {
-    "message": "이 계정에는 다른 컴퓨터에서 만든 동기화 암호 문구가 이미 있습니다. 아래에 입력하세요.",
-    "description": "Notice when the person tried to create a sync passphrase but another computer had already created one."
+    "message": "이 계정에는 다른 기기에서 만든 동기화 암호 문구가 이미 있습니다. 아래에 입력하세요.",
+    "description": "Notice when the person tried to create a sync passphrase but another device had already created one."
   },
   "settingsAccountUnlock": {
     "message": "동기화 암호 문구 입력",
-    "description": "Label of the Settings row where the existing sync passphrase is typed on a new computer."
+    "description": "Label of the Settings row where the existing sync passphrase is typed on a new device."
   },
   "settingsAccountUnlockHint": {
-    "message": "이 계정에는 동기화 암호 문구가 이미 있습니다. 이 컴퓨터에서 동기화를 쓰려면 입력하세요.",
+    "message": "이 계정에는 동기화 암호 문구가 이미 있습니다. 이 기기에서 동기화를 쓰려면 입력하세요.",
     "description": "Grey hint under \"Enter your sync passphrase\" in Settings."
   },
   "settingsAccountUnlockButton": {
@@ -1776,7 +1776,7 @@
     "description": "Inline error when the typed sync passphrase does not match the account."
   },
   "settingsAccountReady": {
-    "message": "동기화 암호 문구를 이 컴퓨터에 저장했습니다.",
+    "message": "동기화 암호 문구를 이 기기에 저장했습니다.",
     "description": "Toast after a sync passphrase was created or entered correctly."
   },
   "settingsAccountReadyHint": {
@@ -1785,10 +1785,10 @@
   },
   "settingsAccountSignOut": {
     "message": "로그아웃",
-    "description": "Button in Settings that signs out of cloud sync on this computer. Keep it short."
+    "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
   },
   "settingsAccountSignedOut": {
-    "message": "로그아웃했습니다. 이 컴퓨터의 세션은 그대로 있습니다.",
+    "message": "로그아웃했습니다. 이 기기의 세션은 그대로 있습니다.",
     "description": "Toast after signing out of cloud sync."
   },
   "settingsAccountDelete": {
@@ -1800,7 +1800,7 @@
     "description": "Title of the dialog that asks before deleting the cloud sync account."
   },
   "settingsAccountDeleteBody": {
-    "message": "계정과 동기화 서버에 저장된 모든 데이터를 삭제합니다. 되돌릴 수 없습니다. 이 컴퓨터의 세션은 남아 있습니다.",
+    "message": "계정과 동기화 서버에 저장된 모든 데이터를 삭제합니다. 되돌릴 수 없습니다. 이 기기의 세션은 남아 있습니다.",
     "description": "Body of the dialog that asks before deleting the cloud sync account."
   },
   "settingsAccountDeleted": {
@@ -1821,7 +1821,7 @@
   },
   "errorCloudSignedOut": {
     "message": "로그아웃되었습니다. 다시 로그인하세요.",
-    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this computer."
+    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this device."
   },
   "errorCloudSignInFailed": {
     "message": "Google 로그인에 실패했습니다. 다시 시도하세요.",
@@ -1829,7 +1829,7 @@
   },
   "errorCloudDecrypt": {
     "message": "동기화된 데이터 일부를 복호화할 수 없습니다.",
-    "description": "Error when data from the sync server does not decrypt with this computer's sync key."
+    "description": "Error when data from the sync server does not decrypt with this device's sync key."
   },
   "errorCloudBadResponse": {
     "message": "동기화 서버가 이 버전이 읽을 수 없는 응답을 보냈습니다.",

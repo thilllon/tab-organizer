@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { me } from '@/lib/cloud-api';
 import {
@@ -6,7 +6,8 @@ import {
   accountState,
   CLOUD_ACCOUNT_KEY,
   CLOUD_SYNC_KEY,
-  loadCloudAccount,
+  keepSyncKeyFor,
+  loadLiveCloudAccount,
   loadSyncKey,
   withCloudAccount,
 } from '@/lib/cloud-auth';
@@ -24,13 +25,17 @@ export interface CloudAccountView {
   error: string | undefined;
   /** Reads everything again (after sign-in, a passphrase, sign-out, or a failure). */
   refresh(): void;
-  /** Records the setup the server just answered with, without asking it again. */
-  setKeySetup(setup: CloudKeySetup | null | undefined): void;
+  /**
+   * Records the setup the server just answered with for the account holding `token`, without
+   * waiting for the next read to ask it again.
+   */
+  setKeySetup(setup: CloudKeySetup | null | undefined, token: string | undefined): void;
 }
 
 /**
- * The cloud sync account as Settings shows it. Reads the stored account and key, asks the server
- * whether a passphrase exists only when this device has none, and follows `cloudAccount` /
+ * The cloud sync account as Settings shows it. Reads the stored account (forgetting an expired
+ * one) and key, asks the server for the account's passphrase setup on every read while signed in
+ * (a 401 signs this device out; a key that does not open the setup is dropped), and follows `cloudAccount` /
  * `cloudSyncKey` in `chrome.storage.onChanged`, so another app tab signing out shows at once.
  * The listener lives in the page and dies with it.
  */
@@ -42,8 +47,17 @@ export function useCloudAccount(): CloudAccountView {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [generation, setGeneration] = useState(0);
+  /** The token the known `keySetup` belongs to: a setup is never shown for another account. */
+  const setupToken = useRef<string | undefined>(undefined);
 
   const refresh = useCallback(() => setGeneration((value) => value + 1), []);
+  const recordKeySetup = useCallback(
+    (setup: CloudKeySetup | null | undefined, token: string | undefined) => {
+      setupToken.current = setup === undefined ? undefined : token;
+      setKeySetup(setup);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!configured) {
@@ -53,24 +67,30 @@ export function useCloudAccount(): CloudAccountView {
     setError(undefined);
     void (async () => {
       try {
-        const [storedAccount, key] = await Promise.all([loadCloudAccount(), loadSyncKey()]);
+        const [storedAccount, key] = await Promise.all([
+          loadLiveCloudAccount(Date.now()),
+          loadSyncKey(),
+        ]);
         if (!live) {
           return;
         }
         setAccount(storedAccount);
         setHasKey(key !== null);
+        if (storedAccount?.token !== setupToken.current) {
+          // Whatever the server said about the passphrase belonged to another account.
+          setupToken.current = undefined;
+          setKeySetup(undefined);
+        }
         setLoaded(true);
         if (storedAccount === null) {
-          // Whatever the server said about the passphrase belonged to the account now gone.
-          setKeySetup(undefined);
-          return;
-        }
-        if (key !== null) {
           return;
         }
         const answer = await withCloudAccount((current) => me(current.token));
+        const kept = await keepSyncKeyFor(answer.keySetup);
         if (live) {
+          setupToken.current = storedAccount.token;
           setKeySetup(answer.keySetup);
+          setHasKey(kept);
         }
       } catch (err: unknown) {
         if (live) {
@@ -103,5 +123,5 @@ export function useCloudAccount(): CloudAccountView {
       ? 'unknown'
       : 'unconfigured';
 
-  return { state, account, keySetup, error, refresh, setKeySetup };
+  return { state, account, keySetup, error, refresh, setKeySetup: recordKeySetup };
 }

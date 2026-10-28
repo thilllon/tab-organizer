@@ -7,9 +7,11 @@ import {
   CLOUD_SYNC_KEY,
   deleteCloudData,
   googleAuthUrl,
+  keepSyncKeyFor,
   idTokenFromRedirect,
   jwtPayload,
   loadCloudAccount,
+  loadLiveCloudAccount,
   loadSyncKey,
   newPassphraseProblem,
   setUpPassphrase,
@@ -82,8 +84,13 @@ describe('accountState', () => {
   it('is needsPassphrase, needsUnlock or ready by the server setup and the local key', () => {
     expect(accountState({ ...base, keySetup: null })).toBe('needsPassphrase');
     expect(accountState({ ...base, keySetup: SETUP })).toBe('needsUnlock');
-    expect(accountState({ ...base, hasLocalKey: true, keySetup: undefined })).toBe('ready');
+    expect(accountState({ ...base, hasLocalKey: true, keySetup: SETUP })).toBe('ready');
     expect(accountState({ ...base, keySetup: undefined })).toBe('unknown');
+  });
+
+  it('never trusts a local key before the server setup is known, or with none there', () => {
+    expect(accountState({ ...base, hasLocalKey: true, keySetup: undefined })).toBe('unknown');
+    expect(accountState({ ...base, hasLocalKey: true, keySetup: null })).toBe('needsPassphrase');
   });
 });
 
@@ -172,6 +179,45 @@ describe('signIn', () => {
     expect(getChromeFake().state.local.has(CLOUD_ACCOUNT_KEY)).toBe(false);
   });
 
+  it('drops a key left from an expired account when another account signs in', async () => {
+    const { rawKey } = await createKeySetup('account A', 100_000);
+    await chrome.storage.local.set({
+      [CLOUD_ACCOUNT_KEY]: { ...ACCOUNT, expiresAt: 1 },
+      [CLOUD_SYNC_KEY]: rawKey,
+    });
+    googleAnswers((sent) => sent);
+    const b = { token: 'tok-b', expiresAt: ACCOUNT.expiresAt, email: 'b@b.c', keySetup: null };
+    const result = await signIn({ fetch: fakeFetch(jsonResponse(200, b)).fetch });
+    expect(result).toMatchObject({ outcome: 'signedIn', keySetup: null });
+    expect(await loadSyncKey()).toBeNull();
+    expect(
+      accountState({
+        configured: true,
+        account: await loadCloudAccount(),
+        hasLocalKey: (await loadSyncKey()) !== null,
+        keySetup: null,
+        now: Date.now(),
+      }),
+    ).toBe('needsPassphrase');
+  });
+
+  it("drops a key that does not open the account's setup, and keeps one that does", async () => {
+    const a = await createKeySetup('passphrase A', 100_000);
+    const again = await createKeySetup('passphrase made again', 100_000);
+    googleAnswers((sent) => sent);
+    const answer = (keySetup: unknown) =>
+      fakeFetch(
+        jsonResponse(200, { token: 'tok', expiresAt: ACCOUNT.expiresAt, email: 'a@b.c', keySetup }),
+      );
+
+    await chrome.storage.local.set({ [CLOUD_SYNC_KEY]: a.rawKey });
+    await signIn({ fetch: answer(a.setup).fetch });
+    expect(await loadSyncKey()).toBe(a.rawKey);
+
+    await signIn({ fetch: answer(again.setup).fetch });
+    expect(await loadSyncKey()).toBeNull();
+  });
+
   it('explains any other failure of the sign-in window', async () => {
     getChromeFake().state.authFlowAnswer = new Error('Authorization page could not be loaded.');
     const err: unknown = await signIn().catch((e: unknown) => e);
@@ -228,6 +274,30 @@ describe('signOut / deleteCloudData', () => {
   });
 });
 
+describe('loadLiveCloudAccount / keepSyncKeyFor', () => {
+  it('forgets an expired account together with its key', async () => {
+    await chrome.storage.local.set({ [CLOUD_ACCOUNT_KEY]: ACCOUNT, [CLOUD_SYNC_KEY]: 'a2V5' });
+    expect(await loadLiveCloudAccount(ACCOUNT.expiresAt - 1)).toEqual(ACCOUNT);
+    expect(await loadSyncKey()).toBe('a2V5');
+    expect(await loadLiveCloudAccount(ACCOUNT.expiresAt)).toBeNull();
+    expect(await loadCloudAccount()).toBeNull();
+    expect(await loadSyncKey()).toBeNull();
+  });
+
+  it('keeps the key only for the setup it opens', async () => {
+    const { setup, rawKey } = await createKeySetup('the one', 1000);
+    expect(await keepSyncKeyFor(setup)).toBe(false);
+    await chrome.storage.local.set({ [CLOUD_SYNC_KEY]: rawKey });
+    expect(await keepSyncKeyFor(setup)).toBe(true);
+    expect(await loadSyncKey()).toBe(rawKey);
+    expect(await keepSyncKeyFor(null)).toBe(false);
+    expect(await loadSyncKey()).toBeNull();
+    await chrome.storage.local.set({ [CLOUD_SYNC_KEY]: 'not base64!' });
+    expect(await keepSyncKeyFor(setup)).toBe(false);
+    expect(await loadSyncKey()).toBeNull();
+  });
+});
+
 describe('withCloudAccount', () => {
   it('forgets the stored account on a 401 and throws it on', async () => {
     await chrome.storage.local.set({ [CLOUD_ACCOUNT_KEY]: ACCOUNT, [CLOUD_SYNC_KEY]: 'a2V5' });
@@ -260,19 +330,18 @@ describe('the sync passphrase', () => {
 
   it('creates a setup on the server and keeps the key here', async () => {
     const server = fakeFetch(jsonResponse(201));
-    expect(await setUpPassphrase('long enough', { fetch: server.fetch, iterations: 1000 })).toBe(
-      'ready',
-    );
+    const result = await setUpPassphrase('long enough', { fetch: server.fetch, iterations: 1000 });
     const sent = server.requests[0]?.body;
+    expect(result).toEqual({ outcome: 'ready', setup: sent });
     expect(sent).toMatchObject({ kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 1000 } });
     expect(JSON.stringify(sent)).not.toContain('long enough');
     expect(await loadSyncKey()).toMatch(/^[A-Za-z0-9+/]{43}=$/);
   });
 
-  it('keeps no key when another computer created a passphrase first', async () => {
+  it('keeps no key when another device created a passphrase first', async () => {
     const server = fakeFetch(jsonResponse(409, { error: 'key_exists' }));
-    expect(await setUpPassphrase('long enough', { fetch: server.fetch, iterations: 1000 })).toBe(
-      'exists',
+    expect(await setUpPassphrase('long enough', { fetch: server.fetch, iterations: 1000 })).toEqual(
+      { outcome: 'exists' },
     );
     expect(await loadSyncKey()).toBeNull();
   });
@@ -283,5 +352,25 @@ describe('the sync passphrase', () => {
     expect(await loadSyncKey()).toBeNull();
     expect(await unlockWithPassphrase(setup, 'the right one')).toBe(true);
     expect(await loadSyncKey()).toBe(rawKey);
+  });
+
+  it('keeps no key when the account was signed out while the key was derived', async () => {
+    const { setup } = await createKeySetup('the right one', 1000);
+    const unlocking = unlockWithPassphrase(setup, 'the right one');
+    const signedOut = chrome.storage.local.remove(CLOUD_ACCOUNT_KEY);
+    await expect(unlocking).rejects.toBeInstanceOf(CloudUnauthorizedError);
+    await signedOut;
+    expect(await loadSyncKey()).toBeNull();
+  });
+
+  it('keeps no key when another account signed in while the setup was being stored', async () => {
+    const server = fakeFetch(() => {
+      void chrome.storage.local.set({ [CLOUD_ACCOUNT_KEY]: { ...ACCOUNT, token: 'tok-b' } });
+      return jsonResponse(201);
+    });
+    await expect(
+      setUpPassphrase('long enough', { fetch: server.fetch, iterations: 1000 }),
+    ).rejects.toBeInstanceOf(CloudUnauthorizedError);
+    expect(await loadSyncKey()).toBeNull();
   });
 });

@@ -1716,7 +1716,7 @@
     "description": "Heading of the Settings section for signing in to cloud sync. One or two words."
   },
   "settingsAccountDescription": {
-    "message": "ログインすると、保存したセッションと設定を複数のパソコンでそろえられます。データは自分だけが知るパスフレーズで、このパソコン上で暗号化されます。",
+    "message": "ログインすると、保存したセッションと設定を複数の端末でそろえられます。データは自分だけが知るパスフレーズで、この端末上で暗号化されます。",
     "description": "Explanation under the Account heading in Settings."
   },
   "settingsAccountGoogle": {
@@ -1740,7 +1740,7 @@
     "description": "Label of the Settings row where a new cloud sync passphrase is typed twice."
   },
   "settingsAccountCreatePassphraseHint": {
-    "message": "すべてのデータは、このパソコンを出る前にこのパスフレーズで暗号化されます。誰も代わりに復元できないため、忘れるとクラウド上のコピーは失われます。",
+    "message": "すべてのデータは、この端末を出る前にこのパスフレーズで暗号化されます。誰も代わりに復元できないため、忘れるとクラウド上のコピーは失われます。",
     "description": "Warning under \"Create a sync passphrase\" in Settings. It must say clearly that a forgotten passphrase cannot be recovered and the cloud copy is then lost."
   },
   "settingsAccountPassphrase": {
@@ -1764,15 +1764,15 @@
     "description": "Button that saves a new sync passphrase. Keep it short."
   },
   "settingsAccountPassphraseExists": {
-    "message": "このアカウントには、別のパソコンで作成した同期パスフレーズがすでにあります。下に入力してください。",
-    "description": "Notice when the person tried to create a sync passphrase but another computer had already created one."
+    "message": "このアカウントには、別の端末で作成した同期パスフレーズがすでにあります。下に入力してください。",
+    "description": "Notice when the person tried to create a sync passphrase but another device had already created one."
   },
   "settingsAccountUnlock": {
     "message": "同期パスフレーズを入力",
-    "description": "Label of the Settings row where the existing sync passphrase is typed on a new computer."
+    "description": "Label of the Settings row where the existing sync passphrase is typed on a new device."
   },
   "settingsAccountUnlockHint": {
-    "message": "このアカウントには同期パスフレーズがすでにあります。このパソコンで同期を使うには入力してください。",
+    "message": "このアカウントには同期パスフレーズがすでにあります。この端末で同期を使うには入力してください。",
     "description": "Grey hint under \"Enter your sync passphrase\" in Settings."
   },
   "settingsAccountUnlockButton": {
@@ -1784,7 +1784,7 @@
     "description": "Inline error when the typed sync passphrase does not match the account."
   },
   "settingsAccountReady": {
-    "message": "同期パスフレーズをこのパソコンに保存しました。",
+    "message": "同期パスフレーズをこの端末に保存しました。",
     "description": "Toast after a sync passphrase was created or entered correctly."
   },
   "settingsAccountReadyHint": {
@@ -1793,10 +1793,10 @@
   },
   "settingsAccountSignOut": {
     "message": "ログアウト",
-    "description": "Button in Settings that signs out of cloud sync on this computer. Keep it short."
+    "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
   },
   "settingsAccountSignedOut": {
-    "message": "ログアウトしました。このパソコンのセッションはそのまま残っています。",
+    "message": "ログアウトしました。この端末のセッションはそのまま残っています。",
     "description": "Toast after signing out of cloud sync."
   },
   "settingsAccountDelete": {
@@ -1808,7 +1808,7 @@
     "description": "Title of the dialog that asks before deleting the cloud sync account."
   },
   "settingsAccountDeleteBody": {
-    "message": "アカウントと、同期サーバーに保存されたすべてのデータを削除します。元に戻せません。このパソコンのセッションは残ります。",
+    "message": "アカウントと、同期サーバーに保存されたすべてのデータを削除します。元に戻せません。この端末のセッションは残ります。",
     "description": "Body of the dialog that asks before deleting the cloud sync account."
   },
   "settingsAccountDeleted": {
@@ -1829,7 +1829,7 @@
   },
   "errorCloudSignedOut": {
     "message": "ログアウトされました。もう一度ログインしてください。",
-    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this computer."
+    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this device."
   },
   "errorCloudSignInFailed": {
     "message": "Google でのログインに失敗しました。もう一度お試しください。",
@@ -1837,7 +1837,7 @@
   },
   "errorCloudDecrypt": {
     "message": "同期されたデータの一部を復号できませんでした。",
-    "description": "Error when data from the sync server does not decrypt with this computer's sync key."
+    "description": "Error when data from the sync server does not decrypt with this device's sync key."
   },
   "errorCloudBadResponse": {
     "message": "同期サーバーから、このバージョンでは読めない応答が届きました。",

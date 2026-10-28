@@ -14,7 +14,7 @@ import {
   putKeys,
 } from '@/lib/cloud-api';
 import { cloudSyncConfig } from '@/lib/cloud-config';
-import { createKeySetup, toBase64, unlockKeySetup } from '@/lib/cloud-crypto';
+import { createKeySetup, keyMatchesSetup, toBase64, unlockKeySetup } from '@/lib/cloud-crypto';
 import { ExplainedError } from '@/lib/error-message';
 import { isRecord } from '@/lib/import-guards';
 import type { CloudAccount, CloudKeySetup } from '@/types';
@@ -49,8 +49,9 @@ export function isCloudAccount(value: unknown): value is CloudAccount {
 
 /**
  * The state for what is known: whether sync is configured, the stored account, whether this device
- * holds the key, and the server's key setup (`undefined` while it is not known yet, which only
- * matters when the device has no key). Pure.
+ * holds a key for the server's setup, and that setup (`undefined` while it is not known yet).
+ * 'ready' needs both halves: a setup on the server and its key here, so a key is never trusted
+ * before the server's setup is known (`keepSyncKeyFor()` drops one that does not open it). Pure.
  */
 export function accountState(input: {
   configured: boolean;
@@ -65,13 +66,13 @@ export function accountState(input: {
   if (input.account === null || input.account.expiresAt <= input.now) {
     return 'signedOut';
   }
-  if (input.hasLocalKey) {
-    return 'ready';
-  }
   if (input.keySetup === undefined) {
     return 'unknown';
   }
-  return input.keySetup === null ? 'needsPassphrase' : 'needsUnlock';
+  if (input.keySetup === null) {
+    return 'needsPassphrase';
+  }
+  return input.hasLocalKey ? 'ready' : 'needsUnlock';
 }
 
 /** Why a new passphrase is refused, or `null` when it is fine. Pure. */
@@ -161,6 +162,49 @@ export async function forgetCloudAccount(): Promise<void> {
   await chrome.storage.local.remove([CLOUD_ACCOUNT_KEY, CLOUD_SYNC_KEY]);
 }
 
+/**
+ * The stored account while its token is still good. An expired one is forgotten, together with
+ * the key, so no key outlives the account it was entered for.
+ */
+export async function loadLiveCloudAccount(now: number): Promise<CloudAccount | null> {
+  const account = await loadCloudAccount();
+  if (account !== null && account.expiresAt <= now) {
+    await forgetCloudAccount();
+    return null;
+  }
+  return account;
+}
+
+/**
+ * Keeps the key on this device only when it opens `setup`, the account's setup on the server:
+ * with no setup there, or one made with another passphrase (another account, or a passphrase
+ * created again after the cloud data was deleted), the key is removed. Whether a key is kept.
+ */
+export async function keepSyncKeyFor(setup: CloudKeySetup | null): Promise<boolean> {
+  const rawKey = await loadSyncKey();
+  if (rawKey === null) {
+    return false;
+  }
+  if (setup !== null && (await keyMatchesSetup(rawKey, setup))) {
+    return true;
+  }
+  await chrome.storage.local.remove(CLOUD_SYNC_KEY);
+  return false;
+}
+
+/**
+ * Stores the key for the account whose `token` it was made under, unless that account was
+ * signed out (or replaced) meanwhile, in another tab say; then nothing is stored and the
+ * request reads as signed out.
+ */
+async function storeSyncKeyFor(token: string, rawKey: string): Promise<void> {
+  const current = await loadCloudAccount();
+  if (current === null || current.token !== token) {
+    throw new CloudUnauthorizedError();
+  }
+  await chrome.storage.local.set({ [CLOUD_SYNC_KEY]: rawKey });
+}
+
 async function requireAccount(): Promise<CloudAccount> {
   const account = await loadCloudAccount();
   if (account === null) {
@@ -230,6 +274,9 @@ export async function signIn(options: CloudApiOptions = {}): Promise<SignInOutco
     expiresAt: result.expiresAt,
     email: result.email,
   };
+  // A key left from an earlier sign-in (another account, or this one before its passphrase was
+  // made again) must not carry over: it stays only when it opens this account's setup.
+  await keepSyncKeyFor(result.keySetup);
   await chrome.storage.local.set({ [CLOUD_ACCOUNT_KEY]: account });
   return { outcome: 'signedIn', account, keySetup: result.keySetup };
 }
@@ -258,32 +305,44 @@ export async function deleteCloudData(options: CloudApiOptions = {}): Promise<vo
 // The sync passphrase
 // ---------------------------------------------------------------------------
 
+export type SetUpPassphraseOutcome =
+  | { outcome: 'ready'; setup: CloudKeySetup }
+  | { outcome: 'exists' };
+
 /**
- * Sets up a new passphrase: the key setup goes to the server and the key is kept here. `'exists'`
- * when another device set one up first; nothing is kept then, and the person enters that one.
+ * Sets up a new passphrase: the key setup goes to the server and the key is kept here (`'ready'`,
+ * with the setup now on the server). `'exists'` when another device set one up first; nothing is
+ * kept then, and the person enters that one. Signed out meanwhile, the key is not kept either.
  */
 export async function setUpPassphrase(
   passphrase: string,
   options: CloudApiOptions & { iterations?: number } = {},
-): Promise<'ready' | 'exists'> {
+): Promise<SetUpPassphraseOutcome> {
   const { setup, rawKey } = await createKeySetup(passphrase, options.iterations);
-  const result = await withCloudAccount((account) => putKeys(account.token, setup, options));
+  const { result, token } = await withCloudAccount(async (account) => ({
+    result: await putKeys(account.token, setup, options),
+    token: account.token,
+  }));
   if (result === 'exists') {
-    return 'exists';
+    return { outcome: 'exists' };
   }
-  await chrome.storage.local.set({ [CLOUD_SYNC_KEY]: rawKey });
-  return 'ready';
+  await storeSyncKeyFor(token, rawKey);
+  return { outcome: 'ready', setup };
 }
 
-/** Tries `passphrase` against the server's setup and keeps the key when it is right. */
+/**
+ * Tries `passphrase` against the server's setup and keeps the key when it is right, unless the
+ * account was signed out (or replaced) while the key was derived.
+ */
 export async function unlockWithPassphrase(
   setup: CloudKeySetup,
   passphrase: string,
 ): Promise<boolean> {
+  const { token } = await requireAccount();
   const rawKey = await unlockKeySetup(setup, passphrase);
   if (rawKey === null) {
     return false;
   }
-  await chrome.storage.local.set({ [CLOUD_SYNC_KEY]: rawKey });
+  await storeSyncKeyFor(token, rawKey);
   return true;
 }

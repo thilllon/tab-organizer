@@ -1880,7 +1880,7 @@
     "description": "Heading of the Settings section for signing in to cloud sync. One or two words."
   },
   "settingsAccountDescription": {
-    "message": "Inicia sesión para mantener tus sesiones guardadas y tus ajustes al día en varios ordenadores. Se cifran en este ordenador con una frase de contraseña que solo tú conoces.",
+    "message": "Inicia sesión para mantener tus sesiones guardadas y tus ajustes al día en varios dispositivos. Se cifran en este dispositivo con una frase de contraseña que solo tú conoces.",
     "description": "Explanation under the Account heading in Settings."
   },
   "settingsAccountGoogle": {
@@ -1904,7 +1904,7 @@
     "description": "Label of the Settings row where a new cloud sync passphrase is typed twice."
   },
   "settingsAccountCreatePassphraseHint": {
-    "message": "Todo se cifra con esta frase de contraseña antes de salir de este ordenador. Nadie puede recuperarla por ti: si la olvidas, la copia en la nube se pierde.",
+    "message": "Todo se cifra con esta frase de contraseña antes de salir de este dispositivo. Nadie puede recuperarla por ti: si la olvidas, la copia en la nube se pierde.",
     "description": "Warning under \"Create a sync passphrase\" in Settings. It must say clearly that a forgotten passphrase cannot be recovered and the cloud copy is then lost."
   },
   "settingsAccountPassphrase": {
@@ -1932,15 +1932,15 @@
     "description": "Button that saves a new sync passphrase. Keep it short."
   },
   "settingsAccountPassphraseExists": {
-    "message": "Esta cuenta ya tiene una frase de contraseña de sincronización, creada en otro ordenador. Escríbela abajo.",
-    "description": "Notice when the person tried to create a sync passphrase but another computer had already created one."
+    "message": "Esta cuenta ya tiene una frase de contraseña de sincronización, creada en otro dispositivo. Escríbela abajo.",
+    "description": "Notice when the person tried to create a sync passphrase but another device had already created one."
   },
   "settingsAccountUnlock": {
     "message": "Escribe tu frase de contraseña de sincronización",
-    "description": "Label of the Settings row where the existing sync passphrase is typed on a new computer."
+    "description": "Label of the Settings row where the existing sync passphrase is typed on a new device."
   },
   "settingsAccountUnlockHint": {
-    "message": "Esta cuenta ya tiene una frase de contraseña de sincronización. Escríbela para usar la sincronización en este ordenador.",
+    "message": "Esta cuenta ya tiene una frase de contraseña de sincronización. Escríbela para usar la sincronización en este dispositivo.",
     "description": "Grey hint under \"Enter your sync passphrase\" in Settings."
   },
   "settingsAccountUnlockButton": {
@@ -1952,7 +1952,7 @@
     "description": "Inline error when the typed sync passphrase does not match the account."
   },
   "settingsAccountReady": {
-    "message": "Frase de contraseña de sincronización guardada en este ordenador.",
+    "message": "Frase de contraseña de sincronización guardada en este dispositivo.",
     "description": "Toast after a sync passphrase was created or entered correctly."
   },
   "settingsAccountReadyHint": {
@@ -1961,10 +1961,10 @@
   },
   "settingsAccountSignOut": {
     "message": "Cerrar sesión",
-    "description": "Button in Settings that signs out of cloud sync on this computer. Keep it short."
+    "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
   },
   "settingsAccountSignedOut": {
-    "message": "Sesión cerrada. Tus sesiones de este ordenador siguen aquí.",
+    "message": "Sesión cerrada. Tus sesiones de este dispositivo siguen aquí.",
     "description": "Toast after signing out of cloud sync."
   },
   "settingsAccountDelete": {
@@ -1976,7 +1976,7 @@
     "description": "Title of the dialog that asks before deleting the cloud sync account."
   },
   "settingsAccountDeleteBody": {
-    "message": "Se eliminarán tu cuenta y todo lo guardado para ella en el servidor de sincronización. No se puede deshacer. Las sesiones de este ordenador se quedan.",
+    "message": "Se eliminarán tu cuenta y todo lo guardado para ella en el servidor de sincronización. No se puede deshacer. Las sesiones de este dispositivo se quedan.",
     "description": "Body of the dialog that asks before deleting the cloud sync account."
   },
   "settingsAccountDeleted": {
@@ -1997,7 +1997,7 @@
   },
   "errorCloudSignedOut": {
     "message": "Se cerró tu sesión. Vuelve a iniciar sesión.",
-    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this computer."
+    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this device."
   },
   "errorCloudSignInFailed": {
     "message": "No se pudo iniciar sesión con Google. Inténtalo de nuevo.",
@@ -2005,7 +2005,7 @@
   },
   "errorCloudDecrypt": {
     "message": "No se pudieron descifrar algunos datos sincronizados.",
-    "description": "Error when data from the sync server does not decrypt with this computer's sync key."
+    "description": "Error when data from the sync server does not decrypt with this device's sync key."
   },
   "errorCloudBadResponse": {
     "message": "El servidor de sincronización envió una respuesta que esta versión no puede leer.",

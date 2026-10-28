@@ -6,6 +6,14 @@
  * Nothing here logs a token or a ciphertext.
  */
 import { cloudSyncConfig } from '@/lib/cloud-config';
+import {
+  base64ByteLength,
+  IV_BYTES,
+  KDF_MAX_ITERATIONS,
+  KDF_MIN_ITERATIONS,
+  SALT_MAX_BYTES,
+  SALT_MIN_BYTES,
+} from '@/lib/cloud-crypto';
 import { ExplainedError } from '@/lib/error-message';
 import { isRecord } from '@/lib/import-guards';
 import type { CloudKeySetup, CloudRecord, CloudRecordKind, CloudRecordWithSeq } from '@/types';
@@ -66,18 +74,33 @@ function isCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
+function byteLength(value: unknown): number | undefined {
+  return isString(value) ? base64ByteLength(value) : undefined;
+}
+
+/**
+ * A key setup within the bounds the server itself enforces on `PUT /v1/keys`: 100,000 to
+ * 10,000,000 PBKDF2 rounds, a 16 to 64 byte salt, a 12-byte iv and a non-empty check, all
+ * base64. Anything else never reaches PBKDF2, where a huge round count would hang the page.
+ */
 export function isCloudKeySetup(value: unknown): value is CloudKeySetup {
   if (!isRecord(value) || !isRecord(value.kdf)) {
     return false;
   }
+  const salt = byteLength(value.salt);
+  const check = byteLength(value.check);
   return (
     value.kdf.name === 'PBKDF2' &&
     value.kdf.hash === 'SHA-256' &&
     isCount(value.kdf.iterations) &&
-    value.kdf.iterations > 0 &&
-    isString(value.salt) &&
-    isString(value.check) &&
-    isString(value.checkIv)
+    value.kdf.iterations >= KDF_MIN_ITERATIONS &&
+    value.kdf.iterations <= KDF_MAX_ITERATIONS &&
+    salt !== undefined &&
+    salt >= SALT_MIN_BYTES &&
+    salt <= SALT_MAX_BYTES &&
+    check !== undefined &&
+    check > 0 &&
+    byteLength(value.checkIv) === IV_BYTES
   );
 }
 
@@ -215,10 +238,18 @@ export async function authGoogle(
   options: CloudApiOptions = {},
 ): Promise<CloudSignInResult> {
   const route = 'POST /v1/auth/google';
-  const body = await json(
-    await send({ method: 'POST', path: '/v1/auth/google', body: { idToken } }, options),
-    route,
-  );
+  let response: Response;
+  try {
+    response = await send({ method: 'POST', path: '/v1/auth/google', body: { idToken } }, options);
+  } catch (err: unknown) {
+    // No bearer token is sent here: a 401 is the server refusing the Google ID token, so the
+    // sign-in failed; it is not "you were signed out".
+    if (err instanceof CloudUnauthorizedError) {
+      throw new ExplainedError(`${route}: HTTP 401 (ID token refused)`, 'errorCloudSignInFailed');
+    }
+    throw err;
+  }
+  const body = await json(response, route);
   if (!isRecord(body) || !isString(body.token) || !isString(body.email)) {
     throw badResponse(route);
   }

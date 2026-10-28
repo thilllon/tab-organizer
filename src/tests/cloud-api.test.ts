@@ -6,6 +6,7 @@ import {
   CloudUnauthorizedError,
   deleteAccount,
   getRecords,
+  isCloudKeySetup,
   logout,
   me,
   postRecords,
@@ -89,6 +90,44 @@ describe('authGoogle', () => {
     const server = fakeFetch(jsonResponse(200, { token: 'tok', email: 'a@b.c' }));
     const err: unknown = await authGoogle('x', { fetch: server.fetch }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ExplainedError);
+    expect(errorMessage(err)).toBe(t('errorCloudBadResponse'));
+  });
+
+  it('explains a 401 as a failed sign-in, not as being signed out', async () => {
+    const server = fakeFetch(jsonResponse(401, { error: 'invalid_id_token' }));
+    const err: unknown = await authGoogle('x', { fetch: server.fetch }).catch((e: unknown) => e);
+    expect(err).not.toBeInstanceOf(CloudUnauthorizedError);
+    expect(errorMessage(err)).toBe(t('errorCloudSignInFailed'));
+  });
+});
+
+describe('isCloudKeySetup', () => {
+  const withKdf = (iterations: number) => ({ ...SETUP, kdf: { ...SETUP.kdf, iterations } });
+
+  it('accepts a setup within the bounds the server enforces', () => {
+    expect(isCloudKeySetup(SETUP)).toBe(true);
+    expect(isCloudKeySetup(withKdf(100_000))).toBe(true);
+    expect(isCloudKeySetup(withKdf(10_000_000))).toBe(true);
+  });
+
+  it('refuses a round count PBKDF2 should never be asked for', () => {
+    expect(isCloudKeySetup(withKdf(1000))).toBe(false);
+    expect(isCloudKeySetup(withKdf(10_000_001))).toBe(false);
+    expect(isCloudKeySetup(withKdf(Number.MAX_SAFE_INTEGER))).toBe(false);
+  });
+
+  it('refuses text that is not base64, a short or long salt, and an iv that is not 12 bytes', () => {
+    expect(isCloudKeySetup({ ...SETUP, salt: 'not base64!' })).toBe(false);
+    expect(isCloudKeySetup({ ...SETUP, salt: btoa('x'.repeat(15)) })).toBe(false);
+    expect(isCloudKeySetup({ ...SETUP, salt: btoa('x'.repeat(65)) })).toBe(false);
+    expect(isCloudKeySetup({ ...SETUP, check: '' })).toBe(false);
+    expect(isCloudKeySetup({ ...SETUP, check: 'Y2hlY2s' })).toBe(false);
+    expect(isCloudKeySetup({ ...SETUP, checkIv: btoa('x'.repeat(16)) })).toBe(false);
+  });
+
+  it('makes such an answer a bad response before anything is derived', async () => {
+    const server = fakeFetch(jsonResponse(200, { email: 'a@b.c', keySetup: withKdf(2 ** 52) }));
+    const err: unknown = await me('tok', { fetch: server.fetch }).catch((e: unknown) => e);
     expect(errorMessage(err)).toBe(t('errorCloudBadResponse'));
   });
 });
