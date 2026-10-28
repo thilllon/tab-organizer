@@ -2,16 +2,16 @@ import type { SiteCopy } from './site-copy';
 
 export const en: SiteCopy = {
   meta: {
-    homeTitle: 'Tab Organizer - sort, group and save your Chrome tabs',
+    homeTitle: 'Tabinet - sort, group and save your Chrome tabs',
     homeDescription:
       'A Chrome extension that sorts and groups every tab in one click, handles duplicates, and saves whole windows as sessions you can restore. Free, no account, nothing leaves your device.',
-    supportTitle: 'Support - Tab Organizer',
+    supportTitle: 'Support - Tabinet',
     supportDescription:
-      'Answers to common questions about Tab Organizer, and how to report a problem or ask for a feature.',
-    privacyTitle: 'Privacy policy - Tab Organizer',
+      'Answers to common questions about Tabinet, and how to report a problem or ask for a feature.',
+    privacyTitle: 'Privacy policy - Tabinet',
     privacyDescription:
-      'Tab Organizer collects nothing and makes no network requests. What it stores, where, and for how long.',
-    ogImageAlt: 'The Tab Organizer page with a saved session of two windows and their tab groups',
+      'Tabinet collects nothing and makes no network requests. What it stores, where, and for how long.',
+    ogImageAlt: 'The Tabinet page with a saved session of two windows and their tab groups',
   },
   nav: {
     home: 'Home',
@@ -31,9 +31,9 @@ export const en: SiteCopy = {
   hero: {
     eyebrow: 'Extension for Chrome',
     title: 'One click, and every tab falls into place.',
-    lead: 'Tab Organizer sorts and groups the tabs in your window, clears out duplicates, and saves whole windows as sessions you can bring back later. Everything stays on your computer.',
+    lead: 'Tabinet sorts and groups the tabs in your window, clears out duplicates, and saves whole windows as sessions you can bring back later. Everything stays on your computer.',
     imageAlt:
-      'The Tab Organizer page: saved sessions in the left column, and a session of two windows with its pinned tabs and tab groups on the right',
+      'The Tabinet page: saved sessions in the left column, and a session of two windows with its pinned tabs and tab groups on the right',
     languages:
       'The extension itself comes in English, 한국어, Español and 日本語. It follows Chrome’s language, or the one you pick in its Settings.',
   },
@@ -64,19 +64,19 @@ export const en: SiteCopy = {
         'Big sessions load lazily, with progress and a Cancel button',
         'Restoring never deletes the saved session',
       ],
-      alt: 'Tab Organizer asking "Restore 112 tabs?" with the option to load tabs lazily, over a saved session of three windows',
+      alt: 'Tabinet asking "Restore 112 tabs?" with the option to load tabs lazily, over a saved session of three windows',
     },
     {
       shot: 'history',
       kicker: 'Automatic snapshots',
       title: 'A safety net for crashes and closed windows',
-      body: 'Every 5 minutes, and only when something changed, Tab Organizer keeps a snapshot of all your open windows. After Chrome restarts, the last one is marked as recovered so you can pick up where you left off.',
+      body: 'Every 5 minutes, and only when something changed, Tabinet keeps a snapshot of all your open windows. After Chrome restarts, the last one is marked as recovered so you can pick up where you left off.',
       points: [
         'The 20 most recent are kept by default; you choose the interval and the number',
         'Keep moves a snapshot into your saved sessions for good',
         'On by default, off in one click, and then no timer runs at all',
       ],
-      alt: 'A recovered snapshot open in Tab Organizer, with three automatic snapshots listed in the left column',
+      alt: 'A recovered snapshot open in Tabinet, with three automatic snapshots listed in the left column',
     },
     {
       shot: 'search',
@@ -88,7 +88,7 @@ export const en: SiteCopy = {
         'Arrow keys to move, Enter to open, Esc to clear',
         'A saved tab that is already open is switched to, not opened twice',
       ],
-      alt: 'Search results for "github" in Tab Organizer, listing matching tabs from two saved sessions',
+      alt: 'Search results for "github" in Tabinet, listing matching tabs from two saved sessions',
     },
     {
       shot: 'settings',
@@ -100,7 +100,7 @@ export const en: SiteCopy = {
         'Advanced options for pinned and suspended tabs stay out of the way',
         'Closed a duplicate by mistake? Ctrl+Shift+T brings it back',
       ],
-      alt: 'The Tab Organizer settings dialog: Sort by set to By URL, Duplicate tabs set to Keep one, and Automatic snapshots switched on',
+      alt: 'The Tabinet settings dialog: Sort by set to By URL, Duplicate tabs set to Keep one, and Automatic snapshots switched on',
     },
   ],
   more: {
@@ -120,7 +120,7 @@ export const en: SiteCopy = {
       {
         icon: 'keyboard',
         title: 'Keyboard shortcuts',
-        body: 'On a new install, sorting gets Alt+Shift+S, Assemble! Alt+Shift+A and pausing every YouTube video Alt+Shift+P (Option on a Mac); set or change any of them at chrome://extensions/shortcuts. Saving a session and opening Tab Organizer can have keys of their own.',
+        body: 'On a new install, sorting gets Alt+Shift+S, Assemble! Alt+Shift+A and pausing every YouTube video Alt+Shift+P (Option on a Mac); set or change any of them at chrome://extensions/shortcuts. Saving a session and opening Tabinet can have keys of their own.',
       },
       {
         icon: 'grouping',
@@ -131,7 +131,7 @@ export const en: SiteCopy = {
   },
   promise: {
     title: 'Your tabs never leave your computer',
-    lead: 'Tab Organizer has no server to send anything to. It works the same with the network unplugged.',
+    lead: 'Tabinet has no server to send anything to. It works the same with the network unplugged.',
     points: [
       {
         title: 'Stays on the device',
@@ -157,15 +157,15 @@ export const en: SiteCopy = {
     lead: 'Answers to the questions people ask most, and how to reach us when something is not right.',
     startTitle: 'Getting started',
     startSteps: [
-      'Add Tab Organizer from the Chrome Web Store, then pin its icon to the toolbar.',
+      'Add Tabinet from the Chrome Web Store, then pin its icon to the toolbar.',
       'Click the icon to sort the window you are in.',
-      'Right-click the icon for Assemble!, Save all windows as session and Pause all YouTube videos. Options opens Tab Organizer itself, with your sessions and settings.',
+      'Right-click the icon for Assemble!, Save all windows as session and Pause all YouTube videos. Options opens Tabinet itself, with your sessions and settings.',
     ],
     reportTitle: 'Report a problem',
     reportLead:
       'Found a bug or missing a feature? Open an issue on GitHub. We read every report. It helps to include:',
     reportItems: [
-      'your Chrome version (chrome://version) and the Tab Organizer version',
+      'your Chrome version (chrome://version) and the Tabinet version',
       'what you did, what you expected, and what happened instead',
       'a screenshot, if the problem is something you can see',
     ],
@@ -187,7 +187,7 @@ export const en: SiteCopy = {
       },
       {
         q: 'Does it send my browsing data anywhere?',
-        a: 'No. Tab Organizer makes no network requests at all. Everything happens inside your browser.',
+        a: 'No. Tabinet makes no network requests at all. Everything happens inside your browser.',
       },
       {
         q: 'Where are my saved sessions stored?',
@@ -211,7 +211,7 @@ export const en: SiteCopy = {
       },
       {
         q: 'Can it pause all my YouTube videos at once?',
-        a: 'Yes. Right-click the icon and choose Pause all YouTube videos, or press its keyboard shortcut (Alt+Shift+P on a new install, Option+Shift+P on a Mac; set or change it at chrome://extensions/shortcuts). Every YouTube tab in every window pauses where it was; nothing is muted or closed, and running it again resumes nothing. The first time, Settings opens at its YouTube section so you can allow access to YouTube; then choose it again. Tab Organizer only presses pause there and reads nothing from the page. You can remove the access in Settings at any time.',
+        a: 'Yes. Right-click the icon and choose Pause all YouTube videos, or press its keyboard shortcut (Alt+Shift+P on a new install, Option+Shift+P on a Mac; set or change it at chrome://extensions/shortcuts). Every YouTube tab in every window pauses where it was; nothing is muted or closed, and running it again resumes nothing. The first time, Settings opens at its YouTube section so you can allow access to YouTube; then choose it again. Tabinet only presses pause there and reads nothing from the page. You can remove the access in Settings at any time.',
       },
       {
         q: 'Does it work in other Chromium browsers?',

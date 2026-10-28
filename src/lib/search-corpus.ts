@@ -246,17 +246,13 @@ export class SearchCorpusCache {
     try {
       loaded = await sessionRepo.getMany(ids);
     } catch (err) {
-      console.warn('[tab-organizer:sessions] search corpus load failed', ids, errorDetail(err));
+      console.warn('[tabinet:sessions] search corpus load failed', ids, errorDetail(err));
       return;
     }
     for (const id of ids) {
       const failure = loaded.failed.get(id);
       if (failure !== undefined) {
-        console.warn(
-          '[tab-organizer:sessions] search corpus load failed',
-          id,
-          errorDetail(failure),
-        );
+        console.warn('[tabinet:sessions] search corpus load failed', id, errorDetail(failure));
       }
       // A load that started before an invalidation drops its result rather than re-caching a body
       // that has since changed or vanished.

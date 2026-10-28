@@ -1,23 +1,23 @@
 {
-  "name": "tab-organizer",
-  "displayName": "Tab Organizer",
+  "name": "tabinet",
+  "displayName": "Tabinet",
   "version": "8.2.0",
   "description": "Sort and group every tab in one click, then save and restore whole windows as sessions. Offline, no account, stays on your device.",
   "keywords": [
     "chrome-extension",
-    "tab-organizer",
-    "tab-sort"
+    "tab-sort",
+    "tabinet"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/thilllon/tab-organizer.git"
+    "url": "https://github.com/thilllon/tabinet.git"
   },
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "site:dev": "pnpm --filter tab-organizer-site dev",
-    "site:build": "pnpm --filter tab-organizer-site build",
+    "site:dev": "pnpm --filter tabinet-site dev",
+    "site:build": "pnpm --filter tabinet-site build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p src/tests",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
@@ -28,7 +28,7 @@
     "e2e:smoke": "tsx scripts/e2e/smoke.ts",
     "e2e:sort": "tsx scripts/e2e/sort.ts",
     "e2e:selection": "tsx scripts/e2e/selection.ts",
-    "e2e:assemble": "vite build --mode e2e --outDir ../node_modules/.cache/tab-organizer/e2e && tsx scripts/e2e/assemble.ts",
+    "e2e:assemble": "vite build --mode e2e --outDir ../node_modules/.cache/tabinet/e2e && tsx scripts/e2e/assemble.ts",
     "release": "release-it",
     "check:dashes": "tsx scripts/check-dashes.ts"
   },

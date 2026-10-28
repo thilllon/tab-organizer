@@ -73,7 +73,7 @@ export function clipboardUnavailableMessage(): string {
 }
 
 export function copyFailureMessage(err: unknown): string {
-  console.warn('[tab-organizer] copy failed', errorDetail(err));
+  console.warn('[tabinet] copy failed', errorDetail(err));
   const reason = knownErrorText(err);
   return reason === undefined ? t('expCopyFailedPlain') : t('expCopyFailed', reason);
 }

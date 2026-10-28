@@ -375,14 +375,14 @@ export function mimeTypeFor(format: ExportFormat): string {
   return MIME_TYPES[format];
 }
 
-/** `tab-organizer-<slug>-<yyyyMMdd-HHmm>.<ext>` in local time; the slug is omitted when empty. */
+/** `tabinet-<slug>-<yyyyMMdd-HHmm>.<ext>` in local time; the slug is omitted when empty. */
 export function exportFilename(base: string, format: ExportFormat, date: Date): string {
   const stamp =
     `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}-` +
     `${pad2(date.getHours())}${pad2(date.getMinutes())}`;
   const slug = slugify(base);
   const middle = slug === '' ? '' : `${slug}-`;
-  return `tab-organizer-${middle}${stamp}.${extensionFor(format)}`;
+  return `tabinet-${middle}${stamp}.${extensionFor(format)}`;
 }
 
 export function serialize(format: ExportFormat, sessions: Session[], exportedAt: number): string {

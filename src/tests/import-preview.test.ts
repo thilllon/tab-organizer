@@ -68,7 +68,7 @@ describe('checkImportSize', () => {
 
 describe('labels', () => {
   it('names every detected format', () => {
-    expect(importFormatLabel('json')).toBe('Tab Organizer JSON');
+    expect(importFormatLabel('json')).toBe('Tabinet JSON');
     expect(importFormatLabel('html')).toBe('Bookmarks HTML');
     expect(importFormatLabel('markdown')).toBe('Markdown');
     expect(importFormatLabel('text')).toBe('Links');

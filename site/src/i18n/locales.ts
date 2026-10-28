@@ -35,7 +35,7 @@ const SLUGS: Record<Page, string> = {
   privacy: 'privacy/',
 };
 
-/** Root-relative URL of a page in a language, base path included: `/tab-organizer/ko/support/`. */
+/** Root-relative URL of a page in a language, base path included: `/tabinet/ko/support/`. */
 export function pageUrl(locale: Locale, page: Page): string {
   return getRelativeLocaleUrl(locale, SLUGS[page]);
 }
@@ -54,8 +54,8 @@ export function localePaths() {
 }
 
 export const STORE_URL =
-  'https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg';
-export const REPO_URL = 'https://github.com/thilllon/tab-organizer';
+  'https://chromewebstore.google.com/detail/bmbpmnfhfbdjdjpblimidmbohgccmjdg';
+export const REPO_URL = 'https://github.com/thilllon/tabinet';
 export const ISSUES_URL = `${REPO_URL}/issues`;
 export const NEW_ISSUE_URL = `${REPO_URL}/issues/new`;
 export const RELEASES_URL = `${REPO_URL}/releases`;

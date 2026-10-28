@@ -25,7 +25,7 @@ afterEach(() => {
 describe('downloadDescriptor', () => {
   it('names the file after the session and the format', () => {
     expect(downloadDescriptor('Work stuff', 'json', DATE)).toEqual({
-      filename: 'tab-organizer-work-stuff-20260829-1403.json',
+      filename: 'tabinet-work-stuff-20260829-1403.json',
       mimeType: 'application/json',
     });
   });
@@ -33,23 +33,23 @@ describe('downloadDescriptor', () => {
   it('resolves the extension and MIME type of every format', () => {
     const formats = ['json', 'markdown', 'text', 'html', 'csv'] as const;
     expect(formats.map((format) => downloadDescriptor('Work', format, DATE))).toEqual([
-      { filename: 'tab-organizer-work-20260829-1403.json', mimeType: 'application/json' },
-      { filename: 'tab-organizer-work-20260829-1403.md', mimeType: 'text/markdown' },
-      { filename: 'tab-organizer-work-20260829-1403.txt', mimeType: 'text/plain' },
-      { filename: 'tab-organizer-work-20260829-1403.html', mimeType: 'text/html' },
-      { filename: 'tab-organizer-work-20260829-1403.csv', mimeType: 'text/csv' },
+      { filename: 'tabinet-work-20260829-1403.json', mimeType: 'application/json' },
+      { filename: 'tabinet-work-20260829-1403.md', mimeType: 'text/markdown' },
+      { filename: 'tabinet-work-20260829-1403.txt', mimeType: 'text/plain' },
+      { filename: 'tabinet-work-20260829-1403.html', mimeType: 'text/html' },
+      { filename: 'tabinet-work-20260829-1403.csv', mimeType: 'text/csv' },
     ]);
   });
 
   it('drops a name that slugifies to nothing', () => {
-    expect(downloadDescriptor('!!!', 'csv', DATE).filename).toBe('tab-organizer-20260829-1403.csv');
+    expect(downloadDescriptor('!!!', 'csv', DATE).filename).toBe('tabinet-20260829-1403.csv');
   });
 });
 
 describe('downloadExport', () => {
   it('returns the descriptor it used (and is a no-op without a DOM)', () => {
     expect(downloadExport('Work', 'text', 'https://a.test/\n', DATE)).toEqual({
-      filename: 'tab-organizer-work-20260829-1403.txt',
+      filename: 'tabinet-work-20260829-1403.txt',
       mimeType: 'text/plain',
     });
   });

@@ -115,6 +115,6 @@ describe('errorDetail / reportError', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const err = new Error('Invariant violated: more than one active tab');
     expect(reportError('restore', err)).toBe(t('errorGeneric'));
-    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer] restore', err);
+    expect(errorSpy).toHaveBeenCalledWith('[tabinet] restore', err);
   });
 });

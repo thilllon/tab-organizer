@@ -1,7 +1,11 @@
 {
   "extName": {
-    "message": "Tab Organizer",
-    "description": "The extension name in Chrome and the Chrome Web Store. Keep the brand name; at most 75 characters."
+    "message": "Tabinet: 탭 정리 & 세션",
+    "description": "The extension name in Chrome and the Chrome Web Store title: the brand \"Tabinet\" (never translated), a colon, then a short description of what it is. At most 75 characters."
+  },
+  "appName": {
+    "message": "Tabinet",
+    "description": "Do not translate. The brand name alone, shown in the page header and the browser tab title."
   },
   "extDescription": {
     "message": "클릭 한 번으로 모든 탭을 정렬하고 그룹으로 묶은 뒤, 창 전체를 세션으로 저장하고 복원합니다. 오프라인, 계정 불필요, 데이터는 기기에만 저장됩니다.",
@@ -12,7 +16,7 @@
     "description": "Do not translate. The language code of this file itself (en, ko, es, ja), not a word: it picks the plural rules and number formats that match this file's text, also when Chrome falls back to it for a language the extension does not ship."
   },
   "actionTitle": {
-    "message": "Tab Organizer: 클릭하여 탭 정렬, 마우스 오른쪽 버튼으로 세션 관리",
+    "message": "Tabinet: 클릭하여 탭 정렬, 마우스 오른쪽 버튼으로 세션 관리",
     "description": "Tooltip of the toolbar icon. Teaches the two gestures."
   },
   "cmdSaveSession": {
@@ -20,7 +24,7 @@
     "description": "Keyboard command, listed at chrome://extensions/shortcuts."
   },
   "cmdOpenDashboard": {
-    "message": "Tab Organizer 열기",
+    "message": "Tabinet 열기",
     "description": "Keyboard command that opens the app page."
   },
   "cmdAssembleTabs": {
@@ -140,15 +144,15 @@
     "description": "Label of the Settings row that allows or removes the extension's access to youtube.com, needed to pause videos."
   },
   "settingsYoutubeAccessOffHint": {
-    "message": "아직 허용되지 않았습니다. 동영상을 일시중지하려면 필요하며, Chrome이 먼저 묻습니다. Tab Organizer는 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
+    "message": "아직 허용되지 않았습니다. 동영상을 일시중지하려면 필요하며, Chrome이 먼저 묻습니다. Tabinet은 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
     "description": "Grey hint under \"Access to YouTube\" while the access is not granted."
   },
   "settingsYoutubeAccessOnHint": {
-    "message": "허용됨. 아이콘을 마우스 오른쪽 버튼으로 클릭해 “$1”를 선택하거나 단축키를 누르면 모든 동영상이 일시중지됩니다. Tab Organizer는 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
+    "message": "허용됨. 아이콘을 마우스 오른쪽 버튼으로 클릭해 “$1”를 선택하거나 단축키를 누르면 모든 동영상이 일시중지됩니다. Tabinet은 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
     "description": "Grey hint under \"Access to YouTube\" once the access is granted. $1 is the right-click menu item (cmdPauseYoutube), quoted."
   },
   "settingsYoutubeAccessAskedHint": {
-    "message": "“$1”를 사용하려면 먼저 이 접근을 허용해야 합니다. 여기서 허용한 뒤 “$1”를 다시 선택하거나 단축키를 누르세요. Tab Organizer는 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
+    "message": "“$1”를 사용하려면 먼저 이 접근을 허용해야 합니다. 여기서 허용한 뒤 “$1”를 다시 선택하거나 단축키를 누르세요. Tabinet은 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다.",
     "description": "Grey hint under \"Access to YouTube\" when the person arrived from the menu item or shortcut without the access yet: explains why Settings opened. $1 (twice) is the right-click menu item (cmdPauseYoutube), quoted."
   },
   "settingsYoutubeAllowed": {
@@ -552,8 +556,8 @@
     "description": "Name given to the snapshot recovered after a browser restart. $1 is its capture time as 2026-08-29 14:03."
   },
   "sessionUnreadableMessage": {
-    "message": "최신 버전의 Tab Organizer로 저장된 세션입니다. 열려면 업데이트하세요.",
-    "description": "Shown in the saved list instead of a session this version cannot read. Tab Organizer is the extension name."
+    "message": "최신 버전의 Tabinet으로 저장된 세션입니다. 열려면 업데이트하세요.",
+    "description": "Shown in the saved list instead of a session this version cannot read. Tabinet is the extension name."
   },
   "sessionUnreadableSchema": {
     "message": "스키마 v$1",
@@ -877,18 +881,18 @@
   },
   "expErrorNoSessionsList": {
     "message": "내보내기 파일에 \"sessions\" 목록이 없습니다.",
-    "description": "Import error for a Tab Organizer JSON file without its sessions list. Keep \"sessions\" as is: it is the field name in the file."
+    "description": "Import error for a Tabinet JSON file without its sessions list. Keep \"sessions\" as is: it is the field name in the file."
   },
   "expErrorNoSessions": {
     "message": "내보내기 파일에 세션이 없습니다.",
     "description": "Import error for an empty export."
   },
   "expErrorInvalidSession": {
-    "message": "$1번째 세션은 올바른 Tab Organizer 세션 레코드가 아닙니다.",
+    "message": "$1번째 세션은 올바른 Tabinet 세션 레코드가 아닙니다.",
     "description": "Import error. $1 is the 1-based position of the bad session in the file."
   },
   "expErrorNotExport": {
-    "message": "이 JSON은 Tab Organizer 내보내기 파일이 아닙니다.",
+    "message": "이 JSON은 Tabinet 내보내기 파일이 아닙니다.",
     "description": "Import error for JSON from somewhere else."
   },
   "expErrorSchemaVersion": {
@@ -904,7 +908,7 @@
     "description": "Import error for pasted text or Markdown without links."
   },
   "expErrorNothingToImport": {
-    "message": "가져올 항목이 없습니다. Tab Organizer JSON 내보내기, 북마크 HTML 파일, Markdown 또는 URL 목록을 붙여넣으세요.",
+    "message": "가져올 항목이 없습니다. Tabinet JSON 내보내기, 북마크 HTML 파일, Markdown 또는 URL 목록을 붙여넣으세요.",
     "description": "Import error when the pasted text is not any known format."
   },
   "expWarnNoWindows": {
@@ -928,7 +932,7 @@
     "description": "Import error when the chosen file cannot be read and there is no reason that can be shown."
   },
   "expDetectedJson": {
-    "message": "Tab Organizer JSON",
+    "message": "Tabinet JSON",
     "description": "Import format name shown after 'Detected'."
   },
   "expDetectedHtml": {
@@ -952,7 +956,7 @@
     "description": "Title of the import dialog."
   },
   "expImportDescription": {
-    "message": "Tab Organizer JSON 내보내기, 북마크 HTML 파일, Markdown 또는 일반 링크 목록을 가져옵니다. 가져온 세션은 이 기기의 저장된 목록에 추가되며, 아무것도 업로드되지 않습니다.",
+    "message": "Tabinet JSON 내보내기, 북마크 HTML 파일, Markdown 또는 일반 링크 목록을 가져옵니다. 가져온 세션은 이 기기의 저장된 목록에 추가되며, 아무것도 업로드되지 않습니다.",
     "description": "Explanation under the import dialog's title."
   },
   "expChooseFile": {
@@ -988,12 +992,12 @@
     "description": "Import button while nothing importable has been chosen yet. Keep it short."
   },
   "appNothingToSaveWindow": {
-    "message": "저장할 항목이 없습니다. 이 창에는 Tab Organizer만 열려 있습니다.",
-    "description": "Notice toast after Save when the current window holds nothing but the extension's own page. 'Tab Organizer' is the extension name."
+    "message": "저장할 항목이 없습니다. 이 창에는 Tabinet만 열려 있습니다.",
+    "description": "Notice toast after Save when the current window holds nothing but the extension's own page. 'Tabinet' is the extension name."
   },
   "appNothingToSaveAll": {
-    "message": "저장할 항목이 없습니다. Tab Organizer 외의 내용이 있는 창이 없습니다.",
-    "description": "Notice toast after 'Save all windows' when no window holds anything but the extension's own page. 'Tab Organizer' is the extension name."
+    "message": "저장할 항목이 없습니다. Tabinet 외의 내용이 있는 창이 없습니다.",
+    "description": "Notice toast after 'Save all windows' when no window holds anything but the extension's own page. 'Tabinet' is the extension name."
   },
   "appNothingToSaveTabs": {
     "message": "저장할 항목이 없습니다. 선택한 탭이 더 이상 열려 있지 않습니다.",
@@ -1068,8 +1072,8 @@
     "description": "Third line of a saved session row in the sidebar. $1 is the date and time it was last saved, already formatted."
   },
   "appNavNewerTitle": {
-    "message": "최신 버전의 Tab Organizer로 저장됨",
-    "description": "Tooltip of the 'newer' badge on a session this version cannot read. 'Tab Organizer' is the extension name."
+    "message": "최신 버전의 Tabinet으로 저장됨",
+    "description": "Tooltip of the 'newer' badge on a session this version cannot read. 'Tabinet' is the extension name."
   },
   "appNavNewerBadge": {
     "message": "새 버전",
@@ -1132,8 +1136,8 @@
     "description": "Tooltip of a button that saves one browser window as a session."
   },
   "openFirstRunHint": {
-    "message": "아직 저장된 세션이 없습니다. $1 버튼을 누르거나, Tab Organizer 아이콘을 마우스 오른쪽 버튼으로 클릭한 뒤 $2 메뉴를 선택하세요. 단축키를 사용하려면 $3.",
-    "description": "Hint shown on the Open tabs view while no session has been saved. $1 is the Save button's label (e.g. 'Save all windows'), shown in bold. $2 is the right-click menu item 'Save all windows as session', shown in bold. $3 is a link that opens Settings (openFirstRunHintSettingsLink). Keep 'Tab Organizer' as is."
+    "message": "아직 저장된 세션이 없습니다. $1 버튼을 누르거나, Tabinet 아이콘을 마우스 오른쪽 버튼으로 클릭한 뒤 $2 메뉴를 선택하세요. 단축키를 사용하려면 $3.",
+    "description": "Hint shown on the Open tabs view while no session has been saved. $1 is the Save button's label (e.g. 'Save all windows'), shown in bold. $2 is the right-click menu item 'Save all windows as session', shown in bold. $3 is a link that opens Settings (openFirstRunHintSettingsLink). Keep 'Tabinet' as is."
   },
   "openFirstRunHintSettingsLink": {
     "message": "설정에서 지정하세요",
@@ -1184,7 +1188,7 @@
     "description": "Text of the close-window dialog. $1 is the formatted number of tabs in the window."
   },
   "openCloseWindowIsCurrent": {
-    "message": "Tab Organizer가 열려 있는 창입니다.",
+    "message": "Tabinet이 열려 있는 창입니다.",
     "description": "Extra sentence after openCloseWindowBody when the window being closed holds the app page itself, so closing it closes the page too."
   },
   "openCloseTabsQuestion_other": {
@@ -1456,8 +1460,8 @@
     "description": "Error when stored session data is damaged and cannot be read."
   },
   "errorDataTooNew": {
-    "message": "이 데이터는 최신 버전의 Tab Organizer로 저장되었습니다. 사용하려면 확장 프로그램을 업데이트하세요.",
-    "description": "Error when stored data was written by a newer version of the extension. Tab Organizer is the extension name."
+    "message": "이 데이터는 최신 버전의 Tabinet으로 저장되었습니다. 사용하려면 확장 프로그램을 업데이트하세요.",
+    "description": "Error when stored data was written by a newer version of the extension. Tabinet is the extension name."
   },
   "errorRestoreNoWindow": {
     "message": "Chrome에서 복원할 창을 열지 못했습니다.",
@@ -1684,8 +1688,8 @@
     "description": "Tooltip and screen-reader label of the x button that closes the restore result toast."
   },
   "restoreSessionTooNew": {
-    "message": "이 세션은 최신 버전의 Tab Organizer로 저장되어 표시할 수 없습니다.",
-    "description": "Error shown in place of a session whose stored format is from a newer version of the extension. Tab Organizer is the extension name."
+    "message": "이 세션은 최신 버전의 Tabinet으로 저장되어 표시할 수 없습니다.",
+    "description": "Error shown in place of a session whose stored format is from a newer version of the extension. Tabinet is the extension name."
   },
   "workerMenuSaveAll": {
     "message": "모든 창을 세션으로 저장",

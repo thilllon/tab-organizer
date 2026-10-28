@@ -536,7 +536,7 @@ async function main(): Promise<void> {
   const started = Date.now();
   let failed = false;
 
-  console.log(`Tab Organizer - sessions smoke test (${STEPS.length} steps)\n`);
+  console.log(`Tabinet - sessions smoke test (${STEPS.length} steps)\n`);
 
   for (const [index, step] of STEPS.entries()) {
     const label = `${String(index + 1).padStart(2, ' ')}/${STEPS.length} ${step.name}`;

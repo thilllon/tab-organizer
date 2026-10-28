@@ -22,7 +22,7 @@ export class MalformedRecordError extends TypeError {
 }
 
 /**
- * The schema version of a body written by a *newer* Tab Organizer, or `undefined` when `err` is
+ * The schema version of a body written by a *newer* Tabinet, or `undefined` when `err` is
  * anything else (a malformed record, or a version this build cannot place). Callers use it to
  * tell "I am too old to read this" -- which the UI can explain and the user can fix by updating
  * -- from "this record is damaged", which it cannot.

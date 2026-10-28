@@ -473,7 +473,7 @@ describe('handleMenuOrCommand', () => {
     await expect(handleMenuOrCommand('save-session')).resolves.toBeUndefined();
 
     expect(getChromeFake().state.badge.text).toBe('!');
-    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    expect(errorSpy).toHaveBeenCalledWith('[tabinet:sessions]', expect.any(Error));
     expect(sessionKeys()).toHaveLength(0);
   });
 });
@@ -609,7 +609,7 @@ describe('listener wiring', () => {
     await vi.waitFor(() => {
       expect(fake.state.alarms.size).toBeGreaterThan(0);
     });
-    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    expect(errorSpy).toHaveBeenCalledWith('[tabinet:sessions]', expect.any(Error));
   });
 
   it('registers no chrome.tabs / windows / tabGroups listeners (AGENTS.md rule)', async () => {
@@ -756,7 +756,7 @@ describe('history wiring', () => {
     expect(() => fake.fire.alarm(HISTORY_ALARM)).not.toThrow();
 
     await vi.waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+      expect(errorSpy).toHaveBeenCalledWith('[tabinet:sessions]', expect.any(Error));
     });
     expect(sessionKeys()).toHaveLength(0);
     // History is silent: only explicit saves drive the action badge.
@@ -814,7 +814,7 @@ describe('history wiring', () => {
     expect(() => fake.fire.actionClicked()).not.toThrow();
 
     await vi.waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+      expect(errorSpy).toHaveBeenCalledWith('[tabinet:sessions]', expect.any(Error));
     });
     expect(sessionKeys()).toHaveLength(0);
   });
@@ -1038,7 +1038,7 @@ describe('history wiring', () => {
     await vi.waitFor(() => {
       expect(alarmNames()).toEqual([HISTORY_FIRST_ALARM, HISTORY_ALARM]);
     });
-    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    expect(errorSpy).toHaveBeenCalledWith('[tabinet:sessions]', expect.any(Error));
   });
 
   it('onStartup still arms the alarms when reconcile rejects (damaged index)', async () => {
@@ -1052,7 +1052,7 @@ describe('history wiring', () => {
     await vi.waitFor(() => {
       expect(alarmNames()).toEqual([HISTORY_FIRST_ALARM, HISTORY_ALARM]);
     });
-    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    expect(errorSpy).toHaveBeenCalledWith('[tabinet:sessions]', expect.any(Error));
   });
 
   it('onInstalled still arms the alarm when reconcile rejects (damaged index)', async () => {
@@ -1066,7 +1066,7 @@ describe('history wiring', () => {
     await vi.waitFor(() => {
       expect(alarmNames()).toEqual([HISTORY_ALARM]);
     });
-    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    expect(errorSpy).toHaveBeenCalledWith('[tabinet:sessions]', expect.any(Error));
   });
 
   it('onInstalled still arms the alarm when the menus cannot be registered', async () => {
@@ -1080,7 +1080,7 @@ describe('history wiring', () => {
     await vi.waitFor(() => {
       expect(alarmNames()).toEqual([HISTORY_ALARM]);
     });
-    expect(errorSpy).toHaveBeenCalledWith('[tab-organizer:sessions]', expect.any(Error));
+    expect(errorSpy).toHaveBeenCalledWith('[tabinet:sessions]', expect.any(Error));
   });
 
   it('a browser start on a damaged index repairs it and still arms the alarms', async () => {

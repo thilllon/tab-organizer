@@ -150,7 +150,7 @@ export function useSearchCorpus({
           }),
         );
       } catch (err) {
-        console.warn('[tab-organizer:sessions] search corpus open tabs failed', errorDetail(err));
+        console.warn('[tabinet:sessions] search corpus open tabs failed', errorDetail(err));
       }
     })();
 

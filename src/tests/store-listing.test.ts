@@ -79,7 +79,7 @@ describe('the store listing', () => {
 
     it('links its own language’s support page', () => {
       const prefix = locale === 'en' ? '' : `${locale}/`;
-      expect(description).toContain(`https://thilllon.github.io/tab-organizer/${prefix}support/`);
+      expect(description).toContain(`https://thilllon.github.io/tabinet/${prefix}support/`);
     });
 
     it('has a Summary (extDescription) the store will accept', () => {

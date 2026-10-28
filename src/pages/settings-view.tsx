@@ -143,7 +143,7 @@ export function SettingsView({
     saveUiLanguage(value).then(
       () => location.reload(),
       (err: unknown) => {
-        console.error('[tab-organizer] language not saved', err);
+        console.error('[tabinet] language not saved', err);
         setLanguage(previous);
         onError(languageSaveFailedMessage(err));
       },

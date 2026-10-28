@@ -126,7 +126,7 @@ export function useRestore(): UseRestore {
       // The toast words each failure in the UI language and drops Chrome's English text when it
       // has no translation for it; the original stays here.
       for (const entry of result.errors) {
-        console.warn('[tab-organizer] restore', entry.url, entry.message);
+        console.warn('[tabinet] restore', entry.url, entry.message);
       }
       return { ok: true };
     } finally {

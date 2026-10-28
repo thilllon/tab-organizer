@@ -2,17 +2,17 @@ import type { SiteCopy } from './site-copy';
 
 export const es: SiteCopy = {
   meta: {
-    homeTitle: 'Tab Organizer - ordena, agrupa y guarda tus pestañas de Chrome',
+    homeTitle: 'Tabinet - ordena, agrupa y guarda tus pestañas de Chrome',
     homeDescription:
       'Una extensión de Chrome que ordena y agrupa todas tus pestañas con un clic, se ocupa de las duplicadas y guarda ventanas enteras como sesiones para recuperarlas después. Gratis, sin cuenta y sin que nada salga de tu equipo.',
-    supportTitle: 'Ayuda - Tab Organizer',
+    supportTitle: 'Ayuda - Tabinet',
     supportDescription:
-      'Respuestas a las dudas más comunes sobre Tab Organizer y cómo avisar de un problema o proponer una mejora.',
-    privacyTitle: 'Política de privacidad - Tab Organizer',
+      'Respuestas a las dudas más comunes sobre Tabinet y cómo avisar de un problema o proponer una mejora.',
+    privacyTitle: 'Política de privacidad - Tabinet',
     privacyDescription:
-      'Tab Organizer no recopila nada ni hace peticiones de red. Qué guarda, dónde y durante cuánto tiempo.',
+      'Tabinet no recopila nada ni hace peticiones de red. Qué guarda, dónde y durante cuánto tiempo.',
     ogImageAlt:
-      'La página de Tab Organizer con una sesión guardada de dos ventanas y sus grupos de pestañas',
+      'La página de Tabinet con una sesión guardada de dos ventanas y sus grupos de pestañas',
   },
   nav: {
     home: 'Inicio',
@@ -32,9 +32,9 @@ export const es: SiteCopy = {
   hero: {
     eyebrow: 'Extensión para Chrome',
     title: 'Un clic y cada pestaña vuelve a su sitio.',
-    lead: 'Tab Organizer ordena y agrupa las pestañas de tu ventana, elimina las duplicadas y guarda ventanas completas como sesiones que puedes recuperar cuando quieras. Todo se queda en tu equipo.',
+    lead: 'Tabinet ordena y agrupa las pestañas de tu ventana, elimina las duplicadas y guarda ventanas completas como sesiones que puedes recuperar cuando quieras. Todo se queda en tu equipo.',
     imageAlt:
-      'La página de Tab Organizer: las sesiones guardadas en la columna izquierda y, a la derecha, una sesión de dos ventanas con sus pestañas fijadas y grupos de pestañas',
+      'La página de Tabinet: las sesiones guardadas en la columna izquierda y, a la derecha, una sesión de dos ventanas con sus pestañas fijadas y grupos de pestañas',
     languages:
       'La extensión está disponible en English, 한국어, Español y 日本語, y usa el idioma de Chrome o el que elijas en su Configuración.',
   },
@@ -65,19 +65,19 @@ export const es: SiteCopy = {
         'Las sesiones grandes se cargan en diferido, con progreso y botón Cancelar',
         'Restaurar nunca borra la sesión guardada',
       ],
-      alt: 'Tab Organizer pregunta «¿Restaurar 112 pestañas?» con la opción «Cargar las pestañas en diferido», sobre una sesión guardada de tres ventanas',
+      alt: 'Tabinet pregunta «¿Restaurar 112 pestañas?» con la opción «Cargar las pestañas en diferido», sobre una sesión guardada de tres ventanas',
     },
     {
       shot: 'history',
       kicker: 'Instantáneas automáticas',
       title: 'Una red de seguridad ante cierres inesperados',
-      body: 'Cada 5 minutos, y solo si algo ha cambiado, Tab Organizer guarda una instantánea de todas tus ventanas abiertas. Cuando Chrome vuelve a arrancar, la última aparece marcada como recuperada para que sigas donde lo dejaste.',
+      body: 'Cada 5 minutos, y solo si algo ha cambiado, Tabinet guarda una instantánea de todas tus ventanas abiertas. Cuando Chrome vuelve a arrancar, la última aparece marcada como recuperada para que sigas donde lo dejaste.',
       points: [
         'Se conservan las 20 más recientes; tú eliges el intervalo y cuántas',
         'Conservar pasa una instantánea a tus sesiones guardadas para siempre',
         'Activadas por defecto, se desactivan con un clic y entonces no queda ningún temporizador',
       ],
-      alt: 'Una instantánea recuperada abierta en Tab Organizer, con tres instantáneas automáticas en la columna izquierda',
+      alt: 'Una instantánea recuperada abierta en Tabinet, con tres instantáneas automáticas en la columna izquierda',
     },
     {
       shot: 'search',
@@ -89,7 +89,7 @@ export const es: SiteCopy = {
         'Flechas para moverte, Intro para abrir, Esc para borrar',
         'Si una pestaña guardada ya está abierta, te lleva a ella en vez de abrirla otra vez',
       ],
-      alt: 'Resultados de buscar "github" en Tab Organizer, con pestañas de dos sesiones guardadas',
+      alt: 'Resultados de buscar "github" en Tabinet, con pestañas de dos sesiones guardadas',
     },
     {
       shot: 'settings',
@@ -101,7 +101,7 @@ export const es: SiteCopy = {
         'Las opciones para pestañas fijadas y suspendidas quedan en Avanzado',
         '¿Cerraste una duplicada sin querer? Ctrl+Mayús+T la recupera',
       ],
-      alt: 'El cuadro de Configuración de Tab Organizer: «Ordenar por» en «Por URL», «Pestañas duplicadas» en «Conservar una» e «Instantáneas automáticas» activadas',
+      alt: 'El cuadro de Configuración de Tabinet: «Ordenar por» en «Por URL», «Pestañas duplicadas» en «Conservar una» e «Instantáneas automáticas» activadas',
     },
   ],
   more: {
@@ -121,7 +121,7 @@ export const es: SiteCopy = {
       {
         icon: 'keyboard',
         title: 'Combinaciones de teclas',
-        body: 'En una instalación nueva, ordenar usa Alt+Mayús+S, ¡Reunir! Alt+Mayús+A y pausar todos los vídeos de YouTube Alt+Mayús+P (Opción en Mac); puedes asignarlas o cambiarlas en chrome://extensions/shortcuts. Guardar una sesión y abrir Tab Organizer pueden tener sus propias teclas.',
+        body: 'En una instalación nueva, ordenar usa Alt+Mayús+S, ¡Reunir! Alt+Mayús+A y pausar todos los vídeos de YouTube Alt+Mayús+P (Opción en Mac); puedes asignarlas o cambiarlas en chrome://extensions/shortcuts. Guardar una sesión y abrir Tabinet pueden tener sus propias teclas.',
       },
       {
         icon: 'grouping',
@@ -132,7 +132,7 @@ export const es: SiteCopy = {
   },
   promise: {
     title: 'Tus pestañas no salen de tu equipo',
-    lead: 'Tab Organizer no tiene ningún servidor al que enviar nada. Funciona igual sin conexión.',
+    lead: 'Tabinet no tiene ningún servidor al que enviar nada. Funciona igual sin conexión.',
     points: [
       {
         title: 'Se queda en el equipo',
@@ -158,15 +158,15 @@ export const es: SiteCopy = {
     lead: 'Respuestas a las preguntas más habituales y cómo contactarnos cuando algo no va bien.',
     startTitle: 'Primeros pasos',
     startSteps: [
-      'Agrega Tab Organizer desde Chrome Web Store y fija su icono en la barra de herramientas.',
+      'Agrega Tabinet desde Chrome Web Store y fija su icono en la barra de herramientas.',
       'Haz clic en el icono para ordenar la ventana en la que estás.',
-      'Haz clic con el botón derecho en el icono para ver ¡Reunir!, Guardar todas las ventanas como sesión y Pausar todos los vídeos de YouTube. Opciones abre la página de Tab Organizer, con tus sesiones y tu configuración.',
+      'Haz clic con el botón derecho en el icono para ver ¡Reunir!, Guardar todas las ventanas como sesión y Pausar todos los vídeos de YouTube. Opciones abre la página de Tabinet, con tus sesiones y tu configuración.',
     ],
     reportTitle: 'Avisar de un problema',
     reportLead:
       '¿Encontraste un error o te falta alguna función? Abre una incidencia en GitHub; leemos todas. Ayuda mucho incluir:',
     reportItems: [
-      'tu versión de Chrome (chrome://version) y la de Tab Organizer',
+      'tu versión de Chrome (chrome://version) y la de Tabinet',
       'qué hiciste, qué esperabas y qué pasó en realidad',
       'una captura de pantalla, si el problema se ve',
     ],
@@ -188,7 +188,7 @@ export const es: SiteCopy = {
       },
       {
         q: '¿Envía mis datos de navegación a algún sitio?',
-        a: 'No. Tab Organizer no hace ninguna petición de red. Todo ocurre dentro de tu navegador.',
+        a: 'No. Tabinet no hace ninguna petición de red. Todo ocurre dentro de tu navegador.',
       },
       {
         q: '¿Dónde se guardan mis sesiones?',
@@ -212,7 +212,7 @@ export const es: SiteCopy = {
       },
       {
         q: '¿Puede pausar todos mis vídeos de YouTube a la vez?',
-        a: 'Sí. Haz clic con el botón derecho en el icono y elige Pausar todos los vídeos de YouTube, o pulsa su combinación de teclas (Alt+Mayús+P en una instalación nueva, Opción+Mayús+P en Mac; puedes asignarla o cambiarla en chrome://extensions/shortcuts). Todas las pestañas de YouTube de todas las ventanas se pausan donde estaban; nada se silencia ni se cierra, y repetirlo no reanuda nada. La primera vez se abre Configuración en su sección de YouTube para que permitas el acceso; después vuelve a elegirlo. Tab Organizer solo pulsa pausa allí y no lee nada de la página. Puedes quitar el acceso en Configuración cuando quieras.',
+        a: 'Sí. Haz clic con el botón derecho en el icono y elige Pausar todos los vídeos de YouTube, o pulsa su combinación de teclas (Alt+Mayús+P en una instalación nueva, Opción+Mayús+P en Mac; puedes asignarla o cambiarla en chrome://extensions/shortcuts). Todas las pestañas de YouTube de todas las ventanas se pausan donde estaban; nada se silencia ni se cierra, y repetirlo no reanuda nada. La primera vez se abre Configuración en su sección de YouTube para que permitas el acceso; después vuelve a elegirlo. Tabinet solo pulsa pausa allí y no lee nada de la página. Puedes quitar el acceso en Configuración cuando quieras.',
       },
       {
         q: '¿Funciona en otros navegadores Chromium?',

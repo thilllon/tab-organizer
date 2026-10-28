@@ -722,7 +722,7 @@ describe('sessionRepo.reconcile', () => {
     await sessionRepo.reconcile();
     expect((await sessionRepo.listSummaries())[0].unreadable).toBeDefined();
 
-    // The user updated Tab Organizer again (here: the body is v1 once more).
+    // The user updated Tabinet again (here: the body is v1 once more).
     fake.state.local.set(sessionKey('id-a'), body);
     const result = await sessionRepo.reconcile();
 

@@ -166,7 +166,7 @@ export function applyUiLanguage(
         nextChoice = language;
       }
     } catch (err) {
-      console.error('[tab-organizer] language not loaded; using Chrome language', err);
+      console.error('[tabinet] language not loaded; using Chrome language', err);
       next = undefined;
       nextChoice = 'auto';
     }

@@ -22,6 +22,8 @@ import {
 export const INDEX_KEY = 'sessionIndex';
 export const SETTINGS_KEY = 'sessionSettings';
 export const HISTORY_META_KEY = 'historyMeta';
+// The extension's name before Tabinet. Kept: a lock name is shared by every page and the worker,
+// so renaming it would let an old page and a new worker write at once during an update.
 export const LOCK_NAME = 'tab-organizer:sessions';
 
 const SESSION_KEY_PREFIX = 'session:';

@@ -66,7 +66,7 @@ export function useOpenWindows(): OpenWindowsState {
           setCurrentWindowId(current.id);
         }
       } catch (err) {
-        console.warn('[tab-organizer:sessions] windows.getCurrent failed', errorDetail(err));
+        console.warn('[tabinet:sessions] windows.getCurrent failed', errorDetail(err));
       }
       if (disposed) {
         return;

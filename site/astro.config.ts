@@ -5,7 +5,7 @@ import { defineConfig } from 'astro/config';
 
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '../src/constants';
 
-// The site is served as a GitHub Pages project site, so every URL sits under /tab-organizer/.
+// The site is served as a GitHub Pages project site, so every URL sits under /tabinet/.
 // The screenshots, PRIVACY_POLICY.md and package.json are read from the repository root above
 // this package, so the dev server is allowed to serve files from there.
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -15,7 +15,7 @@ const LOCALES: string[] = [...SUPPORTED_LOCALES];
 
 export default defineConfig({
   site: 'https://thilllon.github.io',
-  base: '/tab-organizer',
+  base: '/tabinet',
   trailingSlash: 'always',
   output: 'static',
   devToolbar: { enabled: false },

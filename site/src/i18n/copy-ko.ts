@@ -2,16 +2,15 @@ import type { SiteCopy } from './site-copy';
 
 export const ko: SiteCopy = {
   meta: {
-    homeTitle: 'Tab Organizer - Chrome 탭 정렬, 그룹, 세션 저장',
+    homeTitle: 'Tabinet - Chrome 탭 정렬, 그룹, 세션 저장',
     homeDescription:
       '클릭 한 번으로 모든 탭을 정렬하고 그룹으로 묶고, 중복 탭을 정리하고, 창을 통째로 세션으로 저장했다가 되살리는 Chrome 확장 프로그램. 무료이고 계정이 필요 없으며 데이터는 기기 밖으로 나가지 않습니다.',
-    supportTitle: '지원 - Tab Organizer',
-    supportDescription:
-      'Tab Organizer에 대해 자주 묻는 질문과, 문제를 알리거나 기능을 제안하는 방법.',
-    privacyTitle: '개인정보처리방침 - Tab Organizer',
+    supportTitle: '지원 - Tabinet',
+    supportDescription: 'Tabinet에 대해 자주 묻는 질문과, 문제를 알리거나 기능을 제안하는 방법.',
+    privacyTitle: '개인정보처리방침 - Tabinet',
     privacyDescription:
-      'Tab Organizer는 아무것도 수집하지 않고 네트워크 요청도 하지 않습니다. 무엇을, 어디에, 얼마나 저장하는지 안내합니다.',
-    ogImageAlt: '창 2개와 탭 그룹이 담긴 저장된 세션을 보여 주는 Tab Organizer 화면',
+      'Tabinet은 아무것도 수집하지 않고 네트워크 요청도 하지 않습니다. 무엇을, 어디에, 얼마나 저장하는지 안내합니다.',
+    ogImageAlt: '창 2개와 탭 그룹이 담긴 저장된 세션을 보여 주는 Tabinet 화면',
   },
   nav: {
     home: '홈',
@@ -31,9 +30,9 @@ export const ko: SiteCopy = {
   hero: {
     eyebrow: 'Chrome 확장 프로그램',
     title: '클릭 한 번이면 탭이 제자리를 찾습니다.',
-    lead: 'Tab Organizer는 현재 창의 탭을 정렬하고 그룹으로 묶고, 중복 탭을 정리하고, 창을 통째로 세션으로 저장해 두었다가 그대로 되살립니다. 모든 데이터는 내 컴퓨터에만 남습니다.',
+    lead: 'Tabinet은 현재 창의 탭을 정렬하고 그룹으로 묶고, 중복 탭을 정리하고, 창을 통째로 세션으로 저장해 두었다가 그대로 되살립니다. 모든 데이터는 내 컴퓨터에만 남습니다.',
     imageAlt:
-      'Tab Organizer 화면: 왼쪽에는 저장된 세션 목록이, 오른쪽에는 창 2개로 된 세션의 고정된 탭과 탭 그룹이 보입니다',
+      'Tabinet 화면: 왼쪽에는 저장된 세션 목록이, 오른쪽에는 창 2개로 된 세션의 고정된 탭과 탭 그룹이 보입니다',
     languages:
       '확장 프로그램은 English, 한국어, Español, 日本語로 제공되며, Chrome의 언어를 따르거나 설정에서 고른 언어로 표시됩니다.',
   },
@@ -64,7 +63,7 @@ export const ko: SiteCopy = {
         '탭이 많으면 지연 로드하고, 진행 상황과 취소 버튼 표시',
         '복원해도 저장된 세션은 지워지지 않음',
       ],
-      alt: '창 3개로 된 저장된 세션 위에 "탭 112개를 복원할까요?" 확인 창과 "탭 지연 로드" 옵션이 떠 있는 Tab Organizer 화면',
+      alt: '창 3개로 된 저장된 세션 위에 "탭 112개를 복원할까요?" 확인 창과 "탭 지연 로드" 옵션이 떠 있는 Tabinet 화면',
     },
     {
       shot: 'history',
@@ -76,7 +75,7 @@ export const ko: SiteCopy = {
         '"보관"을 누르면 스냅샷이 저장된 세션으로 옮겨져 계속 남음',
         '기본으로 켜져 있고 클릭 한 번으로 끌 수 있으며, 끄면 타이머도 돌지 않음',
       ],
-      alt: '복구된 스냅샷을 연 Tab Organizer 화면, 왼쪽 열에 자동 스냅샷 3개가 보입니다',
+      alt: '복구된 스냅샷을 연 Tabinet 화면, 왼쪽 열에 자동 스냅샷 3개가 보입니다',
     },
     {
       shot: 'search',
@@ -88,7 +87,7 @@ export const ko: SiteCopy = {
         '화살표 키로 이동, Enter로 열기, Esc로 지우기',
         '이미 열려 있는 탭은 새로 열지 않고 그 탭으로 이동',
       ],
-      alt: 'Tab Organizer에서 "github"를 검색한 결과, 저장된 세션 2개에서 찾은 탭이 나열되어 있습니다',
+      alt: 'Tabinet에서 "github"를 검색한 결과, 저장된 세션 2개에서 찾은 탭이 나열되어 있습니다',
     },
     {
       shot: 'settings',
@@ -100,7 +99,7 @@ export const ko: SiteCopy = {
         '고정된 탭과 일시 중지된 탭 관련 옵션은 "고급"에 정리',
         '중복 탭을 잘못 닫았다면 Ctrl+Shift+T로 되살리기',
       ],
-      alt: 'Tab Organizer 설정 창: "정렬 기준"은 "URL순", "중복 탭"은 "하나만 남기기", "자동 스냅샷"은 켜짐',
+      alt: 'Tabinet 설정 창: "정렬 기준"은 "URL순", "중복 탭"은 "하나만 남기기", "자동 스냅샷"은 켜짐',
     },
   ],
   more: {
@@ -120,7 +119,7 @@ export const ko: SiteCopy = {
       {
         icon: 'keyboard',
         title: '단축키',
-        body: '새로 설치하면 정렬은 Alt+Shift+S, 모두 모으기는 Alt+Shift+A, 모든 YouTube 동영상 일시중지는 Alt+Shift+P(Mac은 Option)로 지정됩니다. chrome://extensions/shortcuts에서 언제든 지정하거나 바꿀 수 있습니다. 세션 저장과 Tab Organizer 열기에도 원하는 키를 지정할 수 있습니다.',
+        body: '새로 설치하면 정렬은 Alt+Shift+S, 모두 모으기는 Alt+Shift+A, 모든 YouTube 동영상 일시중지는 Alt+Shift+P(Mac은 Option)로 지정됩니다. chrome://extensions/shortcuts에서 언제든 지정하거나 바꿀 수 있습니다. 세션 저장과 Tabinet 열기에도 원하는 키를 지정할 수 있습니다.',
       },
       {
         icon: 'grouping',
@@ -131,7 +130,7 @@ export const ko: SiteCopy = {
   },
   promise: {
     title: '탭 정보는 내 컴퓨터를 떠나지 않습니다',
-    lead: 'Tab Organizer에는 데이터를 보낼 서버가 없습니다. 인터넷을 끊어도 똑같이 동작합니다.',
+    lead: 'Tabinet에는 데이터를 보낼 서버가 없습니다. 인터넷을 끊어도 똑같이 동작합니다.',
     points: [
       {
         title: '기기에만 저장',
@@ -157,15 +156,15 @@ export const ko: SiteCopy = {
     lead: '자주 묻는 질문에 대한 답과, 문제가 생겼을 때 알려 주시는 방법을 모았습니다.',
     startTitle: '시작하기',
     startSteps: [
-      'Chrome 웹 스토어에서 Tab Organizer를 추가하고, 아이콘을 툴바에 고정합니다.',
+      'Chrome 웹 스토어에서 Tabinet을 추가하고, 아이콘을 툴바에 고정합니다.',
       '아이콘을 클릭하면 현재 창의 탭이 정렬됩니다.',
-      '아이콘을 마우스 오른쪽 버튼으로 클릭하면 "모두 모으기", "모든 창을 세션으로 저장", "모든 YouTube 동영상 일시중지" 메뉴가 있습니다. 옵션을 누르면 세션과 설정이 있는 Tab Organizer 화면이 열립니다.',
+      '아이콘을 마우스 오른쪽 버튼으로 클릭하면 "모두 모으기", "모든 창을 세션으로 저장", "모든 YouTube 동영상 일시중지" 메뉴가 있습니다. 옵션을 누르면 세션과 설정이 있는 Tabinet 화면이 열립니다.',
     ],
     reportTitle: '문제 알리기',
     reportLead:
       '버그를 찾았거나 필요한 기능이 있다면 GitHub에 이슈를 남겨 주세요. 모든 제보를 읽습니다. 다음 내용이 있으면 도움이 됩니다:',
     reportItems: [
-      'Chrome 버전(chrome://version)과 Tab Organizer 버전',
+      'Chrome 버전(chrome://version)과 Tabinet 버전',
       '무엇을 했고, 무엇을 기대했고, 실제로는 어떻게 되었는지',
       '눈에 보이는 문제라면 스크린샷',
     ],
@@ -187,7 +186,7 @@ export const ko: SiteCopy = {
       },
       {
         q: '방문 기록이 어딘가로 전송되나요?',
-        a: '아니요. Tab Organizer는 네트워크 요청을 전혀 하지 않습니다. 모든 작업은 브라우저 안에서 이루어집니다.',
+        a: '아니요. Tabinet은 네트워크 요청을 전혀 하지 않습니다. 모든 작업은 브라우저 안에서 이루어집니다.',
       },
       {
         q: '저장한 세션은 어디에 보관되나요?',
@@ -199,7 +198,7 @@ export const ko: SiteCopy = {
       },
       {
         q: '세션은 어떻게 복원하나요?',
-        a: '아이콘을 마우스 오른쪽 버튼으로 클릭해 "옵션"을 고르거나 지정한 단축키로 Tab Organizer를 연 다음, 왼쪽 열에서 세션을 고르고 "열기"를 누르세요. 창이 탭 순서, 고정된 탭, 탭 그룹, 활성 탭까지 그대로 돌아옵니다. 저장된 창을 현재 창에 덧붙이려면 "여기서 열기"를 누르세요.',
+        a: '아이콘을 마우스 오른쪽 버튼으로 클릭해 "옵션"을 고르거나 지정한 단축키로 Tabinet을 연 다음, 왼쪽 열에서 세션을 고르고 "열기"를 누르세요. 창이 탭 순서, 고정된 탭, 탭 그룹, 활성 탭까지 그대로 돌아옵니다. 저장된 창을 현재 창에 덧붙이려면 "여기서 열기"를 누르세요.',
       },
       {
         q: '다른 컴퓨터로 세션을 옮길 수 있나요?',
@@ -211,7 +210,7 @@ export const ko: SiteCopy = {
       },
       {
         q: '모든 YouTube 동영상을 한 번에 일시중지할 수 있나요?',
-        a: '네. 아이콘을 마우스 오른쪽 버튼으로 클릭해 "모든 YouTube 동영상 일시중지"를 선택하거나 단축키를 누르세요(새로 설치하면 Alt+Shift+P, Mac은 Option+Shift+P이며 chrome://extensions/shortcuts에서 지정하거나 바꿀 수 있습니다). 모든 창의 YouTube 탭이 재생 위치 그대로 멈춥니다. 음소거하거나 탭을 닫지 않으며, 다시 실행해도 다시 재생되지 않습니다. 처음에는 YouTube 접근을 허용할 수 있도록 설정의 YouTube 항목이 열립니다. 허용한 뒤 다시 선택하세요. Tab Organizer는 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다. 접근 권한은 설정에서 언제든 해제할 수 있습니다.',
+        a: '네. 아이콘을 마우스 오른쪽 버튼으로 클릭해 "모든 YouTube 동영상 일시중지"를 선택하거나 단축키를 누르세요(새로 설치하면 Alt+Shift+P, Mac은 Option+Shift+P이며 chrome://extensions/shortcuts에서 지정하거나 바꿀 수 있습니다). 모든 창의 YouTube 탭이 재생 위치 그대로 멈춥니다. 음소거하거나 탭을 닫지 않으며, 다시 실행해도 다시 재생되지 않습니다. 처음에는 YouTube 접근을 허용할 수 있도록 설정의 YouTube 항목이 열립니다. 허용한 뒤 다시 선택하세요. Tabinet은 YouTube에서 일시중지만 누르고 페이지의 내용은 읽지 않습니다. 접근 권한은 설정에서 언제든 해제할 수 있습니다.',
       },
       {
         q: '다른 Chromium 브라우저에서도 되나요?',

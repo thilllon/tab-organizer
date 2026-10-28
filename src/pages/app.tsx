@@ -77,7 +77,7 @@ const VERSION = chrome.runtime.getManifest().version;
 const EXPORT_ALL_TOAST = 'export-all';
 
 /**
- * Tab Organizer's one page: the sidebar lists what you have, the main pane shows what you picked,
+ * Tabinet's one page: the sidebar lists what you have, the main pane shows what you picked,
  * and Settings is a dialog over it rather than a second page - still an address of its own
  * (Chrome's "Options" opens `app.html#settings`), drawn on top of the view you were in.
  * Everything below is wiring - the session logic lives in `src/lib/`
@@ -545,7 +545,7 @@ export function App() {
           className="flex items-center gap-2 rounded-md px-1 py-0.5 text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <img src="/img/logo-32.png" alt="" aria-hidden="true" className="size-5 rounded" />
-          {t('extName')}
+          {t('appName')}
           <span className="text-xs font-normal text-muted-foreground tabular-nums">v{VERSION}</span>
         </a>
         <div className="mx-auto flex max-w-xl flex-1 justify-center">

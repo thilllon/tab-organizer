@@ -1,5 +1,5 @@
 /**
- * Opens Tab Organizer's app page as a singleton: focuses the existing tab (and its window) when
+ * Opens Tabinet's app page as a singleton: focuses the existing tab (and its window) when
  * one is open, otherwise creates it. Used by the service worker (context menu, keyboard command).
  * The `*` on the query matches the page whatever view its hash points at.
  *

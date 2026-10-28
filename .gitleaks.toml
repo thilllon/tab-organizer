@@ -1,6 +1,6 @@
 # gitleaks: secret scanning for commits (lefthook pre-commit) and the whole history (CI).
 # The default rule set, minus generated output that cannot hold a hand-written secret.
-title = "tab-organizer"
+title = "tabinet"
 
 [extend]
 useDefault = true

@@ -2,16 +2,15 @@ import type { SiteCopy } from './site-copy';
 
 export const ja: SiteCopy = {
   meta: {
-    homeTitle: 'Tab Organizer - Chrome のタブを並べ替え、グループ化、保存',
+    homeTitle: 'Tabinet - Chrome のタブを並べ替え、グループ化、保存',
     homeDescription:
       'ワンクリックですべてのタブを並べ替えてグループにまとめ、重複タブを片付け、ウィンドウごとセッションとして保存して後から復元できる Chrome 拡張機能。無料、アカウント不要、データは端末の外に出ません。',
-    supportTitle: 'サポート - Tab Organizer',
-    supportDescription: 'Tab Organizer のよくある質問と、不具合の報告や機能の要望を送る方法。',
-    privacyTitle: 'プライバシーポリシー - Tab Organizer',
+    supportTitle: 'サポート - Tabinet',
+    supportDescription: 'Tabinet のよくある質問と、不具合の報告や機能の要望を送る方法。',
+    privacyTitle: 'プライバシーポリシー - Tabinet',
     privacyDescription:
-      'Tab Organizer は何も収集せず、ネットワーク通信も行いません。何を、どこに、いつまで保存するかを説明します。',
-    ogImageAlt:
-      '2つのウィンドウとタブグループを含む保存したセッションを表示した Tab Organizer の画面',
+      'Tabinet は何も収集せず、ネットワーク通信も行いません。何を、どこに、いつまで保存するかを説明します。',
+    ogImageAlt: '2つのウィンドウとタブグループを含む保存したセッションを表示した Tabinet の画面',
   },
   nav: {
     home: 'ホーム',
@@ -31,9 +30,9 @@ export const ja: SiteCopy = {
   hero: {
     eyebrow: 'Chrome 拡張機能',
     title: 'ワンクリックで、タブがあるべき場所に。',
-    lead: 'Tab Organizer は、ウィンドウのタブを並べ替えてグループにまとめ、重複タブを片付け、ウィンドウをまるごとセッションとして保存して、いつでもそのまま呼び戻せます。データはすべてお使いのパソコンの中だけに残ります。',
+    lead: 'Tabinet は、ウィンドウのタブを並べ替えてグループにまとめ、重複タブを片付け、ウィンドウをまるごとセッションとして保存して、いつでもそのまま呼び戻せます。データはすべてお使いのパソコンの中だけに残ります。',
     imageAlt:
-      'Tab Organizer の画面。左の列に保存したセッションが並び、右側に2つのウィンドウからなるセッションの固定タブとタブグループが表示されています',
+      'Tabinet の画面。左の列に保存したセッションが並び、右側に2つのウィンドウからなるセッションの固定タブとタブグループが表示されています',
     languages:
       '拡張機能は English、한국어、Español、日本語 に対応し、Chrome の言語、または設定で選んだ言語で表示されます。',
   },
@@ -64,7 +63,7 @@ export const ja: SiteCopy = {
         'タブが多いときは遅延読み込みし、進行状況とキャンセルボタンを表示',
         '復元しても保存したセッションは消えません',
       ],
-      alt: '3つのウィンドウからなる保存したセッションの上に、「112個のタブを復元しますか？」という確認と「タブを遅延読み込みする」オプションが表示された Tab Organizer の画面',
+      alt: '3つのウィンドウからなる保存したセッションの上に、「112個のタブを復元しますか？」という確認と「タブを遅延読み込みする」オプションが表示された Tabinet の画面',
     },
     {
       shot: 'history',
@@ -76,7 +75,7 @@ export const ja: SiteCopy = {
         '「保持」を押すとスナップショットが保存したセッションに移り、ずっと残ります',
         '初期状態でオン。ワンクリックでオフにでき、オフの間はタイマーも存在しません',
       ],
-      alt: '復旧したスナップショットを開いた Tab Organizer の画面。左の列に3件の自動スナップショットが並んでいます',
+      alt: '復旧したスナップショットを開いた Tabinet の画面。左の列に3件の自動スナップショットが並んでいます',
     },
     {
       shot: 'search',
@@ -88,7 +87,7 @@ export const ja: SiteCopy = {
         '矢印キーで移動、Enter で開く、Esc でクリア',
         'すでに開いているタブは二重に開かず、そのタブに切り替え',
       ],
-      alt: 'Tab Organizer で「github」を検索した結果。2つの保存したセッションから見つかったタブが並んでいます',
+      alt: 'Tabinet で「github」を検索した結果。2つの保存したセッションから見つかったタブが並んでいます',
     },
     {
       shot: 'settings',
@@ -100,7 +99,7 @@ export const ja: SiteCopy = {
         '固定タブや休止中のタブの設定は「詳細設定」にまとめてあります',
         '重複タブをうっかり閉じても Ctrl+Shift+T で元に戻せます',
       ],
-      alt: 'Tab Organizer の設定ダイアログ。「並べ替えの基準」は「URL 順」、「重複タブ」は「1つだけ残す」、「自動スナップショット」はオン',
+      alt: 'Tabinet の設定ダイアログ。「並べ替えの基準」は「URL 順」、「重複タブ」は「1つだけ残す」、「自動スナップショット」はオン',
     },
   ],
   more: {
@@ -120,7 +119,7 @@ export const ja: SiteCopy = {
       {
         icon: 'keyboard',
         title: 'キーボードショートカット',
-        body: '新しくインストールすると、並べ替えは Alt+Shift+S、「集合！」は Alt+Shift+A、YouTube の動画をすべて一時停止は Alt+Shift+P（Mac では Option）が割り当てられます。chrome://extensions/shortcuts でいつでも設定・変更できます。セッションの保存や Tab Organizer を開く操作にも好きなキーを割り当てられます。',
+        body: '新しくインストールすると、並べ替えは Alt+Shift+S、「集合！」は Alt+Shift+A、YouTube の動画をすべて一時停止は Alt+Shift+P（Mac では Option）が割り当てられます。chrome://extensions/shortcuts でいつでも設定・変更できます。セッションの保存や Tabinet を開く操作にも好きなキーを割り当てられます。',
       },
       {
         icon: 'grouping',
@@ -131,7 +130,7 @@ export const ja: SiteCopy = {
   },
   promise: {
     title: 'タブの情報は、パソコンの外に出ません',
-    lead: 'Tab Organizer には、データを送る先のサーバーがそもそもありません。ネットワークを切っても同じように動きます。',
+    lead: 'Tabinet には、データを送る先のサーバーがそもそもありません。ネットワークを切っても同じように動きます。',
     points: [
       {
         title: '端末の中だけ',
@@ -157,15 +156,15 @@ export const ja: SiteCopy = {
     lead: 'よくある質問への答えと、困ったときの連絡方法をまとめました。',
     startTitle: 'はじめかた',
     startSteps: [
-      'Chrome ウェブストアから Tab Organizer を追加し、アイコンをツールバーに固定します。',
+      'Chrome ウェブストアから Tabinet を追加し、アイコンをツールバーに固定します。',
       'アイコンをクリックすると、現在のウィンドウのタブが並べ替えられます。',
-      'アイコンを右クリックすると「集合！」、「すべてのウィンドウをセッションとして保存」、「YouTube の動画をすべて一時停止」があります。「オプション」を選ぶと、セッションと設定がそろった Tab Organizer の画面が開きます。',
+      'アイコンを右クリックすると「集合！」、「すべてのウィンドウをセッションとして保存」、「YouTube の動画をすべて一時停止」があります。「オプション」を選ぶと、セッションと設定がそろった Tabinet の画面が開きます。',
     ],
     reportTitle: '不具合を報告する',
     reportLead:
       '不具合を見つけたり、ほしい機能があったりしたら、GitHub で Issue を作成してください。すべての報告に目を通しています。次の情報があると助かります。',
     reportItems: [
-      'Chrome のバージョン（chrome://version）と Tab Organizer のバージョン',
+      'Chrome のバージョン（chrome://version）と Tabinet のバージョン',
       '何をしたか、どうなるはずだったか、実際にどうなったか',
       '見た目の問題なら、スクリーンショット',
     ],
@@ -187,7 +186,7 @@ export const ja: SiteCopy = {
       },
       {
         q: '閲覧データがどこかに送信されますか？',
-        a: 'いいえ。Tab Organizer はネットワーク通信を一切行いません。すべてブラウザの中で完結します。',
+        a: 'いいえ。Tabinet はネットワーク通信を一切行いません。すべてブラウザの中で完結します。',
       },
       {
         q: '保存したセッションはどこに保管されますか？',
@@ -211,7 +210,7 @@ export const ja: SiteCopy = {
       },
       {
         q: 'YouTube の動画をまとめて一時停止できますか？',
-        a: 'はい。アイコンを右クリックして「YouTube の動画をすべて一時停止」を選ぶか、ショートカットキーを押してください（新しくインストールした場合は Alt+Shift+P、Mac では Option+Shift+P。chrome://extensions/shortcuts で設定・変更できます）。すべてのウィンドウの YouTube タブが、再生位置はそのままで一時停止します。ミュートしたりタブを閉じたりすることはなく、もう一度実行しても再生は再開されません。初回は YouTube へのアクセスを許可できるよう設定の YouTube の項目が開きます。許可したら、もう一度選んでください。Tab Organizer は YouTube で一時停止を押すだけで、ページの内容は読み取りません。アクセスは設定からいつでも解除できます。',
+        a: 'はい。アイコンを右クリックして「YouTube の動画をすべて一時停止」を選ぶか、ショートカットキーを押してください（新しくインストールした場合は Alt+Shift+P、Mac では Option+Shift+P。chrome://extensions/shortcuts で設定・変更できます）。すべてのウィンドウの YouTube タブが、再生位置はそのままで一時停止します。ミュートしたりタブを閉じたりすることはなく、もう一度実行しても再生は再開されません。初回は YouTube へのアクセスを許可できるよう設定の YouTube の項目が開きます。許可したら、もう一度選んでください。Tabinet は YouTube で一時停止を押すだけで、ページの内容は読み取りません。アクセスは設定からいつでも解除できます。',
       },
       {
         q: 'ほかの Chromium ブラウザでも使えますか？',

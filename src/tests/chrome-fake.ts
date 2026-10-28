@@ -1081,7 +1081,7 @@ export function createChromeFake(): ChromeFake {
     },
     getManifest(): chrome.runtime.Manifest {
       // Only `version` is read by the app; the rest of ManifestV3 is optional.
-      return { manifest_version: 3, name: 'Tab Organizer', version: '7.0.0' };
+      return { manifest_version: 3, name: 'Tabinet', version: '7.0.0' };
     },
     onInstalled,
     onStartup,

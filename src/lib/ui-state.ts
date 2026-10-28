@@ -6,6 +6,7 @@
  * keys at all).
  */
 
+// Prefixed with the extension's name before Tabinet; kept so a remembered state survives the rename.
 /** Open/closed state of the sidebar's snapshots fold. */
 export const HISTORY_OPEN_KEY = 'tab-organizer:history-open';
 /** Width of the app's sidebar, in pixels - a preference, so it outlives the tab. */

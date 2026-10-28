@@ -332,7 +332,7 @@ function onStorageChanged(
 }
 
 function report(err: unknown): void {
-  console.error('[tab-organizer:sessions]', err);
+  console.error('[tabinet:sessions]', err);
 }
 
 // The language chosen in Settings, read once per worker start. Started here, before any listener
@@ -379,6 +379,6 @@ let sortQueue: Promise<void> = Promise.resolve();
 
 chrome.action.onClicked.addListener(() => {
   sortQueue = sortQueue.then(sortTabGroups).catch((err: unknown) => {
-    console.error('[tab-organizer] sort failed', err);
+    console.error('[tabinet] sort failed', err);
   });
 });

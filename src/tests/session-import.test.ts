@@ -516,7 +516,7 @@ describe('importSessions', () => {
     bundle.sessions[1] = { ...fixture, windows: 'nope' };
     const invalid = importSessions(JSON.stringify(bundle), NOW);
     expect(invalid.format === null && invalid.error).toBe(
-      'Session 2 is not a valid Tab Organizer session record.',
+      'Session 2 is not a valid Tabinet session record.',
     );
 
     const newer = importSessions(JSON.stringify({ ...fixture, schemaVersion: 2 }), NOW);
@@ -526,7 +526,7 @@ describe('importSessions', () => {
 
     const foreign = importSessions('{"tabs": ["https://a.test"]}', NOW);
     expect(foreign.format === null && foreign.error).toBe(
-      'Session 1 is not a valid Tab Organizer session record.',
+      'Session 1 is not a valid Tabinet session record.',
     );
 
     const noList = importSessions('{"app": "tab-organizer"}', NOW);
