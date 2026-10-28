@@ -21,6 +21,7 @@ import {
   syncNow,
 } from '@/lib/cloud-sync';
 import {
+  belongsTo,
   CLOUD_SYNC_META_KEY,
   type CloudSyncMeta,
   freshSyncMeta,
@@ -29,6 +30,7 @@ import {
   readSyncMeta,
   type SyncContext,
   syncWorkGrew,
+  withKnownVersion,
   withSessionChanges,
 } from '@/lib/cloud-sync-state';
 import { sessionRepo } from '@/lib/session-repo';
@@ -350,6 +352,30 @@ describe('pure helpers', () => {
     expect(deleted).toMatchObject({ dirtySessions: {}, deletedSessions: { s1: 10 } });
     const back = withSessionChanges(deleted, { changed: [['s1', 11]] }, 11);
     expect(back).toMatchObject({ dirtySessions: { s1: 11 }, deletedSessions: {} });
+  });
+
+  it('a deletion is remembered in knownVersions, which never goes down', () => {
+    const meta = freshSyncMeta(CONTEXT, { s1: 3 });
+    const deleted = withSessionChanges(meta, { deleted: [['s1', 3]] }, 10);
+    expect(deleted.knownVersions).toEqual({ s1: 10 });
+    expect(withKnownVersion(deleted, 's1', 5)).toBe(deleted);
+    expect(withKnownVersion(deleted, 's1', 12).knownVersions).toEqual({ s1: 12 });
+    // Accepted pushes are remembered too, also when the entry changed again since.
+    expect(afterApplied(meta, { set: 'dirty', stamp: 3 }, 's1').knownVersions).toEqual({ s1: 3 });
+    expect(afterApplied(meta, { set: 'dirty', stamp: 2 }, 's1').knownVersions).toEqual({ s1: 2 });
+  });
+
+  it('belongsTo follows the key alone, never the email the server reports', () => {
+    const meta = freshSyncMeta(CONTEXT, {});
+    const otherEmail = { ...CONTEXT, account: { ...CONTEXT.account, email: 'A@B.C' } };
+    expect(belongsTo(meta, otherEmail)).toBe(true);
+    expect(belongsTo(meta, { ...CONTEXT, keyId: 'another' })).toBe(false);
+  });
+
+  it('parseSyncMeta reads bookkeeping written before knownVersions existed', () => {
+    const { knownVersions: _known, ...older } = freshSyncMeta(CONTEXT, { s1: 3 });
+    expect(parseSyncMeta(older)?.knownVersions).toEqual({});
+    expect(parseSyncMeta({ ...older, knownVersions: { s1: -1 } })).toBeUndefined();
   });
 
   it('syncWorkGrew: only new work counts', () => {

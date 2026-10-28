@@ -44,6 +44,7 @@ import {
   readSyncMetaFor,
   type SyncContext,
   syncWorkGrew,
+  withKnownVersion,
   writeSyncMeta,
 } from '@/lib/cloud-sync-state';
 import { errorMessage, ExplainedError } from '@/lib/error-message';
@@ -605,7 +606,11 @@ function dropEntry(
   return { ...meta, [key]: entries };
 }
 
-/** `meta` after the server accepted `item`; an entry changed again since is left pending. Pure. */
+/**
+ * `meta` after the server accepted `item`; an entry changed again since is left pending. A session's
+ * stamp is remembered in `knownVersions` either way, so the server cannot later pass off anything
+ * older as new. Pure.
+ */
 export function afterApplied(
   meta: CloudSyncMeta,
   entry: Outgoing['entry'],
@@ -622,7 +627,7 @@ export function afterApplied(
       settingsSyncedAt: entry.stamp,
     };
   }
-  return dropEntry(meta, entry.set, id, entry.stamp);
+  return withKnownVersion(dropEntry(meta, entry.set, id, entry.stamp), id, entry.stamp);
 }
 
 async function push(run: RunState): Promise<void> {
@@ -660,22 +665,32 @@ async function applyStale(
   item: Outgoing,
   current: CloudRecordWithSeq,
 ): Promise<void> {
+  if (current.kind !== item.record.kind || current.id !== item.record.id) {
+    // An answer about another record settles nothing: the entry stays pending.
+    run.problems.push(new UnusableRecordError(current.kind, current.id));
+    return;
+  }
   try {
     await applyRecord(run, current, true);
   } catch (err: unknown) {
     if (!(err instanceof ExplainedError && err.userKey === 'errorCloudDecrypt')) {
       throw err;
     }
-    // The server's copy cannot be read here. It still wins on the server; this device's copy is
-    // kept untouched and no longer offered, so the push does not repeat forever.
     console.warn(`[tabinet:sync] the server's ${current.kind} ${current.id} does not decrypt`);
     run.problems.push(err);
-    if (item.entry.set !== 'settings') {
-      const { set, stamp } = item.entry;
-      await updateMeta(run.context, (meta) => dropEntry(meta, set, current.id, stamp));
+    const { set, stamp } = item.entry;
+    if (set === 'deleted') {
+      // A deletion stays pending: dropping it on the word of an unreadable record would leave
+      // nothing here to refuse a later replay of the session's old body with. It is offered again.
+      return;
+    }
+    // The server's copy cannot be read here. This device's copy is kept untouched and no longer
+    // offered, so the push does not repeat forever.
+    if (set === 'dirty') {
+      await updateMeta(run.context, (meta) => dropEntry(meta, set, item.record.id, stamp));
     } else {
       await updateMeta(run.context, (meta) =>
-        meta.settingsUpdatedAt === item.entry.stamp ? { ...meta, settingsDirty: false } : meta,
+        meta.settingsUpdatedAt === stamp ? { ...meta, settingsDirty: false } : meta,
       );
     }
   }

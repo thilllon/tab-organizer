@@ -646,6 +646,125 @@ describe('a hostile server', () => {
     expect((await get(b, 's1'))?.name).toBe('One, on B');
     expect((await meta(b))?.lastError).toBe(t('errorCloudDecrypt'));
   });
+
+  it('cannot resurrect a session this device deleted by replaying its record byte for byte', async () => {
+    const alive = stored('session', 's1');
+    at(2_000_000);
+    await on(b, () => sessionRepo.remove('s1'));
+    await sync(b);
+    expect((await meta(b))?.deletedSessions).toEqual({});
+
+    // The very record A sent, under the same metadata: it decrypts, and must still be refused.
+    server.inject(alive);
+    await sync(b);
+    expect(await get(b, 's1')).toBeUndefined();
+    expect(await names(b)).toEqual(['Two']);
+  });
+
+  it('cannot resurrect a session deleted on another device by replaying its record', async () => {
+    const alive = stored('session', 's1');
+    at(2_000_000);
+    await on(a, () => sessionRepo.remove('s1'));
+    await sync(a);
+    await sync(b);
+    expect(await names(b)).toEqual(['Two']);
+
+    server.inject(alive);
+    await sync(b);
+    expect(await names(b)).toEqual(['Two']);
+  });
+
+  it('cannot drop a pending deletion with an unreadable current record, then replay the body', async () => {
+    const alive = stored('session', 's1');
+    at(2_000_000);
+    await on(b, () => sessionRepo.remove('s1'));
+    const realFetch = server.fetch;
+    const forging: typeof fetch = async (input, init) => {
+      if (init?.method === 'POST') {
+        server.inject({
+          kind: 'session',
+          id: 's1',
+          updatedAt: LATER,
+          deleted: false,
+          iv: toBase64(new Uint8Array(12)),
+          ciphertext: toBase64(crypto.getRandomValues(new Uint8Array(32))),
+        });
+      }
+      return realFetch(input, init);
+    };
+    await on(b, () => syncNow({ fetch: forging }));
+    expect(Object.keys((await meta(b))?.deletedSessions ?? {})).toEqual(['s1']);
+
+    server.inject(alive);
+    await sync(b);
+    expect(await names(b)).toEqual(['Two']);
+  });
+
+  it('a stale answer carrying a record of another kind settles nothing', async () => {
+    at(2_000_000);
+    await on(b, () => sessionRepo.rename('s1', 'One, on B'));
+    const stamp = (await meta(b))?.dirtySessions.s1;
+    expect(stamp).toBeDefined();
+    const realFetch = server.fetch;
+    const answering: typeof fetch = async (input, init) => {
+      const response = await realFetch(input, init);
+      if (init?.method !== 'POST') {
+        return response;
+      }
+      const body = (await response.json()) as { results: { kind: string; id: string }[] };
+      return new Response(
+        JSON.stringify({
+          results: body.results.map((result) => ({
+            kind: result.kind,
+            id: result.id,
+            status: 'stale',
+            current: {
+              kind: result.kind === 'session' ? 'settings' : 'session',
+              id: result.id,
+              updatedAt: LATER,
+              deleted: false,
+              iv: toBase64(new Uint8Array(12)),
+              ciphertext: btoa('not the real ciphertext!'),
+              seq: 99,
+            },
+          })),
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    };
+    await on(b, () => syncNow({ fetch: answering }));
+    expect((await meta(b))?.dirtySessions).toEqual({ s1: stamp });
+    expect((await get(b, 's1'))?.name).toBe('One, on B');
+  });
+
+  it('cannot reset the bookkeeping by answering a sign-in with another email', async () => {
+    at(2_000_000);
+    await on(a, () => chrome.storage.sync.set({ sortBy: 'title' }));
+    await sync(a);
+    const oldSettings = stored('settings', 'settings');
+    const alive = stored('session', 's1');
+    at(3_000_000);
+    await on(a, () => chrome.storage.sync.set({ sortBy: 'custom' }));
+    await sync(a);
+    await sync(b);
+    expect((await on(b, () => readLocalSettings())).sort.sortBy).toBe('custom');
+
+    // B deletes s1 while signed out, then signs in again; the server names another email.
+    at(4_000_000);
+    await on(b, () => chrome.storage.local.remove([CLOUD_ACCOUNT_KEY, CLOUD_SYNC_KEY]));
+    await on(b, () => sessionRepo.remove('s1'));
+    await on(b, () =>
+      chrome.storage.local.set({
+        [CLOUD_ACCOUNT_KEY]: { token: 'tok', expiresAt: FAR_FUTURE, email: 'A@B.C' },
+        [CLOUD_SYNC_KEY]: rawKey,
+      }),
+    );
+    server.inject(oldSettings);
+    server.inject(alive);
+    await sync(b);
+    expect((await on(b, () => readLocalSettings())).sort.sortBy).toBe('custom');
+    expect(await names(b)).toEqual(['Two']);
+  });
 });
 
 describe('syncNow', () => {
@@ -668,7 +787,7 @@ describe('syncNow', () => {
     expect(await names(a)).toEqual(['Kept']);
   });
 
-  it('starts over for another account: everything saved is offered again', async () => {
+  it('starts over for another account and key: everything saved is offered again', async () => {
     await on(a, () => sessionRepo.put(makeSession('s1', 'One')));
     await sync(a);
     expect((await meta(a))?.dirtySessions).toEqual({});
@@ -677,10 +796,29 @@ describe('syncNow', () => {
       expiresAt: FAR_FUTURE,
       email: 'someone@else.example',
     });
+    a.fake.state.local.set(CLOUD_SYNC_KEY, newRawKey());
     server = fakeSyncServer();
     await sync(a);
     expect(server.record('session', 's1')).toBeDefined();
     expect((await meta(a))?.owner).toBe('someone@else.example');
+  });
+
+  it('keeps the bookkeeping when only the email the server reports changes', async () => {
+    await on(a, () => sessionRepo.put(makeSession('s1', 'One')));
+    await sync(a);
+    await sync(a);
+    const before = await meta(a);
+    const posts = postCount();
+    a.fake.state.local.set(CLOUD_ACCOUNT_KEY, {
+      token: 'tok',
+      expiresAt: FAR_FUTURE,
+      email: 'A@B.C',
+    });
+    await sync(a);
+    // Not started afresh: nothing is offered again and the feed is not read from the start.
+    expect(postCount()).toBe(posts);
+    expect((await meta(a))?.cursor).toBe(before?.cursor);
+    expect((await meta(a))?.knownVersions).toEqual(before?.knownVersions);
   });
 
   it('stores the cursor after every page, so an interrupted pull resumes there', async () => {

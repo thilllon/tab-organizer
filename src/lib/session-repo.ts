@@ -3,6 +3,7 @@ import {
   readSyncMeta,
   type SessionChanges,
   trackSessionChanges,
+  withKnownVersion,
   writeSyncMeta,
 } from '@/lib/cloud-sync-state';
 import { LocalizedError } from '@/lib/error-message';
@@ -423,6 +424,12 @@ export const sessionRepo = {
    * - the same `updatedAt` (this device's own write coming back), nothing to delete, a snapshot,
    *   or a body this build cannot read: nothing happens (`'unchanged'`). A snapshot or an unreadable
    *   body is never overwritten or deleted by a remote change.
+   *
+   * With no copy here, the bar is the pending tombstone and `knownVersions`, the newest version of
+   * the id this device ever applied, deleted or had accepted: a live record must be strictly newer
+   * (no tie, even for a `stale` answer), so a server replaying a deleted session's last record
+   * byte for byte cannot bring it back. A remote tombstone with no copy here deletes nothing; it
+   * raises the mark and settles a pending tombstone that is not newer than it.
    */
   applyRemote(change: RemoteSessionChange, options: { serverWinsTies?: boolean } = {}) {
     return withLock(async (): Promise<RemoteApplyOutcome> => {
@@ -444,14 +451,42 @@ export const sessionRepo = {
       }
       const meta = await readSyncMeta();
       const tombstone = meta?.deletedSessions[id];
-      const localAt = local !== undefined ? Math.max(local.updatedAt, tombstone ?? 0) : tombstone;
+
+      if (local === undefined) {
+        // Nothing here: the floor is this device's pending deletion and the newest version it has
+        // ever known of the id. A record at or below it is old, whatever the server says: that is
+        // what keeps a replay of a deleted session's last live record from bringing it back.
+        const floors = [tombstone, meta?.knownVersions[id]].filter((at) => at !== undefined);
+        const floor = floors.length > 0 ? Math.max(...floors) : undefined;
+        if (change.type === 'deleted') {
+          // Nothing to delete. A deletion at or after the pending one settles it.
+          if (meta !== undefined) {
+            let next = withKnownVersion(meta, id, remoteAt);
+            if (tombstone !== undefined && remoteAt >= tombstone) {
+              const deletedSessions = { ...next.deletedSessions };
+              delete deletedSessions[id];
+              next = { ...next, deletedSessions };
+            }
+            if (next !== meta) {
+              await writeSyncMeta(next);
+            }
+          }
+          return tombstone !== undefined && remoteAt < tombstone ? 'kept-local' : 'unchanged';
+        }
+        if (floor !== undefined && remoteAt <= floor) {
+          return tombstone !== undefined ? 'kept-local' : 'unchanged';
+        }
+        await writeBodyAndIndex(change.session);
+        await settleRemote(id, remoteAt);
+        return 'applied';
+      }
+
+      const localAt = Math.max(local.updatedAt, tombstone ?? 0);
       const remoteWins =
-        localAt === undefined ||
-        remoteAt > localAt ||
-        (options.serverWinsTies === true && remoteAt === localAt);
+        remoteAt > localAt || (options.serverWinsTies === true && remoteAt === localAt);
 
       if (!remoteWins) {
-        if (localAt > remoteAt && local !== undefined && meta !== undefined) {
+        if (localAt > remoteAt && meta !== undefined) {
           if (meta.dirtySessions[id] === undefined && tombstone === undefined) {
             await writeSyncMeta({
               ...meta,
@@ -463,27 +498,13 @@ export const sessionRepo = {
         return localAt > remoteAt ? 'kept-local' : 'unchanged';
       }
 
-      let outcome: RemoteApplyOutcome = 'applied';
       if (change.type === 'session') {
         await writeBodyAndIndex(change.session);
-      } else if (local !== undefined) {
-        await removeBodiesAndIndex(index, [id]);
       } else {
-        outcome = 'unchanged';
+        await removeBodiesAndIndex(index, [id]);
       }
-      // Re-read: removeBodiesAndIndex never touches the bookkeeping, but be exact about it.
-      const current = await readSyncMeta();
-      if (
-        current !== undefined &&
-        (current.dirtySessions[id] !== undefined || current.deletedSessions[id] !== undefined)
-      ) {
-        const dirtySessions = { ...current.dirtySessions };
-        const deletedSessions = { ...current.deletedSessions };
-        delete dirtySessions[id];
-        delete deletedSessions[id];
-        await writeSyncMeta({ ...current, dirtySessions, deletedSessions });
-      }
-      return outcome;
+      await settleRemote(id, remoteAt);
+      return 'applied';
     });
   },
 
@@ -788,6 +809,24 @@ export type RemoteSessionChange =
   | { type: 'deleted'; id: SessionId; updatedAt: number };
 
 export type RemoteApplyOutcome = 'applied' | 'kept-local' | 'unchanged';
+
+/**
+ * After a remote change was applied: this device's pending entries for `id` are dropped (the
+ * remote change replaced them) and `remoteAt` is remembered in `knownVersions`. Inside the lock.
+ */
+async function settleRemote(id: SessionId, remoteAt: number): Promise<void> {
+  const current = await readSyncMeta();
+  if (current === undefined) {
+    return;
+  }
+  const dirtySessions = { ...current.dirtySessions };
+  const deletedSessions = { ...current.deletedSessions };
+  delete dirtySessions[id];
+  delete deletedSessions[id];
+  await writeSyncMeta(
+    withKnownVersion({ ...current, dirtySessions, deletedSessions }, id, remoteAt),
+  );
+}
 
 /** The dirty-set entry for a written session: saved sessions only, snapshots never sync. */
 function savedChange(session: Session): SessionChanges {

@@ -12,8 +12,12 @@
  * Nothing is tracked unless cloud sync is configured (`isCloudSyncEnabled()`) and a first sync
  * started the bookkeeping (`startSyncMeta()`). Once started it outlives the account being ready:
  * an expired token, a 401 or a sign-out keep it, and changes made meanwhile are still recorded, so
- * signing in again to the same account and key resumes it and sends them (a deletion included).
- * Another account or key starts it afresh. While unconfigured no function here reads storage.
+ * signing in again with the same key resumes it and sends them (a deletion included). Another key
+ * starts it afresh. It is bound to the key alone, never to the email the server reports: the
+ * server is not trusted, and a different spelling of the email must not wipe the marks that stop
+ * it from rolling data back (`settingsUpdatedAt`, `knownVersions`, the pending deletions). The
+ * key is random per account (`createKeySetup()`), so the same key means the same account's data.
+ * While unconfigured no function here reads storage.
  */
 import { CLOUD_ACCOUNT_KEY, CLOUD_SYNC_KEY, isCloudAccount } from '@/lib/cloud-auth';
 import { isCloudSyncEnabled } from '@/lib/cloud-config';
@@ -25,7 +29,10 @@ import type { CloudAccount, SessionId } from '@/types';
 export const CLOUD_SYNC_META_KEY = 'cloudSyncMeta';
 
 export interface CloudSyncMeta {
-  /** The account email the bookkeeping belongs to; another account starts it again. */
+  /**
+   * The account email when the bookkeeping started, for information only: the server supplies it,
+   * so it never decides whether the bookkeeping is kept (`belongsTo()`).
+   */
   owner: string;
   /** Fingerprint of the sync key it was started with; another key starts it again. */
   keyId: string;
@@ -39,6 +46,13 @@ export interface CloudSyncMeta {
   dirtySessions: Record<SessionId, number>;
   /** Saved sessions deleted here and not yet accepted by the server: id to deletion time. */
   deletedSessions: Record<SessionId, number>;
+  /**
+   * The newest `updatedAt` this device has applied, deleted or had accepted for each saved
+   * session id, kept for good (also once the session and its pending tombstone are gone). A record
+   * from the server at or below it is old, so a replay of a deleted session's last live record
+   * cannot bring it back.
+   */
+  knownVersions: Record<SessionId, number>;
   /** When the settings last changed on this device (0: not since sync started). */
   settingsUpdatedAt: number;
   /** Whether the settings differ from what was last exchanged with the server. */
@@ -86,6 +100,7 @@ export function parseSyncMeta(value: unknown): CloudSyncMeta | undefined {
     !(value.lastError === undefined || typeof value.lastError === 'string') ||
     !isStampMap(value.dirtySessions) ||
     !isStampMap(value.deletedSessions) ||
+    !(value.knownVersions === undefined || isStampMap(value.knownVersions)) ||
     !isCount(value.settingsUpdatedAt) ||
     typeof value.settingsDirty !== 'boolean' ||
     !(value.settingsHash === undefined || typeof value.settingsHash === 'string') ||
@@ -101,6 +116,7 @@ export function parseSyncMeta(value: unknown): CloudSyncMeta | undefined {
     lastSyncAt: value.lastSyncAt,
     dirtySessions: { ...value.dirtySessions },
     deletedSessions: { ...value.deletedSessions },
+    knownVersions: { ...value.knownVersions },
     settingsUpdatedAt: value.settingsUpdatedAt,
     settingsDirty: value.settingsDirty,
   };
@@ -132,9 +148,12 @@ export function contextFrom(stored: Record<string, unknown>, now: number): SyncC
   return { account, rawKey, keyId: keyFingerprint(rawKey) };
 }
 
-/** Whether `meta` was started for this account and key. Pure. */
+/**
+ * Whether `meta` was started for this key. The key alone decides: the account email comes from the
+ * untrusted server, which could otherwise reset the anti-rollback marks by naming another. Pure.
+ */
 export function belongsTo(meta: CloudSyncMeta, context: SyncContext): boolean {
-  return meta.owner === context.account.email && meta.keyId === context.keyId;
+  return meta.keyId === context.keyId;
 }
 
 /**
@@ -186,9 +205,23 @@ export function freshSyncMeta(
     lastSyncAt: null,
     dirtySessions: { ...savedSessions },
     deletedSessions: {},
+    knownVersions: {},
     settingsUpdatedAt: 0,
     settingsDirty: true,
   };
+}
+
+/** `meta` with `updatedAt` remembered for `id`, never lowering what is there. Pure. */
+export function withKnownVersion(
+  meta: CloudSyncMeta,
+  id: SessionId,
+  updatedAt: number,
+): CloudSyncMeta {
+  const known = meta.knownVersions[id];
+  if (known !== undefined && known >= updatedAt) {
+    return meta;
+  }
+  return { ...meta, knownVersions: { ...meta.knownVersions, [id]: updatedAt } };
 }
 
 /** Saved-session writes for the dirty sets: what changed (with its new `updatedAt`) or was deleted. */
@@ -201,7 +234,8 @@ export interface SessionChanges {
 /**
  * `meta` with `changes` recorded: a change replaces a pending tombstone, a deletion replaces a
  * pending change. A tombstone is stamped `now`, or just after the session's own `updatedAt` when
- * that is later (a copy made on a device whose clock runs ahead). Pure.
+ * that is later (a copy made on a device whose clock runs ahead), and remembered in
+ * `knownVersions`. Pure.
  */
 export function withSessionChanges(
   meta: CloudSyncMeta,
@@ -210,15 +244,18 @@ export function withSessionChanges(
 ): CloudSyncMeta {
   const dirtySessions = { ...meta.dirtySessions };
   const deletedSessions = { ...meta.deletedSessions };
+  const knownVersions = { ...meta.knownVersions };
   for (const [id, updatedAt] of changes.changed ?? []) {
     dirtySessions[id] = updatedAt;
     delete deletedSessions[id];
   }
   for (const [id, updatedAt] of changes.deleted ?? []) {
-    deletedSessions[id] = Math.max(now, updatedAt + 1);
+    const deletedAt = Math.max(now, updatedAt + 1);
+    deletedSessions[id] = deletedAt;
+    knownVersions[id] = Math.max(knownVersions[id] ?? 0, deletedAt);
     delete dirtySessions[id];
   }
-  return { ...meta, dirtySessions, deletedSessions };
+  return { ...meta, dirtySessions, deletedSessions, knownVersions };
 }
 
 /**
