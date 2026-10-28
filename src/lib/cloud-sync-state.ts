@@ -9,9 +9,11 @@
  * (`src/lib/cloud-sync.ts`) wraps its calls in `withLock()`. This module imports nothing from the
  * session repository, so the repository can import it.
  *
- * Nothing is tracked unless cloud sync is configured (`isCloudSyncEnabled()`), this device holds a
- * live account and its sync key, and the bookkeeping was started for that account and key by the
- * first sync (`startSyncMeta()`). While unconfigured no function here reads storage at all.
+ * Nothing is tracked unless cloud sync is configured (`isCloudSyncEnabled()`) and a first sync
+ * started the bookkeeping (`startSyncMeta()`). Once started it outlives the account being ready:
+ * an expired token, a 401 or a sign-out keep it, and changes made meanwhile are still recorded, so
+ * signing in again to the same account and key resumes it and sends them (a deletion included).
+ * Another account or key starts it afresh. While unconfigured no function here reads storage.
  */
 import { CLOUD_ACCOUNT_KEY, CLOUD_SYNC_KEY, isCloudAccount } from '@/lib/cloud-auth';
 import { isCloudSyncEnabled } from '@/lib/cloud-config';
@@ -45,6 +47,12 @@ export interface CloudSyncMeta {
   settingsHash?: string;
   /** The `updatedAt` of those settings. */
   settingsSyncedAt?: number;
+  /**
+   * Settings received from the server and not yet fully written here (the page reloading on a new
+   * language, or the worker stopping, can cut the writes short). While present, a local settings
+   * change is not taken for an edit of this device's own; the next sync finishes writing them.
+   */
+  pendingSettings?: Record<string, unknown>;
 }
 
 /** What a sync runs with: the live account and the raw key, as stored on this device. */
@@ -81,7 +89,8 @@ export function parseSyncMeta(value: unknown): CloudSyncMeta | undefined {
     !isCount(value.settingsUpdatedAt) ||
     typeof value.settingsDirty !== 'boolean' ||
     !(value.settingsHash === undefined || typeof value.settingsHash === 'string') ||
-    !(value.settingsSyncedAt === undefined || isCount(value.settingsSyncedAt))
+    !(value.settingsSyncedAt === undefined || isCount(value.settingsSyncedAt)) ||
+    !(value.pendingSettings === undefined || isRecord(value.pendingSettings))
   ) {
     return undefined;
   }
@@ -103,6 +112,9 @@ export function parseSyncMeta(value: unknown): CloudSyncMeta | undefined {
   }
   if (value.settingsSyncedAt !== undefined) {
     meta.settingsSyncedAt = value.settingsSyncedAt;
+  }
+  if (value.pendingSettings !== undefined) {
+    meta.pendingSettings = { ...value.pendingSettings };
   }
   return meta;
 }
@@ -211,9 +223,10 @@ export function withSessionChanges(
 
 /**
  * Records saved-session writes in the dirty sets. Called by `sessionRepo` from inside its lock,
- * after the write. A no-op (no storage read) while cloud sync is unconfigured, and a no-op while
- * this device is not ready or sync has not started for its account: the first sync marks every
- * saved session dirty anyway.
+ * after the write. A no-op (no storage read) while cloud sync is unconfigured, and a no-op before
+ * the first sync started the bookkeeping (it marks every saved session dirty anyway). It records
+ * also while the device is not ready (an expired token, signed out): the bookkeeping is resumed
+ * when the same account and key sign in again, and what changed meanwhile must be sent then.
  */
 export async function trackSessionChanges(
   changes: SessionChanges,
@@ -225,14 +238,8 @@ export async function trackSessionChanges(
   if ((changes.changed?.length ?? 0) === 0 && (changes.deleted?.length ?? 0) === 0) {
     return;
   }
-  const stored = await chrome.storage.local.get([
-    CLOUD_ACCOUNT_KEY,
-    CLOUD_SYNC_KEY,
-    CLOUD_SYNC_META_KEY,
-  ]);
-  const context = contextFrom(stored, now);
-  const meta = parseSyncMeta(stored[CLOUD_SYNC_META_KEY]);
-  if (context === null || meta === undefined || !belongsTo(meta, context)) {
+  const meta = await readSyncMeta();
+  if (meta === undefined) {
     return;
   }
   await writeSyncMeta(withSessionChanges(meta, changes, now));
@@ -265,8 +272,9 @@ export interface SyncStatus {
   lastError: string | undefined;
 }
 
-/** The last run's time and error for Settings; nothing before the first sync. */
+/** The last run's time and error for Settings; nothing before this account's first sync. */
 export async function loadSyncStatus(): Promise<SyncStatus> {
-  const meta = await readSyncMeta();
+  const context = await loadSyncContext();
+  const meta = context === null ? undefined : await readSyncMetaFor(context);
   return { lastSyncAt: meta?.lastSyncAt ?? null, lastError: meta?.lastError };
 }

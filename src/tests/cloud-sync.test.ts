@@ -368,6 +368,7 @@ describe('two devices converging through the server', () => {
     expect(onB).toEqual(await on(a, () => readLocalSettings()));
     // Applying them did not make B's settings dirty: nothing goes back, on either side.
     expect((await meta(b))?.settingsDirty).toBe(false);
+    expect((await meta(b))?.pendingSettings).toBeUndefined();
     const posts = postCount();
     await sync(b);
     await sync(a);
@@ -486,14 +487,14 @@ describe('syncNow', () => {
     expect(server.requests).toEqual([]);
   });
 
-  it('a 401 signs this device out and drops the bookkeeping, keeping every session', async () => {
+  it('a 401 signs this device out, keeping every session and the bookkeeping', async () => {
     await on(a, () => sessionRepo.put(makeSession('s1', 'Kept')));
     await sync(a);
     server.token = 'another';
     expect(await sync(a)).toMatchObject({ outcome: 'failed' });
     expect(a.fake.state.local.has(CLOUD_ACCOUNT_KEY)).toBe(false);
     expect(a.fake.state.local.has(CLOUD_SYNC_KEY)).toBe(false);
-    expect(a.fake.state.local.has(CLOUD_SYNC_META_KEY)).toBe(false);
+    expect(a.fake.state.local.has(CLOUD_SYNC_META_KEY)).toBe(true);
     expect(await names(a)).toEqual(['Kept']);
   });
 
@@ -557,4 +558,108 @@ describe('syncNow', () => {
     expect(most).toBe(1);
     expect(server.record('session', 's1')).toBeDefined();
   });
+});
+
+describe('interrupted runs and gaps in readiness', () => {
+  /** B changes its language and its snapshot interval, and sends them. */
+  async function remoteSettingsFromB(): Promise<void> {
+    await sync(a);
+    await sync(b);
+    at(2_000_000);
+    await on(b, async () => {
+      await chrome.storage.sync.set({ [UI_LANGUAGE_KEY]: 'ko' });
+      await sessionRepo.setSettings({ historyIntervalMinutes: 30 });
+    });
+    await sync(b);
+    at(3_000_000);
+  }
+
+  async function expectBothHaveBsSettings(): Promise<void> {
+    await sync(a);
+    await sync(b);
+    for (const device of [a, b]) {
+      const settings = await on(device, () => readLocalSettings());
+      expect(settings.uiLanguage).toBe('ko');
+      expect(settings.sessionSettings.historyIntervalMinutes).toBe(30);
+    }
+  }
+
+  it.each([
+    ['right after', true],
+    ['just before', false],
+  ])(
+    'a settings apply cut short %s the language write is finished, never pushed back half done',
+    async (_when, written) => {
+      await remoteSettingsFromB();
+      // A's page reloads as soon as the new language lands (or the worker stops just before
+      // writing it): the run ends there.
+      const sync = a.fake.chrome.storage.sync;
+      const realSet = sync.set.bind(sync);
+      vi.spyOn(sync, 'set').mockImplementationOnce((async (items: Record<string, unknown>) => {
+        if (written) {
+          await realSet(items);
+        }
+        throw new Error('page reloaded');
+      }) as never);
+      expect(await on(a, () => syncNow({ fetch: server.fetch }))).toMatchObject({
+        outcome: 'failed',
+      });
+      await expectBothHaveBsSettings();
+    },
+  );
+
+  it('changes made while the token had expired are sent after signing in again', async () => {
+    await on(a, () => sessionRepo.put(makeSession('s1', 'One')));
+    await on(a, () => sessionRepo.put(makeSession('s2', 'Two')));
+    await sync(a);
+    await sync(b);
+
+    at(2_000_000);
+    a.fake.state.local.set(CLOUD_ACCOUNT_KEY, { token: 'tok', expiresAt: 1_500_000, email: EMAIL });
+    await on(a, () => sessionRepo.rename('s1', 'Renamed while expired'));
+    await on(a, () => sessionRepo.remove('s2'));
+    expect(await sync(a)).toMatchObject({ outcome: 'notReady' });
+
+    a.fake.state.local.set(CLOUD_ACCOUNT_KEY, {
+      token: 'tok',
+      expiresAt: FAR_FUTURE,
+      email: EMAIL,
+    });
+    await sync(a);
+    await sync(b);
+    expect(await names(b)).toEqual(['Renamed while expired']);
+    expect(await names(a)).toEqual(['Renamed while expired']);
+  });
+
+  it.each([['a 401'], ['signing out']])(
+    'a deletion not yet sent survives %s and is sent after signing in again',
+    async (how) => {
+      await on(a, () => sessionRepo.put(makeSession('s1', 'One')));
+      await on(a, () => sessionRepo.put(makeSession('s2', 'Two')));
+      await sync(a);
+      await sync(b);
+
+      at(2_000_000);
+      await on(a, () => sessionRepo.remove('s1'));
+      if (how === 'a 401') {
+        server.token = 'another';
+        expect(await sync(a)).toMatchObject({ outcome: 'failed' });
+        server.token = 'tok';
+      } else {
+        await on(a, () => chrome.storage.local.remove([CLOUD_ACCOUNT_KEY, CLOUD_SYNC_KEY]));
+      }
+      expect(a.fake.state.local.has(CLOUD_ACCOUNT_KEY)).toBe(false);
+
+      await on(a, () =>
+        chrome.storage.local.set({
+          [CLOUD_ACCOUNT_KEY]: { token: 'tok', expiresAt: FAR_FUTURE, email: EMAIL },
+          [CLOUD_SYNC_KEY]: rawKey,
+        }),
+      );
+      await sync(a);
+      await sync(b);
+      expect(await names(a)).toEqual(['Two']);
+      expect(await names(b)).toEqual(['Two']);
+    },
+  );
 });

@@ -204,20 +204,37 @@ describe('dirty tracking in sessionRepo', () => {
     expect(storedMeta()?.deletedSessions).toEqual({});
   });
 
-  it('tracks nothing before the first sync started, or for another account', async () => {
+  it('tracks nothing before the first sync started', async () => {
     getChromeFake().state.local.delete(CLOUD_SYNC_META_KEY);
     await sessionRepo.put(makeSession('s1'));
     expect(getChromeFake().state.local.has(CLOUD_SYNC_META_KEY)).toBe(false);
-
-    startTracking({ owner: 'someone@else.example' });
-    await sessionRepo.put(makeSession('s2'));
-    expect(storedMeta()?.dirtySessions).toEqual({});
   });
 
-  it('tracks nothing while signed out', async () => {
-    getChromeFake().state.local.delete(CLOUD_ACCOUNT_KEY);
+  it('keeps tracking while signed out or expired, for the next sign-in to send', async () => {
+    getChromeFake().state.local.set(CLOUD_ACCOUNT_KEY, { ...ACCOUNT, expiresAt: 1 });
     await sessionRepo.put(makeSession('s1'));
-    expect(storedMeta()?.dirtySessions).toEqual({});
+    getChromeFake().state.local.delete(CLOUD_ACCOUNT_KEY);
+    await sessionRepo.put(makeSession('s2'));
+    vi.setSystemTime(6_000);
+    await sessionRepo.remove('s1');
+    expect(storedMeta()).toMatchObject({
+      dirtySessions: { s2: 5_000 },
+      deletedSessions: { s1: 6_000 },
+    });
+  });
+
+  it('settings received but not fully written are not taken for an edit', async () => {
+    startTracking({
+      settingsHash: 'remote',
+      settingsSyncedAt: 1_000,
+      settingsUpdatedAt: 1_000,
+      pendingSettings: { uiLanguage: 'ko' },
+    });
+    await chrome.storage.sync.set({ sortBy: 'title' });
+    await handleCloudStorageChange({ sortBy: { newValue: 'title' } }, 'sync');
+    expect(storedMeta()).toMatchObject({ settingsDirty: false, settingsUpdatedAt: 1_000 });
+    // A sync soon finishes writing them.
+    expect(getChromeFake().state.alarms.has(CLOUD_SYNC_SOON_ALARM)).toBe(true);
   });
 });
 
@@ -488,7 +505,7 @@ describe('alarms', () => {
     expect(state.alarms.has(CLOUD_SYNC_SOON_ALARM)).toBe(false);
   });
 
-  it('becoming ready arms both; signing out clears them and drops the bookkeeping', async () => {
+  it('becoming ready arms both; signing out clears them and keeps the bookkeeping', async () => {
     const { state } = getChromeFake();
     signIn();
     await handleCloudStorageChange({ [CLOUD_SYNC_KEY]: { newValue: RAW_KEY } }, 'local');
@@ -498,7 +515,7 @@ describe('alarms', () => {
     state.local.delete(CLOUD_ACCOUNT_KEY);
     await handleCloudStorageChange({ [CLOUD_ACCOUNT_KEY]: { oldValue: ACCOUNT } }, 'local');
     expect(state.alarms.size).toBe(0);
-    expect(state.local.has(CLOUD_SYNC_META_KEY)).toBe(false);
+    expect(storedMeta()?.dirtySessions).toEqual({ s1: 1 });
   });
 
   it('a soon sync follows new work, once, and not a cleared entry', async () => {
@@ -523,6 +540,19 @@ describe('alarms', () => {
       'local',
     );
     expect(state.alarms.has(CLOUD_SYNC_SOON_ALARM)).toBe(false);
+  });
+
+  it('a token that expires quietly stops the alarms at the next sync', async () => {
+    const { state } = getChromeFake();
+    signIn();
+    await ensureSyncAlarm();
+    await scheduleSoonSync();
+    expect(state.alarms.size).toBe(2);
+    vi.setSystemTime(ACCOUNT.expiresAt + 1);
+    const fetch = vi.fn<typeof globalThis.fetch>();
+    expect(await syncNow({ fetch })).toMatchObject({ outcome: 'notReady' });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(state.alarms.size).toBe(0);
   });
 
   it('isSyncAlarm knows its two alarms only', () => {

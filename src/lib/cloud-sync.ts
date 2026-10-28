@@ -14,7 +14,7 @@
  * the worker never sync at once; network calls happen outside the sessions lock, and every local
  * write goes through `sessionRepo` (`applyRemote()` for what the server sent).
  *
- * The settings apply path (`applyRemoteSettings()`) is the one place sessions code writes
+ * The settings apply path (`writeReceivedSettings()`) is the one place sessions code writes
  * `chrome.storage.sync`: the sort settings and `uiLanguage` live there, so applying settings from
  * another device must write them there. `readLocalSettings()` is the matching read.
  *
@@ -35,6 +35,7 @@ import {
   type CloudSyncMeta,
   freshSyncMeta,
   loadSyncContext,
+  readSyncMeta,
   readSyncMetaFor,
   type SyncContext,
   syncWorkGrew,
@@ -211,26 +212,35 @@ export async function readLocalSettings(): Promise<SyncedSettings> {
  * Brings `settingsDirty` in line with the settings as they are now: clean when they equal what was
  * last exchanged with the server (also when a change was undone, or when the writes are the
  * server's own settings arriving), dirty and stamped now otherwise. Run on every change of a
- * setting while ready, and before a push. Being state-based, it cannot echo: settings applied from
- * the server read back as unchanged however their writes interleave.
+ * setting once sync has started (also while not ready, like the session tracking), and before a
+ * push. Being state-based, it cannot echo: settings applied from the server read back as
+ * unchanged however their writes interleave.
+ *
+ * While settings received from the server are still being written (`pendingSettings`), nothing is
+ * marked: the local settings are half old, half new, and taking them for an edit would send that
+ * mix back over the other device's change. Returns whether such an apply is pending, so the
+ * caller can ask for the sync that finishes it.
  */
 export async function noteSettingsChange(
   reason: 'changed' | 'check' = 'changed',
   now: number = Date.now(),
-): Promise<void> {
-  const context = await loadSyncContext(now);
-  if (context === null) {
-    return;
+): Promise<boolean> {
+  if (!isCloudSyncEnabled()) {
+    return false;
   }
-  await withLock(async () => {
-    const meta = await readSyncMetaFor(context);
+  return withLock(async () => {
+    const meta = await readSyncMeta();
     if (meta === undefined) {
-      return;
+      return false;
+    }
+    if (meta.pendingSettings !== undefined) {
+      return true;
     }
     const next = settingsState(meta, settingsFingerprint(await readLocalSettings()), reason, now);
     if (next !== meta) {
       await writeSyncMeta(next);
     }
+    return false;
   });
 }
 
@@ -365,9 +375,10 @@ async function applyRecord(
 /**
  * Last writer wins for the settings record, against `settingsUpdatedAt`. When the server's are
  * newer they are put in use: the bookkeeping first, under the lock where the decision is made
- * (their fingerprint, so the change listener recognises the writes below as no change of this
- * device's own), then the sort settings and the language in `chrome.storage.sync`, then the session
- * settings through `sessionRepo.setSettings()`.
+ * (their fingerprint, and the settings themselves as `pendingSettings`, so the change listener
+ * takes none of the writes below for a change of this device's own), then the writes
+ * (`writeReceivedSettings()`), which clear `pendingSettings` when they are all done. A run cut
+ * short in between leaves them pending, and the next sync writes them again before anything else.
  */
 async function applySettingsRecord(
   context: SyncContext,
@@ -396,15 +407,48 @@ async function applySettingsRecord(
       settingsSyncedAt: updatedAt,
       settingsUpdatedAt: updatedAt,
       settingsDirty: false,
+      pendingSettings: { ...settings },
     });
     return true;
   });
   if (!apply) {
     return false;
   }
-  await chrome.storage.sync.set({ ...settings.sort, [UI_LANGUAGE_KEY]: settings.uiLanguage });
-  await sessionRepo.setSettings(settings.sessionSettings);
+  await writeReceivedSettings(context, settings);
   return true;
+}
+
+/**
+ * Writes received settings on this device, then marks them written. The session settings go first
+ * and the language last: in the app page a new `uiLanguage` reloads the page as soon as it lands
+ * (`followUiLanguageChanges()`), and nothing after it may be needed. `pendingSettings` is cleared
+ * only when it still holds these settings (a newer record may have replaced them meanwhile).
+ */
+async function writeReceivedSettings(
+  context: SyncContext,
+  settings: SyncedSettings,
+): Promise<void> {
+  await sessionRepo.setSettings(settings.sessionSettings);
+  await chrome.storage.sync.set({ ...settings.sort, [UI_LANGUAGE_KEY]: settings.uiLanguage });
+  const written = settingsFingerprint(settings);
+  await updateMeta(context, (meta) => {
+    const pending = parseSyncedSettings(meta.pendingSettings);
+    if (pending === null || settingsFingerprint(pending) !== written) {
+      return meta;
+    }
+    const next = { ...meta };
+    delete next.pendingSettings;
+    return next;
+  });
+}
+
+/** Finishes writing settings an earlier run received but could not write to the end. */
+async function resumeSettingsApply(context: SyncContext): Promise<void> {
+  const meta = await readSyncMetaFor(context);
+  const pending = parseSyncedSettings(meta?.pendingSettings);
+  if (pending !== null) {
+    await writeReceivedSettings(context, pending);
+  }
 }
 
 /** Applies one record, keeping a failure to read it as a problem of the run. */
@@ -650,19 +694,22 @@ export async function syncNow(options: SyncOptions = {}): Promise<SyncResult> {
   return withSyncLock(async () => {
     const context = await loadSyncContext();
     if (context === null) {
+      // A token that expired writes nothing, so no storage change cleared the alarms: do it here,
+      // or the periodic alarm would keep waking the worker for nothing.
+      await ensureSyncAlarm();
       return { outcome: 'notReady', pulled: 0, pushed: 0 };
     }
     const run: RunState = { context, options, pulled: 0, pushed: 0, problems: [] };
     try {
       await startSyncMeta(context);
+      await resumeSettingsApply(context);
       await pull(run);
       await push(run);
     } catch (err: unknown) {
       if (err instanceof CloudUnauthorizedError) {
         // Signed out on the server: forget the account like every other 401 (#166). The
-        // bookkeeping goes with it, so a later sign-in starts afresh.
+        // bookkeeping stays, so what was not sent yet (deletions too) goes after signing in again.
         await forgetCloudAccount();
-        await forgetSyncMeta();
         return { outcome: 'failed', pulled: run.pulled, pushed: run.pushed };
       }
       console.warn('[tabinet:sync] sync failed', err);
@@ -671,13 +718,6 @@ export async function syncNow(options: SyncOptions = {}): Promise<SyncResult> {
     }
     await finish(context, run.problems[0]);
     return { outcome: 'synced', pulled: run.pulled, pushed: run.pushed };
-  });
-}
-
-/** Drops the bookkeeping (signed out, or the key removed): the next ready state starts afresh. */
-export async function forgetSyncMeta(): Promise<void> {
-  await withLock(async () => {
-    await chrome.storage.local.remove(CLOUD_SYNC_META_KEY);
   });
 }
 
@@ -738,9 +778,11 @@ function touchesSettings(
  * The worker's `storage.onChanged` part for sync:
  *
  * - the account or the key changed: the alarms are armed (and a sync is due soon) when this device
- *   is ready, cleared otherwise, and the bookkeeping is dropped when it is no longer ready;
+ *   is ready, cleared otherwise. The bookkeeping stays either way: changes are still recorded,
+ *   and signing in again to the same account and key resumes it;
  * - a setting changed (sort settings or the language in sync storage, `sessionSettings`): the
- *   settings are marked dirty, or clean again when they are back to what the server has;
+ *   settings are marked dirty, or clean again when they are back to what the server has; while
+ *   received settings are still being written, a sync soon finishes them instead;
  * - `cloudSyncMeta` gained something to send: a sync about a minute later.
  *
  * Returns at once while cloud sync is unconfigured.
@@ -753,17 +795,15 @@ export async function handleCloudStorageChange(
     return;
   }
   if (areaName === 'local' && (CLOUD_ACCOUNT_KEY in changes || CLOUD_SYNC_KEY in changes)) {
+    await ensureSyncAlarm();
     if ((await loadSyncContext()) === null) {
-      await forgetSyncMeta();
-      await ensureSyncAlarm();
       return;
     }
-    await ensureSyncAlarm();
     await scheduleSoonSync();
     return;
   }
-  if (touchesSettings(changes, areaName)) {
-    await noteSettingsChange();
+  if (touchesSettings(changes, areaName) && (await noteSettingsChange())) {
+    await scheduleSoonSync();
   }
   const meta = changes[CLOUD_SYNC_META_KEY];
   if (areaName === 'local' && meta !== undefined && syncWorkGrew(meta.oldValue, meta.newValue)) {
