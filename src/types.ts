@@ -153,3 +153,50 @@ export interface ExportBundle {
   exportedAt: number;
   sessions: Session[];
 }
+
+// ---------------------------------------------------------------------------
+// Cloud sync (src/lib/cloud-*.ts; the server contract is GitHub issue #165)
+// ---------------------------------------------------------------------------
+
+/**
+ * How the sync key is derived from the passphrase, as the server keeps it (`PUT /v1/keys`). It
+ * holds nothing secret: the salt, and `check`, the fixed text `tabinet-key-check-v1` encrypted
+ * under the key, so a passphrase can be tested without the server ever seeing one. Base64 values.
+ */
+export interface CloudKeySetup {
+  kdf: { name: 'PBKDF2'; hash: 'SHA-256'; iterations: number };
+  salt: string;
+  check: string;
+  checkIv: string;
+}
+
+/** One AES-GCM ciphertext and its 12-byte iv, both base64. */
+export interface EncryptedPayload {
+  iv: string;
+  ciphertext: string;
+}
+
+export type CloudRecordKind = 'session' | 'settings';
+
+/** A record as the server stores it: everything readable lives inside `ciphertext`. */
+export interface CloudRecord extends EncryptedPayload {
+  kind: CloudRecordKind;
+  id: string;
+  updatedAt: number;
+  deleted: boolean;
+}
+
+/** A record read back from the server, with its place in the change feed. */
+export interface CloudRecordWithSeq extends CloudRecord {
+  seq: number;
+}
+
+/**
+ * The signed-in account, in `chrome.storage.local` under `cloudAccount`: the server's bearer
+ * token, when it expires (ms since the epoch) and the Google address it belongs to.
+ */
+export interface CloudAccount {
+  token: string;
+  expiresAt: number;
+  email: string;
+}

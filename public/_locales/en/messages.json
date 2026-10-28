@@ -1874,5 +1874,145 @@
   "workerDuplicatesHostGroupTitle": {
     "message": "$1 ($2)",
     "description": "Title of a Chrome tab group that holds duplicate tabs of one address. $1 is the site's host name (such as example.com, never translated), $2 the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short."
+  },
+  "settingsAccountTitle": {
+    "message": "Account",
+    "description": "Heading of the Settings section for signing in to cloud sync. One or two words."
+  },
+  "settingsAccountDescription": {
+    "message": "Sign in to keep your saved sessions and settings in step across computers. They are encrypted on this computer with a passphrase only you know.",
+    "description": "Explanation under the Account heading in Settings."
+  },
+  "settingsAccountGoogle": {
+    "message": "Google account",
+    "description": "Label of the Settings row that signs in to cloud sync with a Google account."
+  },
+  "settingsAccountSignedOutHint": {
+    "message": "Not signed in.",
+    "description": "Grey hint under \"Google account\" in Settings while nobody is signed in."
+  },
+  "settingsAccountSignIn": {
+    "message": "Sign in with Google",
+    "description": "Button in Settings that opens Google sign-in for cloud sync. Keep it short."
+  },
+  "settingsAccountSignedInAs": {
+    "message": "Signed in as $1.",
+    "description": "Grey hint in Settings while signed in to cloud sync. $1 is the Google email address (never translated)."
+  },
+  "settingsAccountCreatePassphrase": {
+    "message": "Create a sync passphrase",
+    "description": "Label of the Settings row where a new cloud sync passphrase is typed twice."
+  },
+  "settingsAccountCreatePassphraseHint": {
+    "message": "Everything is encrypted with this passphrase before it leaves this computer. Nobody can recover it for you: if you forget it, the copy in the cloud is lost.",
+    "description": "Warning under \"Create a sync passphrase\" in Settings. It must say clearly that a forgotten passphrase cannot be recovered and the cloud copy is then lost."
+  },
+  "settingsAccountPassphrase": {
+    "message": "Passphrase",
+    "description": "Label of the field where the sync passphrase is typed."
+  },
+  "settingsAccountPassphraseRepeat": {
+    "message": "Repeat the passphrase",
+    "description": "Label of the second field, where a new sync passphrase is typed again."
+  },
+  "settingsAccountPassphraseTooShort_one": {
+    "message": "Use at least $1 character.",
+    "description": "Inline error under a new sync passphrase that is too short. $1 is the minimum number of characters (already formatted)."
+  },
+  "settingsAccountPassphraseTooShort_other": {
+    "message": "Use at least $1 characters.",
+    "description": "Inline error under a new sync passphrase that is too short. $1 is the minimum number of characters (already formatted)."
+  },
+  "settingsAccountPassphraseMismatch": {
+    "message": "The two passphrases are not the same.",
+    "description": "Inline error when the new sync passphrase and its repetition differ."
+  },
+  "settingsAccountCreateButton": {
+    "message": "Create passphrase",
+    "description": "Button that saves a new sync passphrase. Keep it short."
+  },
+  "settingsAccountPassphraseExists": {
+    "message": "This account already has a sync passphrase, made on another computer. Enter it below.",
+    "description": "Notice when the person tried to create a sync passphrase but another computer had already created one."
+  },
+  "settingsAccountUnlock": {
+    "message": "Enter your sync passphrase",
+    "description": "Label of the Settings row where the existing sync passphrase is typed on a new computer."
+  },
+  "settingsAccountUnlockHint": {
+    "message": "This account already has a sync passphrase. Enter it to use sync on this computer.",
+    "description": "Grey hint under \"Enter your sync passphrase\" in Settings."
+  },
+  "settingsAccountUnlockButton": {
+    "message": "Unlock",
+    "description": "Button that checks the typed sync passphrase. One word."
+  },
+  "settingsAccountWrongPassphrase": {
+    "message": "That passphrase is not right. Try again.",
+    "description": "Inline error when the typed sync passphrase does not match the account."
+  },
+  "settingsAccountReady": {
+    "message": "Sync passphrase saved on this computer.",
+    "description": "Toast after a sync passphrase was created or entered correctly."
+  },
+  "settingsAccountReadyHint": {
+    "message": "Syncing arrives in the next update.",
+    "description": "Grey hint in Settings once signed in and the passphrase is set: syncing itself is not available yet."
+  },
+  "settingsAccountSignOut": {
+    "message": "Sign out",
+    "description": "Button in Settings that signs out of cloud sync on this computer. Keep it short."
+  },
+  "settingsAccountSignedOut": {
+    "message": "Signed out. Your sessions on this computer are still here.",
+    "description": "Toast after signing out of cloud sync."
+  },
+  "settingsAccountDelete": {
+    "message": "Delete cloud data",
+    "description": "Button in Settings, and the confirming button of its dialog, that deletes the cloud sync account and everything stored for it on the server. Keep it short."
+  },
+  "settingsAccountDeleteTitle": {
+    "message": "Delete your cloud data?",
+    "description": "Title of the dialog that asks before deleting the cloud sync account."
+  },
+  "settingsAccountDeleteBody": {
+    "message": "This deletes your account and everything stored for it on the sync server. It cannot be undone. The sessions on this computer stay.",
+    "description": "Body of the dialog that asks before deleting the cloud sync account."
+  },
+  "settingsAccountDeleted": {
+    "message": "Your cloud data was deleted.",
+    "description": "Toast after the cloud sync account and its data were deleted."
+  },
+  "errorCloudUnreachable": {
+    "message": "Could not reach the sync server. Check the connection and try again.",
+    "description": "Error when the sync server could not be reached (no network, server down)."
+  },
+  "errorCloudServer": {
+    "message": "The sync server had a problem. Try again later.",
+    "description": "Error when the sync server answered with a server error (5xx)."
+  },
+  "errorCloudRejected": {
+    "message": "The sync server refused the request.",
+    "description": "Error when the sync server refused a request for a reason the extension cannot explain."
+  },
+  "errorCloudSignedOut": {
+    "message": "You were signed out. Sign in again.",
+    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this computer."
+  },
+  "errorCloudSignInFailed": {
+    "message": "Signing in with Google did not work. Try again.",
+    "description": "Error when Google sign-in for cloud sync failed."
+  },
+  "errorCloudDecrypt": {
+    "message": "Some synced data could not be decrypted.",
+    "description": "Error when data from the sync server does not decrypt with this computer's sync key."
+  },
+  "errorCloudBadResponse": {
+    "message": "The sync server sent an answer this version cannot read.",
+    "description": "Error when the sync server's answer has an unexpected shape."
+  },
+  "commonTryAgain": {
+    "message": "Try again",
+    "description": "Button that repeats something that failed, such as reading the cloud sync account. Keep it short."
   }
 }

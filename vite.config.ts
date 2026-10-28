@@ -6,7 +6,12 @@ import react from '@vitejs/plugin-react';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 import packageJson from './package.json' with { type: 'json' };
-import { DEFAULT_LOCALE, DEFAULT_SHORTCUTS, YOUTUBE_ORIGINS } from './src/constants.ts';
+import {
+  cloudSyncPermissions,
+  DEFAULT_LOCALE,
+  DEFAULT_SHORTCUTS,
+  YOUTUBE_ORIGINS,
+} from './src/constants.ts';
 
 interface PackageJson {
   name?: string;
@@ -55,7 +60,9 @@ const manifest = defineManifest((env) => {
     // `alarms` is touched at module-evaluation time (`chrome.alarms.onAlarm.addListener` in
     // src/service-worker.ts), so it must ship with that listener - see AGENTS.md. `scripting` is
     // only called inside a handler ("Pause all YouTube videos", src/lib/pause-youtube.ts) and is
-    // useless without the optional YouTube host permission below.
+    // useless without the optional YouTube host permission below. `identity` (cloud sync sign-in)
+    // joins only once CLOUD_SYNC in src/constants.ts is filled in; until then the list is exactly
+    // the one below.
     permissions: [
       'tabs',
       'tabGroups',
@@ -65,6 +72,7 @@ const manifest = defineManifest((env) => {
       'favicon',
       'alarms',
       'scripting',
+      ...cloudSyncPermissions(),
     ],
     // No `host_permissions` and no `content_scripts`: access to YouTube is asked for in Settings,
     // when the person first wants to pause YouTube (chrome.permissions.request needs a click in a

@@ -56,3 +56,33 @@ export const LOCALE_ENDONYMS: Record<SupportedLocale, string> = {
   es: 'Español',
   ja: '日本語',
 };
+
+/** Where cloud sync talks to and which Google OAuth client signs in to it. */
+export interface CloudSyncConfig {
+  /** The sync server's origin, such as `https://tabinet.example.app`; the routes live under `/v1`. */
+  apiBase: string;
+  /** The Google OAuth client id ("Web application", redirect `https://<extension-id>.chromiumapp.org/`). */
+  googleClientId: string;
+}
+
+/**
+ * Cloud sync (sign-in, the sync passphrase and the server client in `src/lib/cloud-*.ts`). Empty
+ * on purpose: until both values are filled in, the feature is dormant - the manifest asks for no
+ * `identity` permission and Settings shows no Account section, so a build is exactly what it was
+ * without it. Tests switch it on through `overrideCloudSyncConfig()` in `src/lib/cloud-config.ts`.
+ */
+export const CLOUD_SYNC: CloudSyncConfig = { apiBase: '', googleClientId: '' };
+
+/** Whether cloud sync is set up: true only when both the server and the Google client are named. */
+export function cloudSyncConfigured(config: CloudSyncConfig = CLOUD_SYNC): boolean {
+  return config.apiBase.trim() !== '' && config.googleClientId.trim() !== '';
+}
+
+/**
+ * The manifest permissions cloud sync adds (`vite.config.ts` spreads them): `identity`, for
+ * `chrome.identity.launchWebAuthFlow`, and only once it is configured. Nothing touches
+ * `chrome.identity` while the module body runs, so no load-time code depends on it.
+ */
+export function cloudSyncPermissions(config: CloudSyncConfig = CLOUD_SYNC): 'identity'[] {
+  return cloudSyncConfigured(config) ? ['identity'] : [];
+}

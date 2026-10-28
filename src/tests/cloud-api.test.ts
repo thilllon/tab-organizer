@@ -1,0 +1,197 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import {
+  apiUrl,
+  authGoogle,
+  CloudUnauthorizedError,
+  deleteAccount,
+  getRecords,
+  logout,
+  me,
+  postRecords,
+  putKeys,
+} from '@/lib/cloud-api';
+import { overrideCloudSyncConfig } from '@/lib/cloud-config';
+import { ExplainedError, errorMessage } from '@/lib/error-message';
+import { t } from '@/lib/i18n';
+import type { CloudKeySetup, CloudRecordWithSeq } from '@/types';
+
+import { fakeFetch, jsonResponse } from './cloud-fetch';
+
+const API = 'https://sync.test';
+const SETUP: CloudKeySetup = {
+  kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600000 },
+  salt: 'c2FsdHNhbHRzYWx0c2FsdA==',
+  check: 'Y2hlY2s=',
+  checkIv: 'aXZpdml2aXZpdml2',
+};
+const RECORD: CloudRecordWithSeq = {
+  kind: 'session',
+  id: 'abc-1',
+  updatedAt: 1700000000000,
+  deleted: false,
+  iv: 'aXY=',
+  ciphertext: 'Y3Q=',
+  seq: 7,
+};
+
+beforeEach(() => {
+  overrideCloudSyncConfig(() => ({ apiBase: `${API}/`, googleClientId: 'client.apps' }));
+});
+
+afterEach(() => {
+  overrideCloudSyncConfig();
+});
+
+describe('apiUrl', () => {
+  it('joins the base and the route without a double slash', () => {
+    expect(apiUrl('https://sync.test/', '/v1/me')).toBe('https://sync.test/v1/me');
+    expect(apiUrl('https://sync.test', '/v1/me')).toBe('https://sync.test/v1/me');
+  });
+});
+
+describe('authGoogle', () => {
+  it('posts the ID token and reads the account, with no Authorization header', async () => {
+    const server = fakeFetch(
+      jsonResponse(200, { token: 'tok', expiresAt: 1800000000000, email: 'a@b.c', keySetup: null }),
+    );
+    const result = await authGoogle('id.token.here', { fetch: server.fetch });
+    expect(result).toEqual({
+      token: 'tok',
+      expiresAt: 1800000000000,
+      email: 'a@b.c',
+      keySetup: null,
+    });
+    expect(server.requests[0]).toMatchObject({
+      url: `${API}/v1/auth/google`,
+      method: 'POST',
+      body: { idToken: 'id.token.here' },
+    });
+    expect(server.requests[0]?.headers.authorization).toBeUndefined();
+    expect(server.requests[0]?.headers['content-type']).toBe('application/json');
+  });
+
+  it('reads an ISO expiry as milliseconds and keeps a key setup', async () => {
+    const server = fakeFetch(
+      jsonResponse(200, {
+        token: 'tok',
+        expiresAt: '2030-01-01T00:00:00.000Z',
+        email: 'a@b.c',
+        keySetup: SETUP,
+      }),
+    );
+    const result = await authGoogle('x', { fetch: server.fetch });
+    expect(result.expiresAt).toBe(Date.parse('2030-01-01T00:00:00.000Z'));
+    expect(result.keySetup).toEqual(SETUP);
+  });
+
+  it('refuses an answer of the wrong shape', async () => {
+    const server = fakeFetch(jsonResponse(200, { token: 'tok', email: 'a@b.c' }));
+    const err: unknown = await authGoogle('x', { fetch: server.fetch }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ExplainedError);
+    expect(errorMessage(err)).toBe(t('errorCloudBadResponse'));
+  });
+});
+
+describe('statuses', () => {
+  it('turns a 401 into CloudUnauthorizedError, explained as signed out', async () => {
+    const server = fakeFetch(jsonResponse(401, { error: 'unauthorized' }));
+    const err: unknown = await me('tok', { fetch: server.fetch }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CloudUnauthorizedError);
+    expect(errorMessage(err)).toBe(t('errorCloudSignedOut'));
+  });
+
+  it('explains a 5xx as a server problem and a 4xx as a refusal', async () => {
+    const down = fakeFetch(jsonResponse(503, { error: 'unavailable' }));
+    expect(errorMessage(await me('tok', { fetch: down.fetch }).catch((e: unknown) => e))).toBe(
+      t('errorCloudServer'),
+    );
+    const bad = fakeFetch(jsonResponse(400, { error: 'bad_request' }));
+    expect(errorMessage(await me('tok', { fetch: bad.fetch }).catch((e: unknown) => e))).toBe(
+      t('errorCloudRejected'),
+    );
+  });
+
+  it('explains a network failure as unreachable, without the token in the message', async () => {
+    const offline = fakeFetch(new TypeError('Failed to fetch'));
+    const err: unknown = await logout('secret-token', { fetch: offline.fetch }).catch(
+      (e: unknown) => e,
+    );
+    expect(errorMessage(err)).toBe(t('errorCloudUnreachable'));
+    expect(String(err)).not.toContain('secret-token');
+  });
+});
+
+describe('routes', () => {
+  it('sends the bearer token to me, logout and deleteAccount', async () => {
+    const server = fakeFetch(
+      jsonResponse(200, { email: 'a@b.c', keySetup: SETUP }),
+      jsonResponse(204),
+      jsonResponse(204),
+    );
+    expect(await me('tok', { fetch: server.fetch })).toEqual({ email: 'a@b.c', keySetup: SETUP });
+    await logout('tok', { fetch: server.fetch });
+    await deleteAccount('tok', { fetch: server.fetch });
+    expect(server.requests.map((r) => `${r.method} ${r.url}`)).toEqual([
+      `GET ${API}/v1/me`,
+      `POST ${API}/v1/auth/logout`,
+      `DELETE ${API}/v1/account`,
+    ]);
+    for (const request of server.requests) {
+      expect(request.headers.authorization).toBe('Bearer tok');
+    }
+  });
+
+  it('putKeys: 201 is created, 409 key_exists is exists, another 409 is a refusal', async () => {
+    const server = fakeFetch(
+      jsonResponse(201),
+      jsonResponse(409, { error: 'key_exists' }),
+      jsonResponse(409, { error: 'conflict' }),
+    );
+    expect(await putKeys('tok', SETUP, { fetch: server.fetch })).toBe('created');
+    expect(server.requests[0]).toMatchObject({ method: 'PUT', url: `${API}/v1/keys`, body: SETUP });
+    expect(await putKeys('tok', SETUP, { fetch: server.fetch })).toBe('exists');
+    const err: unknown = await putKeys('tok', SETUP, { fetch: server.fetch }).catch(
+      (e: unknown) => e,
+    );
+    expect(errorMessage(err)).toBe(t('errorCloudRejected'));
+  });
+
+  it('getRecords asks with since and limit and checks every record', async () => {
+    const server = fakeFetch(
+      jsonResponse(200, { records: [RECORD], next: 7, hasMore: false }),
+      jsonResponse(200, { records: [{ ...RECORD, kind: 'tabs' }], next: 7, hasMore: false }),
+    );
+    expect(await getRecords('tok', 3, 50, { fetch: server.fetch })).toEqual({
+      records: [RECORD],
+      next: 7,
+      hasMore: false,
+    });
+    expect(server.requests[0]?.url).toBe(`${API}/v1/records?since=3&limit=50`);
+    const err: unknown = await getRecords('tok', 3, undefined, { fetch: server.fetch }).catch(
+      (e: unknown) => e,
+    );
+    expect(errorMessage(err)).toBe(t('errorCloudBadResponse'));
+    expect(server.requests[1]?.url).toBe(`${API}/v1/records?since=3`);
+  });
+
+  it('postRecords sends the records and reads applied and stale results', async () => {
+    const { seq: _seq, ...record } = RECORD;
+    const results = [
+      { kind: 'session', id: 'abc-1', status: 'applied', seq: 8 },
+      {
+        kind: 'settings',
+        id: 'main',
+        status: 'stale',
+        current: { ...RECORD, kind: 'settings', id: 'main' },
+      },
+    ];
+    const server = fakeFetch(jsonResponse(200, { results }));
+    expect(await postRecords('tok', [record], { fetch: server.fetch })).toEqual(results);
+    expect(server.requests[0]).toMatchObject({
+      method: 'POST',
+      url: `${API}/v1/records`,
+      body: { records: [record] },
+    });
+  });
+});

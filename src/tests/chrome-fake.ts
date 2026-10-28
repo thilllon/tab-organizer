@@ -142,6 +142,15 @@ interface FakeState {
   pageMedia: Map<number, FakeMediaElement[]>;
   /** Every `chrome.scripting.executeScript` call that reached a page, by tab id. */
   injectedTabs: number[];
+  /**
+   * What the Google sign-in window answers to `chrome.identity.launchWebAuthFlow`: the redirect URL
+   * it ends on, an error it rejects with (Chrome rejects with "The user did not approve access."
+   * when the person closes it), or a function of the auth URL that returns either, so a test can
+   * echo the nonce it was sent. Rejects as a closed window by default.
+   */
+  authFlowAnswer: string | Error | ((url: string) => string | Error);
+  /** The URL of every `launchWebAuthFlow` call, in order. */
+  authFlowUrls: string[];
   /** Testing-only knob: when true, `tabs.create` leaves the tab
    * uncommitted (`url: ''`, `pendingUrl` set, `status: 'loading'`) until `commitNavigation`
    * is called for it, modelling a real browser navigation that has not finished yet. */
@@ -279,6 +288,8 @@ export function createChromeFake(): ChromeFake {
     permissionAnswer: true,
     pageMedia: new Map(),
     injectedTabs: [],
+    authFlowAnswer: new Error('The user did not approve access.'),
+    authFlowUrls: [],
     deferCommit: false,
   };
 
@@ -1295,6 +1306,28 @@ export function createChromeFake(): ChromeFake {
     },
   };
 
+  // ---- identity -------------------------------------------------------------
+
+  /** `chrome.identity`: the redirect URL Chrome reserves for this extension, and the sign-in window. */
+  const identity = {
+    getRedirectURL(path?: string): string {
+      return `https://${runtime.id}.chromiumapp.org/${(path ?? '').replace(/^\//, '')}`;
+    },
+    async launchWebAuthFlow(
+      details: chrome.identity.WebAuthFlowDetails,
+    ): Promise<string | undefined> {
+      state.authFlowUrls.push(details.url);
+      const answer =
+        typeof state.authFlowAnswer === 'function'
+          ? state.authFlowAnswer(details.url)
+          : state.authFlowAnswer;
+      if (answer instanceof Error) {
+        throw answer;
+      }
+      return answer;
+    },
+  };
+
   const api = {
     storage: { local, sync, onChanged: storageChanged },
     i18n,
@@ -1309,6 +1342,7 @@ export function createChromeFake(): ChromeFake {
     extension,
     permissions,
     scripting,
+    identity,
   };
 
   const fire: FakeFire = {
