@@ -19,7 +19,7 @@ import { UI_LANGUAGE_KEY } from '@/lib/ui-language';
 import { SESSION_SCHEMA_VERSION, type Session, type WindowSnapshot } from '@/types';
 
 import { createChromeFake } from './chrome-fake';
-import { fakeSyncServer, type FakeSyncServer } from './cloud-fetch';
+import { fakeSyncServer, type FakeServerRecord, type FakeSyncServer } from './cloud-fetch';
 
 /*
  * Two (or three) simulated devices, each with its own chrome fake, talking to one fake server
@@ -116,6 +116,16 @@ function meta(device: Device): Promise<CloudSyncMeta | undefined> {
   return on(device, () => readSyncMeta());
 }
 
+/** A copy of the server's record, as an attacker holding the server would keep it. */
+function stored(kind: 'session' | 'settings', id: string): Omit<FakeServerRecord, 'seq'> {
+  const record = server.record(kind, id);
+  if (record === undefined) {
+    throw new Error(`no ${kind} ${id} on the server`);
+  }
+  const { seq: _seq, ...rest } = record;
+  return rest;
+}
+
 function postCount(): number {
   return server.posts.length;
 }
@@ -182,7 +192,9 @@ describe('two devices converging through the server', () => {
     await sync(to);
     expect(await get(to, 's1')).toBeUndefined();
     expect(await names(to)).toEqual(['Home']);
-    expect(server.record('session', 's1')).toMatchObject({ deleted: true, ciphertext: '' });
+    // The tombstone is encrypted like any record: the server cannot make one up.
+    expect(server.record('session', 's1')).toMatchObject({ deleted: true });
+    expect(server.record('session', 's1')?.ciphertext).not.toBe('');
   });
 
   it('concurrent edits: the newer one wins on both devices, whichever syncs first', async () => {
@@ -272,7 +284,11 @@ describe('two devices converging through the server', () => {
 
     // Between B's pull and its push another device writes a newer copy.
     const newer = { ...makeSession('s1', 'Elsewhere, newer'), updatedAt: 3_000_000 };
-    const payload = await encryptRecord(rawKey, newer);
+    const payload = await encryptRecord(
+      rawKey,
+      { kind: 'session', id: 's1', updatedAt: 3_000_000, deleted: false },
+      newer,
+    );
     const realFetch = server.fetch;
     let injected = false;
     const fetchWithRace: typeof fetch = async (input, init) => {
@@ -475,6 +491,160 @@ describe('two devices converging through the server', () => {
     expect(server.record('session', 'small')).toBeDefined();
     expect((await meta(a))?.lastError).toBe(t('errorCloudRecordTooLarge'));
     expect(Object.keys((await meta(a))?.dirtySessions ?? {})).toEqual(['huge']);
+  });
+});
+
+describe('a hostile server', () => {
+  /*
+   * The server is untrusted: it can withhold records, but anything it forges, moves or replays
+   * under other metadata must not decrypt, must change nothing on the device and must be reported.
+   * A sees the attack happen on the server; B is the victim that pulls it.
+   */
+  const LATER = 9_000_000;
+
+  beforeEach(async () => {
+    await on(a, () => sessionRepo.put(makeSession('s1', 'One')));
+    await on(a, () => sessionRepo.put(makeSession('s2', 'Two')));
+    await sync(a);
+    await sync(b);
+  });
+
+  async function expectRefused(): Promise<void> {
+    const before = await on(b, () => sessionRepo.listSummaries());
+    const settingsBefore = await on(b, () => readLocalSettings());
+    const bodies = await Promise.all(before.map((summary) => get(b, summary.id)));
+    expect(await sync(b)).toMatchObject({ outcome: 'synced' });
+    expect(await on(b, () => sessionRepo.listSummaries())).toEqual(before);
+    expect(await Promise.all(before.map((summary) => get(b, summary.id)))).toEqual(bodies);
+    expect(await on(b, () => readLocalSettings())).toEqual(settingsBefore);
+    expect((await meta(b))?.lastError).toBe(t('errorCloudDecrypt'));
+  }
+
+  it('cannot delete a session with a forged tombstone', async () => {
+    server.inject({
+      kind: 'session',
+      id: 's1',
+      updatedAt: LATER,
+      deleted: true,
+      iv: toBase64(new Uint8Array(12)),
+      ciphertext: toBase64(crypto.getRandomValues(new Uint8Array(32))),
+    });
+    await expectRefused();
+    expect((await get(b, 's1'))?.name).toBe('One');
+  });
+
+  it('cannot delete a session with a tombstone that carries no ciphertext', async () => {
+    server.inject({
+      kind: 'session',
+      id: 's1',
+      updatedAt: LATER,
+      deleted: true,
+      iv: '',
+      ciphertext: '',
+    });
+    await expectRefused();
+    expect((await get(b, 's1'))?.name).toBe('One');
+  });
+
+  it('cannot turn a live record into a tombstone by flipping its deleted flag', async () => {
+    server.inject({ ...stored('session', 's1'), deleted: true });
+    await expectRefused();
+    server.inject({ ...stored('session', 's2'), updatedAt: LATER, deleted: true });
+    await expectRefused();
+    expect(await names(b)).toEqual(['One', 'Two']);
+  });
+
+  it('cannot resurrect a deleted session, by flipping its tombstone or replaying its body', async () => {
+    const alive = stored('session', 's2');
+    at(2_000_000);
+    await on(a, () => sessionRepo.remove('s2'));
+    await sync(a);
+    await sync(b);
+    expect(await names(b)).toEqual(['One']);
+
+    const tombstone = stored('session', 's2');
+    server.inject({ ...tombstone, updatedAt: LATER, deleted: false });
+    await expectRefused();
+    server.inject({ ...alive, updatedAt: LATER });
+    await expectRefused();
+    expect(await names(b)).toEqual(['One']);
+  });
+
+  it('cannot roll a session back by replaying an older ciphertext as newer', async () => {
+    const old = stored('session', 's1');
+    at(2_000_000);
+    await on(a, () => sessionRepo.rename('s1', 'One, edited'));
+    await sync(a);
+    await sync(b);
+    expect((await get(b, 's1'))?.name).toBe('One, edited');
+
+    server.inject({ ...old, updatedAt: LATER });
+    await expectRefused();
+    expect((await get(b, 's1'))?.name).toBe('One, edited');
+  });
+
+  it('cannot roll the settings back by replaying an older ciphertext as newer', async () => {
+    at(2_000_000);
+    await on(a, () => chrome.storage.sync.set({ sortBy: 'title' }));
+    await sync(a);
+    const old = stored('settings', 'settings');
+    at(3_000_000);
+    await on(a, () => chrome.storage.sync.set({ sortBy: 'custom' }));
+    await sync(a);
+    await sync(b);
+    expect((await on(b, () => readLocalSettings())).sort.sortBy).toBe('custom');
+
+    // The settings hold no updatedAt of their own: only the authenticated metadata stops this.
+    server.inject({ ...old, updatedAt: LATER });
+    await expectRefused();
+    expect((await on(b, () => readLocalSettings())).sort.sortBy).toBe('custom');
+  });
+
+  it('cannot move a ciphertext to another id', async () => {
+    const one = stored('session', 's1');
+    server.inject({ ...one, id: 's2', updatedAt: LATER });
+    await expectRefused();
+    server.inject({ ...one, id: 'planted' });
+    await expectRefused();
+    expect(await get(b, 'planted')).toBeUndefined();
+    expect((await get(b, 's2'))?.name).toBe('Two');
+  });
+
+  it('cannot move a ciphertext to another kind', async () => {
+    const settings = stored('settings', 'settings');
+    server.inject({ ...settings, kind: 'session', updatedAt: LATER });
+    await expectRefused();
+    expect(await get(b, 'settings')).toBeUndefined();
+
+    server.inject({
+      ...stored('session', 's1'),
+      kind: 'settings',
+      id: 'settings',
+      updatedAt: LATER,
+    });
+    await expectRefused();
+  });
+
+  it('cannot delete a session through the current record of a stale answer', async () => {
+    at(2_000_000);
+    await on(b, () => sessionRepo.rename('s1', 'One, on B'));
+    const realFetch = server.fetch;
+    const forging: typeof fetch = async (input, init) => {
+      if (init?.method === 'POST') {
+        server.inject({
+          kind: 'session',
+          id: 's1',
+          updatedAt: LATER,
+          deleted: true,
+          iv: toBase64(new Uint8Array(12)),
+          ciphertext: toBase64(crypto.getRandomValues(new Uint8Array(32))),
+        });
+      }
+      return realFetch(input, init);
+    };
+    expect(await on(b, () => syncNow({ fetch: forging }))).toMatchObject({ outcome: 'synced' });
+    expect((await get(b, 's1'))?.name).toBe('One, on B');
+    expect((await meta(b))?.lastError).toBe(t('errorCloudDecrypt'));
   });
 });
 

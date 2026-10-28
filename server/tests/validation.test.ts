@@ -91,11 +91,17 @@ describe('parseRecordsBody', () => {
     }
   });
 
-  it('wants a tombstone to carry an empty iv and ciphertext', () => {
-    expect(parseRecordsBody({ records: [{ ...tombstone('a', 1), iv: b64(12) }] })).toBeNull();
-    expect(
-      parseRecordsBody({ records: [{ ...tombstone('a', 1), ciphertext: 'AAAA' }] }),
-    ).toBeNull();
+  it('wants a tombstone to carry an iv and a ciphertext like a live record', () => {
+    for (const patch of [
+      { iv: '', ciphertext: '' },
+      { iv: '' },
+      { ciphertext: '' },
+      { iv: b64(11) },
+      { ciphertext: 'not base64' },
+      { ciphertext: 'A'.repeat(1024 * 1024 + 4) },
+    ]) {
+      expect(parseRecordsBody({ records: [{ ...tombstone('a', 1), ...patch }] })).toBeNull();
+    }
   });
 
   it('wants a live record to carry an iv and a non-empty base64 ciphertext', () => {

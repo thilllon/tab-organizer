@@ -5,9 +5,14 @@
  *
  * Records: a saved session is `{ kind: 'session', id, updatedAt }` with the whole `Session` body
  * encrypted inside; a deleted one is its tombstone (`deleted: true`, `updatedAt` = when it was
- * deleted); the settings are one record `{ kind: 'settings', id: 'settings' }` holding the sort
- * settings, the session settings and the language. Last writer wins by `updatedAt`, as on the
- * server.
+ * deleted, `TOMBSTONE_PAYLOAD` encrypted inside); the settings are one record
+ * `{ kind: 'settings', id: 'settings' }` holding the sort settings, the session settings and the
+ * language. Last writer wins by `updatedAt`, as on the server.
+ *
+ * The server is not trusted: every record, a tombstone included, is encrypted with its
+ * `kind`/`id`/`updatedAt`/`deleted` as AES-GCM additional data (`encryptRecord()`), so a record
+ * the server forged, moved to another id or kind, replayed under a newer `updatedAt` or turned
+ * into a tombstone does not decrypt. It is skipped and reported, never applied.
  *
  * `syncNow()` pulls the change feed, then pushes what this device changed (the dirty sets in
  * `cloudSyncMeta`, `src/lib/cloud-sync-state.ts`). It runs under its own Web Lock, so the page and
@@ -183,6 +188,14 @@ class RecordTooLargeError extends ExplainedError {
   }
 }
 
+/** What a tombstone's ciphertext holds: the deletion, authenticated like any other record. */
+export const TOMBSTONE_PAYLOAD = { deleted: true } as const;
+
+/** Whether a decrypted tombstone says what its metadata says. Pure. */
+function isTombstonePayload(value: unknown): boolean {
+  return isRecord(value) && Object.keys(value).length === 1 && value.deleted === true;
+}
+
 /** A record that decrypted to something this version cannot use. */
 class UnusableRecordError extends ExplainedError {
   constructor(kind: string, id: string) {
@@ -328,10 +341,15 @@ interface RunState {
   problems: unknown[];
 }
 
-/** The record's content; anything that does not decrypt is a `CloudDecryptError`. */
+/**
+ * The record's content, checked against its metadata (the additional data it was encrypted with);
+ * anything that does not decrypt is a `CloudDecryptError`. A tombstone is decrypted like any
+ * record: one with an empty or forged ciphertext never deletes anything.
+ */
 async function decrypt(run: RunState, record: CloudRecord): Promise<unknown> {
+  const { kind, id, updatedAt, deleted } = record;
   try {
-    return await decryptRecord(run.context.rawKey, record);
+    return await decryptRecord(run.context.rawKey, { kind, id, updatedAt, deleted }, record);
   } catch (err: unknown) {
     if (err instanceof CloudDecryptError) {
       throw err;
@@ -347,24 +365,26 @@ async function applyRecord(
   record: CloudRecord,
   serverWinsTies: boolean,
 ): Promise<boolean> {
+  // Decrypted first, whatever it is: nothing the server says outside the ciphertext is trusted.
+  const content = await decrypt(run, record);
   if (record.kind === 'settings') {
-    if (record.deleted || record.id !== SETTINGS_RECORD_ID) {
-      return false;
-    }
-    const settings = parseSyncedSettings(await decrypt(run, record));
-    if (settings === null) {
+    const settings = record.deleted ? null : parseSyncedSettings(content);
+    if (settings === null || record.id !== SETTINGS_RECORD_ID) {
       throw new UnusableRecordError(record.kind, record.id);
     }
     return applySettingsRecord(run.context, settings, record.updatedAt, serverWinsTies);
   }
   if (record.deleted) {
+    if (!isTombstonePayload(content)) {
+      throw new UnusableRecordError(record.kind, record.id);
+    }
     const outcome = await sessionRepo.applyRemote(
       { type: 'deleted', id: record.id, updatedAt: record.updatedAt },
       { serverWinsTies },
     );
     return outcome === 'applied';
   }
-  const session = parseSyncedSession(await decrypt(run, record), record.id);
+  const session = parseSyncedSession(content, record.id);
   if (session === null || session.updatedAt !== record.updatedAt) {
     throw new UnusableRecordError(record.kind, record.id);
   }
@@ -527,38 +547,38 @@ async function collectOutgoing(run: RunState): Promise<Outgoing[]> {
       await updateMeta(run.context, (current) => dropEntry(current, 'dirty', id, stamp));
       continue;
     }
-    const payload = await encryptRecord(rawKey, body);
+    const recordMeta = { kind: 'session', id, updatedAt: body.updatedAt, deleted: false } as const;
+    const payload = await encryptRecord(rawKey, recordMeta, body);
     if (payload.ciphertext.length > MAX_CIPHERTEXT_CHARS) {
       run.problems.push(new RecordTooLargeError(id));
       continue;
     }
-    outgoing.push({
-      record: { kind: 'session', id, updatedAt: body.updatedAt, deleted: false, ...payload },
-      entry: { set: 'dirty', stamp },
-    });
+    outgoing.push({ record: { ...recordMeta, ...payload }, entry: { set: 'dirty', stamp } });
   }
 
   for (const [id, deletedAt] of Object.entries(meta.deletedSessions)) {
     if (!RECORD_ID.test(id)) {
       continue;
     }
+    const recordMeta = { kind: 'session', id, updatedAt: deletedAt, deleted: true } as const;
+    const payload = await encryptRecord(rawKey, recordMeta, TOMBSTONE_PAYLOAD);
     outgoing.push({
-      record: { kind: 'session', id, updatedAt: deletedAt, deleted: true, iv: '', ciphertext: '' },
+      record: { ...recordMeta, ...payload },
       entry: { set: 'deleted', stamp: deletedAt },
     });
   }
 
   if (meta.settingsDirty) {
     const settings = await readLocalSettings();
-    const payload = await encryptRecord(rawKey, settings);
+    const recordMeta = {
+      kind: 'settings',
+      id: SETTINGS_RECORD_ID,
+      updatedAt: meta.settingsUpdatedAt,
+      deleted: false,
+    } as const;
+    const payload = await encryptRecord(rawKey, recordMeta, settings);
     outgoing.push({
-      record: {
-        kind: 'settings',
-        id: SETTINGS_RECORD_ID,
-        updatedAt: meta.settingsUpdatedAt,
-        deleted: false,
-        ...payload,
-      },
+      record: { ...recordMeta, ...payload },
       entry: {
         set: 'settings',
         stamp: meta.settingsUpdatedAt,

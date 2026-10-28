@@ -104,10 +104,8 @@ function parseRecord(value: unknown): RecordInput | null {
   ) {
     return null;
   }
-  if (deleted) {
-    // A tombstone carries nothing: the deletion itself is the record.
-    return iv === '' && ciphertext === '' ? { kind, id, updatedAt, deleted, iv, ciphertext } : null;
-  }
+  // A tombstone carries an iv and a ciphertext like a live record: the client encrypts the
+  // deletion with the record's metadata, so the server cannot forge one.
   if (
     !base64Within(iv, 12, 32) ||
     ciphertext.length > MAX_CIPHERTEXT_CHARS ||

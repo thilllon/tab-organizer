@@ -78,7 +78,7 @@ export function sessionRecord(id: string, updatedAt: number, fill = 1) {
 }
 
 export function tombstone(id: string, updatedAt: number) {
-  return { kind: 'session', id, updatedAt, deleted: true, iv: '', ciphertext: '' };
+  return { kind: 'session', id, updatedAt, deleted: true, iv: b64(12), ciphertext: b64(32, 2) };
 }
 
 export function validKeySetup() {

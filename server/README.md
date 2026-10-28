@@ -47,8 +47,11 @@ Limits and rules:
 - `kdf` is `{name: "PBKDF2", hash: "SHA-256", iterations}` with 100000..10000000 iterations;
   `salt` 16..64 bytes, `check` 1..1024 bytes, `checkIv` 12..32 bytes, all padded base64.
 - A record's `kind` is `session` or `settings`, its `id` matches `[A-Za-z0-9_-]{1,64}`,
-  `updatedAt` is a non-negative integer (ms). A live record has an `iv` of 12..32 bytes and a
-  non-empty `ciphertext` of at most 1 MiB of base64; a tombstone (`deleted: true`) has both empty.
+  `updatedAt` is a non-negative integer (ms). Every record, a tombstone (`deleted: true`)
+  included, has an `iv` of 12..32 bytes and a non-empty `ciphertext` of at most 1 MiB of base64:
+  the client encrypts the deletion too, with the record's `kind`, `id`, `updatedAt` and `deleted`
+  as AES-GCM additional data, so the server cannot forge a tombstone or move, replay or flip a
+  record under other metadata.
 - At most 100 records and at most 4 MiB of body per request, whichever comes first, so a client
   splits its batches by size as well as by count; unknown fields are refused. One bad record
   refuses the whole request. (Vercel itself refuses a body over 4.5 MB before the function runs,

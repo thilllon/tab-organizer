@@ -118,9 +118,7 @@ function isPostedRecord(value: unknown): value is Omit<FakeServerRecord, 'seq'> 
   ) {
     return false;
   }
-  if (deleted) {
-    return iv === '' && ciphertext === '';
-  }
+  // A tombstone carries an iv and a ciphertext like a live record (the deletion is encrypted).
   return iv !== '' && ciphertext !== '' && ciphertext.length <= SERVER_MAX_CIPHERTEXT_CHARS;
 }
 
