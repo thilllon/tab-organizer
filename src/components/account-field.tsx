@@ -1,4 +1,4 @@
-import { KeyRound, LogIn, LogOut, RotateCw, Trash2 } from 'lucide-react';
+import { KeyRound, LogIn, LogOut, RefreshCw, RotateCw, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 import { DeleteCloudDataDialog } from '@/components/delete-cloud-data-dialog';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCloudAccount } from '@/hooks/use-cloud-account';
+import { useCloudSync } from '@/hooks/use-cloud-sync';
 import {
   deleteCloudData,
   newPassphraseProblem,
@@ -16,6 +17,7 @@ import {
   signOut,
   unlockWithPassphrase,
 } from '@/lib/cloud-auth';
+import { formatDateTime } from '@/lib/display-format';
 import { reportError } from '@/lib/error-message';
 import { joinSentences, t, tp } from '@/lib/i18n';
 import type { CloudKeySetup } from '@/types';
@@ -30,12 +32,22 @@ interface AccountFieldProps {
  * `src/lib/cloud-auth.ts`). Signed out, a Google sign-in button; signed in without a passphrase
  * on the server, a form creating one (typed twice, with the warning that it cannot be
  * recovered); with one on the server but not on this device, a form entering it; ready, the
- * address, Sign out and Delete cloud data. Rendered only when cloud sync is configured.
+ * address, when the last sync finished (and why it failed), Sync now, Sign out and Delete cloud
+ * data. Rendered only when cloud sync is configured.
  */
 export function AccountField({ onNotice, onError }: AccountFieldProps) {
   const cloud = useCloudAccount();
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const syncing = useCloudSync(cloud.state === 'ready');
+
+  const startSync = () => {
+    void syncing.sync().then((synced) => {
+      if (synced) {
+        onNotice(t('settingsAccountSynced'));
+      }
+    });
+  };
 
   /** Runs one account action, keeping the buttons still meanwhile and reporting a failure. */
   const run = (context: string, action: () => Promise<void>) => {
@@ -117,8 +129,22 @@ export function AccountField({ onNotice, onError }: AccountFieldProps) {
       <>
         <SettingsField
           label={t('settingsAccountGoogle')}
-          hint={joinSentences(t('settingsAccountSignedInAs', email), t('settingsAccountReadyHint'))}
+          hint={joinSentences(
+            t('settingsAccountSignedInAs', email),
+            syncing.lastSyncAt === null
+              ? t('settingsAccountNotSyncedYet')
+              : t('settingsAccountLastSync', formatDateTime(syncing.lastSyncAt)),
+          )}
         >
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={startSync}
+            disabled={busy || syncing.syncing}
+          >
+            <RefreshCw className={syncing.syncing ? 'animate-spin' : undefined} />
+            {t('settingsAccountSyncNow')}
+          </Button>
           {signOutButton}
           <Button
             variant="outline"
@@ -130,6 +156,11 @@ export function AccountField({ onNotice, onError }: AccountFieldProps) {
             {t('settingsAccountDelete')}
           </Button>
         </SettingsField>
+        {syncing.lastError !== undefined && (
+          <p role="alert" className="text-xs text-destructive">
+            {syncing.lastError}
+          </p>
+        )}
         <DeleteCloudDataDialog
           open={confirmDelete}
           busy={busy}

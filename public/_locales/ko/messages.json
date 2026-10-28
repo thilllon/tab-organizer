@@ -1779,10 +1779,6 @@
     "message": "동기화 암호 문구를 이 기기에 저장했습니다.",
     "description": "Toast after a sync passphrase was created or entered correctly."
   },
-  "settingsAccountReadyHint": {
-    "message": "동기화는 다음 업데이트에서 제공됩니다.",
-    "description": "Grey hint in Settings once signed in and the passphrase is set: syncing itself is not available yet."
-  },
   "settingsAccountSignOut": {
     "message": "로그아웃",
     "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
@@ -1806,6 +1802,22 @@
   "settingsAccountDeleted": {
     "message": "클라우드 데이터를 삭제했습니다.",
     "description": "Toast after the cloud sync account and its data were deleted."
+  },
+  "settingsAccountSyncNow": {
+    "message": "지금 동기화",
+    "description": "Button in Settings > Account that syncs saved sessions and settings with the server right away. Keep it short."
+  },
+  "settingsAccountLastSync": {
+    "message": "마지막 동기화: $1",
+    "description": "Grey hint in Settings > Account once syncing is set up. $1 is the date and time of the last sync, already formatted."
+  },
+  "settingsAccountNotSyncedYet": {
+    "message": "아직 동기화하지 않았습니다.",
+    "description": "Grey hint in Settings > Account before the first sync has finished on this device."
+  },
+  "settingsAccountSynced": {
+    "message": "동기화했습니다.",
+    "description": "Toast after \"Sync now\" finished."
   },
   "errorCloudUnreachable": {
     "message": "동기화 서버에 연결할 수 없습니다. 연결을 확인하고 다시 시도하세요.",
@@ -1834,6 +1846,10 @@
   "errorCloudBadResponse": {
     "message": "동기화 서버가 이 버전이 읽을 수 없는 응답을 보냈습니다.",
     "description": "Error when the sync server's answer has an unexpected shape."
+  },
+  "errorCloudRecordTooLarge": {
+    "message": "세션 하나가 너무 커서 동기화할 수 없습니다. 이 기기에만 남아 있습니다.",
+    "description": "Error when a saved session is too large for the sync server; it stays on this device only."
   },
   "commonTryAgain": {
     "message": "다시 시도",

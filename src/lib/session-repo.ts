@@ -1,3 +1,11 @@
+import { isCloudSyncEnabled } from '@/lib/cloud-config';
+import {
+  readSyncMeta,
+  type SessionChanges,
+  trackSessionChanges,
+  withKnownVersion,
+  writeSyncMeta,
+} from '@/lib/cloud-sync-state';
 import { LocalizedError } from '@/lib/error-message';
 import { t } from '@/lib/i18n';
 import {
@@ -232,7 +240,8 @@ export function normalizeHistoryInterval(value: unknown): number {
   );
 }
 
-function normalizeSettings(value: unknown): SessionSettings {
+/** A stored or received `sessionSettings` value, every field validated with its default as fallback. */
+export function normalizeSettings(value: unknown): SessionSettings {
   if (!isRecord(value)) {
     return { ...DEFAULT_SESSION_SETTINGS };
   }
@@ -316,6 +325,7 @@ export const sessionRepo = {
     return withLock(async () => {
       const body: Session = { ...session, updatedAt: Date.now() };
       await writeBodyAndIndex(body);
+      await trackSessionChanges(savedChange(body));
     });
   },
 
@@ -325,7 +335,10 @@ export const sessionRepo = {
       if (existing === undefined) {
         throw new LocalizedError(t('storageSessionNotFound', id));
       }
-      await writeBodyAndIndex({ ...existing, name });
+      const next: Session = { ...existing, name };
+      stampEdit(existing, next);
+      await writeBodyAndIndex(next);
+      await trackSessionChanges(savedChange(next));
     });
   },
 
@@ -336,8 +349,11 @@ export const sessionRepo = {
    * entry re-derived from it, so counts and `bytes` always describe what is stored.
    *
    * `updatedAt` is written exactly as `mutate` leaves it: an in-place edit keeps the session where
-   * it is in the newest-first list instead of jumping it to the top. Resolves with the session as
-   * written, or `null` when it was deleted; throws when `id` has no body.
+   * it is in the newest-first list instead of jumping it to the top. The exception is a build with
+   * cloud sync configured, where an edit to a saved session moves `updatedAt` forward (`stampEdit`):
+   * the server keeps the copy with the newest `updatedAt`, so an edit that kept it would be lost.
+   * Resolves with the session as written, or `null` when it was deleted; throws when `id` has no
+   * body.
    */
   update(id: SessionId, mutate: (session: Session) => Session | null): Promise<Session | null> {
     return withLock(async () => {
@@ -349,13 +365,16 @@ export const sessionRepo = {
       if (next === null) {
         // Same path as remove(): body, index, then the `historyMeta` staleness check.
         await removeBodiesAndIndex(await readIndex(), [id]);
+        await trackSessionChanges(savedDeletion([existing]));
         return null;
       }
       if (next.id !== id) {
         // Would write the body under a different key and leave the original orphaned.
         throw new TypeError(`update() must not change the session id (${id} -> ${next.id})`);
       }
+      stampEdit(existing, next);
       await writeBodyAndIndex(next);
+      await trackSessionChanges(savedChange(next));
       return next;
     });
   },
@@ -366,18 +385,126 @@ export const sessionRepo = {
       // single snapshot goes through the same helper as pruneHistory/removeAllHistory so it too
       // drops a `historyMeta` left fingerprinting the snapshot just removed: otherwise the next
       // alarm compares against a hash nothing holds and returns 'skipped-unchanged' forever.
-      await removeBodiesAndIndex(await readIndex(), [id]);
+      const index = await readIndex();
+      await removeBodiesAndIndex(index, [id]);
+      await trackSessionChanges(savedDeletion(index.sessions.filter((entry) => entry.id === id)));
     });
   },
 
   removeAll(): Promise<void> {
     return withLock(async () => {
+      // Read before anything is removed, for the tombstones; an unreadable index has no saved
+      // sessions to tell the server about.
+      let saved: SessionSummary[] = [];
+      try {
+        saved = (await readIndex()).sessions;
+      } catch {
+        saved = [];
+      }
       const keys = await listStorageKeys();
       const bodyKeys = keys.filter((key) => idFromKey(key) !== undefined);
       if (bodyKeys.length > 0) {
         await chrome.storage.local.remove(bodyKeys);
       }
       await chrome.storage.local.remove([INDEX_KEY, HISTORY_META_KEY]);
+      await trackSessionChanges(savedDeletion(saved));
+    });
+  },
+
+  /**
+   * Applies a change received from the sync server (`src/lib/cloud-sync.ts`): a saved session, or
+   * the tombstone of one. Not recorded in the dirty sets, because it came from the server. Last
+   * writer wins by `updatedAt`, decided here under the lock against the copy as it is now:
+   *
+   * - the remote change is newer (or `serverWinsTies` and equally new, for a `stale` answer): the
+   *   session is written, or deleted, with the server's `updatedAt` kept exactly, and any pending
+   *   entry of this device for it is dropped (`'applied'`);
+   * - this device's copy (or pending tombstone) is newer: nothing is written and the copy is made
+   *   pending if it was not, so the server gets it on the next push (`'kept-local'`);
+   * - the same `updatedAt` (this device's own write coming back), nothing to delete, a snapshot,
+   *   or a body this build cannot read: nothing happens (`'unchanged'`). A snapshot or an unreadable
+   *   body is never overwritten or deleted by a remote change.
+   *
+   * With no copy here, the bar is the pending tombstone and `knownVersions`, the newest version of
+   * the id this device ever applied, deleted or had accepted: a live record must be strictly newer
+   * (no tie, even for a `stale` answer), so a server replaying a deleted session's last record
+   * byte for byte cannot bring it back. A remote tombstone with no copy here deletes nothing; it
+   * raises the mark and settles a pending tombstone that is not newer than it.
+   */
+  applyRemote(change: RemoteSessionChange, options: { serverWinsTies?: boolean } = {}) {
+    return withLock(async (): Promise<RemoteApplyOutcome> => {
+      const id = change.type === 'session' ? change.session.id : change.id;
+      const remoteAt = change.type === 'session' ? change.session.updatedAt : change.updatedAt;
+      const index = await readIndex();
+      const summary = index.sessions.find((entry) => entry.id === id);
+      if (summary !== undefined && (summary.kind === 'history' || summary.unreadable)) {
+        return 'unchanged';
+      }
+      let local: Session | undefined;
+      try {
+        local = await readBody(id);
+      } catch {
+        return 'unchanged';
+      }
+      if (local !== undefined && local.kind !== 'saved') {
+        return 'unchanged';
+      }
+      const meta = await readSyncMeta();
+      const tombstone = meta?.deletedSessions[id];
+
+      if (local === undefined) {
+        // Nothing here: the floor is this device's pending deletion and the newest version it has
+        // ever known of the id. A record at or below it is old, whatever the server says: that is
+        // what keeps a replay of a deleted session's last live record from bringing it back.
+        const floors = [tombstone, meta?.knownVersions[id]].filter((at) => at !== undefined);
+        const floor = floors.length > 0 ? Math.max(...floors) : undefined;
+        if (change.type === 'deleted') {
+          // Nothing to delete. A deletion at or after the pending one settles it.
+          if (meta !== undefined) {
+            let next = withKnownVersion(meta, id, remoteAt);
+            if (tombstone !== undefined && remoteAt >= tombstone) {
+              const deletedSessions = { ...next.deletedSessions };
+              delete deletedSessions[id];
+              next = { ...next, deletedSessions };
+            }
+            if (next !== meta) {
+              await writeSyncMeta(next);
+            }
+          }
+          return tombstone !== undefined && remoteAt < tombstone ? 'kept-local' : 'unchanged';
+        }
+        if (floor !== undefined && remoteAt <= floor) {
+          return tombstone !== undefined ? 'kept-local' : 'unchanged';
+        }
+        await writeBodyAndIndex(change.session);
+        await settleRemote(id, remoteAt);
+        return 'applied';
+      }
+
+      const localAt = Math.max(local.updatedAt, tombstone ?? 0);
+      const remoteWins =
+        remoteAt > localAt || (options.serverWinsTies === true && remoteAt === localAt);
+
+      if (!remoteWins) {
+        if (localAt > remoteAt && meta !== undefined) {
+          if (meta.dirtySessions[id] === undefined && tombstone === undefined) {
+            await writeSyncMeta({
+              ...meta,
+              dirtySessions: { ...meta.dirtySessions, [id]: local.updatedAt },
+            });
+          }
+          return 'kept-local';
+        }
+        return localAt > remoteAt ? 'kept-local' : 'unchanged';
+      }
+
+      if (change.type === 'session') {
+        await writeBodyAndIndex(change.session);
+      } else {
+        await removeBodiesAndIndex(index, [id]);
+      }
+      await settleRemote(id, remoteAt);
+      return 'applied';
     });
   },
 
@@ -649,6 +776,7 @@ export const sessionRepo = {
         copy.contentHash = source.contentHash;
       }
       await writeBodyAndIndex(copy);
+      await trackSessionChanges(savedChange(copy));
       return copy;
     });
   },
@@ -670,6 +798,60 @@ export const sessionRepo = {
     });
   },
 };
+
+// ---------------------------------------------------------------------------
+// Cloud sync hooks (src/lib/cloud-sync-state.ts holds the bookkeeping)
+// ---------------------------------------------------------------------------
+
+/** A change received from the sync server, for `sessionRepo.applyRemote()`. */
+export type RemoteSessionChange =
+  | { type: 'session'; session: Session }
+  | { type: 'deleted'; id: SessionId; updatedAt: number };
+
+export type RemoteApplyOutcome = 'applied' | 'kept-local' | 'unchanged';
+
+/**
+ * After a remote change was applied: this device's pending entries for `id` are dropped (the
+ * remote change replaced them) and `remoteAt` is remembered in `knownVersions`. Inside the lock.
+ */
+async function settleRemote(id: SessionId, remoteAt: number): Promise<void> {
+  const current = await readSyncMeta();
+  if (current === undefined) {
+    return;
+  }
+  const dirtySessions = { ...current.dirtySessions };
+  const deletedSessions = { ...current.deletedSessions };
+  delete dirtySessions[id];
+  delete deletedSessions[id];
+  await writeSyncMeta(
+    withKnownVersion({ ...current, dirtySessions, deletedSessions }, id, remoteAt),
+  );
+}
+
+/** The dirty-set entry for a written session: saved sessions only, snapshots never sync. */
+function savedChange(session: Session): SessionChanges {
+  return session.kind === 'saved' ? { changed: [[session.id, session.updatedAt]] } : {};
+}
+
+/** The tombstones for removed sessions: saved ones only. */
+function savedDeletion(removed: readonly (Session | SessionSummary)[]): SessionChanges {
+  return {
+    deleted: removed
+      .filter((entry) => entry.kind === 'saved')
+      .map((entry) => [entry.id, entry.updatedAt] as const),
+  };
+}
+
+/**
+ * With cloud sync configured, an edit to a saved session moves its `updatedAt` forward (to now,
+ * and always past the old value), so the server's last-writer-wins rule keeps the edit. Without it
+ * nothing changes: an edit keeps the session's place in the list, as it always has.
+ */
+function stampEdit(previous: Session, next: Session): void {
+  if (next.kind === 'saved' && isCloudSyncEnabled()) {
+    next.updatedAt = Math.max(Date.now(), previous.updatedAt + 1);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // History snapshot helpers

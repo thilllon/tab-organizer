@@ -5,7 +5,7 @@
  * base64, under `chrome.storage.local` `cloudSyncKey` (`src/lib/cloud-auth.ts`).
  */
 import { ExplainedError } from '@/lib/error-message';
-import type { CloudKeySetup, EncryptedPayload } from '@/types';
+import type { CloudKeySetup, CloudRecord, EncryptedPayload } from '@/types';
 
 /** PBKDF2 rounds for a new setup (OWASP's 2023 figure for PBKDF2-HMAC-SHA256). */
 export const KDF_ITERATIONS = 600_000;
@@ -89,12 +89,23 @@ function importAesKey(raw: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
 
+/** AES-GCM parameters: the iv, plus the additional data when there is some (none for the check). */
+function gcmParams(
+  iv: Uint8Array<ArrayBuffer>,
+  additionalData: Uint8Array<ArrayBuffer> | undefined,
+): AesGcmParams {
+  return additionalData === undefined
+    ? { name: 'AES-GCM', iv }
+    : { name: 'AES-GCM', iv, additionalData };
+}
+
 async function encryptBytes(
   key: CryptoKey,
   plain: Uint8Array<ArrayBuffer>,
+  additionalData?: Uint8Array<ArrayBuffer>,
 ): Promise<EncryptedPayload> {
   const iv = randomBytes(IV_BYTES);
-  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain);
+  const cipher = await crypto.subtle.encrypt(gcmParams(iv, additionalData), key, plain);
   return { iv: toBase64(iv), ciphertext: toBase64(new Uint8Array(cipher)) };
 }
 
@@ -102,10 +113,11 @@ async function encryptBytes(
 async function decryptBytes(
   key: CryptoKey,
   payload: EncryptedPayload,
+  additionalData?: Uint8Array<ArrayBuffer>,
 ): Promise<Uint8Array<ArrayBuffer> | null> {
   try {
     const plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: fromBase64(payload.iv) },
+      gcmParams(fromBase64(payload.iv), additionalData),
       key,
       fromBase64(payload.ciphertext),
     );
@@ -170,18 +182,60 @@ export async function keyMatchesSetup(rawKey: string, setup: CloudKeySetup): Pro
   }
 }
 
-/** `value` as JSON, UTF-8, then AES-GCM under `rawKey` with a fresh 12-byte iv. */
-export async function encryptRecord(rawKey: string, value: unknown): Promise<EncryptedPayload> {
-  const key = await importAesKey(fromBase64(rawKey));
-  return encryptBytes(key, new TextEncoder().encode(JSON.stringify(value)));
+/** What a record says about itself outside its ciphertext: all of it is authenticated. */
+export type CloudRecordMeta = Pick<CloudRecord, 'kind' | 'id' | 'updatedAt' | 'deleted'>;
+
+/** The prefix of every record's additional data; a new format gets a new version. */
+export const RECORD_AAD_VERSION = 'tabinet-record-v1';
+
+/**
+ * The AES-GCM additional data of a record: `tabinet-record-v1|<kind>|<id>|<updatedAt>|<0 or 1>`,
+ * UTF-8. Binding the metadata to the ciphertext means the server cannot move a ciphertext to
+ * another kind or id, replay it under a newer `updatedAt`, or flip `deleted`: any change makes
+ * decryption fail. None of the fields can hold a `|` (ids are `[A-Za-z0-9_-]`). Pure.
+ */
+export function recordAdditionalData(meta: CloudRecordMeta): Uint8Array<ArrayBuffer> {
+  const text = [
+    RECORD_AAD_VERSION,
+    meta.kind,
+    meta.id,
+    String(meta.updatedAt),
+    meta.deleted ? '1' : '0',
+  ].join('|');
+  return new TextEncoder().encode(text);
 }
 
-/** The inverse of `encryptRecord`; throws `CloudDecryptError` on anything that does not decrypt. */
-export async function decryptRecord(rawKey: string, payload: EncryptedPayload): Promise<unknown> {
+/**
+ * `value` as JSON, UTF-8, then AES-GCM under `rawKey` with a fresh 12-byte iv and `meta` as the
+ * additional data (`recordAdditionalData()`), so the record's metadata is authenticated with it.
+ */
+export async function encryptRecord(
+  rawKey: string,
+  meta: CloudRecordMeta,
+  value: unknown,
+): Promise<EncryptedPayload> {
   const key = await importAesKey(fromBase64(rawKey));
-  const plain = await decryptBytes(key, payload);
+  return encryptBytes(
+    key,
+    new TextEncoder().encode(JSON.stringify(value)),
+    recordAdditionalData(meta),
+  );
+}
+
+/**
+ * The inverse of `encryptRecord`, for a record whose metadata is `meta`; throws
+ * `CloudDecryptError` on anything that does not decrypt, metadata that is not what it was
+ * encrypted with included.
+ */
+export async function decryptRecord(
+  rawKey: string,
+  meta: CloudRecordMeta,
+  payload: EncryptedPayload,
+): Promise<unknown> {
+  const key = await importAesKey(fromBase64(rawKey));
+  const plain = await decryptBytes(key, payload, recordAdditionalData(meta));
   if (plain === null) {
-    throw new CloudDecryptError('AES-GCM refused the record (tampered or another key)');
+    throw new CloudDecryptError('AES-GCM refused the record (tampered, moved or another key)');
   }
   try {
     const value: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(plain));
