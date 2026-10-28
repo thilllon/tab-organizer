@@ -24,6 +24,8 @@ import { useSessionSettings } from '@/hooks/use-session-settings';
 import { formatRoute, HOME, type Route, routeSessionId } from '@/lib/app-route';
 import { assembleOutcome } from '@/lib/assemble-notice';
 import { assembleTabs } from '@/lib/assemble-tabs';
+import { isCloudSyncEnabled } from '@/lib/cloud-config';
+import { syncNow } from '@/lib/cloud-sync';
 import { downloadExport } from '@/lib/download-and-copy';
 import { reportError } from '@/lib/error-message';
 import {
@@ -91,6 +93,14 @@ export function App() {
   // What had focus when Settings opened. The dialog is opened by the route, not by a
   // `DialogTrigger`, so Radix has nothing to hand focus back to on close.
   const settingsOpener = useRef<Element | null>(null);
+
+  // Cloud sync runs once when the page opens (a no-op unless configured and ready); the result is
+  // in Settings > Account, and the session list follows whatever it changed through its listener.
+  useEffect(() => {
+    if (isCloudSyncEnabled()) {
+      syncNow().catch((err: unknown) => reportError('sync on open failed', err));
+    }
+  }, []);
 
   // The page header's height, for whatever sticks right under it (the Open tabs selection bar).
   // Measured rather than assumed: the header wraps to a second row on a narrow window.

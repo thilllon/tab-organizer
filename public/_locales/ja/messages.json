@@ -1787,10 +1787,6 @@
     "message": "同期パスフレーズをこの端末に保存しました。",
     "description": "Toast after a sync passphrase was created or entered correctly."
   },
-  "settingsAccountReadyHint": {
-    "message": "同期は次のアップデートで利用できるようになります。",
-    "description": "Grey hint in Settings once signed in and the passphrase is set: syncing itself is not available yet."
-  },
   "settingsAccountSignOut": {
     "message": "ログアウト",
     "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
@@ -1814,6 +1810,22 @@
   "settingsAccountDeleted": {
     "message": "クラウドのデータを削除しました。",
     "description": "Toast after the cloud sync account and its data were deleted."
+  },
+  "settingsAccountSyncNow": {
+    "message": "今すぐ同期",
+    "description": "Button in Settings > Account that syncs saved sessions and settings with the server right away. Keep it short."
+  },
+  "settingsAccountLastSync": {
+    "message": "最終同期: $1",
+    "description": "Grey hint in Settings > Account once syncing is set up. $1 is the date and time of the last sync, already formatted."
+  },
+  "settingsAccountNotSyncedYet": {
+    "message": "まだ同期していません。",
+    "description": "Grey hint in Settings > Account before the first sync has finished on this device."
+  },
+  "settingsAccountSynced": {
+    "message": "同期しました。",
+    "description": "Toast after \"Sync now\" finished."
   },
   "errorCloudUnreachable": {
     "message": "同期サーバーに接続できません。接続を確認して、もう一度お試しください。",
@@ -1842,6 +1854,10 @@
   "errorCloudBadResponse": {
     "message": "同期サーバーから、このバージョンでは読めない応答が届きました。",
     "description": "Error when the sync server's answer has an unexpected shape."
+  },
+  "errorCloudRecordTooLarge": {
+    "message": "大きすぎて同期できないセッションがあります。このデバイスにだけ残ります。",
+    "description": "Error when a saved session is too large for the sync server; it stays on this device only."
   },
   "commonTryAgain": {
     "message": "再試行",

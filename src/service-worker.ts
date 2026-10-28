@@ -1,5 +1,6 @@
 import { formatRoute } from '@/lib/app-route';
 import { assembleTabs } from '@/lib/assemble-tabs';
+import { ensureSyncAlarm, handleCloudStorageChange, isSyncAlarm, syncNow } from '@/lib/cloud-sync';
 import {
   ensureHistoryAlarm,
   HISTORY_ALARM,
@@ -248,6 +249,8 @@ async function onInstalled(details: chrome.runtime.InstalledDetails): Promise<vo
   // Chrome drops every alarm on extension update/reload, so the periodic history alarm is
   // re-asserted for all reasons (a no-op replace when it already exists).
   await ensureHistoryAlarm();
+  // The cloud sync alarm, for the same reason (nothing at all while sync is unconfigured).
+  await ensureSyncAlarm().catch(report);
 }
 
 async function onStartup(): Promise<void> {
@@ -270,10 +273,12 @@ async function onStartup(): Promise<void> {
   // One-shot 'history-first' 1 min out: Chrome is still restoring tabs while onStartup runs,
   // and a capture now would record half-loaded windows.
   await scheduleFirstSnapshot(settings);
+  await ensureSyncAlarm().catch(report);
 }
 
 /**
- * `alarms.onAlarm` handler. Both history alarms take an `origin: 'alarm'` snapshot;
+ * `alarms.onAlarm` handler. The cloud sync alarms (`cloud-sync`, `cloud-sync-soon`) run a sync,
+ * which returns `'notReady'` by itself when this device is not ready. Both history alarms take an `origin: 'alarm'` snapshot;
  * `takeHistorySnapshot` itself returns `'disabled'` (without querying windows) when the user
  * turned history off after the alarm was scheduled, so no settings read is needed here.
  */
@@ -283,6 +288,10 @@ function onAlarm(alarm: chrome.alarms.Alarm): void {
   // clear timer died with a previous worker. It can cut a fresh badge a fraction short when an
   // alarm lands inside those 2 s; a stale ✓ that never goes away is the worse failure.
   clearBadge();
+  if (isSyncAlarm(alarm.name)) {
+    syncNow().catch(report);
+    return;
+  }
   if (alarm.name !== HISTORY_ALARM && alarm.name !== HISTORY_FIRST_ALARM) {
     return;
   }
@@ -315,11 +324,16 @@ function onActionClicked(): void {
  *   the key was removed) as every other settings read.
  * - `uiLanguage` (sync; the language chosen in Settings, or on another device) is put in use and
  *   the right-click menu is recreated, so its titles follow at once.
+ *
+ * Every change is also handed to cloud sync first (`handleCloudStorageChange()`): the account or
+ * key arms or clears its alarms, a setting marks the settings dirty, and new work in
+ * `cloudSyncMeta` asks for a sync a minute later. It returns at once while sync is unconfigured.
  */
 function onStorageChanged(
   changes: { [key: string]: chrome.storage.StorageChange },
   areaName: chrome.storage.AreaName,
 ): void {
+  handleCloudStorageChange(changes, areaName).catch(report);
   if (areaName === 'sync' && UI_LANGUAGE_KEY in changes) {
     void applyUiLanguage(parseUiLanguage(changes[UI_LANGUAGE_KEY]?.newValue));
     registerContextMenus().catch(report);
