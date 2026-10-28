@@ -42,7 +42,7 @@ export async function loadUiLanguage(): Promise<UiLanguage> {
     const stored = await chrome.storage.sync.get(UI_LANGUAGE_KEY);
     return parseUiLanguage(stored[UI_LANGUAGE_KEY]);
   } catch (err) {
-    console.error('[tab-organizer] language setting not read', err);
+    console.error('[tabinet] language setting not read', err);
     return DEFAULT_UI_LANGUAGE;
   }
 }

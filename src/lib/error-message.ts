@@ -132,6 +132,6 @@ export function errorDetail(err: unknown): string {
  * so it is not lost when the person sees the generic sentence, and returns what to show.
  */
 export function reportError(context: string, err: unknown): string {
-  console.error(`[tab-organizer] ${context}`, err);
+  console.error(`[tabinet] ${context}`, err);
   return errorMessage(err);
 }

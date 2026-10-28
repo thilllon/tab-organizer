@@ -176,7 +176,7 @@ export async function collectSessionBodies(
         sessions.push(session);
       }
     } catch (err) {
-      console.warn('[tab-organizer:sessions] export skipped', summary.id, errorDetail(err));
+      console.warn('[tabinet:sessions] export skipped', summary.id, errorDetail(err));
       skipped.push(summary.id);
     }
     loaded += 1;

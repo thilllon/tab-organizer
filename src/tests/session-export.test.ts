@@ -459,17 +459,17 @@ describe('exportFilename', () => {
   it('slugifies the base and stamps local yyyyMMdd-HHmm', () => {
     const date = new Date(2026, 7, 29, 14, 3);
     expect(exportFilename('Work Session · 3 windows', 'json', date)).toBe(
-      'tab-organizer-work-session-3-windows-20260829-1403.json',
+      'tabinet-work-session-3-windows-20260829-1403.json',
     );
-    expect(exportFilename('Work', 'markdown', date)).toBe('tab-organizer-work-20260829-1403.md');
-    expect(exportFilename('Work', 'text', date)).toBe('tab-organizer-work-20260829-1403.txt');
-    expect(exportFilename('Work', 'html', date)).toBe('tab-organizer-work-20260829-1403.html');
-    expect(exportFilename('Work', 'csv', date)).toBe('tab-organizer-work-20260829-1403.csv');
+    expect(exportFilename('Work', 'markdown', date)).toBe('tabinet-work-20260829-1403.md');
+    expect(exportFilename('Work', 'text', date)).toBe('tabinet-work-20260829-1403.txt');
+    expect(exportFilename('Work', 'html', date)).toBe('tabinet-work-20260829-1403.html');
+    expect(exportFilename('Work', 'csv', date)).toBe('tabinet-work-20260829-1403.csv');
   });
 
   it('omits the slug segment when nothing survives slugification', () => {
     expect(exportFilename('···', 'json', new Date(2026, 0, 5, 9, 7))).toBe(
-      'tab-organizer-20260105-0907.json',
+      'tabinet-20260105-0907.json',
     );
   });
 });

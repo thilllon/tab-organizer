@@ -50,7 +50,7 @@ describe('migrateSession', () => {
 });
 
 describe('futureSchemaVersion', () => {
-  it('names the version of a body written by a newer Tab Organizer', () => {
+  it('names the version of a body written by a newer Tabinet', () => {
     try {
       migrateSession({ ...session, schemaVersion: 2 });
       expect.unreachable('migrateSession must reject a v2 record');

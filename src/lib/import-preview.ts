@@ -41,7 +41,7 @@ export function checkImportSize(bytes: number, max: number = MAX_IMPORT_BYTES): 
 
 /** Every failure that stops the dialog before parsing reads the same way. */
 export function fileReadError(err: unknown): string {
-  console.warn('[tab-organizer] import file read failed', errorDetail(err));
+  console.warn('[tabinet] import file read failed', errorDetail(err));
   const reason = knownErrorText(err);
   return reason === undefined ? t('expErrorFileReadPlain') : t('expErrorFileRead', reason);
 }

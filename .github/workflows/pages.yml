@@ -1,7 +1,7 @@
 name: Website
 
 # Builds the project website in site/ (Astro) and publishes it to GitHub Pages at
-# https://thilllon.github.io/tab-organizer/. The repository's Pages source must be set to
+# https://thilllon.github.io/tabinet/. The repository's Pages source must be set to
 # "GitHub Actions" (Settings > Pages) for the deploy job to succeed.
 
 on:

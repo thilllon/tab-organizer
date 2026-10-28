@@ -48,7 +48,7 @@ export function YoutubeAccessField({
   }, [sentHere, granted]);
 
   const failed = (err: unknown) => {
-    console.error('[tab-organizer] YouTube access not changed', err);
+    console.error('[tabinet] YouTube access not changed', err);
     onError(t('settingsYoutubeAccessFailed'));
   };
 

@@ -1,10 +1,10 @@
 <p align="center">
-  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg">
-    <img src="assets/promo-marquee-1400x560.png" alt="Tab Organizer: one-click tab sorting and grouping for Chrome" width="100%" />
+  <a href="https://chromewebstore.google.com/detail/bmbpmnfhfbdjdjpblimidmbohgccmjdg">
+    <img src="assets/promo-marquee-1400x560.png" alt="Tabinet: one-click tab sorting and grouping for Chrome" width="100%" />
   </a>
 </p>
 
-<h1 align="center">Tab Organizer</h1>
+<h1 align="center">Tabinet</h1>
 
 <p align="center">
   <strong>One click. Every tab sorted, grouped, and de-duplicated, plus sessions you can save and restore.</strong><br />
@@ -12,17 +12,17 @@
 </p>
 
 <p align="center">
-  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/v/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white" alt="Chrome Web Store" /></a>
-  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/users/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=users&logo=googlechrome&logoColor=white" alt="Users" /></a>
-  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/rating/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=rating&logo=googlechrome&logoColor=white" alt="Rating" /></a>
-  <a href="https://github.com/thilllon/tab-organizer/releases"><img src="https://img.shields.io/github/v/release/thilllon/tab-organizer?logo=github" alt="GitHub release" /></a>
-  <a href="https://github.com/thilllon/tab-organizer/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thilllon/tab-organizer/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white" alt="CI" /></a>
+  <a href="https://chromewebstore.google.com/detail/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/v/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white" alt="Chrome Web Store" /></a>
+  <a href="https://chromewebstore.google.com/detail/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/users/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=users&logo=googlechrome&logoColor=white" alt="Users" /></a>
+  <a href="https://chromewebstore.google.com/detail/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><img src="https://img.shields.io/chrome-web-store/rating/bmbpmnfhfbdjdjpblimidmbohgccmjdg?label=rating&logo=googlechrome&logoColor=white" alt="Rating" /></a>
+  <a href="https://github.com/thilllon/tabinet/releases"><img src="https://img.shields.io/github/v/release/thilllon/tabinet?logo=github" alt="GitHub release" /></a>
+  <a href="https://github.com/thilllon/tabinet/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thilllon/tabinet/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white" alt="CI" /></a>
 </p>
 
 <p align="center">
-  <a href="https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><strong>➜ Install from the Chrome Web Store</strong></a>
+  <a href="https://chromewebstore.google.com/detail/bmbpmnfhfbdjdjpblimidmbohgccmjdg"><strong>➜ Install from the Chrome Web Store</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://thilllon.github.io/tab-organizer/"><strong>Website</strong></a>
+  <a href="https://thilllon.github.io/tabinet/"><strong>Website</strong></a>
 </p>
 
 ## See it in action
@@ -64,11 +64,11 @@ Pin the icon, click it, and you're done. Every tab in the window is sorted and g
 Everything that is not the icon click lives on one page (`app.html`), opened once and re-focused thereafter. Three ways in, none of them on the icon click (a left-click only ever sorts):
 
 1. **Right-click the icon → _Options_**: Chrome's own item, pointed at `app.html#settings`. The same menu carries _Assemble!_, _Save all windows as session_ (a ✓ badge confirms a save) and _Pause all YouTube videos_ (✓ once paused; until you have allowed access to YouTube it opens Settings instead); opening the page is left to Chrome's entry rather than repeated there.
-2. **Keyboard shortcuts**: sorting (listed by Chrome as _Activate the extension_: a key bound to it does what a click on the icon does), _Save the current window as a session_, _Open Tab Organizer_, _Assemble! (move every window's tabs into this one)_ and _Pause all YouTube videos_ are Chrome commands. Sorting is suggested as `Alt+Shift+S`, gathering the windows as `Alt+Shift+A` and pausing YouTube as `Alt+Shift+P` (`⌥⇧S`, `⌥⇧A` and `⌥⇧P` on a Mac), which Chrome assigns only on a new install, never on an update that adds one; the other two have no preset key; bind them at `chrome://extensions/shortcuts` (Settings lists the keys you have assigned).
+2. **Keyboard shortcuts**: sorting (listed by Chrome as _Activate the extension_: a key bound to it does what a click on the icon does), _Save the current window as a session_, _Open Tabinet_, _Assemble! (move every window's tabs into this one)_ and _Pause all YouTube videos_ are Chrome commands. Sorting is suggested as `Alt+Shift+S`, gathering the windows as `Alt+Shift+A` and pausing YouTube as `Alt+Shift+P` (`⌥⇧S`, `⌥⇧A` and `⌥⇧P` on a Mac), which Chrome assigns only on a new install, never on an update that adds one; the other two have no preset key; bind them at `chrome://extensions/shortcuts` (Settings lists the keys you have assigned).
 3. **`chrome://extensions` → Details → Extension options**.
 
 <p align="center">
-  <img src="assets/dashboard-sessions.png" alt="The Tab Organizer app page" width="640" />
+  <img src="assets/dashboard-sessions.png" alt="The Tabinet app page" width="640" />
 </p>
 
 The left column is what you have; the rest of the page is whatever you picked. Every view has its own address, so Back works and a session can be bookmarked:
@@ -87,14 +87,14 @@ Everything lives in `chrome.storage.local` on the device, never synced, never up
 
 ## Languages
 
-English, Korean (한국어), Spanish (Español) and Japanese (日本語). By default (Automatic) Tab Organizer follows the language Chrome is displayed in, and uses English for any other; the language menu at the top of Settings, next to the close button, picks one of the four instead, for the Tab Organizer page and the icon's right-click menu. The extension's name and description, the icon's tooltip and the keyboard shortcut descriptions at chrome://extensions always follow Chrome's language, which Chrome reads itself. The choice is stored with your other preferences in Chrome's sync storage. The Chrome Web Store listing comes in the same four languages, picked by Chrome's language. Text you saved (session names, group titles) stays as you wrote it, and exports open and import back the same in every language.
+English, Korean (한국어), Spanish (Español) and Japanese (日本語). By default (Automatic) Tabinet follows the language Chrome is displayed in, and uses English for any other; the language menu at the top of Settings, next to the close button, picks one of the four instead, for the Tabinet page and the icon's right-click menu. The extension's name and description, the icon's tooltip and the keyboard shortcut descriptions at chrome://extensions always follow Chrome's language, which Chrome reads itself. The choice is stored with your other preferences in Chrome's sync storage. The Chrome Web Store listing comes in the same four languages, picked by Chrome's language. Text you saved (session names, group titles) stays as you wrote it, and exports open and import back the same in every language.
 
 ## Privacy
 
 - **Zero network requests**: works entirely offline, no analytics, no telemetry.
 - **Eight permissions, no host permissions at install**: `tabs`, `tabGroups`, `storage` (settings via Chrome sync; sessions in local storage on this device only), `contextMenus` (icon menu), `unlimitedStorage` (large sessions), `favicon` (site icons from Chrome's local cache), `alarms` (snapshot timer; none exists when snapshots are off), `scripting` (pausing YouTube). Plus one optional host permission, `https://*.youtube.com/*`, asked for only when you click **Allow access** in Settings and removable there. Requires Chrome 123 or newer.
 - **No content scripts**: nothing is injected into a web page, except that **Pause all YouTube videos**, once you allowed it, runs one packaged function in your YouTube tabs that presses pause and reads nothing.
-- Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md), also on the [website](https://thilllon.github.io/tab-organizer/privacy/) in English, Korean, Spanish and Japanese.
+- Full policy: [PRIVACY_POLICY.md](PRIVACY_POLICY.md), also on the [website](https://thilllon.github.io/tabinet/privacy/) in English, Korean, Spanish and Japanese.
 
 Everything typed into the store dashboard (each language's description, the privacy answers, the reviewers' test instructions) is kept as data at the top of [`scripts/store-listing.ts`](scripts/store-listing.ts); `pnpm store:bundle` gathers it with the screenshots into one `SUBMIT.md`.
 
@@ -127,6 +127,6 @@ pnpm site:dev               # The project website (site/, Astro) on a dev server
 pnpm site:build             # Build the website into site/dist/
 ```
 
-The website at [thilllon.github.io/tab-organizer](https://thilllon.github.io/tab-organizer/) lives in `site/` and is deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main` that changes it.
+The website at [thilllon.github.io/tabinet](https://thilllon.github.io/tabinet/) lives in `site/` and is deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main` that changes it.
 
 The `dist` folder will contain the production-ready extension.

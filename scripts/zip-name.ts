@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 /**
- * The upload zip's file name, `Tab-Organizer-<version>.zip`. It comes from `package.json`'s
+ * The upload zip's file name, `Tabinet-<version>.zip`. It comes from `package.json`'s
  * `displayName`, never from the built manifest: since the extension is translated the manifest's
  * `name` is the message reference `__MSG_extName__`, which would make a file called
  * `__MSG_extName__-7.14.0.zip`. `zip.ts` writes the file under this name and `store-bundle.ts`

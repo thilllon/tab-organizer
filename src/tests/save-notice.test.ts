@@ -4,20 +4,18 @@ import { nothingToSaveNotice } from '@/lib/save-notice';
 
 describe('nothingToSaveNotice', () => {
   it('words the current-window save', () => {
-    expect(nothingToSaveNotice('window')).toBe(
-      'Nothing to save: this window only holds Tab Organizer.',
-    );
+    expect(nothingToSaveNotice('window')).toBe('Nothing to save: this window only holds Tabinet.');
   });
 
   it('words the all-windows save', () => {
     expect(nothingToSaveNotice('all')).toBe(
-      'Nothing to save: no open window holds anything besides Tab Organizer.',
+      'Nothing to save: no open window holds anything besides Tabinet.',
     );
   });
 
   it('treats one chosen window like the current one', () => {
     expect(nothingToSaveNotice({ windowId: 7 })).toBe(
-      'Nothing to save: this window only holds Tab Organizer.',
+      'Nothing to save: this window only holds Tabinet.',
     );
   });
 

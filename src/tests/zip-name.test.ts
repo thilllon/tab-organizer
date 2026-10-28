@@ -5,8 +5,8 @@ import { readDisplayName, zipFileName } from '../../scripts/zip-name';
 describe('zipFileName', () => {
   it("names the upload zip after package.json's displayName and the version", () => {
     const displayName = readDisplayName(new URL('../../package.json', import.meta.url).pathname);
-    expect(displayName).toBe('Tab Organizer');
-    expect(zipFileName(displayName, '7.14.0')).toBe('Tab-Organizer-7.14.0.zip');
+    expect(displayName).toBe('Tabinet');
+    expect(zipFileName(displayName, '7.14.0')).toBe('Tabinet-7.14.0.zip');
   });
 
   it('refuses the translated manifest name, which is only a message reference', () => {

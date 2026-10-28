@@ -30,7 +30,7 @@ export const STORE_DESCRIPTIONS: Record<ListingLocale, string> = {
 
 No account, no tracking: everything stays on your device.
 
-Guide and FAQ: https://thilllon.github.io/tab-organizer/support/`,
+Guide and FAQ: https://thilllon.github.io/tabinet/support/`,
   ko: `아이콘을 한 번 누르면 창의 모든 탭이 사이트, 제목, URL 순으로 정렬되고 그룹으로 묶이며 중복 탭이 정리됩니다.
 
 • 창을 세션으로 저장했다가 탭 그룹, 고정 탭까지 그대로 복원
@@ -40,7 +40,7 @@ Guide and FAQ: https://thilllon.github.io/tab-organizer/support/`,
 
 계정도 추적도 없습니다. 모든 데이터는 이 기기에만 저장됩니다.
 
-사용법과 FAQ: https://thilllon.github.io/tab-organizer/ko/support/`,
+사용법과 FAQ: https://thilllon.github.io/tabinet/ko/support/`,
   es: `Un clic en el icono ordena todas las pestañas de la ventana por sitio, título o URL, las agrupa y elimina los duplicados.
 
 • Guarda ventanas como sesiones y restáuralas con sus grupos y pestañas fijadas
@@ -50,7 +50,7 @@ Guide and FAQ: https://thilllon.github.io/tab-organizer/support/`,
 
 Sin cuenta ni rastreo: todo se queda en tu dispositivo.
 
-Guía y preguntas frecuentes: https://thilllon.github.io/tab-organizer/es/support/`,
+Guía y preguntas frecuentes: https://thilllon.github.io/tabinet/es/support/`,
   ja: `アイコンをクリックするだけで、ウィンドウ内のすべてのタブをサイト、タイトル、URL 順に並べ替え、グループにまとめ、重複タブを整理します。
 
 • ウィンドウをセッションとして保存し、タブグループや固定タブごと復元
@@ -60,15 +60,15 @@ Guía y preguntas frecuentes: https://thilllon.github.io/tab-organizer/es/suppor
 
 アカウント不要、追跡なし。データはすべてこのデバイスに保存されます。
 
-使い方と FAQ: https://thilllon.github.io/tab-organizer/ja/support/`,
+使い方と FAQ: https://thilllon.github.io/tabinet/ja/support/`,
 };
 
 /** Store listing tab: the fields besides Description and images. */
 export const PRODUCT_DETAILS = {
   category: 'Functionality & UI',
-  homepageUrl: 'https://thilllon.github.io/tab-organizer/',
-  supportUrl: 'https://thilllon.github.io/tab-organizer/support/',
-  privacyPolicyUrl: 'https://thilllon.github.io/tab-organizer/privacy/',
+  homepageUrl: 'https://thilllon.github.io/tabinet/',
+  supportUrl: 'https://thilllon.github.io/tabinet/support/',
+  privacyPolicyUrl: 'https://thilllon.github.io/tabinet/privacy/',
   matureContent: 'No',
   promoVideo: 'None (the store takes a YouTube URL only)',
 } as const;
@@ -131,7 +131,7 @@ export const TEST_INSTRUCTIONS = `No account, login or server is needed; leave t
 1. Open a few tabs from different sites in one window, in mixed order, with one address open twice.
 2. Click the toolbar icon. There is no popup: the tabs are sorted by URL (site first) at once and the duplicate tab is closed.
 3. Right-click the icon and choose "Save all windows as session". The icon shows a check mark for a moment.
-4. Right-click the icon and choose "Options". The Tab Organizer page opens; its sidebar has Open tabs, Saved and Automatic snapshots. Pick the saved session and click Open to restore it.
+4. Right-click the icon and choose "Options". The Tabinet page opens; its sidebar has Open tabs, Saved and Automatic snapshots. Pick the saved session and click Open to restore it.
 5. With two or more windows open, right-click the icon and choose "Assemble! (move every window's tabs into this one)". Every tab moves into the current window.
 6. On that page, the Settings button at the top opens Settings: set Sort by to Custom and click the toolbar icon again; tabs from the same site now sit next to each other, the first site seen first. Set Duplicate tabs to "Group them" to put duplicate tabs into a tab group instead of closing them. Automatic snapshots, the language and Backup (export, import) are there too.
 7. Open two YouTube videos, in different windows, and play both. Right-click the icon and choose "Pause all YouTube videos". The first time, Settings opens instead: in its YouTube section click "Allow access" and accept Chrome's prompt, then choose the menu item again. Both videos pause where they were; choosing it again resumes nothing. "Remove access" in the same place takes the access back.

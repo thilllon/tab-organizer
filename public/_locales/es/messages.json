@@ -1,7 +1,11 @@
 {
   "extName": {
-    "message": "Tab Organizer",
-    "description": "The extension name in Chrome and the Chrome Web Store. Keep the brand name; at most 75 characters."
+    "message": "Tabinet: organizador de pestañas y sesiones",
+    "description": "The extension name in Chrome and the Chrome Web Store title: the brand \"Tabinet\" (never translated), a colon, then a short description of what it is. At most 75 characters."
+  },
+  "appName": {
+    "message": "Tabinet",
+    "description": "Do not translate. The brand name alone, shown in the page header and the browser tab title."
   },
   "extDescription": {
     "message": "Ordena y agrupa todas las pestañas en un clic; guarda y restaura ventanas enteras como sesiones. Sin conexión ni cuenta, todo local.",
@@ -12,7 +16,7 @@
     "description": "Do not translate. The language code of this file itself (en, ko, es, ja), not a word: it picks the plural rules and number formats that match this file's text, also when Chrome falls back to it for a language the extension does not ship."
   },
   "actionTitle": {
-    "message": "Tab Organizer: haz clic para ordenar las pestañas, clic derecho para sesiones",
+    "message": "Tabinet: haz clic para ordenar las pestañas, clic derecho para sesiones",
     "description": "Tooltip of the toolbar icon. Teaches the two gestures."
   },
   "cmdSaveSession": {
@@ -20,7 +24,7 @@
     "description": "Keyboard command, listed at chrome://extensions/shortcuts."
   },
   "cmdOpenDashboard": {
-    "message": "Abrir Tab Organizer",
+    "message": "Abrir Tabinet",
     "description": "Keyboard command that opens the app page."
   },
   "cmdAssembleTabs": {
@@ -148,15 +152,15 @@
     "description": "Label of the Settings row that allows or removes the extension's access to youtube.com, needed to pause videos."
   },
   "settingsYoutubeAccessOffHint": {
-    "message": "Aún no está permitido. Hace falta para pausar vídeos; Chrome te lo pregunta antes. Tab Organizer solo pulsa pausa en YouTube y no lee nada de la página.",
+    "message": "Aún no está permitido. Hace falta para pausar vídeos; Chrome te lo pregunta antes. Tabinet solo pulsa pausa en YouTube y no lee nada de la página.",
     "description": "Grey hint under \"Access to YouTube\" while the access is not granted."
   },
   "settingsYoutubeAccessOnHint": {
-    "message": "Permitido. Haz clic derecho en el icono y elige «$1», o pulsa su combinación de teclas, para pausar todos los vídeos. Tab Organizer solo pulsa pausa en YouTube y no lee nada de la página.",
+    "message": "Permitido. Haz clic derecho en el icono y elige «$1», o pulsa su combinación de teclas, para pausar todos los vídeos. Tabinet solo pulsa pausa en YouTube y no lee nada de la página.",
     "description": "Grey hint under \"Access to YouTube\" once the access is granted. $1 is the right-click menu item (cmdPauseYoutube), quoted."
   },
   "settingsYoutubeAccessAskedHint": {
-    "message": "«$1» necesita antes este acceso. Permítelo aquí y luego vuelve a elegir «$1» o pulsa su combinación de teclas. Tab Organizer solo pulsa pausa en YouTube y no lee nada de la página.",
+    "message": "«$1» necesita antes este acceso. Permítelo aquí y luego vuelve a elegir «$1» o pulsa su combinación de teclas. Tabinet solo pulsa pausa en YouTube y no lee nada de la página.",
     "description": "Grey hint under \"Access to YouTube\" when the person arrived from the menu item or shortcut without the access yet: explains why Settings opened. $1 (twice) is the right-click menu item (cmdPauseYoutube), quoted."
   },
   "settingsYoutubeAllowed": {
@@ -564,8 +568,8 @@
     "description": "Name given to the snapshot recovered after a browser restart. $1 is its capture time as 2026-08-29 14:03."
   },
   "sessionUnreadableMessage": {
-    "message": "Guardada con una versión más reciente de Tab Organizer. Actualiza para abrirla.",
-    "description": "Shown in the saved list instead of a session this version cannot read. Tab Organizer is the extension name."
+    "message": "Guardada con una versión más reciente de Tabinet. Actualiza para abrirla.",
+    "description": "Shown in the saved list instead of a session this version cannot read. Tabinet is the extension name."
   },
   "sessionUnreadableSchema": {
     "message": "esquema v$1",
@@ -925,18 +929,18 @@
   },
   "expErrorNoSessionsList": {
     "message": "El paquete exportado no tiene una lista \"sessions\".",
-    "description": "Import error for a Tab Organizer JSON file without its sessions list. Keep \"sessions\" as is: it is the field name in the file."
+    "description": "Import error for a Tabinet JSON file without its sessions list. Keep \"sessions\" as is: it is the field name in the file."
   },
   "expErrorNoSessions": {
     "message": "La exportación no contiene sesiones.",
     "description": "Import error for an empty export."
   },
   "expErrorInvalidSession": {
-    "message": "La sesión $1 no es un registro de sesión válido de Tab Organizer.",
+    "message": "La sesión $1 no es un registro de sesión válido de Tabinet.",
     "description": "Import error. $1 is the 1-based position of the bad session in the file."
   },
   "expErrorNotExport": {
-    "message": "El JSON no es una exportación de Tab Organizer.",
+    "message": "El JSON no es una exportación de Tabinet.",
     "description": "Import error for JSON from somewhere else."
   },
   "expErrorSchemaVersion": {
@@ -952,7 +956,7 @@
     "description": "Import error for pasted text or Markdown without links."
   },
   "expErrorNothingToImport": {
-    "message": "No hay nada que importar: pega una exportación JSON de Tab Organizer, un archivo HTML de marcadores, Markdown o una lista de URLs.",
+    "message": "No hay nada que importar: pega una exportación JSON de Tabinet, un archivo HTML de marcadores, Markdown o una lista de URLs.",
     "description": "Import error when the pasted text is not any known format."
   },
   "expWarnNoWindows": {
@@ -976,7 +980,7 @@
     "description": "Import error when the chosen file cannot be read and there is no reason that can be shown."
   },
   "expDetectedJson": {
-    "message": "JSON de Tab Organizer",
+    "message": "JSON de Tabinet",
     "description": "Import format name shown after 'Detected'."
   },
   "expDetectedHtml": {
@@ -1000,7 +1004,7 @@
     "description": "Title of the import dialog."
   },
   "expImportDescription": {
-    "message": "Una exportación JSON de Tab Organizer, un archivo HTML de marcadores, Markdown o una lista de enlaces sin formato. Las sesiones importadas se añaden a la lista de guardadas en este dispositivo; no se sube nada.",
+    "message": "Una exportación JSON de Tabinet, un archivo HTML de marcadores, Markdown o una lista de enlaces sin formato. Las sesiones importadas se añaden a la lista de guardadas en este dispositivo; no se sube nada.",
     "description": "Explanation under the import dialog's title."
   },
   "expChooseFile": {
@@ -1052,12 +1056,12 @@
     "description": "Import button while nothing importable has been chosen yet. Keep it short."
   },
   "appNothingToSaveWindow": {
-    "message": "No hay nada que guardar: esta ventana solo contiene Tab Organizer.",
-    "description": "Notice toast after Save when the current window holds nothing but the extension's own page. 'Tab Organizer' is the extension name."
+    "message": "No hay nada que guardar: esta ventana solo contiene Tabinet.",
+    "description": "Notice toast after Save when the current window holds nothing but the extension's own page. 'Tabinet' is the extension name."
   },
   "appNothingToSaveAll": {
-    "message": "No hay nada que guardar: ninguna ventana abierta contiene algo aparte de Tab Organizer.",
-    "description": "Notice toast after 'Save all windows' when no window holds anything but the extension's own page. 'Tab Organizer' is the extension name."
+    "message": "No hay nada que guardar: ninguna ventana abierta contiene algo aparte de Tabinet.",
+    "description": "Notice toast after 'Save all windows' when no window holds anything but the extension's own page. 'Tabinet' is the extension name."
   },
   "appNothingToSaveTabs": {
     "message": "No hay nada que guardar: las pestañas seleccionadas ya no están abiertas.",
@@ -1136,8 +1140,8 @@
     "description": "Third line of a saved session row in the sidebar. $1 is the date and time it was last saved, already formatted."
   },
   "appNavNewerTitle": {
-    "message": "Guardada con una versión más reciente de Tab Organizer",
-    "description": "Tooltip of the 'newer' badge on a session this version cannot read. 'Tab Organizer' is the extension name."
+    "message": "Guardada con una versión más reciente de Tabinet",
+    "description": "Tooltip of the 'newer' badge on a session this version cannot read. 'Tabinet' is the extension name."
   },
   "appNavNewerBadge": {
     "message": "más reciente",
@@ -1204,8 +1208,8 @@
     "description": "Tooltip of a button that saves one browser window as a session."
   },
   "openFirstRunHint": {
-    "message": "Aún no hay nada guardado. Pulsa $1 o haz clic derecho en el icono de Tab Organizer y elige $2. Para usar una combinación de teclas, $3.",
-    "description": "Hint shown on the Open tabs view while no session has been saved. $1 is the Save button's label (e.g. 'Save all windows'), shown in bold. $2 is the right-click menu item 'Save all windows as session', shown in bold. $3 is a link that opens Settings (openFirstRunHintSettingsLink). Keep 'Tab Organizer' as is."
+    "message": "Aún no hay nada guardado. Pulsa $1 o haz clic derecho en el icono de Tabinet y elige $2. Para usar una combinación de teclas, $3.",
+    "description": "Hint shown on the Open tabs view while no session has been saved. $1 is the Save button's label (e.g. 'Save all windows'), shown in bold. $2 is the right-click menu item 'Save all windows as session', shown in bold. $3 is a link that opens Settings (openFirstRunHintSettingsLink). Keep 'Tabinet' as is."
   },
   "openFirstRunHintSettingsLink": {
     "message": "configúrala en Configuración",
@@ -1260,7 +1264,7 @@
     "description": "Text of the close-window dialog. $1 is the formatted number of tabs in the window."
   },
   "openCloseWindowIsCurrent": {
-    "message": "Es la ventana en la que está Tab Organizer.",
+    "message": "Es la ventana en la que está Tabinet.",
     "description": "Extra sentence after openCloseWindowBody when the window being closed holds the app page itself, so closing it closes the page too."
   },
   "openCloseTabsQuestion_one": {
@@ -1572,8 +1576,8 @@
     "description": "Error when stored session data is damaged and cannot be read."
   },
   "errorDataTooNew": {
-    "message": "Estos datos se guardaron con una versión más reciente de Tab Organizer. Actualiza la extensión para usarlos.",
-    "description": "Error when stored data was written by a newer version of the extension. Tab Organizer is the extension name."
+    "message": "Estos datos se guardaron con una versión más reciente de Tabinet. Actualiza la extensión para usarlos.",
+    "description": "Error when stored data was written by a newer version of the extension. Tabinet is the extension name."
   },
   "errorRestoreNoWindow": {
     "message": "Chrome no abrió ninguna ventana en la que restaurar.",
@@ -1856,8 +1860,8 @@
     "description": "Tooltip and screen-reader label of the x button that closes the restore result toast."
   },
   "restoreSessionTooNew": {
-    "message": "Esta sesión se guardó con una versión más reciente de Tab Organizer y no se puede mostrar.",
-    "description": "Error shown in place of a session whose stored format is from a newer version of the extension. Tab Organizer is the extension name."
+    "message": "Esta sesión se guardó con una versión más reciente de Tabinet y no se puede mostrar.",
+    "description": "Error shown in place of a session whose stored format is from a newer version of the extension. Tabinet is the extension name."
   },
   "workerMenuSaveAll": {
     "message": "Guardar todas las ventanas como sesión",

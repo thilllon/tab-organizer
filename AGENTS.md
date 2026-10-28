@@ -2,10 +2,10 @@
 
 ## Project Overview
 
-**Tab Organizer** is a Chrome extension (Manifest V3) that sorts and organizes browser tabs and saves/restores sets of windows and tabs as sessions. It groups tabs by hostname/domain, handles duplicate tabs, supports suspended tab detection, and keeps a local-only session store (saved sessions plus automatic history snapshots, on by default) with unified search, import and export. On request it also pauses every playing video in every YouTube tab ("Pause all YouTube videos", behind an optional host permission the person grants in Settings). All operations are entirely local with zero external data transmission.
+**Tabinet** is a Chrome extension (Manifest V3) that sorts and organizes browser tabs and saves/restores sets of windows and tabs as sessions. It groups tabs by hostname/domain, handles duplicate tabs, supports suspended tab detection, and keeps a local-only session store (saved sessions plus automatic history snapshots, on by default) with unified search, import and export. On request it also pauses every playing video in every YouTube tab ("Pause all YouTube videos", behind an optional host permission the person grants in Settings). All operations are entirely local with zero external data transmission.
 
-- Repository: `https://github.com/thilllon/tab-organizer`
-- Chrome Web Store: `https://chromewebstore.google.com/detail/tab-organizer/bmbpmnfhfbdjdjpblimidmbohgccmjdg`
+- Repository: `https://github.com/thilllon/tabinet`
+- Chrome Web Store: `https://chromewebstore.google.com/detail/bmbpmnfhfbdjdjpblimidmbohgccmjdg`
 - License: Private
 
 ---
@@ -123,7 +123,7 @@ Sort settings are persisted in `chrome.storage.sync` and loaded fresh on every s
 ### Directory Structure
 
 ```
-tab-organizer/
+tabinet/
 ├── src/
 │   ├── app.html                # The extension page, the only HTML entry (Vite `root` is src/, so it builds to dist/app.html)
 │   ├── service-worker.ts       # The manifest's service worker, the only file loaded there: every chrome event listener
@@ -220,7 +220,7 @@ tab-organizer/
 │   │   ├── browser.ts         # launchExtension() - a real Chromium with dist/ loaded (shared with screenshots)
 │   │   ├── server.ts          # startDemoServer() - 127.0.0.1 fixture pages (the QA browser has no network)
 │   │   └── fixtures.ts        # Session fixtures seeded straight into chrome.storage.local
-│   ├── zip.ts                 # Packages dist/ into release/Tab-Organizer-<version>.zip for Web Store (archiver 8)
+│   ├── zip.ts                 # Packages dist/ into release/Tabinet-<version>.zip for Web Store (archiver 8)
 │   ├── zip-name.ts            # zipFileName(): the zip's name from package.json displayName, never the manifest's
 │   │                          #   __MSG_extName__ (shared with store-bundle.ts; test in src/tests/)
 │   ├── prepare-registration.ts # Store-asset pipeline (build, Settings + the four dashboard-*.png screenshots,
@@ -236,8 +236,8 @@ tab-organizer/
 │                              #   before/after-sort.png and demo.gif/.mp4 (frozen, no longer regenerated);
 │                              #   <code>/ holds another UI language's Settings + dashboard screenshots, same names
 ├── site/                      # The project website (Astro, static), its own pnpm workspace package
-│   │                          #   `tab-organizer-site`; see "Project website" below
-│   ├── astro.config.ts        # site + base (/tab-organizer), i18n (en default, ko, es, ja), sitemap
+│   │                          #   `tabinet-site`; see "Project website" below
+│   ├── astro.config.ts        # site + base (/tabinet), i18n (en default, ko, es, ja), sitemap
 │   └── src/
 │       ├── pages/[...locale]/ # index, support, privacy, once per language (en has no prefix); robots.txt.ts, 404
 │       ├── i18n/          # locales.ts (URLs, store/repo links), site-copy.ts (the SiteCopy type),
@@ -439,9 +439,9 @@ pnpm exec tsx scripts/e2e/smoke.ts   # Real-Chrome sessions smoke test (run `pnp
 pnpm e2e:assemble                    # e2e build (in node_modules/.cache) + real-Chrome assemble-tabs checks
 pnpm e2e:sort                        # Real-Chrome sort checks against dist/ (run `pnpm build` first; headed)
 pnpm e2e:selection                   # Real-Chrome checks of the Open tabs selection (run `pnpm build` first; headed)
-pnpm exec tsx scripts/zip.ts        # Package the current dist/ into release/Tab-Organizer-<version>.zip
+pnpm exec tsx scripts/zip.ts        # Package the current dist/ into release/Tabinet-<version>.zip
 
-pnpm site:dev                        # The project website on a local dev server (http://localhost:4321/tab-organizer/)
+pnpm site:dev                        # The project website on a local dev server (http://localhost:4321/tabinet/)
 pnpm site:build                      # astro check + astro build -> site/dist/
 ```
 
@@ -591,9 +591,9 @@ The extension speaks English (`en`, the manifest's `default_locale`), Korean (`k
 
 ## Project website
 
-`site/` is the public website at https://thilllon.github.io/tab-organizer/: a static Astro site, its own workspace package (`tab-organizer-site`, listed in `pnpm-workspace.yaml`) sharing the root lockfile. It is not part of the extension: the root `tsconfig.json` includes `src` only, vitest finds no tests there, and oxlint/oxfmt skip `site/dist` and `site/.astro`.
+`site/` is the public website at https://thilllon.github.io/tabinet/: a static Astro site, its own workspace package (`tabinet-site`, listed in `pnpm-workspace.yaml`) sharing the root lockfile. It is not part of the extension: the root `tsconfig.json` includes `src` only, vitest finds no tests there, and oxlint/oxfmt skip `site/dist` and `site/.astro`.
 
-- **Run it**: `pnpm site:dev` (dev server) or `pnpm site:build` (`astro check && astro build` into `site/dist/`), then `pnpm --filter tab-organizer-site preview` to serve the build.
+- **Run it**: `pnpm site:dev` (dev server) or `pnpm site:build` (`astro check && astro build` into `site/dist/`), then `pnpm --filter tabinet-site preview` to serve the build.
 - **Pages**: home, support (FAQ, how to report a problem, the current version read from the root `package.json`) and privacy, in English (no prefix), Korean (`/ko/`), Spanish (`/es/`) and Japanese (`/ja/`) through Astro's i18n routing. Every page has a language switch that keeps the page, `hreflang` alternates, a canonical URL and Open Graph tags; `@astrojs/sitemap` writes the sitemap and `robots.txt` points at it.
 - **Copy stays in step with the product.** The strings are in `site/src/i18n/copy-*.ts`, one file per language, each written natively with Chrome's own terms (탭, 창, 탭 그룹, 고정 탭 / タブ, ウィンドウ, タブグループ, 固定タブ / pestaña, ventana, grupo de pestañas, pestañas fijadas). When a feature, default or FAQ answer changes, change all four (and the store Descriptions in `scripts/store-listing.ts`). The English privacy page renders `PRIVACY_POLICY.md` itself and says it is the authoritative version; `site/src/privacy/{ko,es,ja}.md` are translations of it and must be updated whenever it changes.
 - **Screenshots** are imported from `assets/` through `astro:assets` (optimized to WebP at build time, never copied into `site/`); the favicon is `public/img/logo.svg`. Same zero-network rule as the extension: no external fonts, CDNs, analytics, cookies or trackers (Inter comes from `@fontsource-variable/inter`, served by the site itself).
@@ -631,7 +631,7 @@ Security scanning for JavaScript/TypeScript on every push and pull request to ma
 
 ### Release procedure (Chrome Web Store)
 
-`pnpm release` runs release-it (`.release-it.json`): `before:bump` executes `scripts/prepare-registration.ts` (build, Settings + the four `assets/dashboard-*.png` captures, promo tiles), then the version is bumped, `after:bump` runs `pnpm build` + `scripts/zip.ts` (→ `release/Tab-Organizer-<version>.zip`, named from `package.json` `displayName`) + `scripts/store-bundle.ts` (→ `release/store-<version>/`, whose `SUBMIT.md` carries every text from `scripts/store-listing.ts`), and a GitHub release is created. It requires the `main` branch and hooks/CI green. Every optional step of `prepare-registration.ts` is skippable on its own (`SKIP_BUILD`, `SKIP_OPTIONS`, `SKIP_DASHBOARD`, `SKIP_PROMO`), so one asset can be regenerated without a full run; `pnpm exec tsx scripts/zip.ts` packages an existing `dist/` on its own.
+`pnpm release` runs release-it (`.release-it.json`): `before:bump` executes `scripts/prepare-registration.ts` (build, Settings + the four `assets/dashboard-*.png` captures, promo tiles), then the version is bumped, `after:bump` runs `pnpm build` + `scripts/zip.ts` (→ `release/Tabinet-<version>.zip`, named from `package.json` `displayName`) + `scripts/store-bundle.ts` (→ `release/store-<version>/`, whose `SUBMIT.md` carries every text from `scripts/store-listing.ts`), and a GitHub release is created. It requires the `main` branch and hooks/CI green. Every optional step of `prepare-registration.ts` is skippable on its own (`SKIP_BUILD`, `SKIP_OPTIONS`, `SKIP_DASHBOARD`, `SKIP_PROMO`), so one asset can be regenerated without a full run; `pnpm exec tsx scripts/zip.ts` packages an existing `dist/` on its own.
 
 1. Release through a pull request like any change: on a `release/vX.Y.Z` branch regenerate whatever store assets changed (`tsx scripts/prepare-registration.ts` with the `SKIP_*` flags for the rest), set the version with `npm version X.Y.Z --no-git-tag-version`, and open a `chore: release vX.Y.Z` pull request. Before merging it, make sure `scripts/store-listing.ts`, `PRIVACY_POLICY.md` (Last Updated), `README.md` and this file describe what ships, and that `package.json` `description` (the store Summary) is ≤ 132 characters.
 2. After the merge, on an up-to-date `main`: `pnpm release --ci --no-increment --no-git.commit` with every `SKIP_*` flag set (the assets are already committed). release-it then only builds, zips, writes `release/store-<version>/`, and pushes the `vX.Y.Z` tag; nothing is committed to `main`. If it prints a "releases/new" link instead of creating the GitHub release (no `GITHUB_TOKEN`), create it with `gh release create vX.Y.Z --title vX.Y.Z --notes …`.
@@ -668,7 +668,7 @@ Playwright itself is a devDependency, used by this harness and by `scripts/prepa
 
 ### Real-Chrome assemble-tabs check (committed)
 
-`pnpm e2e:assemble` builds into `node_modules/.cache/tab-organizer/e2e/` (out of sight, rebuilt on every run, safe to lose) with `vite build --mode e2e` (the only build exposing `globalThis.__tabOrganizerE2e`) and runs `scripts/e2e/assemble.ts`: five windows (two pinned tabs and a tab with back/forward history; a collapsed titled group holding the window's active tab next to a tab with a JS value, scroll position and typed input; a window that is only a collapsed three-tab group with its middle tab active; a single-tab group; and a target whose active tab is not its first), then the command through the menu id, then 11 checks - one window left, every tab id kept, exact order, pinned re-pinned in order, each group kept (id/title/colour/collapsed/members) or rebuilt with the same look, `Page.getNavigationHistory` unchanged, page state unchanged (no reload), **zero `tabs.onActivated` events in the target during the run**, focus and ✓ badge. On macOS set `PW_CHROMIUM` to a Chrome for Testing binary (Playwright's own lives under `~/Library/Caches/ms-playwright/chromium-*/`); the headless shell cannot load extensions. It passes `--use-mock-keychain --password-store=basic` so a fresh profile does not stall on a keychain prompt. Test traps: `chrome.tabs.group` needs `createProperties.windowId` or the group lands in the last-focused window; build history with real page navigations (extension-made `tabs.update(url)` history can refuse `goBack`) and verify it over CDP. Split view (Chrome 140+) is only visible as `Tab.splitViewId` / `chrome.tabs.SPLIT_VIEW_ID_NONE` - no extension API creates one, so moving split tabs is not covered.
+`pnpm e2e:assemble` builds into `node_modules/.cache/tabinet/e2e/` (out of sight, rebuilt on every run, safe to lose) with `vite build --mode e2e` (the only build exposing `globalThis.__tabOrganizerE2e`) and runs `scripts/e2e/assemble.ts`: five windows (two pinned tabs and a tab with back/forward history; a collapsed titled group holding the window's active tab next to a tab with a JS value, scroll position and typed input; a window that is only a collapsed three-tab group with its middle tab active; a single-tab group; and a target whose active tab is not its first), then the command through the menu id, then 11 checks - one window left, every tab id kept, exact order, pinned re-pinned in order, each group kept (id/title/colour/collapsed/members) or rebuilt with the same look, `Page.getNavigationHistory` unchanged, page state unchanged (no reload), **zero `tabs.onActivated` events in the target during the run**, focus and ✓ badge. On macOS set `PW_CHROMIUM` to a Chrome for Testing binary (Playwright's own lives under `~/Library/Caches/ms-playwright/chromium-*/`); the headless shell cannot load extensions. It passes `--use-mock-keychain --password-store=basic` so a fresh profile does not stall on a keychain prompt. Test traps: `chrome.tabs.group` needs `createProperties.windowId` or the group lands in the last-focused window; build history with real page navigations (extension-made `tabs.update(url)` history can refuse `goBack`) and verify it over CDP. Split view (Chrome 140+) is only visible as `Tab.splitViewId` / `chrome.tabs.SPLIT_VIEW_ID_NONE` - no extension API creates one, so moving split tabs is not covered.
 
 ### Real-Chrome sort check (committed)
 

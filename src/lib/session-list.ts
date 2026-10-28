@@ -33,7 +33,7 @@ export function splitByKind(summaries: readonly SessionSummary[]): {
 
 /**
  * What the saved list says instead of a session this build cannot read: the store was
- * written by a newer Tab Organizer and the fix is an update, not a repair. The row stays inert
+ * written by a newer Tabinet and the fix is an update, not a repair. The row stays inert
  * (no restore / rename / export / expand) but keeps Delete, so the user is never stuck with an
  * entry they can neither open nor get rid of.
  */

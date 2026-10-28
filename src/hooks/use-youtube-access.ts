@@ -21,7 +21,7 @@ export function useYoutubeAccess(): boolean | null {
           }
         },
         (err: unknown) => {
-          console.error('[tab-organizer] YouTube access unknown', err);
+          console.error('[tabinet] YouTube access unknown', err);
           if (live) {
             setGranted(false);
           }

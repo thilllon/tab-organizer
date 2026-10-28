@@ -24,7 +24,7 @@ async function start(): Promise<void> {
   // app.html is static and says `lang="en"`; the page is in the UI language, so screen readers,
   // hyphenation and fonts follow that instead.
   document.documentElement.lang = uiLocale();
-  document.title = t('extName');
+  document.title = t('appName');
 
   const root = document.getElementById('app');
   if (!root) {

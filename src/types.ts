@@ -80,7 +80,7 @@ export interface Session {
  * Why the body behind an index entry cannot be read. There is one reason today: the
  * record was written by a newer schema version than this build understands, so `migrateSession`
  * refuses it. `reconcile()` marks the entry instead of dropping it, so a store written by a newer
- * Tab Organizer and then opened by an older one still lists its sessions -- read-only, with an
+ * Tabinet and then opened by an older one still lists its sessions -- read-only, with an
  * explanation -- rather than showing an empty dashboard while the bodies sit on disk.
  */
 export interface UnreadableSession {
@@ -147,6 +147,7 @@ export const DEFAULT_SESSION_SETTINGS: SessionSettings = {
 export type ExportFormat = 'json' | 'markdown' | 'text' | 'html' | 'csv';
 
 export interface ExportBundle {
+  /** The format id, from the extension's name before Tabinet. Never renamed: older versions only import files carrying it. */
   app: 'tab-organizer';
   schemaVersion: typeof SESSION_SCHEMA_VERSION;
   exportedAt: number;

@@ -71,7 +71,7 @@ export function useSessionIndex(): SessionIndexState {
         // Reconcile orphan bodies / dangling index entries on dashboard mount.
         await sessionRepo.reconcile();
       } catch (err) {
-        console.warn('[tab-organizer:sessions] reconcile failed', errorDetail(err));
+        console.warn('[tabinet:sessions] reconcile failed', errorDetail(err));
       }
       if (disposed) {
         return;
