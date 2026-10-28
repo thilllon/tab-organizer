@@ -1,5 +1,6 @@
 packages:
   - site
+  - server
 allowBuilds:
   esbuild: true
 minimumReleaseAge: 10080

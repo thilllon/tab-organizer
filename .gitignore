@@ -28,3 +28,7 @@ assets/*.html
 site/node_modules
 site/dist
 site/.astro
+
+# The sync server (server/): its dependencies and the Vercel CLI's local project link
+server/node_modules
+server/.vercel

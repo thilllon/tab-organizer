@@ -18,6 +18,8 @@
     "build": "vite build",
     "site:dev": "pnpm --filter tabinet-site dev",
     "site:build": "pnpm --filter tabinet-site build",
+    "server:typecheck": "pnpm --filter tabinet-server typecheck",
+    "server:test": "pnpm --filter tabinet-server test",
     "typecheck": "tsc --noEmit && tsc --noEmit -p src/tests",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
