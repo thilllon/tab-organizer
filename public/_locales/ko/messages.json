@@ -1702,5 +1702,141 @@
   "workerDuplicatesHostGroupTitle": {
     "message": "$1 ($2)",
     "description": "Title of a Chrome tab group that holds duplicate tabs of one address. $1 is the site's host name (such as example.com, never translated), $2 the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short."
+  },
+  "settingsAccountTitle": {
+    "message": "계정",
+    "description": "Heading of the Settings section for signing in to cloud sync. One or two words."
+  },
+  "settingsAccountDescription": {
+    "message": "로그인하면 저장한 세션과 설정을 여러 기기에서 맞춰 둘 수 있습니다. 데이터는 나만 아는 암호 문구로 이 기기에서 암호화됩니다.",
+    "description": "Explanation under the Account heading in Settings."
+  },
+  "settingsAccountGoogle": {
+    "message": "Google 계정",
+    "description": "Label of the Settings row that signs in to cloud sync with a Google account."
+  },
+  "settingsAccountSignedOutHint": {
+    "message": "로그인하지 않았습니다.",
+    "description": "Grey hint under \"Google account\" in Settings while nobody is signed in."
+  },
+  "settingsAccountSignIn": {
+    "message": "Google로 로그인",
+    "description": "Button in Settings that opens Google sign-in for cloud sync. Keep it short."
+  },
+  "settingsAccountSignedInAs": {
+    "message": "$1(으)로 로그인했습니다.",
+    "description": "Grey hint in Settings while signed in to cloud sync. $1 is the Google email address (never translated)."
+  },
+  "settingsAccountCreatePassphrase": {
+    "message": "동기화 암호 문구 만들기",
+    "description": "Label of the Settings row where a new cloud sync passphrase is typed twice."
+  },
+  "settingsAccountCreatePassphraseHint": {
+    "message": "모든 데이터는 이 기기를 떠나기 전에 이 암호 문구로 암호화됩니다. 누구도 대신 찾아 줄 수 없으므로, 잊어버리면 클라우드에 있는 사본을 잃게 됩니다.",
+    "description": "Warning under \"Create a sync passphrase\" in Settings. It must say clearly that a forgotten passphrase cannot be recovered and the cloud copy is then lost."
+  },
+  "settingsAccountPassphrase": {
+    "message": "암호 문구",
+    "description": "Label of the field where the sync passphrase is typed."
+  },
+  "settingsAccountPassphraseRepeat": {
+    "message": "암호 문구 다시 입력",
+    "description": "Label of the second field, where a new sync passphrase is typed again."
+  },
+  "settingsAccountPassphraseTooShort_other": {
+    "message": "$1자 이상 입력하세요.",
+    "description": "Inline error under a new sync passphrase that is too short. $1 is the minimum number of characters (already formatted)."
+  },
+  "settingsAccountPassphraseMismatch": {
+    "message": "두 암호 문구가 같지 않습니다.",
+    "description": "Inline error when the new sync passphrase and its repetition differ."
+  },
+  "settingsAccountCreateButton": {
+    "message": "암호 문구 만들기",
+    "description": "Button that saves a new sync passphrase. Keep it short."
+  },
+  "settingsAccountPassphraseExists": {
+    "message": "이 계정에는 다른 기기에서 만든 동기화 암호 문구가 이미 있습니다. 아래에 입력하세요.",
+    "description": "Notice when the person tried to create a sync passphrase but another device had already created one."
+  },
+  "settingsAccountUnlock": {
+    "message": "동기화 암호 문구 입력",
+    "description": "Label of the Settings row where the existing sync passphrase is typed on a new device."
+  },
+  "settingsAccountUnlockHint": {
+    "message": "이 계정에는 동기화 암호 문구가 이미 있습니다. 이 기기에서 동기화를 쓰려면 입력하세요.",
+    "description": "Grey hint under \"Enter your sync passphrase\" in Settings."
+  },
+  "settingsAccountUnlockButton": {
+    "message": "잠금 해제",
+    "description": "Button that checks the typed sync passphrase. One word."
+  },
+  "settingsAccountWrongPassphrase": {
+    "message": "암호 문구가 맞지 않습니다. 다시 시도하세요.",
+    "description": "Inline error when the typed sync passphrase does not match the account."
+  },
+  "settingsAccountReady": {
+    "message": "동기화 암호 문구를 이 기기에 저장했습니다.",
+    "description": "Toast after a sync passphrase was created or entered correctly."
+  },
+  "settingsAccountReadyHint": {
+    "message": "동기화는 다음 업데이트에서 제공됩니다.",
+    "description": "Grey hint in Settings once signed in and the passphrase is set: syncing itself is not available yet."
+  },
+  "settingsAccountSignOut": {
+    "message": "로그아웃",
+    "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
+  },
+  "settingsAccountSignedOut": {
+    "message": "로그아웃했습니다. 이 기기의 세션은 그대로 있습니다.",
+    "description": "Toast after signing out of cloud sync."
+  },
+  "settingsAccountDelete": {
+    "message": "클라우드 데이터 삭제",
+    "description": "Button in Settings, and the confirming button of its dialog, that deletes the cloud sync account and everything stored for it on the server. Keep it short."
+  },
+  "settingsAccountDeleteTitle": {
+    "message": "클라우드 데이터를 삭제할까요?",
+    "description": "Title of the dialog that asks before deleting the cloud sync account."
+  },
+  "settingsAccountDeleteBody": {
+    "message": "계정과 동기화 서버에 저장된 모든 데이터를 삭제합니다. 되돌릴 수 없습니다. 이 기기의 세션은 남아 있습니다.",
+    "description": "Body of the dialog that asks before deleting the cloud sync account."
+  },
+  "settingsAccountDeleted": {
+    "message": "클라우드 데이터를 삭제했습니다.",
+    "description": "Toast after the cloud sync account and its data were deleted."
+  },
+  "errorCloudUnreachable": {
+    "message": "동기화 서버에 연결할 수 없습니다. 연결을 확인하고 다시 시도하세요.",
+    "description": "Error when the sync server could not be reached (no network, server down)."
+  },
+  "errorCloudServer": {
+    "message": "동기화 서버에 문제가 생겼습니다. 나중에 다시 시도하세요.",
+    "description": "Error when the sync server answered with a server error (5xx)."
+  },
+  "errorCloudRejected": {
+    "message": "동기화 서버가 요청을 거부했습니다.",
+    "description": "Error when the sync server refused a request for a reason the extension cannot explain."
+  },
+  "errorCloudSignedOut": {
+    "message": "로그아웃되었습니다. 다시 로그인하세요.",
+    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this device."
+  },
+  "errorCloudSignInFailed": {
+    "message": "Google 로그인에 실패했습니다. 다시 시도하세요.",
+    "description": "Error when Google sign-in for cloud sync failed."
+  },
+  "errorCloudDecrypt": {
+    "message": "동기화된 데이터 일부를 복호화할 수 없습니다.",
+    "description": "Error when data from the sync server does not decrypt with this device's sync key."
+  },
+  "errorCloudBadResponse": {
+    "message": "동기화 서버가 이 버전이 읽을 수 없는 응답을 보냈습니다.",
+    "description": "Error when the sync server's answer has an unexpected shape."
+  },
+  "commonTryAgain": {
+    "message": "다시 시도",
+    "description": "Button that repeats something that failed, such as reading the cloud sync account. Keep it short."
   }
 }

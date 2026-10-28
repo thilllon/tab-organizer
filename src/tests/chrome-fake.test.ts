@@ -842,3 +842,29 @@ describe('chrome fake: match patterns, permissions and scripting', () => {
     expect(result?.result).toBe(42);
   });
 });
+
+describe('chrome fake: identity', () => {
+  it('gives the extension its chromiumapp.org redirect URL', () => {
+    expect(chrome.identity.getRedirectURL()).toBe('https://fakeextid.chromiumapp.org/');
+    expect(chrome.identity.getRedirectURL('/cb')).toBe('https://fakeextid.chromiumapp.org/cb');
+  });
+
+  it('rejects like a closed sign-in window by default and records every URL', async () => {
+    await expect(
+      chrome.identity.launchWebAuthFlow({ url: 'https://accounts.example/a', interactive: true }),
+    ).rejects.toThrow('The user did not approve access.');
+    expect(getChromeFake().state.authFlowUrls).toEqual(['https://accounts.example/a']);
+  });
+
+  it('answers with state.authFlowAnswer, a fixed redirect or one made from the URL', async () => {
+    const fake = getChromeFake();
+    fake.state.authFlowAnswer = 'https://fakeextid.chromiumapp.org/#id_token=x';
+    expect(await chrome.identity.launchWebAuthFlow({ url: 'https://a/', interactive: true })).toBe(
+      'https://fakeextid.chromiumapp.org/#id_token=x',
+    );
+    fake.state.authFlowAnswer = (url) => `https://fakeextid.chromiumapp.org/#from=${url}`;
+    expect(await chrome.identity.launchWebAuthFlow({ url: 'https://b/', interactive: true })).toBe(
+      'https://fakeextid.chromiumapp.org/#from=https://b/',
+    );
+  });
+});

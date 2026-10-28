@@ -1710,5 +1710,141 @@
   "workerDuplicatesHostGroupTitle": {
     "message": "$1（$2）",
     "description": "Title of a Chrome tab group that holds duplicate tabs of one address. $1 is the site's host name (such as example.com, never translated), $2 the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short."
+  },
+  "settingsAccountTitle": {
+    "message": "アカウント",
+    "description": "Heading of the Settings section for signing in to cloud sync. One or two words."
+  },
+  "settingsAccountDescription": {
+    "message": "ログインすると、保存したセッションと設定を複数の端末でそろえられます。データは自分だけが知るパスフレーズで、この端末上で暗号化されます。",
+    "description": "Explanation under the Account heading in Settings."
+  },
+  "settingsAccountGoogle": {
+    "message": "Google アカウント",
+    "description": "Label of the Settings row that signs in to cloud sync with a Google account."
+  },
+  "settingsAccountSignedOutHint": {
+    "message": "ログインしていません。",
+    "description": "Grey hint under \"Google account\" in Settings while nobody is signed in."
+  },
+  "settingsAccountSignIn": {
+    "message": "Google でログイン",
+    "description": "Button in Settings that opens Google sign-in for cloud sync. Keep it short."
+  },
+  "settingsAccountSignedInAs": {
+    "message": "$1 でログインしています。",
+    "description": "Grey hint in Settings while signed in to cloud sync. $1 is the Google email address (never translated)."
+  },
+  "settingsAccountCreatePassphrase": {
+    "message": "同期パスフレーズを作成",
+    "description": "Label of the Settings row where a new cloud sync passphrase is typed twice."
+  },
+  "settingsAccountCreatePassphraseHint": {
+    "message": "すべてのデータは、この端末を出る前にこのパスフレーズで暗号化されます。誰も代わりに復元できないため、忘れるとクラウド上のコピーは失われます。",
+    "description": "Warning under \"Create a sync passphrase\" in Settings. It must say clearly that a forgotten passphrase cannot be recovered and the cloud copy is then lost."
+  },
+  "settingsAccountPassphrase": {
+    "message": "パスフレーズ",
+    "description": "Label of the field where the sync passphrase is typed."
+  },
+  "settingsAccountPassphraseRepeat": {
+    "message": "パスフレーズをもう一度入力",
+    "description": "Label of the second field, where a new sync passphrase is typed again."
+  },
+  "settingsAccountPassphraseTooShort_other": {
+    "message": "$1 文字以上にしてください。",
+    "description": "Inline error under a new sync passphrase that is too short. $1 is the minimum number of characters (already formatted)."
+  },
+  "settingsAccountPassphraseMismatch": {
+    "message": "2 つのパスフレーズが一致しません。",
+    "description": "Inline error when the new sync passphrase and its repetition differ."
+  },
+  "settingsAccountCreateButton": {
+    "message": "パスフレーズを作成",
+    "description": "Button that saves a new sync passphrase. Keep it short."
+  },
+  "settingsAccountPassphraseExists": {
+    "message": "このアカウントには、別の端末で作成した同期パスフレーズがすでにあります。下に入力してください。",
+    "description": "Notice when the person tried to create a sync passphrase but another device had already created one."
+  },
+  "settingsAccountUnlock": {
+    "message": "同期パスフレーズを入力",
+    "description": "Label of the Settings row where the existing sync passphrase is typed on a new device."
+  },
+  "settingsAccountUnlockHint": {
+    "message": "このアカウントには同期パスフレーズがすでにあります。この端末で同期を使うには入力してください。",
+    "description": "Grey hint under \"Enter your sync passphrase\" in Settings."
+  },
+  "settingsAccountUnlockButton": {
+    "message": "ロック解除",
+    "description": "Button that checks the typed sync passphrase. One word."
+  },
+  "settingsAccountWrongPassphrase": {
+    "message": "パスフレーズが正しくありません。もう一度お試しください。",
+    "description": "Inline error when the typed sync passphrase does not match the account."
+  },
+  "settingsAccountReady": {
+    "message": "同期パスフレーズをこの端末に保存しました。",
+    "description": "Toast after a sync passphrase was created or entered correctly."
+  },
+  "settingsAccountReadyHint": {
+    "message": "同期は次のアップデートで利用できるようになります。",
+    "description": "Grey hint in Settings once signed in and the passphrase is set: syncing itself is not available yet."
+  },
+  "settingsAccountSignOut": {
+    "message": "ログアウト",
+    "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
+  },
+  "settingsAccountSignedOut": {
+    "message": "ログアウトしました。この端末のセッションはそのまま残っています。",
+    "description": "Toast after signing out of cloud sync."
+  },
+  "settingsAccountDelete": {
+    "message": "クラウドのデータを削除",
+    "description": "Button in Settings, and the confirming button of its dialog, that deletes the cloud sync account and everything stored for it on the server. Keep it short."
+  },
+  "settingsAccountDeleteTitle": {
+    "message": "クラウドのデータを削除しますか?",
+    "description": "Title of the dialog that asks before deleting the cloud sync account."
+  },
+  "settingsAccountDeleteBody": {
+    "message": "アカウントと、同期サーバーに保存されたすべてのデータを削除します。元に戻せません。この端末のセッションは残ります。",
+    "description": "Body of the dialog that asks before deleting the cloud sync account."
+  },
+  "settingsAccountDeleted": {
+    "message": "クラウドのデータを削除しました。",
+    "description": "Toast after the cloud sync account and its data were deleted."
+  },
+  "errorCloudUnreachable": {
+    "message": "同期サーバーに接続できません。接続を確認して、もう一度お試しください。",
+    "description": "Error when the sync server could not be reached (no network, server down)."
+  },
+  "errorCloudServer": {
+    "message": "同期サーバーで問題が発生しました。しばらくしてからお試しください。",
+    "description": "Error when the sync server answered with a server error (5xx)."
+  },
+  "errorCloudRejected": {
+    "message": "同期サーバーがリクエストを拒否しました。",
+    "description": "Error when the sync server refused a request for a reason the extension cannot explain."
+  },
+  "errorCloudSignedOut": {
+    "message": "ログアウトされました。もう一度ログインしてください。",
+    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this device."
+  },
+  "errorCloudSignInFailed": {
+    "message": "Google でのログインに失敗しました。もう一度お試しください。",
+    "description": "Error when Google sign-in for cloud sync failed."
+  },
+  "errorCloudDecrypt": {
+    "message": "同期されたデータの一部を復号できませんでした。",
+    "description": "Error when data from the sync server does not decrypt with this device's sync key."
+  },
+  "errorCloudBadResponse": {
+    "message": "同期サーバーから、このバージョンでは読めない応答が届きました。",
+    "description": "Error when the sync server's answer has an unexpected shape."
+  },
+  "commonTryAgain": {
+    "message": "再試行",
+    "description": "Button that repeats something that failed, such as reading the cloud sync account. Keep it short."
   }
 }

@@ -1874,5 +1874,145 @@
   "workerDuplicatesHostGroupTitle": {
     "message": "$1 ($2)",
     "description": "Title of a Chrome tab group that holds duplicate tabs of one address. $1 is the site's host name (such as example.com, never translated), $2 the number of tabs in the group (already formatted). Shown on the small tab group chip, keep it very short."
+  },
+  "settingsAccountTitle": {
+    "message": "Cuenta",
+    "description": "Heading of the Settings section for signing in to cloud sync. One or two words."
+  },
+  "settingsAccountDescription": {
+    "message": "Inicia sesión para mantener tus sesiones guardadas y tus ajustes al día en varios dispositivos. Se cifran en este dispositivo con una frase de contraseña que solo tú conoces.",
+    "description": "Explanation under the Account heading in Settings."
+  },
+  "settingsAccountGoogle": {
+    "message": "Cuenta de Google",
+    "description": "Label of the Settings row that signs in to cloud sync with a Google account."
+  },
+  "settingsAccountSignedOutHint": {
+    "message": "No has iniciado sesión.",
+    "description": "Grey hint under \"Google account\" in Settings while nobody is signed in."
+  },
+  "settingsAccountSignIn": {
+    "message": "Iniciar sesión con Google",
+    "description": "Button in Settings that opens Google sign-in for cloud sync. Keep it short."
+  },
+  "settingsAccountSignedInAs": {
+    "message": "Sesión iniciada como $1.",
+    "description": "Grey hint in Settings while signed in to cloud sync. $1 is the Google email address (never translated)."
+  },
+  "settingsAccountCreatePassphrase": {
+    "message": "Crear una frase de contraseña de sincronización",
+    "description": "Label of the Settings row where a new cloud sync passphrase is typed twice."
+  },
+  "settingsAccountCreatePassphraseHint": {
+    "message": "Todo se cifra con esta frase de contraseña antes de salir de este dispositivo. Nadie puede recuperarla por ti: si la olvidas, la copia en la nube se pierde.",
+    "description": "Warning under \"Create a sync passphrase\" in Settings. It must say clearly that a forgotten passphrase cannot be recovered and the cloud copy is then lost."
+  },
+  "settingsAccountPassphrase": {
+    "message": "Frase de contraseña",
+    "description": "Label of the field where the sync passphrase is typed."
+  },
+  "settingsAccountPassphraseRepeat": {
+    "message": "Repite la frase de contraseña",
+    "description": "Label of the second field, where a new sync passphrase is typed again."
+  },
+  "settingsAccountPassphraseTooShort_one": {
+    "message": "Usa al menos $1 carácter.",
+    "description": "Inline error under a new sync passphrase that is too short. $1 is the minimum number of characters (already formatted)."
+  },
+  "settingsAccountPassphraseTooShort_other": {
+    "message": "Usa al menos $1 caracteres.",
+    "description": "Inline error under a new sync passphrase that is too short. $1 is the minimum number of characters (already formatted)."
+  },
+  "settingsAccountPassphraseMismatch": {
+    "message": "Las dos frases de contraseña no coinciden.",
+    "description": "Inline error when the new sync passphrase and its repetition differ."
+  },
+  "settingsAccountCreateButton": {
+    "message": "Crear frase de contraseña",
+    "description": "Button that saves a new sync passphrase. Keep it short."
+  },
+  "settingsAccountPassphraseExists": {
+    "message": "Esta cuenta ya tiene una frase de contraseña de sincronización, creada en otro dispositivo. Escríbela abajo.",
+    "description": "Notice when the person tried to create a sync passphrase but another device had already created one."
+  },
+  "settingsAccountUnlock": {
+    "message": "Escribe tu frase de contraseña de sincronización",
+    "description": "Label of the Settings row where the existing sync passphrase is typed on a new device."
+  },
+  "settingsAccountUnlockHint": {
+    "message": "Esta cuenta ya tiene una frase de contraseña de sincronización. Escríbela para usar la sincronización en este dispositivo.",
+    "description": "Grey hint under \"Enter your sync passphrase\" in Settings."
+  },
+  "settingsAccountUnlockButton": {
+    "message": "Desbloquear",
+    "description": "Button that checks the typed sync passphrase. One word."
+  },
+  "settingsAccountWrongPassphrase": {
+    "message": "La frase de contraseña no es correcta. Inténtalo de nuevo.",
+    "description": "Inline error when the typed sync passphrase does not match the account."
+  },
+  "settingsAccountReady": {
+    "message": "Frase de contraseña de sincronización guardada en este dispositivo.",
+    "description": "Toast after a sync passphrase was created or entered correctly."
+  },
+  "settingsAccountReadyHint": {
+    "message": "La sincronización llegará en la próxima actualización.",
+    "description": "Grey hint in Settings once signed in and the passphrase is set: syncing itself is not available yet."
+  },
+  "settingsAccountSignOut": {
+    "message": "Cerrar sesión",
+    "description": "Button in Settings that signs out of cloud sync on this device. Keep it short."
+  },
+  "settingsAccountSignedOut": {
+    "message": "Sesión cerrada. Tus sesiones de este dispositivo siguen aquí.",
+    "description": "Toast after signing out of cloud sync."
+  },
+  "settingsAccountDelete": {
+    "message": "Eliminar datos de la nube",
+    "description": "Button in Settings, and the confirming button of its dialog, that deletes the cloud sync account and everything stored for it on the server. Keep it short."
+  },
+  "settingsAccountDeleteTitle": {
+    "message": "¿Eliminar tus datos de la nube?",
+    "description": "Title of the dialog that asks before deleting the cloud sync account."
+  },
+  "settingsAccountDeleteBody": {
+    "message": "Se eliminarán tu cuenta y todo lo guardado para ella en el servidor de sincronización. No se puede deshacer. Las sesiones de este dispositivo se quedan.",
+    "description": "Body of the dialog that asks before deleting the cloud sync account."
+  },
+  "settingsAccountDeleted": {
+    "message": "Se eliminaron tus datos de la nube.",
+    "description": "Toast after the cloud sync account and its data were deleted."
+  },
+  "errorCloudUnreachable": {
+    "message": "No se pudo conectar con el servidor de sincronización. Revisa la conexión e inténtalo de nuevo.",
+    "description": "Error when the sync server could not be reached (no network, server down)."
+  },
+  "errorCloudServer": {
+    "message": "El servidor de sincronización tuvo un problema. Inténtalo más tarde.",
+    "description": "Error when the sync server answered with a server error (5xx)."
+  },
+  "errorCloudRejected": {
+    "message": "El servidor de sincronización rechazó la solicitud.",
+    "description": "Error when the sync server refused a request for a reason the extension cannot explain."
+  },
+  "errorCloudSignedOut": {
+    "message": "Se cerró tu sesión. Vuelve a iniciar sesión.",
+    "description": "Error when the sync server no longer accepts the sign-in (expired or revoked), so the account was signed out on this device."
+  },
+  "errorCloudSignInFailed": {
+    "message": "No se pudo iniciar sesión con Google. Inténtalo de nuevo.",
+    "description": "Error when Google sign-in for cloud sync failed."
+  },
+  "errorCloudDecrypt": {
+    "message": "No se pudieron descifrar algunos datos sincronizados.",
+    "description": "Error when data from the sync server does not decrypt with this device's sync key."
+  },
+  "errorCloudBadResponse": {
+    "message": "El servidor de sincronización envió una respuesta que esta versión no puede leer.",
+    "description": "Error when the sync server's answer has an unexpected shape."
+  },
+  "commonTryAgain": {
+    "message": "Reintentar",
+    "description": "Button that repeats something that failed, such as reading the cloud sync account. Keep it short."
   }
 }

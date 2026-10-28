@@ -1,6 +1,7 @@
 import { Download, Keyboard, Upload } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 
+import { AccountField } from '@/components/account-field';
 import { AdvancedFold } from '@/components/advanced-fold';
 import { SelectMenu } from '@/components/select-menu';
 import { SessionSettingsFields } from '@/components/session-settings-fields';
@@ -14,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { YoutubeAccessField } from '@/components/youtube-access-field';
 import { useSessionSettings } from '@/hooks/use-session-settings';
 import type { SettingsFocus } from '@/lib/app-route';
+import { isCloudSyncEnabled } from '@/lib/cloud-config';
 import {
   changeOnlyInChrome,
   type CommandRow,
@@ -312,6 +314,17 @@ export function SettingsView({
             onError={onError}
           />
         </SettingsSection>
+
+        {/* Cloud sync sign-in. Absent while CLOUD_SYNC (src/constants.ts) is empty, so a build
+            without a sync server shows exactly what it did before. */}
+        {isCloudSyncEnabled() && (
+          <SettingsSection
+            title={t('settingsAccountTitle')}
+            description={t('settingsAccountDescription')}
+          >
+            <AccountField onNotice={onNotice} onError={onError} />
+          </SettingsSection>
+        )}
 
         <SettingsSection
           title={t('settingsSessionsTitle')}
