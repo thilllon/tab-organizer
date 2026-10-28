@@ -1,0 +1,102 @@
+# Tabinet sync server
+
+`tabinet-server` keeps a signed-in user's saved sessions and settings in step across devices. It
+stores them **end-to-end encrypted**: a device encrypts each record with a key derived from the
+user's passphrase before it is sent, so the server holds `{kind, id, updatedAt, deleted, iv,
+ciphertext}` and never a session name, url or title. Sign-in is with Google; the server keeps the
+Google account id (`sub`) and the email, nothing else about the person.
+
+The extension does not talk to it yet (stage 1 of cloud sync: the server only).
+
+## Layout
+
+| Path                      | What it is                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `api/index.ts`            | The Vercel function. `vercel.json` rewrites `/v1/*` to it                           |
+| `src/app.ts`              | `handle(request, deps)`: the whole API as one web-standard router                   |
+| `src/validation.ts`       | Strict parsing of every body and query (sizes, id pattern, kinds, base64)           |
+| `src/store.ts`            | `createSqlStore(query)`: every SQL statement, over a one-function `query()` adapter |
+| `src/google-auth.ts`      | Google ID token verification with `jose` against Google's published keys            |
+| `src/tokens.ts`           | Bearer tokens: 32 random bytes, stored only as their sha256                         |
+| `src/cors.ts`             | CORS for the origins in `ALLOWED_ORIGINS` only                                      |
+| `src/production.ts`       | The real dependencies: Neon over HTTP, Google, the clock, `crypto.randomBytes`      |
+| `src/migrations.ts`       | Applies `migrations/NNN_*.sql` once each, recorded in `schema_migrations`           |
+| `migrations/001_init.sql` | `users`, `auth_tokens`, `records` and the `record_seq` sequence                     |
+| `scripts/migrate.ts`      | `pnpm --filter tabinet-server migrate`                                              |
+| `tests/`                  | vitest; the store and the routes run against PGlite (Postgres in WASM), no network  |
+
+## API
+
+JSON, base path `/v1`. Every route but `POST /v1/auth/google` and `OPTIONS` needs
+`Authorization: Bearer <token>`; a missing, unknown or expired token gets 401
+`{"error":"unauthorized"}`. Any bad input gets 400 `{"error":"bad_request"}`.
+
+| Route                                      | Answer                                                                                        |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `POST /v1/auth/google {idToken}`           | 200 `{token, expiresAt, email, keySetup}`; the token lasts 90 days                            |
+| `POST /v1/auth/logout`                     | 204; the presented token is deleted                                                           |
+| `GET /v1/me`                               | 200 `{email, keySetup}`                                                                       |
+| `PUT /v1/keys {kdf, salt, check, checkIv}` | 201 the first time, then 409 `{"error":"key_exists"}`                                         |
+| `GET /v1/records?since=&limit=`            | 200 `{records, next, hasMore}`: records with `seq > since`, ascending, `limit` 1..500 (500)   |
+| `POST /v1/records {records}`               | 200 `{results: [{kind, id, status: "applied", seq} or {kind, id, status: "stale", current}]}` |
+| `DELETE /v1/account`                       | 204; the user, their tokens and their records are deleted                                     |
+
+Limits and rules:
+
+- `kdf` is `{name: "PBKDF2", hash: "SHA-256", iterations}` with 100000..10000000 iterations;
+  `salt` 16..64 bytes, `check` 1..1024 bytes, `checkIv` 12..32 bytes, all padded base64.
+- A record's `kind` is `session` or `settings`, its `id` matches `[A-Za-z0-9_-]{1,64}`,
+  `updatedAt` is a non-negative integer (ms). A live record has an `iv` of 12..32 bytes and a
+  non-empty `ciphertext` of at most 1 MiB of base64; a tombstone (`deleted: true`) has both empty.
+- At most 100 records per request, and unknown fields are refused. One bad record refuses the whole
+  request. Vercel caps a request body at 4.5 MB, so a client sends large records in smaller batches.
+- Last writer wins per `(kind, id)`: a write applies only when its `updatedAt` is greater than the
+  stored one; a tie or an older one comes back `stale` with the stored record. Each record is one
+  conditional upsert statement, so concurrent writers cannot lose an update, and every applied
+  write takes a new `seq` from one global sequence.
+- CORS headers go only to an `Origin` listed in `ALLOWED_ORIGINS`; preflight allows GET, POST, PUT,
+  DELETE with `Authorization` and `Content-Type`. Every answer carries `Vary: Origin` and
+  `Cache-Control: no-store`.
+- Logs carry an error's name only, never a token or a record.
+
+## Develop
+
+```bash
+pnpm install                          # from the repository root
+pnpm server:typecheck                 # tsc over server/
+pnpm server:test                      # vitest, against PGlite
+```
+
+## Deploy
+
+1. **Create the Vercel project.** In Vercel, "Add New... > Project", import this repository and set
+   **Root Directory** to `server`. Framework preset "Other"; no build command. The function runs on
+   the Node.js runtime.
+2. **Add Postgres.** In the project's **Storage** tab, add **Neon** from the Vercel Marketplace and
+   connect it to the project. This sets `DATABASE_URL` for every environment.
+3. **Set the environment variables** (Settings > Environment Variables):
+   - `DATABASE_URL`: set by step 2 (the pooled connection string).
+   - `GOOGLE_CLIENT_IDS`: the OAuth client id from step 5, comma-separated if there are several.
+   - `ALLOWED_ORIGINS`: `chrome-extension://bmbpmnfhfbdjdjpblimidmbohgccmjdg` (comma-separated; add
+     the id of an unpacked development build if you test with one).
+
+   Redeploy after changing them.
+
+4. **Create the tables.** From the repository root, with the same connection string:
+
+   ```bash
+   DATABASE_URL='postgres://...' pnpm --filter tabinet-server migrate
+   ```
+
+   It applies every file in `migrations/` that has not run yet, so run it again after adding one.
+
+5. **Create the Google OAuth client.** In Google Cloud Console, "APIs & Services > Credentials >
+   Create credentials > OAuth client ID":
+   - Application type: **Web application**.
+   - Authorized redirect URI: `https://<extension-id>.chromiumapp.org/` (for the store build,
+     `https://bmbpmnfhfbdjdjpblimidmbohgccmjdg.chromiumapp.org/`).
+   - The OAuth consent screen asks for the scopes `openid` and `email` only.
+
+   Put its client id in `GOOGLE_CLIENT_IDS` (step 3).
+
+Check it: `curl https://<project>.vercel.app/v1/me` answers 401 `{"error":"unauthorized"}`.

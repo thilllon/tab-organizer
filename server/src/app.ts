@@ -1,0 +1,193 @@
+import { withCors } from './cors.js';
+import type { VerifyGoogleIdToken } from './google-auth.js';
+import type { Store } from './store.js';
+import { bearerToken, hashToken, mintToken, TOKEN_TTL_MS } from './tokens.js';
+import type { StoredRecord, User } from './types.js';
+import { parseIdToken, parseKeySetup, parseRecordsBody, parseRecordsQuery } from './validation.js';
+
+/** Everything the router reaches outside itself, injected so tests run without network. */
+export interface Deps {
+  store: Store;
+  verifyGoogleIdToken: VerifyGoogleIdToken;
+  /** Milliseconds since the epoch. */
+  now: () => number;
+  randomBytes: (size: number) => Uint8Array;
+  /** Origins answered with CORS headers, e.g. `chrome-extension://<id>`. */
+  allowedOrigins: readonly string[];
+}
+
+type ErrorCode =
+  | 'bad_request'
+  | 'unauthorized'
+  | 'not_found'
+  | 'method_not_allowed'
+  | 'key_exists'
+  | 'internal';
+
+interface Context {
+  request: Request;
+  url: URL;
+  deps: Deps;
+}
+
+interface AuthedContext extends Context {
+  user: User;
+  tokenHash: string;
+}
+
+type Handler = (ctx: Context) => Promise<Response>;
+
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
+}
+
+function error(status: number, code: ErrorCode): Response {
+  return json(status, { error: code });
+}
+
+function noContent(status = 204): Response {
+  return new Response(null, { status, headers: { 'Cache-Control': 'no-store' } });
+}
+
+/** The parsed JSON body, or undefined when it is not JSON at all. */
+async function readJson(request: Request): Promise<unknown> {
+  try {
+    return JSON.parse(await request.text());
+  } catch {
+    return undefined;
+  }
+}
+
+// Wraps a handler that needs a signed-in caller: a missing, unknown or expired token is a 401.
+function authed(handler: (ctx: AuthedContext) => Promise<Response>): Handler {
+  return async (ctx) => {
+    const token = bearerToken(ctx.request.headers.get('Authorization'));
+    if (token === null) {
+      return error(401, 'unauthorized');
+    }
+    const tokenHash = hashToken(token);
+    const user = await ctx.deps.store.findUserByToken(tokenHash, ctx.deps.now());
+    if (user === null) {
+      return error(401, 'unauthorized');
+    }
+    return handler({ ...ctx, user, tokenHash });
+  };
+}
+
+async function signInWithGoogle({ request, deps }: Context): Promise<Response> {
+  const idToken = parseIdToken(await readJson(request));
+  if (idToken === null) {
+    return error(400, 'bad_request');
+  }
+  const identity = await deps.verifyGoogleIdToken(idToken);
+  if (identity === null) {
+    return error(401, 'unauthorized');
+  }
+  const user = await deps.store.upsertUser(identity.sub, identity.email);
+  const token = mintToken(deps.randomBytes);
+  const now = deps.now();
+  const expiresAt = now + TOKEN_TTL_MS;
+  await deps.store.createToken(hashToken(token), user.id, expiresAt, now);
+  return json(200, { token, expiresAt, email: user.email, keySetup: user.keySetup });
+}
+
+const logout = authed(async ({ deps, tokenHash }) => {
+  await deps.store.deleteToken(tokenHash);
+  return noContent();
+});
+
+const me = authed(async ({ user }) => json(200, { email: user.email, keySetup: user.keySetup }));
+
+const putKeys = authed(async ({ request, deps, user }) => {
+  const keySetup = parseKeySetup(await readJson(request));
+  if (keySetup === null) {
+    return error(400, 'bad_request');
+  }
+  // Set once: a second setup would make every record encrypted under the first key unreadable.
+  return (await deps.store.setKeySetup(user.id, keySetup))
+    ? noContent(201)
+    : error(409, 'key_exists');
+});
+
+const getRecords = authed(async ({ url, deps, user }) => {
+  const query = parseRecordsQuery(url.searchParams);
+  if (query === null) {
+    return error(400, 'bad_request');
+  }
+  // One extra row says whether there is more without a second query.
+  const rows = await deps.store.listRecords(user.id, query.since, query.limit + 1);
+  const hasMore = rows.length > query.limit;
+  const records: StoredRecord[] = hasMore ? rows.slice(0, query.limit) : rows;
+  const next = records.length > 0 ? records[records.length - 1].seq : query.since;
+  return json(200, { records, next, hasMore });
+});
+
+const postRecords = authed(async ({ request, deps, user }) => {
+  const records = parseRecordsBody(await readJson(request));
+  if (records === null) {
+    return error(400, 'bad_request');
+  }
+  const results = [];
+  // In order, one statement each: a later record with the same (kind, id) sees the earlier one.
+  for (const record of records) {
+    const result = await deps.store.applyRecord(user.id, record);
+    results.push(
+      result.status === 'applied'
+        ? { kind: record.kind, id: record.id, status: 'applied', seq: result.seq }
+        : { kind: record.kind, id: record.id, status: 'stale', current: result.current },
+    );
+  }
+  return json(200, { results });
+});
+
+const deleteAccount = authed(async ({ deps, user }) => {
+  await deps.store.deleteUser(user.id);
+  return noContent();
+});
+
+const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
+  '/v1/auth/google': { POST: signInWithGoogle },
+  '/v1/auth/logout': { POST: logout },
+  '/v1/me': { GET: me },
+  '/v1/keys': { PUT: putKeys },
+  '/v1/records': { GET: getRecords, POST: postRecords },
+  '/v1/account': { DELETE: deleteAccount },
+};
+
+async function route(request: Request, url: URL, deps: Deps): Promise<Response> {
+  const methods = Object.hasOwn(ROUTES, url.pathname) ? ROUTES[url.pathname] : undefined;
+  if (methods === undefined) {
+    return error(404, 'not_found');
+  }
+  const handler = methods[request.method];
+  if (handler === undefined) {
+    const response = error(405, 'method_not_allowed');
+    response.headers.set('Allow', Object.keys(methods).join(', '));
+    return response;
+  }
+  return handler({ request, url, deps });
+}
+
+/** The whole API: one web-standard handler, used by the Vercel function and by the tests. */
+export async function handle(request: Request, deps: Deps): Promise<Response> {
+  const origin = request.headers.get('Origin');
+  if (request.method === 'OPTIONS') {
+    return withCors(noContent(), origin, deps.allowedOrigins, true);
+  }
+  let response: Response;
+  try {
+    response = await route(request, new URL(request.url), deps);
+  } catch (err) {
+    // The name only: a message or stack could carry a token, a hash or a record's ciphertext.
+    console.error(
+      'tabinet-server: request failed',
+      request.method,
+      err instanceof Error ? err.name : typeof err,
+    );
+    response = error(500, 'internal');
+  }
+  return withCors(response, origin, deps.allowedOrigins, false);
+}

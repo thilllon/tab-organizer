@@ -247,6 +247,8 @@ tabinet/
 │       ├── components/    # header, footer, language switch, Add to Chrome button, icons
 │       ├── layouts/       # base-layout.astro: head (canonical, hreflang, Open Graph), header, footer
 │       └── styles/global.css  # the extension's colour tokens, light and dark by prefers-color-scheme
+├── server/                    # The sync server (Vercel + Postgres), its own pnpm workspace package
+│                              #   `tabinet-server`; see "Sync server" below
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml             # CI pipeline (typecheck, format, build; tools via mise)
@@ -443,6 +445,9 @@ pnpm exec tsx scripts/zip.ts        # Package the current dist/ into release/Tab
 
 pnpm site:dev                        # The project website on a local dev server (http://localhost:4321/tabinet/)
 pnpm site:build                      # astro check + astro build -> site/dist/
+
+pnpm server:typecheck                # tsc over server/ (the sync server)
+pnpm server:test                     # the sync server's vitest (PGlite, no network)
 ```
 
 ### Local Development Workflow
@@ -602,6 +607,19 @@ The extension speaks English (`en`, the manifest's `default_locale`), Korean (`k
 
 ---
 
+## Sync server
+
+`server/` is the cloud sync backend (stage 1, issue #165: the server only; the extension does not call it yet): its own workspace package `tabinet-server`, deployed as a Vercel project whose root is `server/`, with Postgres on Neon. `server/README.md` has the API, the limits and the deploy steps.
+
+- **End-to-end encrypted.** The server stores `{kind, id, updatedAt, deleted, iv, ciphertext}` per record (`kind` is `session` or `settings`: saved sessions and settings only, never history snapshots) and never sees a session name, url or title. The key setup it keeps (PBKDF2 parameters, salt, a check value) lets a device derive and test the key from the passphrase; it is set once and never replaced.
+- **Shape.** One web-standard router, `handle(request, deps)` in `server/src/app.ts`, behind the Vercel function `server/api/index.ts` (`server/vercel.json` rewrites `/v1/*` to it). `deps` = `{ store, verifyGoogleIdToken, now, randomBytes, allowedOrigins }`, so tests need no network. Every SQL statement is in `server/src/store.ts` over a one-function `query(text, params)` adapter (Neon's HTTP driver in production). Google ID tokens are checked with `jose` (issuer, audience = `GOOGLE_CLIENT_IDS`, `email_verified`); bearer tokens are 32 random bytes kept only as their sha256, valid 90 days.
+- **Last writer wins** per `(kind, id)` on the client's `updatedAt`, in one conditional upsert statement per record; a tie or an older write is answered `stale` with the stored record. Every applied write takes a new `seq` from one sequence, which is what `GET /v1/records?since=` pages over.
+- **Migrations** are plain SQL, `server/migrations/NNN_name.sql`, applied once each by `pnpm --filter tabinet-server migrate` (`server/scripts/migrate.ts`, tsx; recorded in `schema_migrations`). Never edit a shipped migration; add the next number.
+- **Tests** are `server/tests/*.test.ts`, run by `pnpm server:test` with the server's own vitest config; the store and every route run against PGlite (Postgres in WASM) with the real migrations. `pnpm server:typecheck` checks the package with its own `tsconfig.json` (`NodeNext`, so relative imports end in `.js`). The root vitest excludes `server/**`; oxfmt, oxlint and the dash check cover it like everything else.
+- **Environment** (Vercel): `DATABASE_URL`, `GOOGLE_CLIENT_IDS` and `ALLOWED_ORIGINS` (comma-separated, e.g. `chrome-extension://bmbpmnfhfbdjdjpblimidmbohgccmjdg`), read in `server/src/production.ts`. Logs carry an error's name only, never a token or ciphertext.
+
+---
+
 ## CI/CD
 
 ### GitHub Actions (`ci.yml`)
@@ -613,11 +631,12 @@ Runs on push to `main`, PRs to `main`, and manual dispatch:
 3. `gitleaks git` over every commit (fails on any finding; config `.gitleaks.toml`)
 4. `pnpm install --frozen-lockfile`
 5. `pnpm typecheck`
-6. `pnpm test` (vitest; includes `src/tests/store-listing.test.ts`, which fails on a store description over 500 characters, a summary over 132 or a permission without a justification, and `src/tests/i18n.test.ts`, which fails when the `_locales` drift apart)
-7. `pnpm format:check` (oxfmt; fails when any file is not formatted)
-8. `pnpm lint` (oxlint; fails on any warning or error)
-9. `pnpm build`
-10. `pnpm site:build` (the project website; `astro check` fails on any type error)
+6. `pnpm test` (vitest over the extension; includes `src/tests/store-listing.test.ts`, which fails on a store description over 500 characters, a summary over 132 or a permission without a justification, and `src/tests/i18n.test.ts`, which fails when the `_locales` drift apart)
+7. `pnpm server:typecheck` and `pnpm server:test` (the sync server, `server/`; its tests run against PGlite, no database needed)
+8. `pnpm format:check` (oxfmt; fails when any file is not formatted)
+9. `pnpm lint` (oxlint; fails on any warning or error)
+10. `pnpm build`
+11. `pnpm site:build` (the project website; `astro check` fails on any type error)
 
 Dependabot (`dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates, grouping minor/patch bumps. Auto-merge is opt-in per pull request and Dependabot never opts its own in, so `dependabot-auto-merge.yml` runs `gh pr merge --auto --squash` on a Dependabot PR whose `update-type` (from `dependabot/fetch-metadata`) is minor or patch - and only when Dependabot itself caused the run, so a commit a person pushes onto its branch is not auto-merged; GitHub then merges it once the required `ci` check passes. Major updates stay open for a person. A merge made with the workflow's `GITHUB_TOKEN` does not start the `push` run of `ci.yml` on `main` - the PR's own run is the evidence.
 
@@ -739,7 +758,7 @@ Vitest + the chrome fake cannot catch Chrome's own argument validation or its na
 - **Tab group IDs**: `-1` means ungrouped in the Chrome API. The code uses this convention throughout.
 - **Tab ID arrays**: Chrome's `tabs.move()` and `tabs.group()` require `[number, ...number[]]` tuple type for non-empty arrays.
 - **`scripts/zip.ts` and archiver 8**: archiver 8 is ESM and exports no callable default - the archive classes come by name (`import { ZipArchive } from 'archiver'`). `finalize()` resolves before the file is complete, so the script also waits for the write stream's `close` event; don't "simplify" either back.
-- **`pnpm-workspace.yaml`**: Lists one workspace package, `site` (the project website); the extension is the root package. It also holds pnpm's install policy: `allowBuilds` (only `esbuild` may run install scripts) and `minimumReleaseAge: 10080` (minutes - only versions published at least 7 days ago are installed; pnpm's default is 1 day). A lockfile entry younger than that makes `pnpm install --frozen-lockfile` fail, in CI too, so `dependabot.yml` carries the matching `cooldown: default-days: 7` for npm. `minimumReleaseAgeExclude` is the escape hatch (exact `name@version`) for a release that must be installed sooner; there is none at the moment.
+- **`pnpm-workspace.yaml`**: Lists two workspace packages, `site` (the project website) and `server` (the sync server); the extension is the root package. It also holds pnpm's install policy: `allowBuilds` (only `esbuild` may run install scripts) and `minimumReleaseAge: 10080` (minutes - only versions published at least 7 days ago are installed; pnpm's default is 1 day). A lockfile entry younger than that makes `pnpm install --frozen-lockfile` fail, in CI too, so `dependabot.yml` carries the matching `cooldown: default-days: 7` for npm. `minimumReleaseAgeExclude` is the escape hatch (exact `name@version`) for a release that must be installed sooner; there is none at the moment.
 - **The store text is data, pasted by hand**: `scripts/store-listing.ts` is the only source of the dashboard text; only Title and Summary come from the package (`_locales`).
 - **No Python** (set by the owner): every script is TypeScript run with `tsx`; no `.py` file, virtualenv, ruff or pip config in this repository.
 - **Pre-push `update-docs` hook amends commits**: on feature branches push with `LEFTHOOK_EXCLUDE=update-docs git push …` and do one manual docs pass per phase.

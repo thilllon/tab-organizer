@@ -1,0 +1,25 @@
+{
+  "name": "tabinet-server",
+  "private": true,
+  "description": "Tabinet sync server: stores end-to-end encrypted records for signed-in users.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "migrate": "tsx scripts/migrate.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.2.0",
+    "jose": "6.2.13"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
