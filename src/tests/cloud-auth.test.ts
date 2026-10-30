@@ -6,10 +6,8 @@ import {
   CLOUD_ACCOUNT_KEY,
   CLOUD_SYNC_KEY,
   deleteCloudData,
-  googleAuthUrl,
+  isSignInCancelled,
   keepSyncKeyFor,
-  idTokenFromRedirect,
-  jwtPayload,
   loadCloudAccount,
   loadLiveCloudAccount,
   loadSyncKey,
@@ -37,25 +35,11 @@ const SETUP: CloudKeySetup = {
   checkIv: 'aXZpdml2aXZpdml2',
 };
 
-function base64url(text: string): string {
-  return btoa(String.fromCharCode(...new TextEncoder().encode(text)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
+const GOOGLE_TOKEN = 'ya29.google-access-token';
 
-/** An unsigned JWT-shaped token: only the payload is ever read on this side. */
-function idToken(payload: Record<string, unknown>): string {
-  return `${base64url('{"alg":"RS256"}')}.${base64url(JSON.stringify(payload))}.sig`;
-}
-
-/** The Google window: answers the auth URL with a redirect carrying an ID token for `nonce`. */
-function googleAnswers(nonceOf: (sent: string) => string) {
-  getChromeFake().state.authFlowAnswer = (url) => {
-    const sent = new URL(url).searchParams.get('nonce') ?? '';
-    const token = idToken({ nonce: nonceOf(sent), email: 'a@b.c' });
-    return `https://fakeextid.chromiumapp.org/#id_token=${token}&token_type=Bearer`;
-  };
+/** Chrome's consent window: answers `getAuthToken` with a Google access token. */
+function googleAnswers(token = GOOGLE_TOKEN) {
+  getChromeFake().state.authTokenAnswer = token;
 }
 
 beforeEach(() => {
@@ -104,43 +88,26 @@ describe('newPassphraseProblem', () => {
   });
 });
 
-describe('googleAuthUrl / idTokenFromRedirect / jwtPayload', () => {
-  it('asks Google for an ID token with every required parameter', () => {
-    const url = new URL(googleAuthUrl('client.apps', 'https://x.chromiumapp.org/', 'n0nce'));
-    expect(`${url.origin}${url.pathname}`).toBe('https://accounts.google.com/o/oauth2/v2/auth');
-    expect(Object.fromEntries(url.searchParams)).toEqual({
-      client_id: 'client.apps',
-      response_type: 'id_token',
-      redirect_uri: 'https://x.chromiumapp.org/',
-      scope: 'openid email',
-      nonce: 'n0nce',
-      prompt: 'select_account',
-    });
+describe('isSignInCancelled', () => {
+  it("takes Chrome's refused-consent wording and an explicit cancel as cancelled", () => {
+    expect(isSignInCancelled(new Error('The user did not approve access.'))).toBe(true);
+    expect(isSignInCancelled(new Error('Sign-in was canceled.'))).toBe(true);
+    expect(isSignInCancelled(new Error('The request was cancelled by the user'))).toBe(true);
   });
 
-  it('reads the id_token, or the error, from the fragment', () => {
-    expect(idTokenFromRedirect('https://x.chromiumapp.org/#id_token=a.b.c&authuser=0')).toEqual({
-      idToken: 'a.b.c',
-    });
-    expect(idTokenFromRedirect('https://x.chromiumapp.org/#error=access_denied')).toEqual({
-      error: 'access_denied',
-    });
-    expect(idTokenFromRedirect('https://x.chromiumapp.org/')).toEqual({ error: 'no_id_token' });
-  });
-
-  it('decodes a payload, including non-ASCII, and refuses what is not a JWT', () => {
-    expect(jwtPayload(idToken({ nonce: 'n', name: 'Zoë 한글' }))).toEqual({
-      nonce: 'n',
-      name: 'Zoë 한글',
-    });
-    expect(jwtPayload('not-a-jwt')).toBeNull();
-    expect(jwtPayload(`a.${base64url('[1]')}.c`)).toBeNull();
+  it('treats every other failure as a real one', () => {
+    expect(isSignInCancelled(new Error('Authorization page could not be loaded.'))).toBe(false);
+    expect(isSignInCancelled(new Error('The user turned off browser signin'))).toBe(false);
+    expect(isSignInCancelled(new Error('OAuth2 request failed: Connection failed.'))).toBe(false);
+    expect(isSignInCancelled(new Error('Invalid OAuth2 Client ID.'))).toBe(false);
+    expect(isSignInCancelled('did not approve')).toBe(false);
+    expect(isSignInCancelled(undefined)).toBe(false);
   });
 });
 
 describe('signIn', () => {
-  it('opens Google interactively, then stores the account the server answers with', async () => {
-    googleAnswers((sent) => sent);
+  it('asks Chrome for a token interactively, then stores the account the server answers with', async () => {
+    googleAnswers();
     const server = fakeFetch(
       jsonResponse(200, {
         token: 'tok',
@@ -153,30 +120,47 @@ describe('signIn', () => {
     expect(result).toEqual({ outcome: 'signedIn', account: ACCOUNT, keySetup: null });
     expect(await loadCloudAccount()).toEqual(ACCOUNT);
     const fake = getChromeFake();
-    const sentUrl = new URL(fake.state.authFlowUrls[0] ?? '');
-    expect(sentUrl.searchParams.get('redirect_uri')).toBe('https://fakeextid.chromiumapp.org/');
-    expect(sentUrl.searchParams.get('client_id')).toBe('client.apps');
-    expect(sentUrl.searchParams.get('nonce')).toMatch(/^[A-Za-z0-9_-]{16,}$/);
-    expect(server.requests[0]?.url).toBe('https://sync.test/v1/auth/google');
+    expect(fake.state.authTokenRequests).toEqual([
+      { interactive: true, scopes: ['openid', 'email'] },
+    ]);
+    expect(server.requests[0]).toMatchObject({
+      url: 'https://sync.test/v1/auth/google',
+      body: { accessToken: GOOGLE_TOKEN },
+    });
   });
 
-  it('refuses an ID token minted for another nonce, and stores nothing', async () => {
-    googleAnswers(() => 'someone-elses-nonce');
+  it('keeps the Google token nowhere: not stored, and dropped from Chrome after the exchange', async () => {
+    googleAnswers();
+    const answer = { token: 'tok', expiresAt: ACCOUNT.expiresAt, email: 'a@b.c', keySetup: null };
+    await signIn({ fetch: fakeFetch(jsonResponse(200, answer)).fetch });
+    const fake = getChromeFake();
+    expect(fake.state.removedAuthTokens).toEqual([GOOGLE_TOKEN]);
+    expect(JSON.stringify([...fake.state.local.entries()])).not.toContain(GOOGLE_TOKEN);
+  });
+
+  it('drops the Google token from Chrome also when the server refuses it, and stores nothing', async () => {
+    googleAnswers();
+    const server = fakeFetch(jsonResponse(401, { error: 'unauthorized' }));
+    const err: unknown = await signIn({ fetch: server.fetch }).catch((e: unknown) => e);
+    expect(errorMessage(err)).toBe(t('errorCloudSignInFailed'));
+    expect(getChromeFake().state.removedAuthTokens).toEqual([GOOGLE_TOKEN]);
+    expect(getChromeFake().state.local.has(CLOUD_ACCOUNT_KEY)).toBe(false);
+  });
+
+  it('is cancelled, not failed, when the person closes or turns down the consent window', async () => {
+    const server = fakeFetch(jsonResponse(200, {}));
+    // The fake's default: Chrome's wording for a refused consent.
+    expect(await signIn({ fetch: server.fetch })).toEqual({ outcome: 'cancelled' });
+    expect(server.requests).toHaveLength(0);
+    expect(getChromeFake().state.local.has(CLOUD_ACCOUNT_KEY)).toBe(false);
+  });
+
+  it('fails, without asking the server, when Chrome answers without a token', async () => {
+    googleAnswers('');
     const server = fakeFetch(jsonResponse(200, {}));
     const err: unknown = await signIn({ fetch: server.fetch }).catch((e: unknown) => e);
     expect(errorMessage(err)).toBe(t('errorCloudSignInFailed'));
     expect(server.requests).toHaveLength(0);
-    expect(getChromeFake().state.local.has(CLOUD_ACCOUNT_KEY)).toBe(false);
-  });
-
-  it('is cancelled, not failed, when the person closes the window or declines', async () => {
-    const server = fakeFetch(jsonResponse(200, {}));
-    // The fake's default: Chrome's wording for a closed window.
-    expect(await signIn({ fetch: server.fetch })).toEqual({ outcome: 'cancelled' });
-    getChromeFake().state.authFlowAnswer = 'https://fakeextid.chromiumapp.org/#error=access_denied';
-    expect(await signIn({ fetch: server.fetch })).toEqual({ outcome: 'cancelled' });
-    expect(server.requests).toHaveLength(0);
-    expect(getChromeFake().state.local.has(CLOUD_ACCOUNT_KEY)).toBe(false);
   });
 
   it('drops a key left from an expired account when another account signs in', async () => {
@@ -185,7 +169,7 @@ describe('signIn', () => {
       [CLOUD_ACCOUNT_KEY]: { ...ACCOUNT, expiresAt: 1 },
       [CLOUD_SYNC_KEY]: rawKey,
     });
-    googleAnswers((sent) => sent);
+    googleAnswers();
     const b = { token: 'tok-b', expiresAt: ACCOUNT.expiresAt, email: 'b@b.c', keySetup: null };
     const result = await signIn({ fetch: fakeFetch(jsonResponse(200, b)).fetch });
     expect(result).toMatchObject({ outcome: 'signedIn', keySetup: null });
@@ -204,7 +188,7 @@ describe('signIn', () => {
   it("drops a key that does not open the account's setup, and keeps one that does", async () => {
     const a = await createKeySetup('passphrase A', 100_000);
     const again = await createKeySetup('passphrase made again', 100_000);
-    googleAnswers((sent) => sent);
+    googleAnswers();
     const answer = (keySetup: unknown) =>
       fakeFetch(
         jsonResponse(200, { token: 'tok', expiresAt: ACCOUNT.expiresAt, email: 'a@b.c', keySetup }),
@@ -218,8 +202,8 @@ describe('signIn', () => {
     expect(await loadSyncKey()).toBeNull();
   });
 
-  it('explains any other failure of the sign-in window', async () => {
-    getChromeFake().state.authFlowAnswer = new Error('Authorization page could not be loaded.');
+  it('explains any other failure of the consent window', async () => {
+    getChromeFake().state.authTokenAnswer = new Error('Authorization page could not be loaded.');
     const err: unknown = await signIn().catch((e: unknown) => e);
     expect(errorMessage(err)).toBe(t('errorCloudSignInFailed'));
   });
@@ -245,6 +229,7 @@ describe('signOut / deleteCloudData', () => {
     expect(local.has(CLOUD_ACCOUNT_KEY)).toBe(false);
     expect(local.has(CLOUD_SYNC_KEY)).toBe(false);
     expect(local.has('sessionIndex')).toBe(true);
+    expect(getChromeFake().state.authTokenCacheClears).toBe(1);
   });
 
   it('still signs out here when the server cannot be reached', async () => {
@@ -264,6 +249,7 @@ describe('signOut / deleteCloudData', () => {
     });
     expect(await loadCloudAccount()).toBeNull();
     expect(await loadSyncKey()).toBeNull();
+    expect(getChromeFake().state.authTokenCacheClears).toBe(1);
     expect(getChromeFake().state.local.has('sessionIndex')).toBe(true);
   });
 
@@ -271,6 +257,7 @@ describe('signOut / deleteCloudData', () => {
     const down = fakeFetch(jsonResponse(500, { error: 'internal' }));
     await expect(deleteCloudData({ fetch: down.fetch })).rejects.toThrow(/HTTP 500/);
     expect(await loadCloudAccount()).toEqual(ACCOUNT);
+    expect(getChromeFake().state.authTokenCacheClears).toBe(0);
   });
 });
 
@@ -372,5 +359,16 @@ describe('the sync passphrase', () => {
       setUpPassphrase('long enough', { fetch: server.fetch, iterations: 1000 }),
     ).rejects.toBeInstanceOf(CloudUnauthorizedError);
     expect(await loadSyncKey()).toBeNull();
+  });
+});
+
+describe('signing out without chrome.identity', () => {
+  it('still signs out when the identity API is absent (no permission)', async () => {
+    await chrome.storage.local.set({ [CLOUD_ACCOUNT_KEY]: ACCOUNT });
+    // The fake is fresh for every test, so removing its identity API here touches nothing else.
+    Reflect.deleteProperty(chrome, 'identity');
+    expect(chrome.identity).toBeUndefined();
+    await signOut({ fetch: fakeFetch(jsonResponse(204)).fetch });
+    expect(await loadCloudAccount()).toBeNull();
   });
 });

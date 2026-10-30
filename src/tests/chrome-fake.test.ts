@@ -844,27 +844,30 @@ describe('chrome fake: match patterns, permissions and scripting', () => {
 });
 
 describe('chrome fake: identity', () => {
-  it('gives the extension its chromiumapp.org redirect URL', () => {
-    expect(chrome.identity.getRedirectURL()).toBe('https://fakeextid.chromiumapp.org/');
-    expect(chrome.identity.getRedirectURL('/cb')).toBe('https://fakeextid.chromiumapp.org/cb');
+  it('rejects like a refused consent by default and records every request', async () => {
+    const details = { interactive: true, scopes: ['openid', 'email'] };
+    await expect(chrome.identity.getAuthToken(details)).rejects.toThrow(
+      'The user did not approve access.',
+    );
+    expect(getChromeFake().state.authTokenRequests).toEqual([details]);
   });
 
-  it('rejects like a closed sign-in window by default and records every URL', async () => {
-    await expect(
-      chrome.identity.launchWebAuthFlow({ url: 'https://accounts.example/a', interactive: true }),
-    ).rejects.toThrow('The user did not approve access.');
-    expect(getChromeFake().state.authFlowUrls).toEqual(['https://accounts.example/a']);
-  });
-
-  it('answers with state.authFlowAnswer, a fixed redirect or one made from the URL', async () => {
+  it('answers with state.authTokenAnswer, fixed or made from the request', async () => {
     const fake = getChromeFake();
-    fake.state.authFlowAnswer = 'https://fakeextid.chromiumapp.org/#id_token=x';
-    expect(await chrome.identity.launchWebAuthFlow({ url: 'https://a/', interactive: true })).toBe(
-      'https://fakeextid.chromiumapp.org/#id_token=x',
-    );
-    fake.state.authFlowAnswer = (url) => `https://fakeextid.chromiumapp.org/#from=${url}`;
-    expect(await chrome.identity.launchWebAuthFlow({ url: 'https://b/', interactive: true })).toBe(
-      'https://fakeextid.chromiumapp.org/#from=https://b/',
-    );
+    fake.state.authTokenAnswer = 'ya29.token';
+    expect(await chrome.identity.getAuthToken({ interactive: true, scopes: ['email'] })).toEqual({
+      token: 'ya29.token',
+      grantedScopes: ['email'],
+    });
+    fake.state.authTokenAnswer = (details) => `token-${String(details.interactive)}`;
+    expect((await chrome.identity.getAuthToken({ interactive: false })).token).toBe('token-false');
+  });
+
+  it('records removed tokens and cache clears', async () => {
+    const fake = getChromeFake();
+    await chrome.identity.removeCachedAuthToken({ token: 'a' });
+    await chrome.identity.clearAllCachedAuthTokens();
+    expect(fake.state.removedAuthTokens).toEqual(['a']);
+    expect(fake.state.authTokenCacheClears).toBe(1);
   });
 });

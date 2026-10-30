@@ -44,13 +44,19 @@ function base64Within(value: unknown, min: number, max: number): value is string
   return bytes !== null && bytes >= min && bytes <= max;
 }
 
-export function parseIdToken(body: unknown): string | null {
-  if (!isPlain(body) || !hasExactly(body, ['idToken'])) {
+/** The longest access token accepted. Google documents up to 2048 bytes; this leaves room. */
+export const MAX_ACCESS_TOKEN_LENGTH = 4096;
+
+/** The Google access token in a sign-in body `{ accessToken }`, or null. */
+export function parseAccessToken(body: unknown): string | null {
+  if (!isPlain(body) || !hasExactly(body, ['accessToken'])) {
     return null;
   }
-  const { idToken } = body;
-  return typeof idToken === 'string' && idToken.length > 0 && idToken.length <= 8192
-    ? idToken
+  const { accessToken } = body;
+  return typeof accessToken === 'string' &&
+    accessToken.length > 0 &&
+    accessToken.length <= MAX_ACCESS_TOKEN_LENGTH
+    ? accessToken
     : null;
 }
 

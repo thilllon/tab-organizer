@@ -52,11 +52,11 @@ describe('apiUrl', () => {
 });
 
 describe('authGoogle', () => {
-  it('posts the ID token and reads the account, with no Authorization header', async () => {
+  it('posts the Google access token and reads the account, with no Authorization header', async () => {
     const server = fakeFetch(
       jsonResponse(200, { token: 'tok', expiresAt: 1800000000000, email: 'a@b.c', keySetup: null }),
     );
-    const result = await authGoogle('id.token.here', { fetch: server.fetch });
+    const result = await authGoogle('ya29.access-token', { fetch: server.fetch });
     expect(result).toEqual({
       token: 'tok',
       expiresAt: 1800000000000,
@@ -66,7 +66,7 @@ describe('authGoogle', () => {
     expect(server.requests[0]).toMatchObject({
       url: `${API}/v1/auth/google`,
       method: 'POST',
-      body: { idToken: 'id.token.here' },
+      body: { accessToken: 'ya29.access-token' },
     });
     expect(server.requests[0]?.headers.authorization).toBeUndefined();
     expect(server.requests[0]?.headers['content-type']).toBe('application/json');
@@ -94,7 +94,7 @@ describe('authGoogle', () => {
   });
 
   it('explains a 401 as a failed sign-in, not as being signed out', async () => {
-    const server = fakeFetch(jsonResponse(401, { error: 'invalid_id_token' }));
+    const server = fakeFetch(jsonResponse(401, { error: 'unauthorized' }));
     const err: unknown = await authGoogle('x', { fetch: server.fetch }).catch((e: unknown) => e);
     expect(err).not.toBeInstanceOf(CloudUnauthorizedError);
     expect(errorMessage(err)).toBe(t('errorCloudSignInFailed'));

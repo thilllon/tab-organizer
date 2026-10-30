@@ -6,7 +6,9 @@ user's passphrase before it is sent, so the server holds `{kind, id, updatedAt, 
 ciphertext}` and never a session name, url or title. Sign-in is with Google; the server keeps the
 Google account id (`sub`) and the email, nothing else about the person.
 
-The extension does not talk to it yet (stage 1 of cloud sync: the server only).
+The extension calls it once `CLOUD_SYNC.apiBase` is set in `src/constants.ts` (sign-in with
+`chrome.identity.getAuthToken`, then the sync engine in `src/lib/cloud-sync.ts`); until then it is
+dormant.
 
 ## Layout
 
@@ -16,7 +18,7 @@ The extension does not talk to it yet (stage 1 of cloud sync: the server only).
 | `src/app.ts`              | `handle(request, deps)`: the whole API as one web-standard router                   |
 | `src/validation.ts`       | Strict parsing of every body and query (sizes, id pattern, kinds, base64)           |
 | `src/store.ts`            | `createSqlStore(query)`: every SQL statement, over a one-function `query()` adapter |
-| `src/google-auth.ts`      | Google ID token verification with `jose` against Google's published keys            |
+| `src/google-auth.ts`      | Google access token verification through Google's tokeninfo endpoint                |
 | `src/tokens.ts`           | Bearer tokens: 32 random bytes, stored only as their sha256                         |
 | `src/cors.ts`             | CORS for the origins in `ALLOWED_ORIGINS` only                                      |
 | `src/production.ts`       | The real dependencies (Neon, Google, clock, random bytes) and `createServer()`      |
@@ -34,7 +36,7 @@ JSON, base path `/v1`. Every route but `POST /v1/auth/google` and `OPTIONS` need
 
 | Route                                      | Answer                                                                                        |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `POST /v1/auth/google {idToken}`           | 200 `{token, expiresAt, email, keySetup}`; the token lasts 90 days                            |
+| `POST /v1/auth/google {accessToken}`       | 200 `{token, expiresAt, email, keySetup}`; the token lasts 90 days                            |
 | `POST /v1/auth/logout`                     | 204; the presented token is deleted                                                           |
 | `GET /v1/me`                               | 200 `{email, keySetup}`                                                                       |
 | `PUT /v1/keys {kdf, salt, check, checkIv}` | 201 the first time, then 409 `{"error":"key_exists"}`                                         |
@@ -44,6 +46,16 @@ JSON, base path `/v1`. Every route but `POST /v1/auth/google` and `OPTIONS` need
 
 Limits and rules:
 
+- Sign-in takes a Google OAuth access token, at most 4096 characters, which the server checks
+  by POSTing it (form body, never a URL or a log) to `https://oauth2.googleapis.com/tokeninfo`
+  with a 10 s timeout. It is accepted only on HTTP 200 when the token was issued to one of
+  `GOOGLE_CLIENT_IDS` (`aud` must be one of them when Google reports it, otherwise `azp`: a token
+  Google issued to another app for the same account is refused), `email_verified` is true,
+  `email` and `sub` are non-empty and `expires_in` is above 0. A 400 or 401 from Google (an
+  invalid or expired token) is 401 `unauthorized`; any other status (429, 408, a 5xx), a network
+  failure or a timeout is 500, never a false 401. An empty `GOOGLE_CLIENT_IDS` is a configuration
+  error and answers 500. The Google
+  token is used for that one check and not stored.
 - `kdf` is `{name: "PBKDF2", hash: "SHA-256", iterations}` with 100000..10000000 iterations;
   `salt` 16..64 bytes, `check` 1..1024 bytes, `checkIv` 12..32 bytes, all padded base64.
 - A record's `kind` is `session` or `settings`, its `id` matches `[A-Za-z0-9_-]{1,64}`,
@@ -101,11 +113,15 @@ pnpm server:test                      # vitest, against PGlite
 
 5. **Create the Google OAuth client.** In Google Cloud Console, "APIs & Services > Credentials >
    Create credentials > OAuth client ID":
-   - Application type: **Web application**.
-   - Authorized redirect URI: `https://<extension-id>.chromiumapp.org/` (for the store build,
-     `https://bmbpmnfhfbdjdjpblimidmbohgccmjdg.chromiumapp.org/`).
+   - Application type: **Chrome extension**, item ID `bmbpmnfhfbdjdjpblimidmbohgccmjdg` (the store
+     build). The extension signs in with `chrome.identity.getAuthToken` and sends the access token.
    - The OAuth consent screen asks for the scopes `openid` and `email` only.
 
    Put its client id in `GOOGLE_CLIENT_IDS` (step 3).
+
+   This client works only for that item id. An unpacked build (`pnpm dev`, a local `dist/`) has
+   another extension id, so `getAuthToken` refuses the client there. To test sign-in locally, load
+   a build whose manifest carries the store item's public `key`, or create a second "Chrome
+   extension" client for the unpacked id and add it to `GOOGLE_CLIENT_IDS` (comma-separated).
 
 Check it: `curl https://<project>.vercel.app/v1/me` answers 401 `{"error":"unauthorized"}`.

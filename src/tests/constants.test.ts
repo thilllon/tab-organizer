@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLOUD_SYNC,
   cloudSyncConfigured,
+  cloudSyncOauth2,
   cloudSyncPermissions,
   DEFAULT_SHORTCUTS,
 } from '@/constants';
@@ -36,20 +37,29 @@ describe('the Assemble! label', () => {
 });
 
 describe('cloud sync configuration', () => {
-  it('ships dormant: no server, no Google client, no identity permission', () => {
-    expect(CLOUD_SYNC).toEqual({ apiBase: '', googleClientId: '' });
+  it('ships dormant: no server, so no identity permission and no oauth2 key', () => {
+    expect(CLOUD_SYNC.apiBase).toBe('');
     expect(cloudSyncConfigured()).toBe(false);
     expect(cloudSyncPermissions()).toEqual([]);
+    expect(cloudSyncOauth2()).toEqual({});
     expect(isCloudSyncEnabled()).toBe(false);
   });
 
-  it('needs both values before the feature and its permission switch on', () => {
+  it('names the Chrome extension OAuth client', () => {
+    expect(CLOUD_SYNC.googleClientId).toMatch(/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/);
+  });
+
+  it('needs both values before the feature, its permission and its oauth2 key switch on', () => {
     const server = { apiBase: 'https://sync.test', googleClientId: '' };
     expect(cloudSyncConfigured(server)).toBe(false);
+    expect(cloudSyncOauth2(server)).toEqual({});
     expect(cloudSyncConfigured({ apiBase: ' ', googleClientId: 'id' })).toBe(false);
-    const both = { apiBase: 'https://sync.test', googleClientId: 'id' };
+    const both = { apiBase: 'https://sync.test', googleClientId: ' id ' };
     expect(cloudSyncConfigured(both)).toBe(true);
     expect(cloudSyncPermissions(both)).toEqual(['identity']);
+    expect(cloudSyncOauth2(both)).toEqual({
+      oauth2: { client_id: 'id', scopes: ['openid', 'email'] },
+    });
   });
 
   it('can be switched on for a test and back', () => {

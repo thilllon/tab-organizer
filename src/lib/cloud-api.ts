@@ -232,20 +232,26 @@ async function json(response: Response, route: string): Promise<unknown> {
 // Routes
 // ---------------------------------------------------------------------------
 
-/** `POST /v1/auth/google`: trades a Google ID token for the server's bearer token. */
+/** `POST /v1/auth/google`: trades a Google access token for the server's bearer token. */
 export async function authGoogle(
-  idToken: string,
+  accessToken: string,
   options: CloudApiOptions = {},
 ): Promise<CloudSignInResult> {
   const route = 'POST /v1/auth/google';
   let response: Response;
   try {
-    response = await send({ method: 'POST', path: '/v1/auth/google', body: { idToken } }, options);
+    response = await send(
+      { method: 'POST', path: '/v1/auth/google', body: { accessToken } },
+      options,
+    );
   } catch (err: unknown) {
-    // No bearer token is sent here: a 401 is the server refusing the Google ID token, so the
+    // No bearer token is sent here: a 401 is the server refusing the Google access token, so the
     // sign-in failed; it is not "you were signed out".
     if (err instanceof CloudUnauthorizedError) {
-      throw new ExplainedError(`${route}: HTTP 401 (ID token refused)`, 'errorCloudSignInFailed');
+      throw new ExplainedError(
+        `${route}: HTTP 401 (Google token refused)`,
+        'errorCloudSignInFailed',
+      );
     }
     throw err;
   }
