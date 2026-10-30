@@ -7,6 +7,7 @@ import { configDefaults, defineConfig } from 'vitest/config';
 
 import packageJson from './package.json' with { type: 'json' };
 import {
+  cloudSyncOauth2,
   cloudSyncPermissions,
   DEFAULT_LOCALE,
   DEFAULT_SHORTCUTS,
@@ -74,6 +75,9 @@ const manifest = defineManifest((env) => {
       'scripting',
       ...cloudSyncPermissions(),
     ],
+    // The Google OAuth client `chrome.identity.getAuthToken` signs in with (cloud sync): no `oauth2`
+    // key at all until CLOUD_SYNC is configured, so an unconfigured manifest is unchanged.
+    ...cloudSyncOauth2(),
     // No `host_permissions` and no `content_scripts`: access to YouTube is asked for in Settings,
     // when the person first wants to pause YouTube (chrome.permissions.request needs a click in a
     // page), and can be taken back there. Without it, nothing runs in any web page.

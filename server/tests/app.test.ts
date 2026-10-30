@@ -58,7 +58,7 @@ async function call(req: Request): Promise<{ status: number; body: ApiBody; res:
 
 async function signIn(sub = 'sub-1', email = 'a@example.com'): Promise<string> {
   const { status, body } = await call(
-    request('POST', '/v1/auth/google', { body: { idToken: `google:${sub}:${email}` } }),
+    request('POST', '/v1/auth/google', { body: { accessToken: `google:${sub}:${email}` } }),
   );
   expect(status).toBe(200);
   return body.token;
@@ -67,7 +67,7 @@ async function signIn(sub = 'sub-1', email = 'a@example.com'): Promise<string> {
 describe('POST /v1/auth/google', () => {
   it('creates the user and returns a token, its expiry, the email and no key setup', async () => {
     const { status, body } = await call(
-      request('POST', '/v1/auth/google', { body: { idToken: 'google:sub-1:a@example.com' } }),
+      request('POST', '/v1/auth/google', { body: { accessToken: 'google:sub-1:a@example.com' } }),
     );
     expect(status).toBe(200);
     expect(body).toEqual({
@@ -99,14 +99,14 @@ describe('POST /v1/auth/google', () => {
     const token = await signIn();
     await call(request('PUT', '/v1/keys', { token, body: validKeySetup() }));
     const { body } = await call(
-      request('POST', '/v1/auth/google', { body: { idToken: 'google:sub-1:a@example.com' } }),
+      request('POST', '/v1/auth/google', { body: { accessToken: 'google:sub-1:a@example.com' } }),
     );
     expect(body.keySetup).toEqual(validKeySetup());
   });
 
   it('refuses a token Google does not vouch for with 401', async () => {
     const { status, body } = await call(
-      request('POST', '/v1/auth/google', { body: { idToken: 'forged' } }),
+      request('POST', '/v1/auth/google', { body: { accessToken: 'forged' } }),
     );
     expect(status).toBe(401);
     expect(body).toEqual({ error: 'unauthorized' });
@@ -116,10 +116,11 @@ describe('POST /v1/auth/google', () => {
   it.each([
     ['no body', undefined],
     ['not JSON', '{'],
-    ['no idToken', '{}'],
-    ['a number', '{"idToken":5}'],
-    ['an empty idToken', '{"idToken":""}'],
-    ['an extra field', '{"idToken":"google:a:b","x":1}'],
+    ['no accessToken', '{}'],
+    ['a number', '{"accessToken":5}'],
+    ['an empty accessToken', '{"accessToken":""}'],
+    ['an extra field', '{"accessToken":"google:a:b","x":1}'],
+    ['a token over the length bound', JSON.stringify({ accessToken: 'x'.repeat(4097) })],
   ])('answers %s with 400', async (_name, rawBody) => {
     const { status, body } = await call(request('POST', '/v1/auth/google', { rawBody }));
     expect(status).toBe(400);
@@ -128,11 +129,11 @@ describe('POST /v1/auth/google', () => {
 
   it('answers 500 when Google cannot be reached, and logs no token', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-    deps.verifyGoogleIdToken = async () => {
+    deps.verifyGoogleToken = async () => {
       throw new TypeError('fetch failed for secret-token');
     };
     const { status, body } = await call(
-      request('POST', '/v1/auth/google', { body: { idToken: 'google:a:b' } }),
+      request('POST', '/v1/auth/google', { body: { accessToken: 'google:a:b' } }),
     );
     expect(status).toBe(500);
     expect(body).toEqual({ error: 'internal' });

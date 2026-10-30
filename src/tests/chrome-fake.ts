@@ -143,14 +143,18 @@ interface FakeState {
   /** Every `chrome.scripting.executeScript` call that reached a page, by tab id. */
   injectedTabs: number[];
   /**
-   * What the Google sign-in window answers to `chrome.identity.launchWebAuthFlow`: the redirect URL
-   * it ends on, an error it rejects with (Chrome rejects with "The user did not approve access."
-   * when the person closes it), or a function of the auth URL that returns either, so a test can
-   * echo the nonce it was sent. Rejects as a closed window by default.
+   * What Chrome answers to `chrome.identity.getAuthToken`: the Google access token, an error it
+   * rejects with (Chrome rejects with "The user did not approve access." when the person closes
+   * or turns down the consent window), or a function of the request that returns either. Rejects
+   * as a refused consent by default.
    */
-  authFlowAnswer: string | Error | ((url: string) => string | Error);
-  /** The URL of every `launchWebAuthFlow` call, in order. */
-  authFlowUrls: string[];
+  authTokenAnswer: string | Error | ((details: chrome.identity.TokenDetails) => string | Error);
+  /** The details of every `getAuthToken` call, in order. */
+  authTokenRequests: chrome.identity.TokenDetails[];
+  /** Every token passed to `removeCachedAuthToken`, in order. */
+  removedAuthTokens: string[];
+  /** How many times `clearAllCachedAuthTokens` was called. */
+  authTokenCacheClears: number;
   /** Testing-only knob: when true, `tabs.create` leaves the tab
    * uncommitted (`url: ''`, `pendingUrl` set, `status: 'loading'`) until `commitNavigation`
    * is called for it, modelling a real browser navigation that has not finished yet. */
@@ -288,8 +292,10 @@ export function createChromeFake(): ChromeFake {
     permissionAnswer: true,
     pageMedia: new Map(),
     injectedTabs: [],
-    authFlowAnswer: new Error('The user did not approve access.'),
-    authFlowUrls: [],
+    authTokenAnswer: new Error('The user did not approve access.'),
+    authTokenRequests: [],
+    removedAuthTokens: [],
+    authTokenCacheClears: 0,
     deferCommit: false,
   };
 
@@ -1308,23 +1314,29 @@ export function createChromeFake(): ChromeFake {
 
   // ---- identity -------------------------------------------------------------
 
-  /** `chrome.identity`: the redirect URL Chrome reserves for this extension, and the sign-in window. */
+  /**
+   * `chrome.identity`: Chrome's own Google sign-in (`getAuthToken`, promise form, which resolves
+   * to `{ token, grantedScopes }` as Chrome 105+ does) and its token cache.
+   */
   const identity = {
-    getRedirectURL(path?: string): string {
-      return `https://${runtime.id}.chromiumapp.org/${(path ?? '').replace(/^\//, '')}`;
-    },
-    async launchWebAuthFlow(
-      details: chrome.identity.WebAuthFlowDetails,
-    ): Promise<string | undefined> {
-      state.authFlowUrls.push(details.url);
+    async getAuthToken(
+      details: chrome.identity.TokenDetails = {},
+    ): Promise<chrome.identity.GetAuthTokenResult> {
+      state.authTokenRequests.push(details);
       const answer =
-        typeof state.authFlowAnswer === 'function'
-          ? state.authFlowAnswer(details.url)
-          : state.authFlowAnswer;
+        typeof state.authTokenAnswer === 'function'
+          ? state.authTokenAnswer(details)
+          : state.authTokenAnswer;
       if (answer instanceof Error) {
         throw answer;
       }
-      return answer;
+      return { token: answer, grantedScopes: details.scopes ?? [] };
+    },
+    async removeCachedAuthToken(details: chrome.identity.InvalidTokenDetails): Promise<void> {
+      state.removedAuthTokens.push(details.token);
+    },
+    async clearAllCachedAuthTokens(): Promise<void> {
+      state.authTokenCacheClears += 1;
     },
   };
 

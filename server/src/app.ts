@@ -1,11 +1,11 @@
 import { withCors } from './cors.js';
-import type { VerifyGoogleIdToken } from './google-auth.js';
+import type { VerifyGoogleToken } from './google-auth.js';
 import type { Store } from './store.js';
 import { bearerToken, hashToken, mintToken, TOKEN_TTL_MS } from './tokens.js';
 import type { StoredRecord, User } from './types.js';
 import {
   MAX_BODY_BYTES,
-  parseIdToken,
+  parseAccessToken,
   parseKeySetup,
   parseRecordsBody,
   parseRecordsQuery,
@@ -14,7 +14,7 @@ import {
 /** Everything the router reaches outside itself, injected so tests run without network. */
 export interface Deps {
   store: Store;
-  verifyGoogleIdToken: VerifyGoogleIdToken;
+  verifyGoogleToken: VerifyGoogleToken;
   /** Milliseconds since the epoch. */
   now: () => number;
   randomBytes: (size: number) => Uint8Array;
@@ -98,11 +98,11 @@ function authed(handler: (ctx: AuthedContext) => Promise<Response>): Handler {
 }
 
 async function signInWithGoogle({ request, deps }: Context): Promise<Response> {
-  const idToken = parseIdToken(await readJson(request));
-  if (idToken === null) {
+  const accessToken = parseAccessToken(await readJson(request));
+  if (accessToken === null) {
     return error(400, 'bad_request');
   }
-  const identity = await deps.verifyGoogleIdToken(idToken);
+  const identity = await deps.verifyGoogleToken(accessToken);
   if (identity === null) {
     return error(401, 'unauthorized');
   }

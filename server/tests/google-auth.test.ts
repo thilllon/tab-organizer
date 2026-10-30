@@ -1,75 +1,181 @@
-import { createLocalJWKSet, exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { createGoogleVerifier, type VerifyGoogleIdToken } from '../src/google-auth.js';
+import {
+  createGoogleVerifier,
+  GOOGLE_TOKENINFO_URL,
+  identityFromTokenInfo,
+  issuedToUs,
+} from '../src/google-auth.js';
 
 const CLIENT_ID = 'client-1.apps.googleusercontent.com';
+const CLIENT_IDS = ['other-client', CLIENT_ID];
+const TOKEN = 'ya29.secret-access-token';
 
-let privateKey: CryptoKey;
-let otherKey: CryptoKey;
-let verify: VerifyGoogleIdToken;
+/** What Google's tokeninfo answers for a good access token of ours. */
+function goodInfo(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    azp: CLIENT_ID,
+    aud: CLIENT_ID,
+    sub: '1234',
+    scope: 'openid https://www.googleapis.com/auth/userinfo.email',
+    exp: '1800000000',
+    expires_in: '3599',
+    email: 'a@example.com',
+    email_verified: 'true',
+    access_type: 'online',
+    ...overrides,
+  };
+}
 
-beforeAll(async () => {
-  const pair = await generateKeyPair('RS256');
-  privateKey = pair.privateKey;
-  otherKey = (await generateKeyPair('RS256')).privateKey;
-  const jwk = { ...(await exportJWK(pair.publicKey)), kid: 'k1', alg: 'RS256' };
-  verify = createGoogleVerifier({
-    clientIds: ['other-client', CLIENT_ID],
-    keys: createLocalJWKSet({ keys: [jwk] }),
+interface Call {
+  url: string;
+  init: RequestInit | undefined;
+}
+
+function fakeGoogle(answer: Response | Error | (() => Promise<Response>)) {
+  const calls: Call[] = [];
+  const fetchFn: typeof fetch = async (input, init) => {
+    calls.push({ url: String(input), init });
+    if (answer instanceof Error) {
+      throw answer;
+    }
+    return typeof answer === 'function' ? answer() : answer.clone();
+  };
+  return { calls, fetchFn };
+}
+
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+describe('issuedToUs', () => {
+  it('requires aud to be ours when it is there, whatever azp says', () => {
+    expect(issuedToUs({ aud: CLIENT_ID, azp: CLIENT_ID }, CLIENT_IDS)).toBe(true);
+    expect(issuedToUs({ aud: 'someone-else', azp: CLIENT_ID }, CLIENT_IDS)).toBe(false);
+    expect(issuedToUs({ aud: '', azp: CLIENT_ID }, CLIENT_IDS)).toBe(false);
+    expect(issuedToUs({ aud: 5, azp: CLIENT_ID }, CLIENT_IDS)).toBe(false);
+  });
+
+  it('falls back to azp only when aud is absent', () => {
+    expect(issuedToUs({ azp: CLIENT_ID }, CLIENT_IDS)).toBe(true);
+    expect(issuedToUs({ azp: 'someone-else' }, CLIENT_IDS)).toBe(false);
+    expect(issuedToUs({}, CLIENT_IDS)).toBe(false);
   });
 });
 
-function sign(claims: JWTPayload, options: { key?: CryptoKey; expiresIn?: string } = {}) {
-  return new SignJWT({ email: 'a@example.com', email_verified: true, ...claims })
-    .setProtectedHeader({ alg: 'RS256', kid: 'k1' })
-    .setIssuer(typeof claims.iss === 'string' ? claims.iss : 'https://accounts.google.com')
-    .setAudience(claims.aud ?? CLIENT_ID)
-    .setSubject(typeof claims.sub === 'string' ? claims.sub : '1234')
-    .setIssuedAt()
-    .setExpirationTime(options.expiresIn ?? '1h')
-    .sign(options.key ?? privateKey);
-}
+describe('identityFromTokenInfo', () => {
+  it('reads sub and email from a good answer', () => {
+    expect(identityFromTokenInfo(goodInfo(), CLIENT_IDS)).toEqual({
+      sub: '1234',
+      email: 'a@example.com',
+    });
+    expect(
+      identityFromTokenInfo(goodInfo({ email_verified: true, expires_in: 10 }), CLIENT_IDS),
+    ).toEqual({ sub: '1234', email: 'a@example.com' });
+  });
 
-describe('createGoogleVerifier', () => {
-  it('accepts a good token from either Google issuer', async () => {
-    for (const iss of ['https://accounts.google.com', 'accounts.google.com']) {
-      expect(await verify(await sign({ iss }))).toEqual({ sub: '1234', email: 'a@example.com' });
+  it('refuses a token issued to another app', () => {
+    expect(identityFromTokenInfo(goodInfo({ aud: 'x', azp: 'x' }), CLIENT_IDS)).toBeNull();
+    expect(identityFromTokenInfo(goodInfo({ aud: 'x' }), CLIENT_IDS)).toBeNull();
+  });
+
+  it('refuses an unverified, missing or empty email, and a missing sub', () => {
+    for (const email_verified of [false, 'false', undefined, 1]) {
+      expect(identityFromTokenInfo(goodInfo({ email_verified }), CLIENT_IDS)).toBeNull();
+    }
+    expect(identityFromTokenInfo(goodInfo({ email: undefined }), CLIENT_IDS)).toBeNull();
+    expect(identityFromTokenInfo(goodInfo({ email: '' }), CLIENT_IDS)).toBeNull();
+    expect(identityFromTokenInfo(goodInfo({ sub: undefined }), CLIENT_IDS)).toBeNull();
+    expect(identityFromTokenInfo(goodInfo({ sub: '' }), CLIENT_IDS)).toBeNull();
+  });
+
+  it('refuses an expired or unparsable expires_in', () => {
+    for (const expires_in of ['0', '-5', 'soon', undefined, 0]) {
+      expect(identityFromTokenInfo(goodInfo({ expires_in }), CLIENT_IDS)).toBeNull();
     }
   });
 
-  it('refuses another issuer', async () => {
-    expect(await verify(await sign({ iss: 'https://evil.example' }))).toBeNull();
+  it('refuses something that is not an object', () => {
+    expect(identityFromTokenInfo(null, CLIENT_IDS)).toBeNull();
+    expect(identityFromTokenInfo([goodInfo()], CLIENT_IDS)).toBeNull();
+    expect(identityFromTokenInfo('ok', CLIENT_IDS)).toBeNull();
+  });
+});
+
+describe('createGoogleVerifier', () => {
+  it('posts the token in a form body, never in the URL, and accepts a good answer', async () => {
+    const google = fakeGoogle(json(200, goodInfo()));
+    const verify = createGoogleVerifier({ clientIds: CLIENT_IDS, fetch: google.fetchFn });
+    expect(await verify(TOKEN)).toEqual({ sub: '1234', email: 'a@example.com' });
+    expect(google.calls).toHaveLength(1);
+    const [call] = google.calls;
+    expect(call?.url).toBe(GOOGLE_TOKENINFO_URL);
+    expect(call?.url).not.toContain(TOKEN);
+    expect(call?.init?.method).toBe('POST');
+    expect(new Headers(call?.init?.headers).get('Content-Type')).toBe(
+      'application/x-www-form-urlencoded',
+    );
+    expect(new URLSearchParams(String(call?.init?.body)).get('access_token')).toBe(TOKEN);
+    expect(call?.init?.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it('refuses another audience', async () => {
-    expect(await verify(await sign({ aud: 'someone-else' }))).toBeNull();
+  it('refuses a token issued to another app', async () => {
+    const google = fakeGoogle(json(200, goodInfo({ aud: 'evil', azp: 'evil' })));
+    const verify = createGoogleVerifier({ clientIds: CLIENT_IDS, fetch: google.fetchFn });
+    expect(await verify(TOKEN)).toBeNull();
   });
 
-  it('refuses an unverified or missing email', async () => {
-    expect(await verify(await sign({ email_verified: false }))).toBeNull();
-    expect(await verify(await sign({ email_verified: 'true' }))).toBeNull();
-    expect(await verify(await sign({ email: undefined }))).toBeNull();
+  it('answers null when Google refuses the token (4xx)', async () => {
+    for (const status of [400, 401]) {
+      const google = fakeGoogle(json(status, { error: 'invalid_token' }));
+      const verify = createGoogleVerifier({ clientIds: CLIENT_IDS, fetch: google.fetchFn });
+      expect(await verify(TOKEN)).toBeNull();
+    }
   });
 
-  it('refuses an expired token, a wrong signature and garbage', async () => {
-    expect(await verify(await sign({}, { expiresIn: '-1m' }))).toBeNull();
-    expect(await verify(await sign({}, { key: otherKey }))).toBeNull();
-    expect(await verify('not.a.jwt')).toBeNull();
-  });
-
-  it('refuses everything when no client id is configured', async () => {
-    const none = createGoogleVerifier({ clientIds: [], keys: async () => privateKey });
-    expect(await none(await sign({}))).toBeNull();
-  });
-
-  it('throws, rather than refusing, when the keys cannot be fetched', async () => {
+  it('throws, rather than refusing, on a network failure, a 5xx or a non-JSON answer', async () => {
     const offline = createGoogleVerifier({
-      clientIds: [CLIENT_ID],
-      keys: async () => {
-        throw new TypeError('fetch failed');
-      },
+      clientIds: CLIENT_IDS,
+      fetch: fakeGoogle(new TypeError('fetch failed')).fetchFn,
     });
-    await expect(offline(await sign({}))).rejects.toThrow(TypeError);
+    await expect(offline(TOKEN)).rejects.toThrow(TypeError);
+    const down = createGoogleVerifier({
+      clientIds: CLIENT_IDS,
+      fetch: fakeGoogle(json(503, {})).fetchFn,
+    });
+    await expect(down(TOKEN)).rejects.toThrow('503');
+    const garbled = createGoogleVerifier({
+      clientIds: CLIENT_IDS,
+      fetch: fakeGoogle(new Response('<html>', { status: 200 })).fetchFn,
+    });
+    await expect(garbled(TOKEN)).rejects.toThrow();
+  });
+
+  it('gives up after the timeout, by throwing', async () => {
+    const slow: typeof fetch = (_input, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+      });
+    const verify = createGoogleVerifier({ clientIds: CLIENT_IDS, fetch: slow, timeoutMs: 10 });
+    await expect(verify(TOKEN)).rejects.toThrow();
+  });
+
+  it('never puts the token into an error message', async () => {
+    const down = createGoogleVerifier({
+      clientIds: CLIENT_IDS,
+      fetch: fakeGoogle(json(502, {})).fetchFn,
+    });
+    const err: unknown = await down(TOKEN).catch((e: unknown) => e);
+    expect(String(err)).not.toContain(TOKEN);
+  });
+
+  it('refuses everything, without asking Google, when no client id is configured', async () => {
+    const google = fakeGoogle(json(200, goodInfo()));
+    const none = createGoogleVerifier({ clientIds: [], fetch: google.fetchFn });
+    expect(await none(TOKEN)).toBeNull();
+    expect(google.calls).toEqual([]);
   });
 });

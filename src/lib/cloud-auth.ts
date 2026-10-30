@@ -5,16 +5,17 @@
  * loaded by the service worker. Neither key is session data, so they are written here rather
  * than through `sessionRepo`; signing out or deleting the cloud data never touches a session.
  */
+import { GOOGLE_OAUTH_SCOPES } from '@/constants';
 import {
   type CloudApiOptions,
+  type CloudSignInResult,
   CloudUnauthorizedError,
   authGoogle,
   deleteAccount,
   logout,
   putKeys,
 } from '@/lib/cloud-api';
-import { cloudSyncConfig } from '@/lib/cloud-config';
-import { createKeySetup, keyMatchesSetup, toBase64, unlockKeySetup } from '@/lib/cloud-crypto';
+import { createKeySetup, keyMatchesSetup, unlockKeySetup } from '@/lib/cloud-crypto';
 import { ExplainedError } from '@/lib/error-message';
 import { isRecord } from '@/lib/import-guards';
 import type { CloudAccount, CloudKeySetup } from '@/types';
@@ -26,8 +27,6 @@ export const CLOUD_SYNC_KEY = 'cloudSyncKey';
 
 /** The shortest sync passphrase Settings accepts. */
 export const PASSPHRASE_MIN_LENGTH = 8;
-
-const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
 /** What Settings > Account shows. */
 export type AccountState =
@@ -86,59 +85,47 @@ export function newPassphraseProblem(
   return passphrase === repeated ? null : 'mismatch';
 }
 
-/** Google's OAuth URL asking for an ID token for `openid email`. Pure. */
-export function googleAuthUrl(clientId: string, redirectUri: string, nonce: string): string {
-  const query = new URLSearchParams({
-    client_id: clientId,
-    response_type: 'id_token',
-    redirect_uri: redirectUri,
-    scope: 'openid email',
-    nonce,
-    prompt: 'select_account',
-  });
-  return `${GOOGLE_AUTH_URL}?${query.toString()}`;
-}
-
-/** The `id_token` (or Google's `error`) in the fragment of the redirect URL. Pure. */
-export function idTokenFromRedirect(redirectUrl: string): { idToken: string } | { error: string } {
-  const hash = redirectUrl.includes('#') ? redirectUrl.slice(redirectUrl.indexOf('#') + 1) : '';
-  const params = new URLSearchParams(hash);
-  const idToken = params.get('id_token');
-  if (idToken !== null && idToken !== '') {
-    return { idToken };
-  }
-  return { error: params.get('error') ?? 'no_id_token' };
+/**
+ * Whether a `chrome.identity.getAuthToken` failure is the person closing or turning down Chrome's
+ * consent window, which is not an error to report. Chrome rejects with "The user did not approve
+ * access." for both; anything else (no network, sign-in turned off in Chrome, a bad client id) is
+ * a real failure and is explained as one, so only that wording and an explicit cancel count.
+ */
+export function isSignInCancelled(err: unknown): boolean {
+  const message = err instanceof Error ? err.message.toLowerCase() : '';
+  return message.includes('did not approve') || /\bcancel(l?ed)?\b/.test(message);
 }
 
 /**
- * The payload of a JWT, decoded only: the server checks the signature, this side only reads the
- * nonce back. `null` when it is not a JWT with a JSON object payload. Pure.
+ * Takes the access token out of Chrome's token cache once the server has had it (or refused it).
+ * The server needs it once, to learn who signed in, so neither Chrome nor this extension holds a
+ * Google token afterwards, and a token Google has since revoked is never offered again (the next
+ * sign-in gets a fresh one, without a prompt while the grant stands). Best effort.
  */
-export function jwtPayload(token: string): Record<string, unknown> | null {
-  const part = token.split('.')[1];
-  if (part === undefined || part === '') {
-    return null;
+async function dropCachedGoogleToken(token: string): Promise<void> {
+  try {
+    await chrome.identity.removeCachedAuthToken({ token });
+  } catch (err: unknown) {
+    console.warn('[tabinet] could not drop the Google token from the cache', err);
+  }
+}
+
+/**
+ * On sign-out and deletion Chrome is also told to forget this extension's Google grant
+ * (`clearAllCachedAuthTokens`), so the next sign-in asks again and another account can be picked.
+ * There is no single token to remove at that point (it was dropped right after signing in), which
+ * is why the whole cache is cleared rather than `removeCachedAuthToken`. Behind a `typeof` guard
+ * because `chrome.identity` exists only with the `identity` permission; best effort, like logout.
+ */
+async function forgetGoogleGrant(): Promise<void> {
+  if (typeof chrome.identity?.clearAllCachedAuthTokens !== 'function') {
+    return;
   }
   try {
-    const base64 = part.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-    const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
-    const payload: unknown = JSON.parse(new TextDecoder().decode(bytes));
-    return isRecord(payload) ? payload : null;
-  } catch {
-    return null;
+    await chrome.identity.clearAllCachedAuthTokens();
+  } catch (err: unknown) {
+    console.warn('[tabinet] could not clear the Google token cache', err);
   }
-}
-
-function randomNonce(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  return toBase64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-/** Chrome's wording when the person closes the sign-in window or turns the request down. */
-function isCancelled(err: unknown): boolean {
-  const message = err instanceof Error ? err.message.toLowerCase() : '';
-  return message.includes('did not approve') || message.includes('cancel');
 }
 
 // ---------------------------------------------------------------------------
@@ -237,38 +224,37 @@ export type SignInOutcome =
   | { outcome: 'cancelled' };
 
 /**
- * Signs in with Google, straight from a click: Google's chooser in a window Chrome opens, the
- * ID token from the redirect (its nonce checked against the one sent), the server's token for
- * it, and the account stored. A closed window or a refusal is `'cancelled'`, not an error.
+ * Signs in with Google, straight from a click: Chrome's own account and consent window
+ * (`chrome.identity.getAuthToken`, with the client id from the manifest's `oauth2`), the access
+ * token traded once for the server's token, and the account stored. The Google token is never
+ * stored and is dropped from Chrome's cache right after the exchange, whatever its outcome. A
+ * closed or refused consent window is `'cancelled'`, not an error.
  */
 export async function signIn(options: CloudApiOptions = {}): Promise<SignInOutcome> {
-  const nonce = randomNonce();
-  const url = googleAuthUrl(
-    cloudSyncConfig().googleClientId,
-    chrome.identity.getRedirectURL(),
-    nonce,
-  );
-  let redirect: string | undefined;
+  let googleToken: string | undefined;
   try {
-    redirect = await chrome.identity.launchWebAuthFlow({ url, interactive: true });
+    // Promise form (Chrome 105+, below the minimum of 123): resolves to `{ token, grantedScopes }`.
+    const answer = await chrome.identity.getAuthToken({
+      interactive: true,
+      scopes: [...GOOGLE_OAUTH_SCOPES],
+    });
+    googleToken = answer.token;
   } catch (err: unknown) {
-    if (isCancelled(err)) {
+    if (isSignInCancelled(err)) {
       return { outcome: 'cancelled' };
     }
     const reason = err instanceof Error ? err.message : String(err);
-    throw new ExplainedError(`launchWebAuthFlow failed (${reason})`, 'errorCloudSignInFailed');
+    throw new ExplainedError(`getAuthToken failed (${reason})`, 'errorCloudSignInFailed');
   }
-  const answer = idTokenFromRedirect(redirect ?? '');
-  if ('error' in answer) {
-    if (answer.error === 'access_denied') {
-      return { outcome: 'cancelled' };
-    }
-    throw new ExplainedError(`Google sign-in returned ${answer.error}`, 'errorCloudSignInFailed');
+  if (googleToken === undefined || googleToken === '') {
+    throw new ExplainedError('getAuthToken answered without a token', 'errorCloudSignInFailed');
   }
-  if (jwtPayload(answer.idToken)?.nonce !== nonce) {
-    throw new ExplainedError('The ID token carries another nonce', 'errorCloudSignInFailed');
+  let result: CloudSignInResult;
+  try {
+    result = await authGoogle(googleToken, options);
+  } finally {
+    await dropCachedGoogleToken(googleToken);
   }
-  const result = await authGoogle(answer.idToken, options);
   const account: CloudAccount = {
     token: result.token,
     expiresAt: result.expiresAt,
@@ -293,12 +279,14 @@ export async function signOut(options: CloudApiOptions = {}): Promise<void> {
     }
   }
   await forgetCloudAccount();
+  await forgetGoogleGrant();
 }
 
 /** Deletes the account and everything on the server, then signs out on this device. */
 export async function deleteCloudData(options: CloudApiOptions = {}): Promise<void> {
   await withCloudAccount((account) => deleteAccount(account.token, options));
   await forgetCloudAccount();
+  await forgetGoogleGrant();
 }
 
 // ---------------------------------------------------------------------------

@@ -31,8 +31,8 @@ export function createTestDeps(store: Store, overrides: Partial<Deps> = {}) {
   let counter = 0;
   const deps: Deps = {
     store,
-    verifyGoogleIdToken: async (idToken) => {
-      const match = /^google:([^:]+):(.+)$/.exec(idToken);
+    verifyGoogleToken: async (accessToken) => {
+      const match = /^google:([^:]+):(.+)$/.exec(accessToken);
       return match ? { sub: match[1], email: match[2] } : null;
     },
     now: () => clock.now,

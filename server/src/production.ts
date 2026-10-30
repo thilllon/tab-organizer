@@ -38,7 +38,7 @@ export function createProductionDeps(env: NodeJS.ProcessEnv = process.env): Deps
   const sql = neon(requireUrl(env, 'DATABASE_URL'));
   return {
     store: createSqlStore((text, params) => sql.query(text, params)),
-    verifyGoogleIdToken: createGoogleVerifier({
+    verifyGoogleToken: createGoogleVerifier({
       clientIds: listFromEnv(requireEnv(env, 'GOOGLE_CLIENT_IDS')),
     }),
     now: () => Date.now(),
