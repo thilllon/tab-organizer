@@ -6,7 +6,9 @@ user's passphrase before it is sent, so the server holds `{kind, id, updatedAt, 
 ciphertext}` and never a session name, url or title. Sign-in is with Google; the server keeps the
 Google account id (`sub`) and the email, nothing else about the person.
 
-The extension does not talk to it yet (stage 1 of cloud sync: the server only).
+The extension calls it once `CLOUD_SYNC.apiBase` is set in `src/constants.ts` (sign-in with
+`chrome.identity.getAuthToken`, then the sync engine in `src/lib/cloud-sync.ts`); until then it is
+dormant.
 
 ## Layout
 
@@ -49,8 +51,10 @@ Limits and rules:
   with a 10 s timeout. It is accepted only on HTTP 200 when the token was issued to one of
   `GOOGLE_CLIENT_IDS` (`aud` must be one of them when Google reports it, otherwise `azp`: a token
   Google issued to another app for the same account is refused), `email_verified` is true,
-  `email` and `sub` are non-empty and `expires_in` is above 0. A 4xx from Google is 401
-  `unauthorized`; a network failure, a 5xx or a timeout is 500, never a false 401. The Google
+  `email` and `sub` are non-empty and `expires_in` is above 0. A 400 or 401 from Google (an
+  invalid or expired token) is 401 `unauthorized`; any other status (429, 408, a 5xx), a network
+  failure or a timeout is 500, never a false 401. An empty `GOOGLE_CLIENT_IDS` is a configuration
+  error and answers 500. The Google
   token is used for that one check and not stored.
 - `kdf` is `{name: "PBKDF2", hash: "SHA-256", iterations}` with 100000..10000000 iterations;
   `salt` 16..64 bytes, `check` 1..1024 bytes, `checkIv` 12..32 bytes, all padded base64.
@@ -114,5 +118,10 @@ pnpm server:test                      # vitest, against PGlite
    - The OAuth consent screen asks for the scopes `openid` and `email` only.
 
    Put its client id in `GOOGLE_CLIENT_IDS` (step 3).
+
+   This client works only for that item id. An unpacked build (`pnpm dev`, a local `dist/`) has
+   another extension id, so `getAuthToken` refuses the client there. To test sign-in locally, load
+   a build whose manifest carries the store item's public `key`, or create a second "Chrome
+   extension" client for the unpacked id and add it to `GOOGLE_CLIENT_IDS` (comma-separated).
 
 Check it: `curl https://<project>.vercel.app/v1/me` answers 401 `{"error":"unauthorized"}`.

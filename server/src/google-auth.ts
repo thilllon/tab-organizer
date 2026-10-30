@@ -6,6 +6,9 @@ export const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
 /** How long Google is given to answer before the sign-in fails with a 500. */
 export const TOKENINFO_TIMEOUT_MS = 10_000;
 
+/** The statuses tokeninfo answers for a token it does not accept (invalid, expired, revoked). */
+const TOKEN_REFUSED_STATUSES: ReadonlySet<number> = new Set([400, 401]);
+
 export type VerifyGoogleToken = (accessToken: string) => Promise<GoogleIdentity | null>;
 
 function nonEmptyString(value: unknown): value is string {
@@ -58,9 +61,12 @@ export function identityFromTokenInfo(
 
 /**
  * Verifies a Google OAuth access token by asking Google about it (the tokeninfo endpoint, the
- * token in a form body). Returns null for a token Google refuses (a 4xx answer) or one that fails
- * `identityFromTokenInfo()`. A failure to reach Google, a 5xx or a timeout is thrown, so it
- * becomes a 500 rather than a false "unauthorized". The token is never logged.
+ * token in a form body). Returns null for a token Google refuses (400 or 401, its answers for an
+ * invalid or expired token) or one that fails `identityFromTokenInfo()`. Anything else is thrown,
+ * so it becomes a 500 rather than a false "unauthorized": a failure to reach Google, a timeout,
+ * a 5xx, and other 4xx such as 429 (rate limited) or 408, which say nothing about the token. The
+ * token is never logged. Building one with no client id throws, because that is a configuration
+ * error (a 500 from `createServer()`), not a refused sign-in.
  */
 export function createGoogleVerifier(options: {
   clientIds: readonly string[];
@@ -68,22 +74,24 @@ export function createGoogleVerifier(options: {
   timeoutMs?: number;
 }): VerifyGoogleToken {
   const clientIds = [...options.clientIds];
+  if (clientIds.length === 0) {
+    throw new Error('No Google OAuth client id configured');
+  }
   const send = options.fetch ?? fetch;
   const timeoutMs = options.timeoutMs ?? TOKENINFO_TIMEOUT_MS;
   return async (accessToken) => {
-    if (clientIds.length === 0) {
-      return null;
-    }
     const response = await send(GOOGLE_TOKENINFO_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ access_token: accessToken }).toString(),
       signal: AbortSignal.timeout(timeoutMs),
     });
-    if (response.status >= 400 && response.status < 500) {
-      return null;
-    }
     if (response.status !== 200) {
+      // Release the connection: an unread body holds it until garbage collection.
+      await response.body?.cancel().catch(() => undefined);
+      if (TOKEN_REFUSED_STATUSES.has(response.status)) {
+        return null;
+      }
       throw new Error(`Google tokeninfo answered HTTP ${response.status}`);
     }
     let info: unknown;

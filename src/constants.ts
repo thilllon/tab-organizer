@@ -64,7 +64,9 @@ export interface CloudSyncConfig {
   /**
    * The Google OAuth client id, of type "Chrome extension" (bound to the store item id
    * `bmbpmnfhfbdjdjpblimidmbohgccmjdg`), used by `chrome.identity.getAuthToken` through the
-   * manifest's `oauth2` key. The server lists the same id in `GOOGLE_CLIENT_IDS`.
+   * manifest's `oauth2` key. The server lists the same id in `GOOGLE_CLIENT_IDS`. The manifest has
+   * no `key`, so an unpacked build gets another extension id and Chrome refuses this client there:
+   * sign-in works only in the store build (AGENTS.md, Cloud sync, says how to test it locally).
    */
   googleClientId: string;
 }

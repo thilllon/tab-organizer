@@ -34,14 +34,25 @@ interface Call {
 
 function fakeGoogle(answer: Response | Error | (() => Promise<Response>)) {
   const calls: Call[] = [];
+  const responses: Response[] = [];
   const fetchFn: typeof fetch = async (input, init) => {
     calls.push({ url: String(input), init });
     if (answer instanceof Error) {
       throw answer;
     }
-    return typeof answer === 'function' ? answer() : answer.clone();
+    if (typeof answer === 'function') {
+      return answer();
+    }
+    // A fresh Response per call, like a real fetch. Not clone(): a cloned body is one branch of a
+    // tee, and cancelling one branch waits for the other.
+    const response = new Response(await answer.clone().arrayBuffer(), {
+      status: answer.status,
+      headers: answer.headers,
+    });
+    responses.push(response);
+    return response;
   };
-  return { calls, fetchFn };
+  return { calls, responses, fetchFn };
 }
 
 function json(status: number, body: unknown): Response {
@@ -128,11 +139,30 @@ describe('createGoogleVerifier', () => {
     expect(await verify(TOKEN)).toBeNull();
   });
 
-  it('answers null when Google refuses the token (4xx)', async () => {
+  it('answers null when Google refuses the token (400 or 401)', async () => {
     for (const status of [400, 401]) {
       const google = fakeGoogle(json(status, { error: 'invalid_token' }));
       const verify = createGoogleVerifier({ clientIds: CLIENT_IDS, fetch: google.fetchFn });
       expect(await verify(TOKEN)).toBeNull();
+    }
+  });
+
+  it('throws, rather than refusing, on any other 4xx, such as 429 or 408', async () => {
+    for (const status of [429, 408, 403]) {
+      const verify = createGoogleVerifier({
+        clientIds: CLIENT_IDS,
+        fetch: fakeGoogle(json(status, { error: 'rate_limit_exceeded' })).fetchFn,
+      });
+      await expect(verify(TOKEN)).rejects.toThrow(String(status));
+    }
+  });
+
+  it('cancels the body of a non-200 answer, so the connection is released', async () => {
+    for (const status of [400, 429, 503]) {
+      const google = fakeGoogle(json(status, { error: 'x' }));
+      const verify = createGoogleVerifier({ clientIds: CLIENT_IDS, fetch: google.fetchFn });
+      await verify(TOKEN).catch(() => undefined);
+      expect(google.responses.map((response) => response.bodyUsed)).toEqual([true]);
     }
   });
 
@@ -172,10 +202,11 @@ describe('createGoogleVerifier', () => {
     expect(String(err)).not.toContain(TOKEN);
   });
 
-  it('refuses everything, without asking Google, when no client id is configured', async () => {
+  it('cannot be built without a client id, a configuration error rather than a refusal', () => {
     const google = fakeGoogle(json(200, goodInfo()));
-    const none = createGoogleVerifier({ clientIds: [], fetch: google.fetchFn });
-    expect(await none(TOKEN)).toBeNull();
+    expect(() => createGoogleVerifier({ clientIds: [], fetch: google.fetchFn })).toThrow(
+      'client id',
+    );
     expect(google.calls).toEqual([]);
   });
 });
