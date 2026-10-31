@@ -367,6 +367,10 @@
     "message": "セッションはこの端末内にのみ保存されます。ほかの場所に移すにはファイルにエクスポートしてください。",
     "description": "Explanation under the Backup heading in Settings."
   },
+  "settingsBackupDescriptionSynced": {
+    "message": "ログインすると保存したセッションが同期され、スナップショットはこのデバイスにのみ残ります。自分用のコピーを残すにはファイルにエクスポートしてください。",
+    "description": "Settings > Backup, section description shown instead of settingsBackupDescription when cloud sync is available in this build."
+  },
   "settingsExportEverything": {
     "message": "すべてをエクスポート",
     "description": "Label of the row with the button that exports every session to a file."

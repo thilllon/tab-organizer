@@ -358,7 +358,9 @@ export function SettingsView({
 
         <SettingsSection
           title={t('settingsBackupTitle')}
-          description={t('settingsBackupDescription')}
+          description={t(
+            isCloudSyncEnabled() ? 'settingsBackupDescriptionSynced' : 'settingsBackupDescription',
+          )}
         >
           <SettingsField
             label={t('settingsExportEverything')}

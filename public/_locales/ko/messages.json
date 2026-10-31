@@ -359,6 +359,10 @@
     "message": "세션은 이 기기에만 저장됩니다. 다른 곳으로 옮기려면 파일로 내보내세요.",
     "description": "Explanation under the Backup heading in Settings."
   },
+  "settingsBackupDescriptionSynced": {
+    "message": "로그인하면 저장한 세션이 동기화되고, 스냅샷은 이 기기에만 남습니다. 내 사본을 따로 보관하려면 파일로 내보내세요.",
+    "description": "Settings > Backup, section description shown instead of settingsBackupDescription when cloud sync is available in this build."
+  },
   "settingsExportEverything": {
     "message": "모두 내보내기",
     "description": "Label of the row with the button that exports every session to a file."

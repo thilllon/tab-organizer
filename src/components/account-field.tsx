@@ -107,6 +107,7 @@ export function AccountField({ onNotice, onError }: AccountFieldProps) {
             {t('commonTryAgain')}
           </Button>
         )}
+        {cloud.error !== undefined && cloud.account !== null && signOutButton}
       </SettingsField>
     );
   }
