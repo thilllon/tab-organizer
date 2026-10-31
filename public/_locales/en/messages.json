@@ -371,6 +371,10 @@
     "message": "Sessions live on this device only. Export a file to move them somewhere else.",
     "description": "Explanation under the Backup heading in Settings."
   },
+  "settingsBackupDescriptionSynced": {
+    "message": "Saved sessions sync when you are signed in; snapshots stay on this device. Export a file to keep your own copy.",
+    "description": "Settings > Backup, section description shown instead of settingsBackupDescription when cloud sync is available in this build."
+  },
   "settingsExportEverything": {
     "message": "Export everything",
     "description": "Label of the row with the button that exports every session to a file."

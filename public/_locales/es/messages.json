@@ -371,6 +371,10 @@
     "message": "Las sesiones solo están en este dispositivo. Exporta un archivo para llevarlas a otro sitio.",
     "description": "Explanation under the Backup heading in Settings."
   },
+  "settingsBackupDescriptionSynced": {
+    "message": "Las sesiones guardadas se sincronizan cuando inicias sesión; las instantáneas se quedan en este dispositivo. Exporta un archivo para conservar tu propia copia.",
+    "description": "Settings > Backup, section description shown instead of settingsBackupDescription when cloud sync is available in this build."
+  },
   "settingsExportEverything": {
     "message": "Exportar todo",
     "description": "Label of the row with the button that exports every session to a file."
